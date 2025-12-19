@@ -36,7 +36,7 @@ export class SubscriptionService {
   availablePlans: SubscriptionPlan[] = [
     {
       name: 'Trial',
-      description: 'Período de teste de 30 dias',
+      description: 'Período de teste de 14 dias',
       monthly_price: 0,
       yearly_price: 0,
       features: [
@@ -178,5 +178,41 @@ export class SubscriptionService {
     const today = new Date();
     const diff = nextBilling.getTime() - today.getTime();
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  }
+
+  isTrialing(): boolean {
+    const sub = this.subscriptionSignal();
+    return sub?.status === 'trialing';
+  }
+
+  isTrialExpired(): boolean {
+    const sub = this.subscriptionSignal();
+    if (!sub || sub.status !== 'trialing' || !sub.end_date) return false;
+
+    const endDate = new Date(sub.end_date);
+    const today = new Date();
+    return today > endDate;
+  }
+
+  getDaysRemainingInTrial(): number {
+    const sub = this.subscriptionSignal();
+    if (!sub || sub.status !== 'trialing' || !sub.end_date) return 0;
+
+    const endDate = new Date(sub.end_date);
+    const today = new Date();
+    const diff = endDate.getTime() - today.getTime();
+    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    return days > 0 ? days : 0;
+  }
+
+  canAccessFeatures(): boolean {
+    const sub = this.subscriptionSignal();
+    if (!sub) return false;
+
+    if (sub.status === 'trialing') {
+      return !this.isTrialExpired();
+    }
+
+    return sub.status === 'active';
   }
 }

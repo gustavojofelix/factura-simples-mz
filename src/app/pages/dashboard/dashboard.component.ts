@@ -10,6 +10,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { CompanyService } from '../../core/services/company.service';
 import { SupabaseService } from '../../core/services/supabase.service';
+import { SubscriptionService } from '../../core/services/subscription.service';
 import { InvoiceDialogComponent } from '../../shared/components/invoice-dialog.component';
 import { Invoice } from '../../core/services/invoice.service';
 
@@ -61,6 +62,7 @@ export class DashboardComponent implements OnInit {
 
   constructor(
     public companyService: CompanyService,
+    public subscriptionService: SubscriptionService,
     private supabase: SupabaseService,
     private dialog: MatDialog
   ) {
@@ -85,7 +87,8 @@ export class DashboardComponent implements OnInit {
     try {
       await Promise.all([
         this.loadMetrics(companyId),
-        this.loadRecentInvoices(companyId)
+        this.loadRecentInvoices(companyId),
+        this.subscriptionService.loadSubscription(companyId)
       ]);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
