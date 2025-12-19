@@ -1,0 +1,39 @@
+:host {
+  display: block;
+}
+
+mat-card {
+  height: 100%;
+}
+
+.bg-blue-50 {
+  background-color: #eff6ff;
+}
+
+.bg-green-50 {
+  background-color: #f0fdf4;
+}
+
+.bg-red-50 {
+  background-color: #fef2f2;
+}
+
+.bg-orange-50 {
+  background-color: #fff7ed;
+}
+
+.text-blue-600 {
+  color: #2563eb;
+}
+
+.text-green-600 {
+  color: #16a34a;
+}
+
+.text-red-600 {
+  color: #dc2626;
+}
+
+.text-orange-600 {
+  color: #ea580c;
+}

@@ -1,0 +1,13 @@
+::ng-deep .mat-mdc-table {
+  background: transparent;
+}
+
+::ng-deep .mat-mdc-header-cell {
+  background-color: #f9fafb;
+  font-weight: 600;
+  color: #374151;
+}
+
+::ng-deep .mat-mdc-dialog-container .mdc-dialog__surface {
+  border-radius: 12px;
+}

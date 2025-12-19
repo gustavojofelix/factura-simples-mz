@@ -1,0 +1,36 @@
+@import '@angular/material/prebuilt-themes/indigo-pink.css';
+
+:root {
+  --moz-green: #007a5e;
+  --moz-yellow: #FCD116;
+  --moz-red: #CE1126;
+  --primary-color: #007a5e;
+  --accent-color: #FCD116;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+}
+
+.mat-mdc-raised-button.mat-primary {
+  --mdc-protected-button-container-color: var(--moz-green);
+  --mdc-protected-button-label-text-color: white;
+}
+
+.mat-mdc-button.mat-primary {
+  --mdc-text-button-label-text-color: var(--moz-green);
+}
+
+.mat-mdc-outlined-button.mat-primary {
+  --mdc-outlined-button-label-text-color: var(--moz-green);
+  --mdc-outlined-button-outline-color: var(--moz-green);
+}
+
+.mat-mdc-card {
+  --mdc-elevated-card-container-color: white;
+}

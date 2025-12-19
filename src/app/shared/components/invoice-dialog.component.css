@@ -1,0 +1,28 @@
+.invoice-dialog {
+  width: 100%;
+  max-width: 900px;
+}
+
+::ng-deep .mat-mdc-dialog-container .mdc-dialog__surface {
+  border-radius: 12px;
+  max-width: 95vw;
+}
+
+::ng-deep .mat-stepper-horizontal {
+  background: transparent;
+}
+
+::ng-deep .mat-mdc-table {
+  background: transparent;
+}
+
+::ng-deep .mat-mdc-header-cell {
+  background-color: #f9fafb;
+  font-weight: 600;
+  color: #374151;
+  padding: 12px 16px;
+}
+
+::ng-deep .mat-mdc-cell {
+  padding: 12px 16px;
+}

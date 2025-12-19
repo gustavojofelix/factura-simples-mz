@@ -1,0 +1,136 @@
+<div class="flex h-screen bg-gray-100">
+  <!-- Sidebar Desktop -->
+  <aside class="hidden md:flex md:flex-shrink-0">
+    <div class="flex flex-col w-64 bg-white border-r border-gray-200">
+      <!-- Logo -->
+      <div class="flex items-center justify-center h-16 px-4 bg-moz-green">
+        <h1 class="text-xl font-bold text-white">FaturaSimples MZ</h1>
+      </div>
+
+      <!-- Company Selector -->
+      @if (companyService.companies().length > 0) {
+        <div class="p-4 border-b border-gray-200">
+          <mat-form-field appearance="outline" class="w-full !text-sm">
+            <mat-select
+              [value]="companyService.activeCompany()?.id"
+              (selectionChange)="onCompanyChange($event.value)"
+            >
+              @for (company of companyService.companies(); track company.id) {
+                <mat-option [value]="company.id">
+                  <div class="flex items-center">
+                    <mat-icon class="mr-2 !text-lg">business</mat-icon>
+                    <span class="truncate">{{ company.name }}</span>
+                  </div>
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+      }
+
+      <!-- Navigation -->
+      <nav class="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
+        @for (item of menuItems; track item.route) {
+          <a
+            [routerLink]="item.route"
+            routerLinkActive="bg-moz-green/10 text-moz-green"
+            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <mat-icon class="mr-3">{{ item.icon }}</mat-icon>
+            <span class="font-medium">{{ item.label }}</span>
+          </a>
+        }
+      </nav>
+
+      <!-- User Menu -->
+      <div class="p-4 border-t border-gray-200">
+        <button
+          mat-button
+          [matMenuTriggerFor]="userMenu"
+          class="w-full !justify-start !text-left"
+        >
+          <mat-icon class="mr-3">account_circle</mat-icon>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-gray-900 truncate">
+              {{ authService.currentUser()?.email }}
+            </p>
+            <p class="text-xs text-gray-500">Ver perfil</p>
+          </div>
+          <mat-icon>more_vert</mat-icon>
+        </button>
+
+        <mat-menu #userMenu="matMenu">
+          <button mat-menu-item routerLink="/configuracoes">
+            <mat-icon>settings</mat-icon>
+            <span>Configurações</span>
+          </button>
+          <button mat-menu-item (click)="logout()">
+            <mat-icon>logout</mat-icon>
+            <span>Sair</span>
+          </button>
+        </mat-menu>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="flex flex-col flex-1 overflow-hidden">
+    <!-- Mobile Header -->
+    <header class="md:hidden bg-white border-b border-gray-200">
+      <div class="flex items-center justify-between h-16 px-4">
+        <button mat-icon-button (click)="toggleMobileMenu()">
+          <mat-icon>menu</mat-icon>
+        </button>
+        <h1 class="text-lg font-bold text-moz-green">FaturaSimples MZ</h1>
+        <button mat-icon-button [matMenuTriggerFor]="mobileUserMenu">
+          <mat-icon>account_circle</mat-icon>
+        </button>
+      </div>
+
+      <mat-menu #mobileUserMenu="matMenu">
+        <button mat-menu-item routerLink="/configuracoes">
+          <mat-icon>settings</mat-icon>
+          <span>Configurações</span>
+        </button>
+        <button mat-menu-item (click)="logout()">
+          <mat-icon>logout</mat-icon>
+          <span>Sair</span>
+        </button>
+      </mat-menu>
+    </header>
+
+    <!-- Mobile Sidebar -->
+    @if (isMobileMenuOpen()) {
+      <div class="fixed inset-0 z-40 md:hidden">
+        <div class="absolute inset-0 bg-gray-600 bg-opacity-75" (click)="toggleMobileMenu()"></div>
+        <div class="relative flex flex-col w-64 h-full bg-white">
+          <div class="flex items-center justify-between h-16 px-4 border-b">
+            <h1 class="text-lg font-bold text-moz-green">Menu</h1>
+            <button mat-icon-button (click)="toggleMobileMenu()">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+
+          <nav class="flex-1 px-2 py-4 space-y-1">
+            @for (item of menuItems; track item.route) {
+              <a
+                [routerLink]="item.route"
+                (click)="toggleMobileMenu()"
+                routerLinkActive="bg-moz-green/10 text-moz-green"
+                class="flex items-center px-4 py-3 text-gray-700 rounded-lg"
+              >
+                <mat-icon class="mr-3">{{ item.icon }}</mat-icon>
+                <span class="font-medium">{{ item.label }}</span>
+              </a>
+            }
+          </nav>
+        </div>
+      </div>
+    }
+
+    <!-- Page Content -->
+    <main class="flex-1 overflow-y-auto bg-gray-50">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

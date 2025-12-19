@@ -1,0 +1,218 @@
+<div class="p-6">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-900 mb-2">Facturas</h1>
+      <p class="text-gray-600">Gestão de facturas de {{ companyService.activeCompany()?.name }}</p>
+    </div>
+    <button
+      mat-raised-button
+      class="!bg-moz-green !text-white"
+      (click)="openNewInvoiceDialog()"
+    >
+      <mat-icon class="mr-2">add</mat-icon>
+      Nova Factura
+    </button>
+  </div>
+
+  <!-- Stats -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <button
+      (click)="filterByStatus('todas')"
+      class="bg-white p-4 rounded-lg border-2 transition-all hover:border-moz-green"
+      [class.border-moz-green]="statusFilter() === 'todas'"
+      [class.border-gray-200]="statusFilter() !== 'todas'"
+    >
+      <div class="text-2xl font-bold text-gray-900">{{ stats().total }}</div>
+      <div class="text-sm text-gray-600">Total</div>
+    </button>
+
+    <button
+      (click)="filterByStatus('paga')"
+      class="bg-white p-4 rounded-lg border-2 transition-all hover:border-green-500"
+      [class.border-green-500]="statusFilter() === 'paga'"
+      [class.border-gray-200]="statusFilter() !== 'paga'"
+    >
+      <div class="text-2xl font-bold text-green-600">{{ stats().paga }}</div>
+      <div class="text-sm text-gray-600">Pagas</div>
+    </button>
+
+    <button
+      (click)="filterByStatus('pendente')"
+      class="bg-white p-4 rounded-lg border-2 transition-all hover:border-yellow-500"
+      [class.border-yellow-500]="statusFilter() === 'pendente'"
+      [class.border-gray-200]="statusFilter() !== 'pendente'"
+    >
+      <div class="text-2xl font-bold text-yellow-600">{{ stats().pendente }}</div>
+      <div class="text-sm text-gray-600">Pendentes</div>
+    </button>
+
+    <button
+      (click)="filterByStatus('vencida')"
+      class="bg-white p-4 rounded-lg border-2 transition-all hover:border-red-500"
+      [class.border-red-500]="statusFilter() === 'vencida'"
+      [class.border-gray-200]="statusFilter() !== 'vencida'"
+    >
+      <div class="text-2xl font-bold text-red-600">{{ stats().vencida }}</div>
+      <div class="text-sm text-gray-600">Vencidas</div>
+    </button>
+  </div>
+
+  <mat-card class="!shadow-md">
+    <mat-card-content class="!p-6">
+      <div class="mb-4 flex items-center gap-4">
+        <input
+          type="text"
+          placeholder="Pesquisar facturas..."
+          class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-moz-green focus:border-transparent"
+          (input)="onSearchChange($event)"
+        >
+        @if (statusFilter() !== 'todas') {
+          <button
+            mat-stroked-button
+            (click)="filterByStatus('todas')"
+          >
+            <mat-icon class="mr-2">clear</mat-icon>
+            Limpar Filtro
+          </button>
+        }
+      </div>
+
+      @if (invoiceService.isLoading()) {
+        <div class="flex items-center justify-center py-20">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
+      } @else if (filteredInvoices().length === 0) {
+        <div class="py-20 text-center">
+          <mat-icon class="!text-6xl text-gray-300 mb-4">receipt_long</mat-icon>
+          @if (searchTerm() || statusFilter() !== 'todas') {
+            <p class="text-gray-600 mb-4">Nenhuma factura encontrada</p>
+            <button mat-button (click)="searchTerm.set(''); filterByStatus('todas')">
+              Limpar pesquisa
+            </button>
+          } @else {
+            <p class="text-gray-600 mb-4">Ainda não tem facturas</p>
+            <button
+              mat-raised-button
+              class="!bg-moz-green !text-white"
+              (click)="openNewInvoiceDialog()"
+            >
+              <mat-icon class="mr-2">add</mat-icon>
+              Criar Primeira Factura
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="overflow-x-auto">
+          <table mat-table [dataSource]="filteredInvoices()" class="w-full">
+            <ng-container matColumnDef="invoice_number">
+              <th mat-header-cell *matHeaderCellDef class="!font-semibold">Nº Factura</th>
+              <td mat-cell *matCellDef="let invoice">
+                <span class="font-medium">{{ invoice.invoice_number }}</span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="client">
+              <th mat-header-cell *matHeaderCellDef class="!font-semibold">Cliente</th>
+              <td mat-cell *matCellDef="let invoice">
+                <div>
+                  <div class="font-medium">{{ invoice.client?.name || 'Cliente' }}</div>
+                  @if (invoice.client?.nuit) {
+                    <div class="text-sm text-gray-600">NUIT: {{ invoice.client.nuit }}</div>
+                  }
+                </div>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="date">
+              <th mat-header-cell *matHeaderCellDef class="!font-semibold">Data</th>
+              <td mat-cell *matCellDef="let invoice">
+                {{ formatDate(invoice.date) }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="total">
+              <th mat-header-cell *matHeaderCellDef class="!font-semibold">Total</th>
+              <td mat-cell *matCellDef="let invoice">
+                <div>
+                  <div class="font-semibold">{{ formatCurrency(invoice.total) }}</div>
+                  @if (invoice.amount_paid > 0) {
+                    <div class="text-xs text-green-600">Pago: {{ formatCurrency(invoice.amount_paid) }}</div>
+                    <div class="text-xs text-orange-600">Pendente: {{ formatCurrency(invoice.amount_pending) }}</div>
+                  } @else {
+                    <div class="text-xs text-gray-600">ISPC: {{ formatCurrency(invoice.ispc_amount) }}</div>
+                  }
+                </div>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef class="!font-semibold">Estado</th>
+              <td mat-cell *matCellDef="let invoice">
+                <mat-chip [color]="getStatusColor(invoice.status)">
+                  {{ getStatusLabel(invoice.status) }}
+                </mat-chip>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-right">Acções</th>
+              <td mat-cell *matCellDef="let invoice" class="!text-right">
+                <button
+                  mat-icon-button
+                  [matMenuTriggerFor]="menu"
+                >
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #menu="matMenu">
+                  <button mat-menu-item (click)="viewInvoice(invoice)">
+                    <mat-icon>visibility</mat-icon>
+                    <span>Ver Detalhes</span>
+                  </button>
+                  <button mat-menu-item (click)="printInvoice(invoice)">
+                    <mat-icon>print</mat-icon>
+                    <span>Imprimir PDF</span>
+                  </button>
+                  @if (invoice.client?.email) {
+                    <button mat-menu-item (click)="sendEmail(invoice)">
+                      <mat-icon>email</mat-icon>
+                      <span>Enviar Email</span>
+                    </button>
+                  }
+                  @if (invoiceService.canDeleteInvoice(invoice)) {
+                    <mat-divider></mat-divider>
+                    <button mat-menu-item (click)="deleteInvoice(invoice)" class="!text-red-600">
+                      <mat-icon>delete</mat-icon>
+                      <span>Eliminar</span>
+                    </button>
+                  }
+                </mat-menu>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+                class="hover:bg-gray-50"></tr>
+          </table>
+        </div>
+
+        <div class="mt-4 text-sm text-gray-600">
+          {{ filteredInvoices().length }} factura(s)
+          @if (searchTerm() || statusFilter() !== 'todas') {
+            de {{ invoiceService.invoices().length }} no total
+          }
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Floating Action Button -->
+  <button
+    mat-fab
+    extended
+    class="!fixed !bottom-6 !right-6 !bg-moz-green !text-white !shadow-lg hover:!shadow-xl"
+    (click)="openNewInvoiceDialog()"
+  >
+    <mat-icon class="mr-2">add</mat-icon>
+    NOVA FACTURA
+  </button>
+</div>

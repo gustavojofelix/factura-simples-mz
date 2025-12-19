@@ -1,0 +1,214 @@
+<div class="p-6">
+  <!-- Header -->
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">Painel de Controlo</h1>
+    <p class="text-gray-600">
+      Bem-vindo de volta, {{ companyService.activeCompany()?.name }}
+    </p>
+  </div>
+
+  @if (isLoading()) {
+    <div class="flex items-center justify-center py-20">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+  } @else {
+    <!-- Metrics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <!-- Month Sales -->
+      <mat-card class="!shadow-md hover:!shadow-lg transition-shadow">
+        <mat-card-content class="p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-600 mb-1">Vendas do Mês</p>
+              <p class="text-2xl font-bold text-gray-900">
+                {{ formatCurrency(metrics().monthSales) }}
+              </p>
+            </div>
+            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+              <mat-icon class="!text-green-600">trending_up</mat-icon>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- ISPC to Pay -->
+      <mat-card class="!shadow-md hover:!shadow-lg transition-shadow">
+        <mat-card-content class="p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-600 mb-1">ISPC a Pagar</p>
+              <p class="text-2xl font-bold text-gray-900">
+                {{ formatCurrency(metrics().ispcToPay) }}
+              </p>
+            </div>
+            <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+              <mat-icon class="!text-yellow-600">account_balance</mat-icon>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Pending Invoices -->
+      <mat-card class="!shadow-md hover:!shadow-lg transition-shadow">
+        <mat-card-content class="p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-600 mb-1">Facturas Pendentes</p>
+              <p class="text-2xl font-bold text-gray-900">
+                {{ metrics().pendingInvoices }}
+              </p>
+            </div>
+            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+              <mat-icon class="!text-orange-600">receipt_long</mat-icon>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Active Clients -->
+      <mat-card class="!shadow-md hover:!shadow-lg transition-shadow">
+        <mat-card-content class="p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-600 mb-1">Clientes Activos</p>
+              <p class="text-2xl font-bold text-gray-900">
+                {{ metrics().activeClients }}
+              </p>
+            </div>
+            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+              <mat-icon class="!text-blue-600">people</mat-icon>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <button
+        mat-raised-button
+        routerLink="/facturas"
+        class="!h-20 !bg-white hover:!bg-gray-50 !text-gray-900 !shadow-md"
+      >
+        <div class="flex items-center">
+          <mat-icon class="mr-3 !text-moz-green">receipt_long</mat-icon>
+          <div class="text-left">
+            <div class="font-semibold">Ver Facturas</div>
+            <div class="text-sm text-gray-600">Gerir todas as facturas</div>
+          </div>
+        </div>
+      </button>
+
+      <button
+        mat-raised-button
+        routerLink="/clientes"
+        class="!h-20 !bg-white hover:!bg-gray-50 !text-gray-900 !shadow-md"
+      >
+        <div class="flex items-center">
+          <mat-icon class="mr-3 !text-moz-green">people</mat-icon>
+          <div class="text-left">
+            <div class="font-semibold">Gerir Clientes</div>
+            <div class="text-sm text-gray-600">Adicionar e editar clientes</div>
+          </div>
+        </div>
+      </button>
+
+      <button
+        mat-raised-button
+        routerLink="/produtos"
+        class="!h-20 !bg-white hover:!bg-gray-50 !text-gray-900 !shadow-md"
+      >
+        <div class="flex items-center">
+          <mat-icon class="mr-3 !text-moz-green">inventory_2</mat-icon>
+          <div class="text-left">
+            <div class="font-semibold">Ver Produtos</div>
+            <div class="text-sm text-gray-600">Catálogo de produtos</div>
+          </div>
+        </div>
+      </button>
+    </div>
+
+    <!-- Recent Invoices -->
+    <mat-card class="!shadow-md">
+      <mat-card-header class="!p-6 !border-b">
+        <div class="flex items-center justify-between w-full">
+          <mat-card-title class="!text-xl !font-semibold">
+            Facturas Recentes
+          </mat-card-title>
+          <button mat-stroked-button routerLink="/facturas">
+            Ver Todas
+            <mat-icon class="ml-2">arrow_forward</mat-icon>
+          </button>
+        </div>
+      </mat-card-header>
+      <mat-card-content class="!p-0">
+        @if (recentInvoices().length === 0) {
+          <div class="p-12 text-center">
+            <mat-icon class="!text-6xl text-gray-300 mb-4">receipt_long</mat-icon>
+            <p class="text-gray-600 mb-4">Ainda não tem facturas</p>
+            <button
+              mat-raised-button
+              class="!bg-moz-green !text-white"
+              (click)="openNewInvoiceDialog()"
+            >
+              <mat-icon class="mr-2">add</mat-icon>
+              Criar Primeira Factura
+            </button>
+          </div>
+        } @else {
+          <div class="overflow-x-auto">
+            <table mat-table [dataSource]="recentInvoices()" class="w-full">
+              <ng-container matColumnDef="invoice_number">
+                <th mat-header-cell *matHeaderCellDef class="!font-semibold">Nº</th>
+                <td mat-cell *matCellDef="let invoice">
+                  <span class="font-medium">{{ invoice.invoice_number }}</span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="client">
+                <th mat-header-cell *matHeaderCellDef class="!font-semibold">Cliente</th>
+                <td mat-cell *matCellDef="let invoice">{{ invoice.client_name }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="date">
+                <th mat-header-cell *matHeaderCellDef class="!font-semibold">Data</th>
+                <td mat-cell *matCellDef="let invoice">{{ formatDate(invoice.date) }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="total">
+                <th mat-header-cell *matHeaderCellDef class="!font-semibold">Total</th>
+                <td mat-cell *matCellDef="let invoice">
+                  <span class="font-semibold">{{ formatCurrency(invoice.total) }}</span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef class="!font-semibold">Estado</th>
+                <td mat-cell *matCellDef="let invoice">
+                  <mat-chip [color]="getStatusColor(invoice.status)">
+                    {{ getStatusLabel(invoice.status) }}
+                  </mat-chip>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+                  class="hover:bg-gray-50 cursor-pointer"></tr>
+            </table>
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <!-- Floating Action Button -->
+  <button
+    mat-fab
+    extended
+    class="!fixed !bottom-6 !right-6 !bg-moz-green !text-white !shadow-lg hover:!shadow-xl"
+    (click)="openNewInvoiceDialog()"
+  >
+    <mat-icon class="mr-2">add</mat-icon>
+    NOVA FACTURA
+  </button>
+</div>

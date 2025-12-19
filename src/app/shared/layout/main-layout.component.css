@@ -1,0 +1,12 @@
+::ng-deep .mat-mdc-form-field {
+  font-size: 14px;
+}
+
+::ng-deep .mat-mdc-select {
+  font-size: 14px;
+}
+
+.router-link-active {
+  background-color: rgba(0, 122, 94, 0.1);
+  color: #007a5e;
+}

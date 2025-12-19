@@ -1,0 +1,103 @@
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full">
+    <div class="bg-white rounded-2xl shadow-xl p-8">
+      <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Bem-vindo de volta</h1>
+        <p class="text-gray-600">Entre na sua conta FaturaSimples MZ</p>
+      </div>
+
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
+        <div>
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Email</mat-label>
+            <input
+              matInput
+              type="email"
+              formControlName="email"
+              placeholder="seu@email.com"
+              autocomplete="email"
+            />
+            <mat-icon matPrefix class="text-gray-400">email</mat-icon>
+            @if (getErrorMessage('email')) {
+              <mat-error>{{ getErrorMessage('email') }}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <div>
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Palavra-passe</mat-label>
+            <input
+              matInput
+              [type]="hidePassword() ? 'password' : 'text'"
+              formControlName="password"
+              placeholder="••••••••"
+              autocomplete="current-password"
+            />
+            <mat-icon matPrefix class="text-gray-400">lock</mat-icon>
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              (click)="hidePassword.set(!hidePassword())"
+            >
+              <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            @if (getErrorMessage('password')) {
+              <mat-error>{{ getErrorMessage('password') }}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <div class="flex items-center justify-between">
+          <div class="text-sm">
+            <a routerLink="/recuperar-senha" class="text-moz-green hover:text-moz-green/80 font-medium">
+              Esqueceu a palavra-passe?
+            </a>
+          </div>
+        </div>
+
+        <button
+          mat-raised-button
+          type="submit"
+          class="w-full !bg-moz-green !text-white !py-3 !text-lg"
+          [disabled]="isLoading()"
+        >
+          @if (isLoading()) {
+            <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
+            <span>A entrar...</span>
+          } @else {
+            <span>Entrar</span>
+          }
+        </button>
+      </form>
+
+      <div class="mt-6">
+        <div class="relative">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-gray-300"></div>
+          </div>
+          <div class="relative flex justify-center text-sm">
+            <span class="px-2 bg-white text-gray-500">Não tem conta?</span>
+          </div>
+        </div>
+
+        <div class="mt-6 text-center">
+          <a
+            routerLink="/registar"
+            class="font-medium text-moz-green hover:text-moz-green/80"
+          >
+            Criar conta grátis
+          </a>
+        </div>
+      </div>
+
+      <div class="mt-8 text-center">
+        <a routerLink="/" class="text-sm text-gray-600 hover:text-gray-900">
+          <mat-icon class="inline-block align-middle mr-1 !text-base">arrow_back</mat-icon>
+          Voltar ao início
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,172 @@
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full">
+    <div class="bg-white rounded-2xl shadow-xl p-8">
+      <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Criar Conta</h1>
+        <p class="text-gray-600">Comece grátis por 14 dias</p>
+      </div>
+
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-5">
+        <div>
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Nome Completo</mat-label>
+            <input
+              matInput
+              type="text"
+              formControlName="fullName"
+              placeholder="João Silva"
+              autocomplete="name"
+            />
+            <mat-icon matPrefix class="text-gray-400">person</mat-icon>
+            @if (getErrorMessage('fullName')) {
+              <mat-error>{{ getErrorMessage('fullName') }}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <div>
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Email</mat-label>
+            <input
+              matInput
+              type="email"
+              formControlName="email"
+              placeholder="seu@email.com"
+              autocomplete="email"
+            />
+            <mat-icon matPrefix class="text-gray-400">email</mat-icon>
+            @if (getErrorMessage('email')) {
+              <mat-error>{{ getErrorMessage('email') }}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <div>
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Telefone (opcional)</mat-label>
+            <input
+              matInput
+              type="tel"
+              formControlName="phone"
+              placeholder="+258 XX XXX XXXX"
+              (input)="formatPhone()"
+              autocomplete="tel"
+            />
+            <mat-icon matPrefix class="text-gray-400">phone</mat-icon>
+            @if (getErrorMessage('phone')) {
+              <mat-error>{{ getErrorMessage('phone') }}</mat-error>
+            }
+            <mat-hint>Formato moçambicano: +258 XX XXX XXXX</mat-hint>
+          </mat-form-field>
+        </div>
+
+        <div>
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Palavra-passe</mat-label>
+            <input
+              matInput
+              [type]="hidePassword() ? 'password' : 'text'"
+              formControlName="password"
+              placeholder="Mínimo 6 caracteres"
+              autocomplete="new-password"
+            />
+            <mat-icon matPrefix class="text-gray-400">lock</mat-icon>
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              (click)="hidePassword.set(!hidePassword())"
+            >
+              <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            @if (getErrorMessage('password')) {
+              <mat-error>{{ getErrorMessage('password') }}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <div>
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Confirmar Palavra-passe</mat-label>
+            <input
+              matInput
+              [type]="hideConfirmPassword() ? 'password' : 'text'"
+              formControlName="confirmPassword"
+              placeholder="Digite novamente"
+              autocomplete="new-password"
+            />
+            <mat-icon matPrefix class="text-gray-400">lock</mat-icon>
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              (click)="hideConfirmPassword.set(!hideConfirmPassword())"
+            >
+              <mat-icon>{{ hideConfirmPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            @if (getErrorMessage('confirmPassword')) {
+              <mat-error>{{ getErrorMessage('confirmPassword') }}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <div>
+          <mat-checkbox formControlName="acceptTerms" color="primary" class="text-sm">
+            <span class="text-gray-700">
+              Aceito os
+              <a href="#" class="text-moz-green hover:underline">Termos de Uso</a>
+              e
+              <a href="#" class="text-moz-green hover:underline">Política de Privacidade</a>
+            </span>
+          </mat-checkbox>
+          @if (registerForm.get('acceptTerms')?.touched && registerForm.get('acceptTerms')?.hasError('required')) {
+            <div class="text-red-600 text-xs mt-1">
+              Deve aceitar os termos para continuar
+            </div>
+          }
+        </div>
+
+        <button
+          mat-raised-button
+          type="submit"
+          class="w-full !bg-moz-green !text-white !py-3 !text-lg"
+          [disabled]="isLoading()"
+        >
+          @if (isLoading()) {
+            <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
+            <span>A criar conta...</span>
+          } @else {
+            <span>Criar Conta Grátis</span>
+          }
+        </button>
+      </form>
+
+      <div class="mt-6">
+        <div class="relative">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-gray-300"></div>
+          </div>
+          <div class="relative flex justify-center text-sm">
+            <span class="px-2 bg-white text-gray-500">Já tem conta?</span>
+          </div>
+        </div>
+
+        <div class="mt-6 text-center">
+          <a
+            routerLink="/entrar"
+            class="font-medium text-moz-green hover:text-moz-green/80"
+          >
+            Entrar na sua conta
+          </a>
+        </div>
+      </div>
+
+      <div class="mt-8 text-center">
+        <a routerLink="/" class="text-sm text-gray-600 hover:text-gray-900">
+          <mat-icon class="inline-block align-middle mr-1 !text-base">arrow_back</mat-icon>
+          Voltar ao início
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

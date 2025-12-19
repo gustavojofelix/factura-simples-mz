@@ -1,0 +1,184 @@
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-3xl mx-auto">
+    <div class="text-center mb-8">
+      <h1 class="text-3xl font-bold text-gray-900 mb-2">Configurar Empresa</h1>
+      <p class="text-gray-600">Configure a sua primeira empresa em 3 passos simples</p>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-xl p-8">
+      <mat-stepper linear #stepper>
+        <mat-step [stepControl]="companyInfoForm" label="Informações da Empresa">
+          <form [formGroup]="companyInfoForm" class="mt-6 space-y-6">
+            <div>
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Nome da Empresa</mat-label>
+                <input
+                  matInput
+                  type="text"
+                  formControlName="name"
+                  placeholder="Ex: Comercial Silva Lda"
+                />
+                <mat-icon matPrefix class="text-gray-400">business</mat-icon>
+                @if (getErrorMessage(companyInfoForm, 'name')) {
+                  <mat-error>{{ getErrorMessage(companyInfoForm, 'name') }}</mat-error>
+                }
+              </mat-form-field>
+            </div>
+
+            <div>
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>NUIT</mat-label>
+                <input
+                  matInput
+                  type="text"
+                  formControlName="nuit"
+                  placeholder="9 dígitos"
+                  maxlength="9"
+                  (input)="formatNuit()"
+                />
+                <mat-icon matPrefix class="text-gray-400">badge</mat-icon>
+                @if (getErrorMessage(companyInfoForm, 'nuit')) {
+                  <mat-error>{{ getErrorMessage(companyInfoForm, 'nuit') }}</mat-error>
+                }
+                <mat-hint>Número Único de Identificação Tributária (9 dígitos)</mat-hint>
+              </mat-form-field>
+            </div>
+
+            <div>
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Endereço</mat-label>
+                <textarea
+                  matInput
+                  formControlName="address"
+                  rows="3"
+                  placeholder="Av. Julius Nyerere, nº 123, Maputo"
+                ></textarea>
+                <mat-icon matPrefix class="text-gray-400">location_on</mat-icon>
+                @if (getErrorMessage(companyInfoForm, 'address')) {
+                  <mat-error>{{ getErrorMessage(companyInfoForm, 'address') }}</mat-error>
+                }
+              </mat-form-field>
+            </div>
+
+            <div class="flex justify-end">
+              <button mat-raised-button matStepperNext class="!bg-moz-green !text-white">
+                Próximo
+                <mat-icon class="ml-2">arrow_forward</mat-icon>
+              </button>
+            </div>
+          </form>
+        </mat-step>
+
+        <mat-step [stepControl]="businessTypeForm" label="Tipo de Actividade">
+          <form [formGroup]="businessTypeForm" class="mt-6 space-y-6">
+            <div>
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Tipo de Actividade</mat-label>
+                <mat-select formControlName="businessType">
+                  @for (type of businessTypes; track type.value) {
+                    <mat-option [value]="type.value">{{ type.label }}</mat-option>
+                  }
+                </mat-select>
+                <mat-icon matPrefix class="text-gray-400">work</mat-icon>
+                @if (getErrorMessage(businessTypeForm, 'businessType')) {
+                  <mat-error>{{ getErrorMessage(businessTypeForm, 'businessType') }}</mat-error>
+                }
+              </mat-form-field>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div class="flex items-start">
+                <mat-icon class="text-blue-600 mr-3">info</mat-icon>
+                <div>
+                  <h4 class="font-semibold text-blue-900 mb-1">Porquê esta informação?</h4>
+                  <p class="text-sm text-blue-800">
+                    O tipo de actividade ajuda-nos a configurar automaticamente as taxas de ISPC
+                    correctas para os seus produtos e serviços.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex justify-between">
+              <button mat-stroked-button matStepperPrevious>
+                <mat-icon>arrow_back</mat-icon>
+                Anterior
+              </button>
+              <button mat-raised-button matStepperNext class="!bg-moz-green !text-white">
+                Próximo
+                <mat-icon class="ml-2">arrow_forward</mat-icon>
+              </button>
+            </div>
+          </form>
+        </mat-step>
+
+        <mat-step [stepControl]="settingsForm" label="Configuração Inicial">
+          <form [formGroup]="settingsForm" class="mt-6 space-y-6">
+            <div>
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Moeda</mat-label>
+                <mat-select formControlName="currency">
+                  <mat-option value="MZN">MZN - Metical Moçambicano</mat-option>
+                </mat-select>
+                <mat-icon matPrefix class="text-gray-400">payments</mat-icon>
+              </mat-form-field>
+            </div>
+
+            <div>
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Prefixo das Facturas</mat-label>
+                <input
+                  matInput
+                  type="text"
+                  formControlName="invoicePrefix"
+                  placeholder="FAC"
+                  maxlength="10"
+                />
+                <mat-icon matPrefix class="text-gray-400">tag</mat-icon>
+                @if (getErrorMessage(settingsForm, 'invoicePrefix')) {
+                  <mat-error>{{ getErrorMessage(settingsForm, 'invoicePrefix') }}</mat-error>
+                }
+                <mat-hint>Ex: FAC0001, FAC0002, etc.</mat-hint>
+              </mat-form-field>
+            </div>
+
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div class="flex items-start">
+                <mat-icon class="text-green-600 mr-3">check_circle</mat-icon>
+                <div>
+                  <h4 class="font-semibold text-green-900 mb-1">Tudo pronto!</h4>
+                  <p class="text-sm text-green-800">
+                    Após concluir, poderá começar a emitir facturas imediatamente.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex justify-between">
+              <button mat-stroked-button matStepperPrevious>
+                <mat-icon>arrow_back</mat-icon>
+                Anterior
+              </button>
+              <button
+                mat-raised-button
+                class="!bg-moz-green !text-white"
+                (click)="onSubmit()"
+                [disabled]="isLoading()"
+              >
+                @if (isLoading()) {
+                  <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
+                  <span>A configurar...</span>
+                } @else {
+                  <ng-container>
+                    <mat-icon class="mr-2">check</mat-icon>
+                    <span>Concluir Configuração</span>
+                  </ng-container>
+                }
+              </button>
+            </div>
+          </form>
+        </mat-step>
+      </mat-stepper>
+    </div>
+  </div>
+</div>

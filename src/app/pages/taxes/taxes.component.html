@@ -1,0 +1,268 @@
+<div class="p-6 max-w-7xl mx-auto">
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900">Gestão de Impostos (ISPC)</h1>
+    <p class="text-gray-600 mt-1">Calcule, declare e gerencie seus impostos sobre prestação de serviços</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <mat-card class="bg-blue-50">
+      <mat-card-content>
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-600">ISPC Acumulado (Ano)</p>
+            <p class="text-2xl font-bold text-blue-600">{{ formatCurrency(summary().yearToDate) }}</p>
+          </div>
+          <mat-icon class="text-blue-600 text-4xl">account_balance</mat-icon>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="bg-green-50">
+      <mat-card-content>
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-600">Total Pago</p>
+            <p class="text-2xl font-bold text-green-600">{{ formatCurrency(summary().totalPaid) }}</p>
+          </div>
+          <mat-icon class="text-green-600 text-4xl">check_circle</mat-icon>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="bg-red-50">
+      <mat-card-content>
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-600">Em Atraso</p>
+            <p class="text-2xl font-bold text-red-600">{{ formatCurrency(summary().overdue) }}</p>
+          </div>
+          <mat-icon class="text-red-600 text-4xl">error</mat-icon>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="bg-orange-50">
+      <mat-card-content>
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-600">Declarações Pendentes</p>
+            <p class="text-2xl font-bold text-orange-600">{{ summary().pendingDeclarations }}</p>
+          </div>
+          <mat-icon class="text-orange-600 text-4xl">pending_actions</mat-icon>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <mat-tab-group class="mb-6">
+    <mat-tab label="Calculadora">
+      <div class="py-6">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>Calcular ISPC para Período</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Ano</mat-label>
+                <mat-select [(ngModel)]="selectedYear" [value]="selectedYear()">
+                  @for (year of years; track year) {
+                    <mat-option [value]="year">{{ year }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Trimestre</mat-label>
+                <mat-select [(ngModel)]="selectedPeriod" [value]="selectedPeriod()">
+                  @for (period of periods; track period.value) {
+                    <mat-option [value]="period.value">{{ period.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="calculateTax()"
+              [disabled]="isCalculating()">
+              <mat-icon>calculate</mat-icon>
+              @if (isCalculating()) {
+                Calculando...
+              } @else {
+                Calcular
+              }
+            </button>
+
+            @if (calculation()) {
+              <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                <h3 class="font-semibold text-lg mb-4">Resultado do Cálculo</h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <p class="text-sm text-gray-600">Período</p>
+                    <p class="font-semibold">{{ getPeriodLabel(calculation()!.period) }} de {{ calculation()!.year }}</p>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-600">Datas</p>
+                    <p class="font-semibold">{{ formatDate(calculation()!.startDate) }} - {{ formatDate(calculation()!.endDate) }}</p>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-600">Total de Vendas</p>
+                    <p class="font-semibold text-lg">{{ formatCurrency(calculation()!.totalSales) }}</p>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-600">Número de Facturas</p>
+                    <p class="font-semibold">{{ calculation()!.invoiceCount }}</p>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-600">Base Tributável</p>
+                    <p class="font-semibold text-lg">{{ formatCurrency(calculation()!.ispcBase) }}</p>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-600">Taxa ISPC</p>
+                    <p class="font-semibold">{{ calculation()!.ispcRate }}%</p>
+                  </div>
+                </div>
+
+                <div class="p-4 bg-blue-100 rounded-lg mb-4">
+                  <p class="text-sm text-gray-700">ISPC a Pagar</p>
+                  <p class="text-3xl font-bold text-blue-700">{{ formatCurrency(calculation()!.ispcAmount) }}</p>
+                </div>
+
+                <button
+                  mat-raised-button
+                  color="accent"
+                  (click)="createDeclaration()">
+                  <mat-icon>add</mat-icon>
+                  Criar Declaração
+                </button>
+              </div>
+            }
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Declarações">
+      <div class="py-6">
+        @if (taxService.isLoading()) {
+          <div class="flex justify-center py-8">
+            <mat-spinner></mat-spinner>
+          </div>
+        } @else if (taxService.declarations().length === 0) {
+          <mat-card>
+            <mat-card-content class="text-center py-8">
+              <mat-icon class="text-6xl text-gray-400 mb-4">receipt_long</mat-icon>
+              <p class="text-gray-600">Nenhuma declaração encontrada</p>
+              <p class="text-sm text-gray-500 mt-2">Use a calculadora para criar sua primeira declaração</p>
+            </mat-card-content>
+          </mat-card>
+        } @else {
+          <mat-card>
+            <mat-card-content>
+              <div class="overflow-x-auto">
+                <table mat-table [dataSource]="taxService.declarations()" class="w-full">
+                  <ng-container matColumnDef="period">
+                    <th mat-header-cell *matHeaderCellDef class="font-semibold">Período</th>
+                    <td mat-cell *matCellDef="let declaration">
+                      <div>
+                        <p class="font-medium">{{ getPeriodLabel(declaration.period) }}</p>
+                        <p class="text-sm text-gray-600">{{ declaration.year }}</p>
+                      </div>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="dates">
+                    <th mat-header-cell *matHeaderCellDef class="font-semibold">Datas</th>
+                    <td mat-cell *matCellDef="let declaration">
+                      <p class="text-sm">{{ formatDate(declaration.start_date) }}</p>
+                      <p class="text-sm">{{ formatDate(declaration.end_date) }}</p>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="amount">
+                    <th mat-header-cell *matHeaderCellDef class="font-semibold">Valor</th>
+                    <td mat-cell *matCellDef="let declaration">
+                      <div>
+                        <p class="font-semibold">{{ formatCurrency(declaration.ispc_amount) }}</p>
+                        @if (getTotalPaid(declaration) > 0) {
+                          <p class="text-sm text-green-600">Pago: {{ formatCurrency(getTotalPaid(declaration)) }}</p>
+                        }
+                        @if (getAmountPending(declaration) > 0) {
+                          <p class="text-sm text-orange-600">Pendente: {{ formatCurrency(getAmountPending(declaration)) }}</p>
+                        }
+                      </div>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="status">
+                    <th mat-header-cell *matHeaderCellDef class="font-semibold">Estado</th>
+                    <td mat-cell *matCellDef="let declaration">
+                      <mat-chip [color]="getStatusColor(declaration.status)">
+                        {{ getStatusLabel(declaration.status) }}
+                      </mat-chip>
+                      @if (isOverdue(declaration)) {
+                        <mat-chip color="error" class="ml-2">
+                          <mat-icon class="text-sm">warning</mat-icon>
+                          Atrasado
+                        </mat-chip>
+                      }
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="due_date">
+                    <th mat-header-cell *matHeaderCellDef class="font-semibold">Vencimento</th>
+                    <td mat-cell *matCellDef="let declaration">
+                      <p [class.text-red-600]="isOverdue(declaration)">
+                        {{ formatDate(declaration.due_date) }}
+                      </p>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="actions">
+                    <th mat-header-cell *matHeaderCellDef class="font-semibold">Acções</th>
+                    <td mat-cell *matCellDef="let declaration">
+                      <div class="flex gap-2">
+                        <button
+                          mat-icon-button
+                          [matTooltip]="'Gerar Modelo 30'"
+                          (click)="openModel30(declaration)">
+                          <mat-icon>description</mat-icon>
+                        </button>
+
+                        @if (declaration.status === 'pendente') {
+                          <button
+                            mat-icon-button
+                            color="primary"
+                            [matTooltip]="'Marcar como Submetida'"
+                            (click)="submitDeclaration(declaration)">
+                            <mat-icon>send</mat-icon>
+                          </button>
+                        }
+
+                        @if (declaration.status !== 'paga') {
+                          <button
+                            mat-icon-button
+                            color="accent"
+                            [matTooltip]="'Registar Pagamento'"
+                            (click)="openPaymentDialog(declaration)">
+                            <mat-icon>payment</mat-icon>
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </ng-container>
+
+                  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                  <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                </table>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        }
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>
