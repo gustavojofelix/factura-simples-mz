@@ -131,21 +131,11 @@ export class InvoicesComponent implements OnInit {
   }
 
   getStatusColor(status: string): string {
-    const colors: { [key: string]: string } = {
-      'paga': 'success',
-      'pendente': 'warn',
-      'vencida': 'error'
-    };
-    return colors[status] || 'default';
+    return this.invoiceService.getStatusColor(status);
   }
 
   getStatusLabel(status: string): string {
-    const labels: { [key: string]: string } = {
-      'paga': 'PAGA',
-      'pendente': 'PENDENTE',
-      'vencida': 'VENCIDA'
-    };
-    return labels[status] || status.toUpperCase();
+    return this.invoiceService.getStatusLabel(status).toUpperCase();
   }
 
   openNewInvoiceDialog() {

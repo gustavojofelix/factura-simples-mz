@@ -88,7 +88,7 @@ export class InvoiceService {
 
   private calculateInvoiceStatus(invoice: any): string {
     if (invoice.amount_paid >= invoice.total) {
-      return 'pago';
+      return 'paga';
     }
 
     if (invoice.due_date) {
@@ -98,7 +98,7 @@ export class InvoiceService {
       dueDate.setHours(0, 0, 0, 0);
 
       if (dueDate < today && invoice.amount_paid < invoice.total) {
-        return 'vencido';
+        return 'vencida';
       }
     }
 
@@ -159,18 +159,18 @@ export class InvoiceService {
   }
 
   canEditInvoice(invoice: Invoice): boolean {
-    return invoice.status !== 'pago';
+    return invoice.status !== 'paga';
   }
 
   canDeleteInvoice(invoice: Invoice): boolean {
-    return invoice.status !== 'pago';
+    return invoice.status !== 'paga';
   }
 
   getStatusLabel(status: string): string {
     const labels: { [key: string]: string } = {
       'pendente': 'Pendente',
-      'pago': 'Pago',
-      'vencido': 'Vencido'
+      'paga': 'Paga',
+      'vencida': 'Vencida'
     };
     return labels[status] || status;
   }
@@ -178,8 +178,8 @@ export class InvoiceService {
   getStatusColor(status: string): string {
     const colors: { [key: string]: string } = {
       'pendente': 'bg-yellow-100 text-yellow-800',
-      'pago': 'bg-green-100 text-green-800',
-      'vencido': 'bg-red-100 text-red-800'
+      'paga': 'bg-green-100 text-green-800',
+      'vencida': 'bg-red-100 text-red-800'
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   }
