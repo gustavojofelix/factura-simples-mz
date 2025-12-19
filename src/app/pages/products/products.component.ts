@@ -11,7 +11,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { ProductService, Product, ISPC_CATEGORIES } from '../../core/services/product.service';
+import { ProductService, Product } from '../../core/services/product.service';
 import { CompanyService } from '../../core/services/company.service';
 
 @Component({
@@ -69,34 +69,6 @@ import { CompanyService } from '../../core/services/company.service';
           </mat-form-field>
         </div>
 
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Categoria ISPC</mat-label>
-          <mat-select formControlName="ispc_category" (selectionChange)="onCategoryChange()">
-            @for (category of categories; track category.value) {
-              <mat-option [value]="category.value">
-                {{ category.label }} ({{ category.rate * 100 }}%)
-              </mat-option>
-            }
-          </mat-select>
-          @if (form.get('ispc_category')?.hasError('required') && form.get('ispc_category')?.touched) {
-            <mat-error>Categoria é obrigatória</mat-error>
-          }
-        </mat-form-field>
-
-        @if (form.get('price')?.value && form.get('ispc_category')?.value) {
-          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div class="text-sm text-blue-800">
-              <div class="font-semibold mb-2">Cálculo de ISPC:</div>
-              <div class="space-y-1">
-                <div>Preço: {{ formatCurrency(form.get('price')?.value) }}</div>
-                <div>Taxa ISPC: {{ getSelectedRate() * 100 }}%</div>
-                <div class="font-bold text-lg">ISPC: {{ formatCurrency(calculateIspc()) }}</div>
-                <div class="font-bold text-lg">Total: {{ formatCurrency(form.get('price')?.value + calculateIspc()) }}</div>
-              </div>
-            </div>
-          </div>
-        }
-
         @if (form.get('type')?.value === 'produto') {
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Stock</mat-label>
@@ -122,7 +94,6 @@ import { CompanyService } from '../../core/services/company.service';
 export class ProductDialogComponent {
   form: FormGroup;
   saving = signal(false);
-  categories = ISPC_CATEGORIES;
 
   constructor(
     private fb: FormBuilder,
@@ -136,8 +107,6 @@ export class ProductDialogComponent {
       description: [''],
       price: ['', [Validators.required, Validators.min(0)]],
       unit: ['un'],
-      ispc_category: ['E', Validators.required],
-      ispc_rate: [0],
       stock: [null]
     });
   }
@@ -147,34 +116,7 @@ export class ProductDialogComponent {
   ngOnInit() {
     if (this.data) {
       this.form.patchValue(this.data);
-    } else {
-      this.onCategoryChange();
     }
-  }
-
-  onCategoryChange() {
-    const category = this.form.get('ispc_category')?.value;
-    const rate = this.productService.getCategoryRate(category);
-    this.form.patchValue({ ispc_rate: rate });
-  }
-
-  getSelectedRate(): number {
-    const category = this.form.get('ispc_category')?.value;
-    return this.productService.getCategoryRate(category);
-  }
-
-  calculateIspc(): number {
-    const price = this.form.get('price')?.value || 0;
-    const category = this.form.get('ispc_category')?.value;
-    return this.productService.calculateIspc(price, category);
-  }
-
-  formatCurrency(value: number): string {
-    return new Intl.NumberFormat('pt-MZ', {
-      style: 'decimal',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(value) + ' MZN';
   }
 
   async save() {
@@ -240,7 +182,7 @@ export class ProductDialogComponent {
   styleUrls: ['./products.component.css']
 })
 export class ProductsComponent implements OnInit {
-  displayedColumns = ['name', 'price', 'ispc', 'category', 'stock', 'actions'];
+  displayedColumns = ['name', 'price', 'unit', 'stock', 'actions'];
   searchTerm = signal('');
 
   filteredProducts = signal<Product[]>([]);
@@ -315,10 +257,5 @@ export class ProductsComponent implements OnInit {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(value) + ' MZN';
-  }
-
-  getCategoryLabel(category: string): string {
-    const cat = ISPC_CATEGORIES.find(c => c.value === category);
-    return cat ? `Grupo ${cat.value}` : category;
   }
 }
