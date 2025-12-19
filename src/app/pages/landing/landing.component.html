@@ -19,8 +19,16 @@
   </header>
 
   <!-- Hero Section -->
-  <section id="inicio" class="py-20 lg:py-32">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <section id="inicio" class="relative py-20 lg:py-32 overflow-hidden">
+    <!-- Animated Background -->
+    <div class="absolute inset-0 hero-background">
+      <div class="absolute inset-0 bg-gradient-to-br from-moz-green/5 via-transparent to-moz-yellow/5"></div>
+      <div class="floating-shape shape-1"></div>
+      <div class="floating-shape shape-2"></div>
+      <div class="floating-shape shape-3"></div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
       <div class="grid lg:grid-cols-2 gap-12 items-center">
         <div>
           <h1 class="text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 leading-tight mb-6">
@@ -31,28 +39,88 @@
             Criado especialmente para pequenos negócios moçambicanos.
           </p>
           <div class="flex flex-col sm:flex-row gap-4">
-            <button mat-raised-button routerLink="/registar" class="!bg-moz-green !text-white !py-6 !px-8 !text-lg">
+            <button mat-raised-button routerLink="/registar" class="!bg-moz-green !text-white !py-3 !px-8 !text-lg !h-auto">
               Começar Grátis por 14 Dias
-            </button>
-            <button mat-stroked-button class="!border-gray-300 !text-gray-700 !py-6 !px-8 !text-lg">
-              Ver Demonstração
             </button>
           </div>
           <p class="text-sm text-gray-500 mt-4">
             Sem cartão de crédito. Cancele quando quiser.
           </p>
         </div>
+
+        <!-- Login Form -->
         <div class="hidden lg:block">
           <div class="bg-white rounded-2xl shadow-2xl p-8">
-            <div class="space-y-4">
-              <div class="h-12 bg-gray-100 rounded animate-pulse"></div>
-              <div class="grid grid-cols-3 gap-4">
-                <div class="h-20 bg-moz-green/10 rounded"></div>
-                <div class="h-20 bg-moz-yellow/10 rounded"></div>
-                <div class="h-20 bg-blue-50 rounded"></div>
+            <div class="mb-6">
+              <h2 class="text-2xl font-bold text-gray-900 mb-2">Entre na sua conta</h2>
+              <p class="text-gray-600">Acesse o FaturaSimples MZ</p>
+            </div>
+
+            <form [formGroup]="loginForm" (ngSubmit)="onLoginSubmit()" class="space-y-4">
+              <div>
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Email</mat-label>
+                  <input
+                    matInput
+                    type="email"
+                    formControlName="email"
+                    placeholder="seu@email.com"
+                    autocomplete="email"
+                  />
+                  <mat-icon matPrefix class="text-gray-400">email</mat-icon>
+                  @if (getErrorMessage('email')) {
+                    <mat-error>{{ getErrorMessage('email') }}</mat-error>
+                  }
+                </mat-form-field>
               </div>
-              <div class="h-32 bg-gray-50 rounded"></div>
-              <div class="h-10 bg-moz-green rounded"></div>
+
+              <div>
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Palavra-passe</mat-label>
+                  <input
+                    matInput
+                    [type]="hidePassword() ? 'password' : 'text'"
+                    formControlName="password"
+                    placeholder="••••••••"
+                    autocomplete="current-password"
+                  />
+                  <mat-icon matPrefix class="text-gray-400">lock</mat-icon>
+                  <button
+                    mat-icon-button
+                    matSuffix
+                    type="button"
+                    (click)="hidePassword.set(!hidePassword())"
+                  >
+                    <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+                  </button>
+                  @if (getErrorMessage('password')) {
+                    <mat-error>{{ getErrorMessage('password') }}</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+
+              <button
+                mat-raised-button
+                type="submit"
+                class="w-full !bg-moz-green !text-white !py-3 !text-base"
+                [disabled]="isLoading()"
+              >
+                @if (isLoading()) {
+                  <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
+                  <span>A entrar...</span>
+                } @else {
+                  <span>Entrar</span>
+                }
+              </button>
+            </form>
+
+            <div class="mt-6 text-center">
+              <p class="text-sm text-gray-600">
+                Não tem conta?
+                <a routerLink="/registar" class="font-medium text-moz-green hover:text-moz-green/80 ml-1">
+                  Criar conta grátis
+                </a>
+              </p>
             </div>
           </div>
         </div>
