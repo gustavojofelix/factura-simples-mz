@@ -125,7 +125,11 @@ export class ProductDialogComponent {
     this.saving.set(true);
 
     try {
-      const formData = { ...this.form.value };
+      const formData = {
+        ...this.form.value,
+        ispc_category: 'E',
+        ispc_rate: 0
+      };
 
       if (formData.type === 'servico') {
         formData.stock = null;
