@@ -186,11 +186,13 @@ export class SettingsComponent implements OnInit {
           const success = await this.companyService.updateCompany(company.id, result);
           if (success) {
             this.snackBar.open('Empresa atualizada com sucesso', 'Fechar', { duration: 3000 });
+            await this.companyService.loadCompanies();
           }
         } else {
           const newCompany = await this.companyService.createCompany(result);
           if (newCompany) {
             this.snackBar.open('Empresa criada com sucesso', 'Fechar', { duration: 3000 });
+            await this.companyService.loadCompanies();
           }
         }
       }

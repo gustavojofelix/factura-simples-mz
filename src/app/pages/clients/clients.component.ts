@@ -304,6 +304,11 @@ export class ClientsComponent implements OnInit {
 
     const instance = dialogRef.componentInstance;
     instance.data = client || null;
+
+    dialogRef.afterClosed().subscribe(() => {
+      this.clientService.loadClients();
+      this.updateFilteredClients();
+    });
   }
 
   async deleteClient(client: Client) {

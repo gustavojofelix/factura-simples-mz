@@ -287,6 +287,11 @@ export class ProductsComponent implements OnInit {
 
     const instance = dialogRef.componentInstance;
     instance.data = product || null;
+
+    dialogRef.afterClosed().subscribe(() => {
+      this.productService.loadProducts();
+      this.updateFilteredProducts();
+    });
   }
 
   async deleteProduct(product: Product) {
