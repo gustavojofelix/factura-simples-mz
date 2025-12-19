@@ -64,7 +64,7 @@ export class InvoiceService {
         .from('invoices')
         .select(`
           *,
-          clients (name, nuit, email, phone, address, document_type)
+          client:clients (name, nuit, email, phone, address, document_type)
         `)
         .eq('company_id', company.id)
         .order('created_at', { ascending: false });
@@ -131,7 +131,7 @@ export class InvoiceService {
         .from('invoices')
         .select(`
           *,
-          clients (name, nuit, email, phone, address, document_type)
+          client:clients (name, nuit, email, phone, address, document_type)
         `)
         .eq('id', invoiceId)
         .single();
@@ -239,9 +239,13 @@ export class InvoiceService {
 
       if (itemsError) throw itemsError;
 
-      await this.companyService.updateCompany(company.id, {
+      const updateSuccess = await this.companyService.updateCompany(company.id, {
         invoice_number: company.invoice_number + 1
       });
+
+      if (!updateSuccess) {
+        console.error('Erro ao actualizar número da factura');
+      }
 
       await this.loadInvoices();
 
