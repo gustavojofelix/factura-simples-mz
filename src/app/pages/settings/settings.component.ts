@@ -11,13 +11,15 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { MatChipsModule } from '@angular/material/chips';
-import { MatDialogModule } from '@angular/material/dialog';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { CompanyService } from '../../core/services/company.service';
+import { CompanyService, Company } from '../../core/services/company.service';
 import { SubscriptionService, SubscriptionPlan } from '../../core/services/subscription.service';
-import { UserManagementService, CompanyUser } from '../../core/services/user-management.service';
+import { UserManagementService, UserWithCompanies } from '../../core/services/user-management.service';
 import { AuthService } from '../../core/services/auth.service';
+import { CompanyDialogComponent } from '../../shared/components/company-dialog.component';
+import { UserCompanyDialogComponent } from '../../shared/components/user-company-dialog.component';
 
 @Component({
   selector: 'app-settings',
@@ -43,21 +45,20 @@ import { AuthService } from '../../core/services/auth.service';
   styleUrls: ['./settings.component.css']
 })
 export class SettingsComponent implements OnInit {
-  company = this.companyService.activeCompany;
-  subscription = this.subscriptionService.subscription;
-  users = this.userManagementService.users;
-  systemSettings = this.userManagementService.settings;
+  companies = this.companyService.companies;
+  allUsers = this.userManagementService.allUsers;
   currentUserId = signal<string>('');
 
   systemForm!: FormGroup;
-  companyForm!: FormGroup;
-  bankForm!: FormGroup;
+  selectedCompanyId = signal<string | null>(null);
+  subscription = signal<any>(null);
 
   selectedTab = signal(0);
   loading = signal(false);
 
   availablePlans: SubscriptionPlan[] = [];
-  userColumns = ['email', 'role', 'is_active', 'actions'];
+  companyColumns = ['name', 'nuit', 'phone', 'actions'];
+  userColumns = ['email', 'companies', 'actions'];
 
   languages = [
     { value: 'pt', label: 'Português' },
@@ -82,100 +83,88 @@ export class SettingsComponent implements OnInit {
     { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD' }
   ];
 
-  roles = [
-    { value: 'owner', label: 'Proprietário' },
-    { value: 'admin', label: 'Administrador' },
-    { value: 'manager', label: 'Gestor' },
-    { value: 'user', label: 'Utilizador' }
-  ];
-
   constructor(
     private fb: FormBuilder,
     private companyService: CompanyService,
     private subscriptionService: SubscriptionService,
     private userManagementService: UserManagementService,
     private authService: AuthService,
+    private dialog: MatDialog,
     private snackBar: MatSnackBar
   ) {
     this.availablePlans = this.subscriptionService.availablePlans;
   }
 
   async ngOnInit() {
-    const company = this.company();
-    if (!company) return;
-
     const user = this.authService.currentUser();
     if (user) {
       this.currentUserId.set(user.id);
     }
 
     this.initializeForms();
-    await this.loadData();
+    await this.loadAllData();
   }
 
   initializeForms() {
-    const settings = this.systemSettings();
-
     this.systemForm = this.fb.group({
-      language: [settings?.language || 'pt'],
-      timezone: [settings?.timezone || 'Africa/Maputo'],
-      currency: [settings?.currency || 'MZN'],
-      date_format: [settings?.date_format || 'DD/MM/YYYY'],
-      fiscal_year_start: [settings?.fiscal_year_start || '01-01'],
-      enable_notifications: [settings?.enable_notifications ?? true],
-      notification_email: [settings?.notification_email || '']
-    });
-
-    const company = this.company();
-    this.companyForm = this.fb.group({
-      name: [company?.name || '', Validators.required],
-      nuit: [company?.nuit || '', Validators.required],
-      address: [company?.address || '', Validators.required],
-      phone: [company?.phone || ''],
-      email: [company?.email || '', [Validators.email]],
-      business_type: [company?.business_type || '']
-    });
-
-    this.bankForm = this.fb.group({
-      bank_name: [company?.bank_name || ''],
-      bank_account: [company?.bank_account || ''],
-      bank_iban: [company?.bank_iban || ''],
-      bank_swift: [company?.bank_swift || '']
+      language: ['pt'],
+      timezone: ['Africa/Maputo'],
+      currency: ['MZN'],
+      date_format: ['DD/MM/YYYY'],
+      fiscal_year_start: ['01-01'],
+      enable_notifications: [true],
+      notification_email: ['']
     });
   }
 
-  async loadData() {
-    const company = this.company();
-    if (!company) return;
+  async loadAllData() {
+    this.loading.set(true);
+    await Promise.all([
+      this.companyService.loadCompanies(),
+      this.userManagementService.loadAllUsers()
+    ]);
+    this.loading.set(false);
+  }
 
+  async loadCompanySettings(companyId: string) {
+    this.selectedCompanyId.set(companyId);
     this.loading.set(true);
 
     await Promise.all([
-      this.subscriptionService.loadSubscription(company.id),
-      this.userManagementService.loadCompanyUsers(company.id),
-      this.userManagementService.loadSystemSettings(company.id)
+      this.subscriptionService.loadSubscription(companyId),
+      this.userManagementService.loadSystemSettings(companyId)
     ]);
 
-    this.initializeForms();
+    const sub = this.subscriptionService.subscription();
+    this.subscription.set(sub);
+
+    const settings = this.userManagementService.settings();
+    if (settings) {
+      this.systemForm.patchValue(settings);
+    }
+
     this.loading.set(false);
   }
 
   async saveSystemSettings() {
     if (this.systemForm.invalid) return;
 
-    const company = this.company();
-    if (!company) return;
+    const companyId = this.selectedCompanyId();
+    if (!companyId) {
+      this.snackBar.open('Selecione uma empresa primeiro', 'Fechar', { duration: 3000 });
+      return;
+    }
 
     this.loading.set(true);
     const success = await this.userManagementService.updateSystemSettings(
-      company.id,
+      companyId,
       this.systemForm.value
     );
 
     this.loading.set(false);
 
     if (success) {
-      this.snackBar.open('Configurações do sistema atualizadas com sucesso', 'Fechar', {
+      this.snackBar.open('Configurações atualizadas com sucesso', 'Fechar', {
         duration: 3000
       });
     } else {
@@ -185,161 +174,117 @@ export class SettingsComponent implements OnInit {
     }
   }
 
-  async saveCompanyDetails() {
-    if (this.companyForm.invalid) return;
+  openCompanyDialog(company?: Company) {
+    const dialogRef = this.dialog.open(CompanyDialogComponent, {
+      data: { company },
+      width: '600px'
+    });
 
-    const company = this.company();
-    if (!company) return;
-
-    this.loading.set(true);
-    const success = await this.companyService.updateCompany(
-      company.id,
-      this.companyForm.value
-    );
-
-    this.loading.set(false);
-
-    if (success) {
-      this.snackBar.open('Dados da empresa atualizados com sucesso', 'Fechar', {
-        duration: 3000
-      });
-    } else {
-      this.snackBar.open('Erro ao atualizar dados da empresa', 'Fechar', {
-        duration: 3000
-      });
-    }
-  }
-
-  async saveBankDetails() {
-    if (this.bankForm.invalid) return;
-
-    const company = this.company();
-    if (!company) return;
-
-    this.loading.set(true);
-    const success = await this.companyService.updateCompany(
-      company.id,
-      this.bankForm.value
-    );
-
-    this.loading.set(false);
-
-    if (success) {
-      this.snackBar.open('Dados bancários atualizados com sucesso', 'Fechar', {
-        duration: 3000
-      });
-    } else {
-      this.snackBar.open('Erro ao atualizar dados bancários', 'Fechar', {
-        duration: 3000
-      });
-    }
-  }
-
-  async uploadLogo(event: Event) {
-    const input = event.target as HTMLInputElement;
-    if (!input.files?.length) return;
-
-    this.snackBar.open('Upload de logo será implementado em breve', 'Fechar', {
-      duration: 3000
+    dialogRef.afterClosed().subscribe(async (result) => {
+      if (result) {
+        if (company) {
+          const success = await this.companyService.updateCompany(company.id, result);
+          if (success) {
+            this.snackBar.open('Empresa atualizada com sucesso', 'Fechar', { duration: 3000 });
+          }
+        } else {
+          const newCompany = await this.companyService.createCompany(result);
+          if (newCompany) {
+            this.snackBar.open('Empresa criada com sucesso', 'Fechar', { duration: 3000 });
+          }
+        }
+      }
     });
   }
 
-  async uploadNuitDocument(event: Event) {
-    const input = event.target as HTMLInputElement;
-    if (!input.files?.length) return;
+  async deleteCompany(company: Company) {
+    if (!confirm(`Tem certeza que deseja eliminar a empresa "${company.name}"?`)) return;
 
-    this.snackBar.open('Upload de documento NUIT será implementado em breve', 'Fechar', {
-      duration: 3000
+    const success = await this.companyService.deleteCompany(company.id);
+    if (success) {
+      this.snackBar.open('Empresa eliminada com sucesso', 'Fechar', { duration: 3000 });
+    } else {
+      this.snackBar.open('Erro ao eliminar empresa', 'Fechar', { duration: 3000 });
+    }
+  }
+
+  async openUserDialog(user?: UserWithCompanies) {
+    let userCompanies: Array<{ company_id: string; role: string }> = [];
+
+    if (user) {
+      userCompanies = user.companies.map(c => ({
+        company_id: c.company_id,
+        role: c.role
+      }));
+    }
+
+    const dialogRef = this.dialog.open(UserCompanyDialogComponent, {
+      data: {
+        userId: user?.user_id,
+        userEmail: user?.user_email,
+        userCompanies
+      },
+      width: '700px'
     });
+
+    dialogRef.afterClosed().subscribe(async (result) => {
+      if (result) {
+        this.loading.set(true);
+
+        for (const { company_id, role } of result.companies) {
+          await this.userManagementService.addUserToCompany(
+            result.email,
+            company_id,
+            role as any
+          );
+        }
+
+        this.loading.set(false);
+        await this.userManagementService.loadAllUsers();
+
+        this.snackBar.open(
+          user ? 'Acesso atualizado com sucesso' : 'Utilizador adicionado com sucesso',
+          'Fechar',
+          { duration: 3000 }
+        );
+      }
+    });
+  }
+
+  async removeUserFromCompany(userId: string, companyId: string) {
+    if (!confirm('Tem certeza que deseja remover este acesso?')) return;
+
+    const success = await this.userManagementService.removeUserFromCompany(userId, companyId);
+    if (success) {
+      await this.userManagementService.loadAllUsers();
+      this.snackBar.open('Acesso removido com sucesso', 'Fechar', { duration: 3000 });
+    }
   }
 
   async changePlan(plan: SubscriptionPlan, cycle: 'monthly' | 'yearly') {
-    const subscription = this.subscription();
-    if (!subscription) return;
+    const sub = this.subscription();
+    if (!sub) {
+      this.snackBar.open('Selecione uma empresa primeiro', 'Fechar', { duration: 3000 });
+      return;
+    }
 
     this.loading.set(true);
     const success = await this.subscriptionService.changePlan(
-      subscription.id,
+      sub.id,
       plan.name,
       cycle
     );
 
+    if (success) {
+      await this.loadCompanySettings(sub.company_id);
+    }
+
     this.loading.set(false);
 
     if (success) {
-      this.snackBar.open('Plano alterado com sucesso', 'Fechar', {
-        duration: 3000
-      });
+      this.snackBar.open('Plano alterado com sucesso', 'Fechar', { duration: 3000 });
     } else {
-      this.snackBar.open('Erro ao alterar plano', 'Fechar', {
-        duration: 3000
-      });
-    }
-  }
-
-  async updateUserRole(user: CompanyUser, newRole: string) {
-    const company = this.company();
-    if (!company) return;
-
-    const success = await this.userManagementService.updateUserRole(
-      user.user_id,
-      company.id,
-      newRole as CompanyUser['role']
-    );
-
-    if (success) {
-      this.snackBar.open('Papel do utilizador atualizado', 'Fechar', {
-        duration: 3000
-      });
-    } else {
-      this.snackBar.open('Erro ao atualizar papel do utilizador', 'Fechar', {
-        duration: 3000
-      });
-    }
-  }
-
-  async toggleUserActive(user: CompanyUser) {
-    const company = this.company();
-    if (!company) return;
-
-    const success = await this.userManagementService.toggleUserActive(
-      user.user_id,
-      company.id,
-      !user.is_active
-    );
-
-    if (success) {
-      this.snackBar.open(
-        user.is_active ? 'Utilizador desativado' : 'Utilizador ativado',
-        'Fechar',
-        { duration: 3000 }
-      );
-    } else {
-      this.snackBar.open('Erro ao alterar status do utilizador', 'Fechar', {
-        duration: 3000
-      });
-    }
-  }
-
-  async removeUser(user: CompanyUser) {
-    if (!confirm(`Tem certeza que deseja remover ${user.user_email}?`)) return;
-
-    const company = this.company();
-    if (!company) return;
-
-    const success = await this.userManagementService.removeUser(
-      user.user_id,
-      company.id
-    );
-
-    if (success) {
-      this.snackBar.open('Utilizador removido', 'Fechar', {
-        duration: 3000
-      });
-    } else {
-      this.snackBar.open('Erro ao remover utilizador', 'Fechar', {
-        duration: 3000
-      });
+      this.snackBar.open('Erro ao alterar plano', 'Fechar', { duration: 3000 });
     }
   }
 
@@ -373,9 +318,8 @@ export class SettingsComponent implements OnInit {
     return labels[role] || role;
   }
 
-  canManageUsers(): boolean {
-    const userId = this.currentUserId();
-    return this.userManagementService.isUserOwnerOrAdmin(userId);
+  getCompanyName(companyId: string): string {
+    return this.companies().find(c => c.id === companyId)?.name || 'Unknown';
   }
 
   formatCurrency(value: number): string {

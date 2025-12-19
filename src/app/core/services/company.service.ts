@@ -54,21 +54,34 @@ export class CompanyService {
     this.isLoading.set(true);
 
     try {
-      const { data, error } = await this.supabase.db
+      const { data: ownedCompanies, error: ownedError } = await this.supabase.db
         .from('companies')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (ownedError) throw ownedError;
 
-      this.companies.set(data || []);
+      const { data: sharedCompanies, error: sharedError } = await this.supabase.db
+        .from('company_users')
+        .select('company_id, companies(*)')
+        .eq('user_id', user.id)
+        .neq('role', 'owner');
 
-      if (data && data.length > 0 && !this.activeCompany()) {
+      if (sharedError) throw sharedError;
+
+      const shared = (sharedCompanies || [])
+        .map((cu: any) => cu.companies)
+        .filter((c: any) => c !== null);
+
+      const allCompanies = [...(ownedCompanies || []), ...shared];
+      this.companies.set(allCompanies);
+
+      if (allCompanies.length > 0 && !this.activeCompany()) {
         const savedCompanyId = localStorage.getItem('activeCompanyId');
         const company = savedCompanyId
-          ? data.find(c => c.id === savedCompanyId) || data[0]
-          : data[0];
+          ? allCompanies.find(c => c.id === savedCompanyId) || allCompanies[0]
+          : allCompanies[0];
         this.setActiveCompany(company);
       }
     } catch (error) {
@@ -131,5 +144,54 @@ export class CompanyService {
       console.error('Erro ao actualizar empresa:', error);
       return false;
     }
+  }
+
+  async deleteCompany(id: string): Promise<boolean> {
+    try {
+      const { error } = await this.supabase.db
+        .from('companies')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      this.companies.update(companies => companies.filter(c => c.id !== id));
+
+      if (this.activeCompany()?.id === id) {
+        const remaining = this.companies();
+        this.activeCompany.set(remaining.length > 0 ? remaining[0] : null);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Erro ao deletar empresa:', error);
+      return false;
+    }
+  }
+
+  async getUserRole(companyId: string): Promise<string | null> {
+    const user = this.authService.currentUser();
+    if (!user) return null;
+
+    const company = this.companies().find(c => c.id === companyId);
+    if (company?.user_id === user.id) return 'owner';
+
+    const { data, error } = await this.supabase.db
+      .from('company_users')
+      .select('role')
+      .eq('company_id', companyId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (error || !data) return null;
+    return data.role;
+  }
+
+  isOwner(companyId: string): boolean {
+    const user = this.authService.currentUser();
+    if (!user) return false;
+
+    const company = this.companies().find(c => c.id === companyId);
+    return company?.user_id === user.id;
   }
 }
