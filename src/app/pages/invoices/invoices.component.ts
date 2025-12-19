@@ -14,6 +14,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { InvoiceService, Invoice } from '../../core/services/invoice.service';
 import { CompanyService } from '../../core/services/company.service';
 import { InvoiceDialogComponent } from '../../shared/components/invoice-dialog.component';
+import { PaymentDialogComponent } from '../../shared/components/payment-dialog.component';
 
 @Component({
   selector: 'app-invoices',
@@ -157,6 +158,26 @@ export class InvoicesComponent implements OnInit {
     dialogRef.afterClosed().subscribe((invoice: Invoice) => {
       if (invoice) {
         this.invoiceService.loadInvoices();
+      }
+    });
+  }
+
+  openPaymentDialog(invoice: Invoice) {
+    const dialogRef = this.dialog.open(PaymentDialogComponent, {
+      width: '500px',
+      data: {
+        invoiceId: invoice.id,
+        invoiceNumber: invoice.invoice_number,
+        totalAmount: invoice.total,
+        amountPaid: invoice.amount_paid,
+        amountPending: invoice.amount_pending
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((success: boolean) => {
+      if (success) {
+        this.invoiceService.loadInvoices();
+        this.snackBar.open('Pagamento registado com sucesso!', 'Fechar', { duration: 3000 });
       }
     });
   }
