@@ -11,6 +11,7 @@ import { InvoiceService, Invoice } from '../../core/services/invoice.service';
 import { PaymentService, Payment } from '../../core/services/payment.service';
 import { CompanyService } from '../../core/services/company.service';
 import { PaymentDialogComponent } from './payment-dialog.component';
+import { ReceiptDetailComponent } from './receipt-detail.component';
 
 @Component({
   selector: 'app-invoice-detail',
@@ -207,6 +208,9 @@ import { PaymentDialogComponent } from './payment-dialog.component';
                 <ng-container matColumnDef="actions">
                   <th mat-header-cell *matHeaderCellDef></th>
                   <td mat-cell *matCellDef="let payment">
+                    <button mat-icon-button (click)="viewReceipt(payment.id)">
+                      <mat-icon>receipt</mat-icon>
+                    </button>
                     @if (invoiceService.canEditInvoice(invoice()!)) {
                       <button mat-icon-button (click)="deletePayment(payment.id)" color="warn">
                         <mat-icon>delete</mat-icon>
@@ -287,6 +291,20 @@ export class InvoiceDetailComponent {
       if (result) {
         await this.loadInvoice(invoice.id);
         await this.invoiceService.loadInvoices();
+      }
+    });
+  }
+
+  viewReceipt(paymentId: string) {
+    const invoice = this.invoice();
+    if (!invoice) return;
+
+    this.dialog.open(ReceiptDetailComponent, {
+      width: '800px',
+      maxWidth: '95vw',
+      data: {
+        paymentId: paymentId,
+        invoiceId: invoice.id
       }
     });
   }

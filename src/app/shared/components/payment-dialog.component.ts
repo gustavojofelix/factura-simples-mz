@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatDialog, MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,6 +9,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { PaymentService } from '../../core/services/payment.service';
+import { ReceiptDetailComponent } from './receipt-detail.component';
 
 export interface PaymentDialogData {
   invoiceId: string;
@@ -124,6 +125,7 @@ export class PaymentDialogComponent {
   private dialogRef = inject(MatDialogRef<PaymentDialogComponent>);
   data = inject<PaymentDialogData>(MAT_DIALOG_DATA);
   private paymentService = inject(PaymentService);
+  private dialog = inject(MatDialog);
 
   isSaving = signal(false);
   errorMessage = signal('');
@@ -166,6 +168,17 @@ export class PaymentDialogComponent {
 
       if (payment) {
         this.dialogRef.close(true);
+
+        setTimeout(() => {
+          this.dialog.open(ReceiptDetailComponent, {
+            width: '800px',
+            maxWidth: '95vw',
+            data: {
+              paymentId: payment.id,
+              invoiceId: this.data.invoiceId
+            }
+          });
+        }, 300);
       } else {
         this.errorMessage.set('Erro ao registar pagamento. Tente novamente.');
       }
