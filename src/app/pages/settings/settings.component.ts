@@ -177,7 +177,7 @@ export class SettingsComponent implements OnInit {
   openCompanyDialog(company?: Company) {
     const dialogRef = this.dialog.open(CompanyDialogComponent, {
       data: { company },
-      width: '600px'
+      maxWidth: '95vw'
     });
 
     dialogRef.afterClosed().subscribe(async (result) => {

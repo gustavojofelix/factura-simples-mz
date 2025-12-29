@@ -260,12 +260,26 @@ import { DocumentProcessingService } from '../../core/services/document-processi
     </mat-dialog-actions>
   `,
   styles: [`
+    :host ::ng-deep .mat-mdc-dialog-container {
+      max-width: none !important;
+      width: auto !important;
+    }
+
     mat-dialog-content {
-      min-width: 900px;
-      max-width: 1200px;
-      width: 90vw;
+      min-width: 1000px;
+      width: 85vw;
+      max-width: 1400px;
       max-height: 80vh;
       overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    form {
+      width: 100%;
+    }
+
+    mat-form-field {
+      width: 100%;
     }
   `]
 })
