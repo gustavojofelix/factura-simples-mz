@@ -20,6 +20,15 @@ export interface Company {
   bank_iban?: string;
   bank_swift?: string;
   nuit_document_url?: string;
+  activity_start_document_url?: string;
+  commercial_activity_document_url?: string;
+  registration_certificate_url?: string;
+  documents_metadata?: {
+    province?: string;
+    district?: string;
+    administrativePost?: string;
+    mainActivity?: string;
+  };
   created_at: string;
   updated_at: string;
 }
