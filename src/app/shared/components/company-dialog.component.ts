@@ -37,95 +37,6 @@ import { DocumentProcessingService } from '../../core/services/document-processi
     <h2 mat-dialog-title>{{ data.company ? 'Editar Empresa' : 'Nova Empresa' }}</h2>
     <mat-dialog-content>
       <mat-tab-group>
-        <mat-tab label="Informações Básicas">
-          <form [formGroup]="form" class="space-y-4 pt-4">
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Nome da Empresa</mat-label>
-              <input matInput formControlName="name" required>
-              <mat-error *ngIf="form.get('name')?.hasError('required')">
-                Nome é obrigatório
-              </mat-error>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>NUIT</mat-label>
-              <input matInput formControlName="nuit" required>
-              <mat-error *ngIf="form.get('nuit')?.hasError('required')">
-                NUIT é obrigatório
-              </mat-error>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Endereço</mat-label>
-              <textarea matInput formControlName="address" rows="2"></textarea>
-            </mat-form-field>
-
-            <div class="grid grid-cols-2 gap-4">
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Telefone</mat-label>
-                <input matInput formControlName="phone">
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Email</mat-label>
-                <input matInput type="email" formControlName="email">
-                <mat-error *ngIf="form.get('email')?.hasError('email')">
-                  Email inválido
-                </mat-error>
-              </mat-form-field>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Província</mat-label>
-                <mat-select formControlName="province">
-                  @for (province of provinces; track province) {
-                    <mat-option [value]="province">{{ province }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Distrito</mat-label>
-                <input matInput formControlName="district">
-              </mat-form-field>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Posto Administrativo</mat-label>
-                <input matInput formControlName="administrativePost">
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Actividade Principal</mat-label>
-                <input matInput formControlName="mainActivity">
-              </mat-form-field>
-            </div>
-
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Tipo de Negócio</mat-label>
-              <input matInput formControlName="business_type">
-            </mat-form-field>
-
-            <div class="grid grid-cols-2 gap-4">
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Moeda</mat-label>
-                <mat-select formControlName="currency">
-                  <mat-option value="MZN">Metical (MZN)</mat-option>
-                  <mat-option value="USD">Dólar (USD)</mat-option>
-                  <mat-option value="EUR">Euro (EUR)</mat-option>
-                </mat-select>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Prefixo de Fatura</mat-label>
-                <input matInput formControlName="invoice_prefix">
-              </mat-form-field>
-            </div>
-          </form>
-        </mat-tab>
-
         <mat-tab label="Documentos">
           <div class="pt-4 space-y-4">
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -250,6 +161,95 @@ import { DocumentProcessingService } from '../../core/services/document-processi
             }
           </div>
         </mat-tab>
+
+        <mat-tab label="Informações Básicas">
+          <form [formGroup]="form" class="space-y-4 pt-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Nome da Empresa</mat-label>
+              <input matInput formControlName="name" required>
+              <mat-error *ngIf="form.get('name')?.hasError('required')">
+                Nome é obrigatório
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>NUIT</mat-label>
+              <input matInput formControlName="nuit" required>
+              <mat-error *ngIf="form.get('nuit')?.hasError('required')">
+                NUIT é obrigatório
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Endereço</mat-label>
+              <textarea matInput formControlName="address" rows="2"></textarea>
+            </mat-form-field>
+
+            <div class="grid grid-cols-2 gap-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Telefone</mat-label>
+                <input matInput formControlName="phone">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Email</mat-label>
+                <input matInput type="email" formControlName="email">
+                <mat-error *ngIf="form.get('email')?.hasError('email')">
+                  Email inválido
+                </mat-error>
+              </mat-form-field>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Província</mat-label>
+                <mat-select formControlName="province">
+                  @for (province of provinces; track province) {
+                    <mat-option [value]="province">{{ province }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Distrito</mat-label>
+                <input matInput formControlName="district">
+              </mat-form-field>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Posto Administrativo</mat-label>
+                <input matInput formControlName="administrativePost">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Actividade Principal</mat-label>
+                <input matInput formControlName="mainActivity">
+              </mat-form-field>
+            </div>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Tipo de Negócio</mat-label>
+              <input matInput formControlName="business_type">
+            </mat-form-field>
+
+            <div class="grid grid-cols-2 gap-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Moeda</mat-label>
+                <mat-select formControlName="currency">
+                  <mat-option value="MZN">Metical (MZN)</mat-option>
+                  <mat-option value="USD">Dólar (USD)</mat-option>
+                  <mat-option value="EUR">Euro (EUR)</mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Prefixo de Fatura</mat-label>
+                <input matInput formControlName="invoice_prefix">
+              </mat-form-field>
+            </div>
+          </form>
+        </mat-tab>
       </mat-tab-group>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
@@ -261,8 +261,9 @@ import { DocumentProcessingService } from '../../core/services/document-processi
   `,
   styles: [`
     mat-dialog-content {
-      min-width: 700px;
-      max-width: 900px;
+      min-width: 900px;
+      max-width: 1200px;
+      width: 90vw;
       max-height: 80vh;
       overflow-y: auto;
     }
