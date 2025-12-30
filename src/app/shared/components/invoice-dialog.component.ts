@@ -123,17 +123,13 @@ export class InvoiceDialogComponent implements OnInit {
 
   saving = signal(false);
 
-  displayedColumns = ['product', 'quantity', 'price', 'ispc', 'total', 'actions'];
+  displayedColumns = ['product', 'quantity', 'price', 'total', 'actions'];
 
   subtotal = computed(() =>
     this.invoiceItems().reduce((sum, item) => sum + item.subtotal, 0)
   );
 
-  totalIspc = computed(() =>
-    this.invoiceItems().reduce((sum, item) => sum + item.ispc_amount, 0)
-  );
-
-  total = computed(() => this.subtotal() + this.totalIspc());
+  total = computed(() => this.subtotal());
 
   constructor(
     private fb: FormBuilder,
@@ -190,17 +186,14 @@ export class InvoiceDialogComponent implements OnInit {
     if (!product || !qty) return;
 
     const subtotal = product.price * qty;
-    const ispcAmount = subtotal * product.ispc_rate;
 
     const item: InvoiceItem = {
       product_id: product.id,
       product_name: product.name,
       quantity: qty,
       unit_price: product.price,
-      ispc_rate: product.ispc_rate,
-      ispc_amount: ispcAmount,
       subtotal: subtotal,
-      total: subtotal + ispcAmount
+      total: subtotal
     };
 
     this.invoiceItems.update(items => [...items, item]);

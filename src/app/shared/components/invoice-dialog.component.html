@@ -125,7 +125,6 @@
               @if (selectedProduct()) {
                 <div class="text-sm text-gray-700 space-y-1">
                   <div>Preço unitário: {{ formatCurrency(selectedProduct()!.price) }}</div>
-                  <div>ISPC: {{ selectedProduct()!.ispc_rate * 100 }}%</div>
                 </div>
               }
             </div>
@@ -152,13 +151,6 @@
                     <th mat-header-cell *matHeaderCellDef class="!text-right">Preço</th>
                     <td mat-cell *matCellDef="let item" class="!text-right">
                       {{ formatCurrency(item.unit_price) }}
-                    </td>
-                  </ng-container>
-
-                  <ng-container matColumnDef="ispc">
-                    <th mat-header-cell *matHeaderCellDef class="!text-right">ISPC</th>
-                    <td mat-cell *matCellDef="let item" class="!text-right">
-                      {{ formatCurrency(item.ispc_amount) }}
                     </td>
                   </ng-container>
 
@@ -190,15 +182,6 @@
               <!-- Totals -->
               <div class="bg-moz-green/5 border border-moz-green/20 rounded-lg p-4">
                 <div class="space-y-2 text-right">
-                  <div class="flex justify-between items-center">
-                    <span class="text-gray-700">Subtotal:</span>
-                    <span class="font-semibold">{{ formatCurrency(subtotal()) }}</span>
-                  </div>
-                  <div class="flex justify-between items-center">
-                    <span class="text-gray-700">ISPC:</span>
-                    <span class="font-semibold text-yellow-700">{{ formatCurrency(totalIspc()) }}</span>
-                  </div>
-                  <div class="h-px bg-gray-300 my-2"></div>
                   <div class="flex justify-between items-center">
                     <span class="text-lg font-bold text-gray-900">Total:</span>
                     <span class="text-2xl font-bold text-moz-green">{{ formatCurrency(total()) }}</span>

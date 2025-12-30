@@ -123,11 +123,6 @@ import { ReceiptDetailComponent } from './receipt-detail.component';
                 <td mat-cell *matCellDef="let item" class="text-right">{{ formatCurrency(item.subtotal) }}</td>
               </ng-container>
 
-              <ng-container matColumnDef="ispc">
-                <th mat-header-cell *matHeaderCellDef class="text-right">ISPC</th>
-                <td mat-cell *matCellDef="let item" class="text-right">{{ formatCurrency(item.ispc_amount) }}</td>
-              </ng-container>
-
               <ng-container matColumnDef="total">
                 <th mat-header-cell *matHeaderCellDef class="text-right">Total</th>
                 <td mat-cell *matCellDef="let item" class="text-right font-medium">{{ formatCurrency(item.total) }}</td>
@@ -140,15 +135,7 @@ import { ReceiptDetailComponent } from './receipt-detail.component';
 
           <div class="p-6 border-t border-gray-200 bg-gray-50">
             <div class="max-w-md ml-auto space-y-2">
-              <div class="flex justify-between text-sm">
-                <span class="text-gray-600">Subtotal:</span>
-                <span class="font-medium">{{ formatCurrency(invoice()!.subtotal) }}</span>
-              </div>
-              <div class="flex justify-between text-sm">
-                <span class="text-gray-600">ISPC:</span>
-                <span class="font-medium">{{ formatCurrency(invoice()!.ispc_amount) }}</span>
-              </div>
-              <div class="flex justify-between text-lg font-semibold border-t pt-2">
+              <div class="flex justify-between text-lg font-semibold">
                 <span>Total:</span>
                 <span>{{ formatCurrency(invoice()!.total) }}</span>
               </div>
@@ -249,7 +236,7 @@ export class InvoiceDetailComponent {
   company = this.companyService.activeCompany;
   isLoading = signal(true);
 
-  displayedColumns = ['product', 'quantity', 'price', 'subtotal', 'ispc', 'total'];
+  displayedColumns = ['product', 'quantity', 'price', 'subtotal', 'total'];
   paymentColumns = ['date', 'method', 'reference', 'amount', 'actions'];
 
   async ngOnInit() {

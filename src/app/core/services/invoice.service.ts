@@ -9,8 +9,6 @@ export interface InvoiceItem {
   product_name: string;
   quantity: number;
   unit_price: number;
-  ispc_rate: number;
-  ispc_amount: number;
   subtotal: number;
   total: number;
 }
@@ -23,7 +21,6 @@ export interface Invoice {
   date: string;
   due_date?: string;
   subtotal: number;
-  ispc_amount: number;
   total: number;
   amount_paid: number;
   amount_pending: number;
@@ -195,8 +192,7 @@ export class InvoiceService {
 
     try {
       const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
-      const ispcAmount = items.reduce((sum, item) => sum + item.ispc_amount, 0);
-      const total = subtotal + ispcAmount;
+      const total = subtotal;
 
       const invoiceNumber = `${company.invoice_prefix}${String(company.invoice_number).padStart(5, '0')}`;
 
@@ -209,7 +205,6 @@ export class InvoiceService {
           date: new Date().toISOString().split('T')[0],
           due_date: dueDate,
           subtotal,
-          ispc_amount: ispcAmount,
           total,
           amount_paid: 0,
           amount_pending: total,
@@ -227,8 +222,6 @@ export class InvoiceService {
         product_name: item.product_name,
         quantity: item.quantity,
         unit_price: item.unit_price,
-        ispc_rate: item.ispc_rate,
-        ispc_amount: item.ispc_amount,
         subtotal: item.subtotal,
         total: item.total
       }));

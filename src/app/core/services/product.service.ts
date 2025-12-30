@@ -9,20 +9,10 @@ export interface Product {
   description?: string;
   price: number;
   type: 'produto' | 'servico';
-  ispc_category: string;
-  ispc_rate: number;
   stock?: number;
   unit?: string;
   created_at: string;
 }
-
-export const ISPC_CATEGORIES = [
-  { value: 'A', label: 'Grupo A - Petróleo e derivados', rate: 0.10 },
-  { value: 'B', label: 'Grupo B - Bebidas alcoólicas e tabaco', rate: 0.075 },
-  { value: 'C', label: 'Grupo C - Comunicações', rate: 0.05 },
-  { value: 'D', label: 'Grupo D - Outros produtos e serviços', rate: 0.05 },
-  { value: 'E', label: 'Grupo E - Produtos não sujeitos', rate: 0.0 }
-];
 
 @Injectable({
   providedIn: 'root'
@@ -122,15 +112,5 @@ export class ProductService {
 
   getProductById(id: string): Product | undefined {
     return this.products().find(p => p.id === id);
-  }
-
-  getCategoryRate(category: string): number {
-    const cat = ISPC_CATEGORIES.find(c => c.value === category);
-    return cat?.rate || 0;
-  }
-
-  calculateIspc(price: number, category: string): number {
-    const rate = this.getCategoryRate(category);
-    return price * rate;
   }
 }

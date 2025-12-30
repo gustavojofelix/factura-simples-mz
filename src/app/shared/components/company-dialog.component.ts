@@ -233,6 +233,34 @@ import { DocumentProcessingService } from '../../core/services/document-processi
               <input matInput formControlName="business_type">
             </mat-form-field>
 
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Tipo de Atividade (ISPC)</mat-label>
+              <mat-select formControlName="business_activity_type" required>
+                <mat-option value="comercio_ate_1m">
+                  Comércio/Indústria - até 1M MT/ano (Taxa 3%)
+                </mat-option>
+                <mat-option value="comercio_1m_2.5m">
+                  Comércio/Indústria - 1M a 2.5M MT/ano (Taxa 4%)
+                </mat-option>
+                <mat-option value="comercio_2.5m_4m">
+                  Comércio/Indústria - 2.5M a 4M MT/ano (Taxa 5%)
+                </mat-option>
+                <mat-option value="agricola_pecuaria">
+                  Agrícola, Pecuária, Silvícola, Pesqueira, Avícola, Apícola
+                </mat-option>
+                <mat-option value="servicos_gerais">
+                  Serviços Gerais - Canalização, Carpintaria, Pedreiro, etc (Taxa 12%)
+                </mat-option>
+                <mat-option value="servicos_liberais">
+                  Profissões Liberais - Advogados, Engenheiros, Contabilistas (Taxa 15%)
+                </mat-option>
+              </mat-select>
+              <mat-hint>Selecione o tipo de atividade para cálculo correto do ISPC</mat-hint>
+              <mat-error *ngIf="form.get('business_activity_type')?.hasError('required')">
+                Tipo de atividade é obrigatório
+              </mat-error>
+            </mat-form-field>
+
             <div class="grid grid-cols-2 gap-4">
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Moeda</mat-label>
@@ -316,6 +344,7 @@ export class CompanyDialogComponent {
       phone: [data.company?.phone || ''],
       email: [data.company?.email || '', Validators.email],
       business_type: [data.company?.business_type || ''],
+      business_activity_type: [(data.company as any)?.business_activity_type || 'comercio_ate_1m', Validators.required],
       currency: [data.company?.currency || 'MZN'],
       invoice_prefix: [data.company?.invoice_prefix || 'FAC'],
       province: [metadata.province || ''],

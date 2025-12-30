@@ -126,9 +126,7 @@ export class ProductDialogComponent {
 
     try {
       const formData = {
-        ...this.form.value,
-        ispc_category: 'E',
-        ispc_rate: 0
+        ...this.form.value
       };
 
       if (formData.type === 'servico') {

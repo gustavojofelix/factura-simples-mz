@@ -100,6 +100,28 @@ export class TaxService {
     }
   }
 
+  /**
+   * Calcula a taxa de ISPC baseada no tipo de atividade da empresa e volume anual de negócios
+   */
+  private calculateISPCRate(businessActivityType: string, annualSales: number): number {
+    switch (businessActivityType) {
+      case 'comercio_ate_1m':
+        return annualSales <= 1000000 ? 3 : this.calculateISPCRate('comercio_1m_2.5m', annualSales);
+      case 'comercio_1m_2.5m':
+        return annualSales <= 2500000 ? 4 : this.calculateISPCRate('comercio_2.5m_4m', annualSales);
+      case 'comercio_2.5m_4m':
+        return annualSales <= 4000000 ? 5 : 20;
+      case 'servicos_gerais':
+        return 12;
+      case 'servicos_liberais':
+        return 15;
+      case 'agricola_pecuaria':
+        return annualSales <= 1000000 ? 3 : (annualSales <= 2500000 ? 4 : (annualSales <= 4000000 ? 5 : 20));
+      default:
+        return 3;
+    }
+  }
+
   async calculateTaxForPeriod(year: number, period: number): Promise<TaxCalculation | null> {
     const company = this.companyService.activeCompany();
     if (!company) return null;
@@ -107,19 +129,48 @@ export class TaxService {
     const { startDate, endDate } = this.getPeriodDates(year, period);
 
     try {
+      // Buscar todas as faturas do trimestre
       const { data: invoices, error } = await this.supabase.db
         .from('invoices')
-        .select('total, ispc_amount, date')
+        .select('total, date')
         .eq('company_id', company.id)
         .gte('date', startDate)
         .lte('date', endDate);
 
       if (error) throw error;
 
+      // Calcular total de vendas do trimestre
       const totalSales = invoices?.reduce((sum, inv) => sum + (inv.total || 0), 0) || 0;
+
+      // Buscar vendas anuais até este trimestre para determinar a taxa correta
+      const yearStart = `${year}-01-01`;
+      const { data: yearInvoices, error: yearError } = await this.supabase.db
+        .from('invoices')
+        .select('total')
+        .eq('company_id', company.id)
+        .gte('date', yearStart)
+        .lte('date', endDate);
+
+      if (yearError) throw yearError;
+
+      const annualSales = yearInvoices?.reduce((sum, inv) => sum + (inv.total || 0), 0) || 0;
+
+      // Determinar a taxa baseada no tipo de atividade e volume anual
+      const businessActivityType = (company as any).business_activity_type || 'comercio_ate_1m';
+      const ispcRate = this.calculateISPCRate(businessActivityType, annualSales);
+
+      // Calcular ISPC
       const ispcBase = totalSales;
-      const ispcRate = 5.0;
-      const ispcAmount = invoices?.reduce((sum, inv) => sum + (inv.ispc_amount || 0), 0) || 0;
+      let ispcAmount = (ispcBase * ispcRate) / 100;
+
+      // Se o volume ultrapassou 4M, cobrar 20% sobre o excesso
+      if (businessActivityType.startsWith('comercio_') || businessActivityType === 'agricola_pecuaria') {
+        if (annualSales > 4000000) {
+          const excess = annualSales - 4000000;
+          const excessTax = (excess * 20) / 100;
+          ispcAmount = ((4000000 * 5) / 100) + excessTax;
+        }
+      }
 
       return {
         period,
