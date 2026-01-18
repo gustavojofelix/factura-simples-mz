@@ -51,6 +51,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/taxes/taxes.component').then(m => m.TaxesComponent)
       },
       {
+        path: 'relatorios',
+        loadComponent: () => import('./pages/reports/reports.component').then(m => m.ReportsComponent)
+      },
+      {
         path: 'configuracoes',
         loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent)
       }

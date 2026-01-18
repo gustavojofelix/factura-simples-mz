@@ -38,6 +38,7 @@ export class MainLayoutComponent {
     { icon: 'people', label: 'Clientes', route: '/clientes' },
     { icon: 'inventory_2', label: 'Produtos', route: '/produtos' },
     { icon: 'account_balance', label: 'Impostos', route: '/impostos' },
+    { icon: 'assessment', label: 'Relatórios', route: '/relatorios' },
     { icon: 'settings', label: 'Configurações', route: '/configuracoes' }
   ];
 
