@@ -14,6 +14,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ClientService, Client } from '../../core/services/client.service';
 import { ProductService, Product } from '../../core/services/product.service';
 import { InvoiceService, InvoiceItem } from '../../core/services/invoice.service';
+import { nuitValidator } from '../../core/validators/nuit.validator';
 
 @Component({
   selector: 'app-quick-client-dialog',
@@ -71,7 +72,7 @@ export class QuickClientDialogComponent {
   ) {
     this.form = this.fb.group({
       name: ['', Validators.required],
-      nuit: [''],
+      nuit: ['', nuitValidator()],
       phone: ['']
     });
   }

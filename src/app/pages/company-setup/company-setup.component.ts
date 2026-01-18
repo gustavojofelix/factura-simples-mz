@@ -15,6 +15,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { AuthService } from '../../core/services/auth.service';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { DocumentProcessingService } from '../../core/services/document-processing.service';
+import { nuitValidator } from '../../core/validators/nuit.validator';
 
 @Component({
   selector: 'app-company-setup',
@@ -78,7 +79,7 @@ export class CompanySetupComponent {
   ) {
     this.companyInfoForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
-      nuit: ['', [Validators.required, Validators.pattern(/^\d{9}$/)]],
+      nuit: ['', [Validators.required, nuitValidator()]],
       address: ['', Validators.required],
       province: [''],
       district: [''],
@@ -300,6 +301,9 @@ export class CompanySetupComponent {
     if (control.hasError('maxlength')) {
       const maxLength = control.getError('maxlength').requiredLength;
       return `Máximo de ${maxLength} caracteres`;
+    }
+    if (control.hasError('nuit')) {
+      return control.getError('nuit');
     }
     if (control.hasError('pattern') && field === 'nuit') {
       return 'NUIT deve ter 9 dígitos';

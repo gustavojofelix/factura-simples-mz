@@ -14,6 +14,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { Company } from '../../core/services/company.service';
 import { DocumentProcessingService } from '../../core/services/document-processing.service';
+import { nuitValidator } from '../../core/validators/nuit.validator';
 
 @Component({
   selector: 'app-company-dialog',
@@ -339,7 +340,7 @@ export class CompanyDialogComponent {
 
     this.form = this.fb.group({
       name: [data.company?.name || '', Validators.required],
-      nuit: [data.company?.nuit || '', Validators.required],
+      nuit: [data.company?.nuit || '', [Validators.required, nuitValidator()]],
       address: [data.company?.address || ''],
       phone: [data.company?.phone || ''],
       email: [data.company?.email || '', Validators.email],

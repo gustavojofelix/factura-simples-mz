@@ -4,7 +4,7 @@
     <div class="flex flex-col w-64 bg-white border-r border-gray-200">
       <!-- Logo -->
       <div class="flex items-center justify-center h-16 px-4 bg-moz-green">
-        <h1 class="text-xl font-bold text-white">FaturaSimples MZ</h1>
+        <h1 class="text-xl font-bold text-white">ISPC Facil</h1>
       </div>
 
       <!-- Company Selector -->
@@ -17,10 +17,7 @@
             >
               @for (company of companyService.companies(); track company.id) {
                 <mat-option [value]="company.id">
-                  <div class="flex items-center">
-                    <mat-icon class="mr-2 !text-lg">business</mat-icon>
-                    <span class="truncate">{{ company.name }}</span>
-                  </div>
+                  <span class="truncate">{{ company.name }}</span>
                 </mat-option>
               }
             </mat-select>
@@ -81,7 +78,7 @@
         <button mat-icon-button (click)="toggleMobileMenu()">
           <mat-icon>menu</mat-icon>
         </button>
-        <h1 class="text-lg font-bold text-moz-green">FaturaSimples MZ</h1>
+        <h1 class="text-lg font-bold text-moz-green">ISPC Facil</h1>
         <button mat-icon-button [matMenuTriggerFor]="mobileUserMenu">
           <mat-icon>account_circle</mat-icon>
         </button>

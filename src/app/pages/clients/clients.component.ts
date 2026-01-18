@@ -12,6 +12,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ClientService, Client } from '../../core/services/client.service';
 import { CompanyService } from '../../core/services/company.service';
+import { nuitValidator } from '../../core/validators/nuit.validator';
 
 @Component({
   selector: 'app-client-dialog',
@@ -141,7 +142,7 @@ export class ClientDialogComponent {
   ) {
     this.form = this.fb.group({
       name: ['', Validators.required],
-      nuit: [''],
+      nuit: ['', nuitValidator()],
       email: ['', Validators.email],
       phone: [''],
       address: [''],
