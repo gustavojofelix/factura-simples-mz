@@ -1,264 +1,156 @@
-<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-  <!-- Header -->
-  <header class="bg-white shadow-sm sticky top-0 z-50">
+﻿<div class="min-h-screen bg-gradient-to-br from-gray-50 to-white relative overflow-hidden">
+  <!-- Subtle background patterns -->
+  <div class="absolute inset-0 z-0">
+    <div class="absolute top-0 right-0 w-1/3 h-1/3 bg-ispc-orange/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+    <div class="absolute bottom-0 left-0 w-1/2 h-1/2 bg-ispc-dark/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4"></div>
+  </div>
+
+  <header class="relative z-10 border-b border-gray-100 bg-white/80 backdrop-blur-md sticky top-0">
     <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between items-center h-16">
-        <div class="flex items-center">
-          <span class="text-2xl font-bold text-ispc-orange">ISPC F�cil</span>
+      <div class="flex justify-between items-center h-20">
+        <div class="flex items-center gap-2">
+          <img src="assets/ISPC.png" alt="ISPC Fácil" class="h-10 w-auto">
+          <span class="text-2xl font-bold text-gray-900">ISPC Fácil</span>
         </div>
         <div class="hidden md:flex items-center space-x-8">
-          <a href="#inicio" class="text-gray-700 hover:text-ispc-orange transition">Início</a>
-          <a href="#funcionalidades" class="text-gray-700 hover:text-ispc-orange transition">Funcionalidades</a>
-          <a href="#precos" class="text-gray-700 hover:text-ispc-orange transition">Preços</a>
-          <button mat-stroked-button routerLink="/entrar" class="!border-ispc-orange !text-ispc-orange">
+          <a href="#funcionalidades" class="text-gray-600 hover:text-ispc-orange transition-colors font-medium">Funcionalidades</a>
+          <a href="#precos" class="text-gray-600 hover:text-ispc-orange transition-colors font-medium">Preços</a>
+          <button mat-stroked-button routerLink="/entrar" class="!border-ispc-orange !text-ispc-orange !px-6">
             Entrar
+          </button>
+          <button mat-raised-button routerLink="/registar" class="!bg-ispc-orange !text-white !px-6">
+            Criar Conta
           </button>
         </div>
       </div>
     </nav>
   </header>
 
-  <!-- Hero Section -->
-  <section id="inicio" class="relative py-20 lg:py-32 overflow-hidden">
-    <!-- Animated Background -->
-    <div class="absolute inset-0 hero-background">
-      <div class="absolute inset-0 bg-gradient-to-br from-ispc-orange/5 via-transparent to-moz-yellow/5"></div>
-      <div class="floating-shape shape-1"></div>
-      <div class="floating-shape shape-2"></div>
-      <div class="floating-shape shape-3"></div>
-    </div>
+  <main class="relative z-10">
+    <!-- Hero Section -->
+    <section class="py-20 lg:py-32">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid lg:grid-cols-2 gap-12 items-center">
+          <div class="text-left">
+            <h1 class="text-5xl lg:text-7xl font-extrabold text-gray-900 leading-[1.1] mb-6">
+              Facturação fácil para o seu negócio em <span class="text-ispc-orange">Moçambique</span>
+            </h1>
+            <p class="text-xl text-gray-600 mb-10 leading-relaxed max-w-xl">
+              Simplifique a sua gestão, emita facturas em segundos e mantenha o seu negócio em conformidade com o ISPC Fácil.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4">
+              <button mat-raised-button routerLink="/registar" class="!bg-ispc-orange !text-white !py-4 !px-10 !text-xl !h-auto !rounded-xl shadow-lg shadow-ispc-orange/20 hover:scale-[1.02] transition-transform">
+                Começar Grátis por 14 Dias
+                <mat-icon class="ml-2">arrow_forward</mat-icon>
+              </button>
+            </div>
+            <div class="mt-8 flex items-center gap-4 text-sm text-gray-500">
+              <div class="flex -space-x-2">
+                <div class="w-8 h-8 rounded-full bg-ispc-orange/20 border-2 border-white flex items-center justify-center text-[10px] font-bold">JF</div>
+                <div class="w-8 h-8 rounded-full bg-ispc-dark/20 border-2 border-white flex items-center justify-center text-[10px] font-bold">AM</div>
+                <div class="w-8 h-8 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-[10px] font-bold">+50</div>
+              </div>
+              <span>Junte-se a centenas de negócios moçambicanos</span>
+            </div>
+          </div>
+          <div class="relative lg:block">
+            <div class="absolute -inset-4 bg-gradient-to-tr from-ispc-orange to-orange-300 rounded-3xl blur-2xl opacity-20 animate-pulse"></div>
+            <div class="relative bg-white rounded-3xl shadow-2xl border border-gray-100 p-4">
+              <img src="assets/ispc-facil-logo.png" alt="Dashboard Preview" class="w-full h-auto rounded-2xl">
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-      <div class="grid lg:grid-cols-2 gap-12 items-center">
-        <div>
-          <h1 class="text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 leading-tight mb-6">
-            Facturação fácil para o seu negócio em <span class="text-ispc-orange">Moçambique</span>
-          </h1>
-          <p class="text-xl text-gray-600 mb-8 leading-relaxed">
-            Sistema simples e completo de facturação com cálculo automático de ISPC.
-            Criado especialmente para pequenos negócios moçambicanos.
-          </p>
-          <div class="flex flex-col sm:flex-row gap-4">
-            <button mat-raised-button routerLink="/registar" class="!bg-ispc-orange !text-white !py-3 !px-8 !text-lg !h-auto">
-              Começar Grátis por 14 Dias
+    <!-- Features Section -->
+    <section id="funcionalidades" class="py-24 bg-gray-50/50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+          <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">Tudo o que precisa para crescer</h2>
+          <p class="text-gray-600 text-lg">Funcionalidades pensadas especificamente para o mercado moçambicano.</p>
+        </div>
+        <div class="grid md:grid-cols-3 gap-8">
+          <div *ngFor="let feature of features" class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
+            <div class="w-14 h-14 bg-ispc-orange/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-ispc-orange transition-colors">
+              <mat-icon class="!text-ispc-orange group-hover:!text-white transition-colors">{{ feature.icon }}</mat-icon>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-3">{{ feature.title }}</h3>
+            <p class="text-gray-600 leading-relaxed">{{ feature.description }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="precos" class="py-24">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+          <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">Planos simples e transparentes</h2>
+          <p class="text-gray-600 text-lg">Escolha o plano ideal para a sua empresa.</p>
+        </div>
+        <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div *ngFor="let plan of plans" 
+               class="bg-white p-10 rounded-3xl shadow-sm border-2 transition-all hover:shadow-xl"
+               [class.border-ispc-orange]="plan.highlighted"
+               [class.border-gray-100]="!plan.highlighted"
+               [class.scale-105]="plan.highlighted">
+            <div *ngIf="plan.highlighted" class="bg-ispc-orange text-white text-[10px] font-bold px-3 py-1 rounded-full w-fit mb-4 uppercase tracking-widest">Mais Popular</div>
+            <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ plan.name }}</h3>
+            <div class="flex items-baseline gap-1 mb-6">
+              <span class="text-4xl font-black text-gray-900">{{ plan.price }}</span>
+              <span class="text-gray-500 font-medium">MZN/{{ plan.period }}</span>
+            </div>
+            <ul class="space-y-4 mb-8">
+              <li *ngFor="let feature of plan.features" class="flex items-center gap-3 text-gray-600">
+                <mat-icon class="!text-green-500 !text-sm">check_circle</mat-icon>
+                {{ feature }}
+              </li>
+            </ul>
+            <button mat-raised-button routerLink="/registar" 
+                    class="w-full !py-4 !rounded-xl !text-lg !font-bold transition-all"
+                    [class.!bg-ispc-orange]="plan.highlighted"
+                    [class.!text-white]="plan.highlighted"
+                    [class.!bg-gray-900]="!plan.highlighted"
+                    [class.!text-white]="!plan.highlighted">
+              Escolher {{ plan.name }}
             </button>
           </div>
-          <p class="text-sm text-gray-500 mt-4">
-            Sem cartão de crédito. Cancele quando quiser.
-          </p>
         </div>
+      </div>
+    </section>
+  </main>
 
-        <!-- Login Form -->
-        <div class="hidden lg:block">
-          <div class="bg-white rounded-2xl shadow-2xl p-8">
-            <div class="mb-6">
-              <h2 class="text-2xl font-bold text-gray-900 mb-2">Entre na sua conta</h2>
-              <p class="text-gray-600">Acesse o ISPC F�cil</p>
-            </div>
-
-            <form [formGroup]="loginForm" (ngSubmit)="onLoginSubmit()" class="space-y-4">
-              <div>
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Email</mat-label>
-                  <input
-                    matInput
-                    type="email"
-                    formControlName="email"
-                    placeholder="seu@email.com"
-                    autocomplete="email"
-                  />
-                  <mat-icon matPrefix class="text-gray-400">email</mat-icon>
-                  @if (getErrorMessage('email')) {
-                    <mat-error>{{ getErrorMessage('email') }}</mat-error>
-                  }
-                </mat-form-field>
-              </div>
-
-              <div>
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Palavra-passe</mat-label>
-                  <input
-                    matInput
-                    [type]="hidePassword() ? 'password' : 'text'"
-                    formControlName="password"
-                    placeholder="••••••••"
-                    autocomplete="current-password"
-                  />
-                  <mat-icon matPrefix class="text-gray-400">lock</mat-icon>
-                  <button
-                    mat-icon-button
-                    matSuffix
-                    type="button"
-                    (click)="hidePassword.set(!hidePassword())"
-                  >
-                    <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
-                  </button>
-                  @if (getErrorMessage('password')) {
-                    <mat-error>{{ getErrorMessage('password') }}</mat-error>
-                  }
-                </mat-form-field>
-              </div>
-
-              <button
-                mat-raised-button
-                type="submit"
-                class="w-full !bg-ispc-orange !text-white !py-3 !text-base"
-                [disabled]="isLoading()"
-              >
-                @if (isLoading()) {
-                  <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
-                  <span>A entrar...</span>
-                } @else {
-                  <span>Entrar</span>
-                }
-              </button>
-            </form>
-
-            <div class="mt-6 text-center">
-              <p class="text-sm text-gray-600">
-                Não tem conta?
-                <a routerLink="/registar" class="font-medium text-ispc-orange hover:text-ispc-orange/80 ml-1">
-                  Criar conta grátis
-                </a>
-              </p>
-            </div>
+  <footer class="bg-gray-900 text-white py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid md:grid-cols-4 gap-12 mb-12">
+        <div class="col-span-1 md:col-span-2">
+          <div class="flex items-center gap-2 mb-6">
+            <img src="assets/ISPC.png" alt="ISPC Fácil" class="h-10 w-auto">
+            <span class="text-2xl font-bold">ISPC Fácil</span>
           </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Features Section -->
-  <section id="funcionalidades" class="py-20 bg-white">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center mb-16">
-        <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-4 leading-tight">
-          Tudo que precisa para facturar
-        </h2>
-        <p class="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-          Ferramentas profissionais desenhadas para negócios moçambicanos
-        </p>
-      </div>
-      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-        @for (feature of features; track feature.icon) {
-          <mat-card class="!shadow-md hover:!shadow-xl transition-shadow duration-300">
-            <mat-card-content class="p-6">
-              <div class="flex items-start space-x-4">
-                <div class="flex-shrink-0">
-                  <div class="w-12 h-12 bg-ispc-orange/10 rounded-lg flex items-center justify-center">
-                    <mat-icon class="!text-ispc-orange">{{ feature.icon }}</mat-icon>
-                  </div>
-                </div>
-                <div>
-                  <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ feature.title }}</h3>
-                  <p class="text-gray-600">{{ feature.description }}</p>
-                </div>
-              </div>
-            </mat-card-content>
-          </mat-card>
-        }
-      </div>
-    </div>
-  </section>
-
-  <!-- Pricing Section -->
-  <section id="precos" class="py-20 bg-gray-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center mb-16">
-        <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-4 leading-tight">
-          Planos simples e transparentes
-        </h2>
-        <p class="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-          Escolha o plano ideal para o seu negócio. Sem custos escondidos.
-        </p>
-      </div>
-      <div class="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-        @for (plan of plans; track plan.name) {
-          <mat-card [class.!ring-2]="plan.highlighted" [class.!ring-ispc-orange]="plan.highlighted"
-                    [class.!shadow-2xl]="plan.highlighted" class="!shadow-lg">
-            <mat-card-content class="p-8">
-              @if (plan.highlighted) {
-                <div class="bg-ispc-orange text-white text-sm font-semibold px-4 py-1 rounded-full inline-block mb-4">
-                  MAIS POPULAR
-                </div>
-              }
-              <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ plan.name }}</h3>
-              <div class="mb-6">
-                <span class="text-4xl font-bold text-gray-900">{{ plan.price }}</span>
-                <span class="text-gray-600 ml-2">{{ plan.currency }}/{{ plan.period }}</span>
-              </div>
-              <ul class="space-y-4 mb-8">
-                @for (feature of plan.features; track feature) {
-                  <li class="flex items-start">
-                    <mat-icon class="!text-ispc-orange mr-3 !text-xl">check_circle</mat-icon>
-                    <span class="text-gray-700">{{ feature }}</span>
-                  </li>
-                }
-              </ul>
-              <button mat-raised-button routerLink="/registar"
-                      [class.!bg-ispc-orange]="plan.highlighted"
-                      [class.!text-white]="plan.highlighted"
-                      [class.!bg-gray-100]="!plan.highlighted"
-                      [class.!text-gray-900]="!plan.highlighted"
-                      class="w-full !py-6">
-                Começar Agora
-              </button>
-            </mat-card-content>
-          </mat-card>
-        }
-      </div>
-    </div>
-  </section>
-
-  <!-- CTA Section -->
-  <section class="py-20 bg-ispc-orange">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-      <h2 class="text-3xl lg:text-4xl font-bold text-white mb-6 leading-tight">
-        Pronto para simplificar a sua facturação?
-      </h2>
-      <p class="text-xl text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed">
-        Junte-se a centenas de negócios moçambicanos que já usam o ISPC F�cil
-      </p>
-      <button mat-raised-button routerLink="/registar" class="!bg-white !text-ispc-orange !py-3 !px-12 !text-lg !h-auto">
-        Começar Grátis por 14 Dias
-      </button>
-    </div>
-  </section>
-
-  <!-- Footer -->
-  <footer class="bg-gray-900 text-white py-12">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="grid md:grid-cols-4 gap-8">
-        <div>
-          <h3 class="text-xl font-bold mb-4 leading-tight">ISPC F�cil</h3>
-          <p class="text-gray-400 leading-relaxed">
-            Facturação simplificada para Moçambique
+          <p class="text-gray-400 max-w-sm mb-6 leading-relaxed">
+            Facturação simplificada para o mercado Moçambicano. Focamos na facilidade de uso para que possa focar no que realmente importa: o seu negócio.
           </p>
         </div>
         <div>
-          <h4 class="font-semibold mb-4 leading-tight">Produto</h4>
-          <ul class="space-y-2 text-gray-400">
-            <li><a href="#funcionalidades" class="hover:text-white transition">Funcionalidades</a></li>
-            <li><a href="#precos" class="hover:text-white transition">Preços</a></li>
+          <h4 class="font-bold text-lg mb-6">Links Rápidos</h4>
+          <ul class="space-y-4 text-gray-400">
+            <li><a href="#" class="hover:text-white transition-colors">Funcionalidades</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">Preços</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">Suporte</a></li>
           </ul>
         </div>
         <div>
-          <h4 class="font-semibold mb-4 leading-tight">Empresa</h4>
-          <ul class="space-y-2 text-gray-400">
-            <li><a href="#" class="hover:text-white transition">Sobre Nós</a></li>
-            <li><a href="#" class="hover:text-white transition">Contacto</a></li>
-          </ul>
-        </div>
-        <div>
-          <h4 class="font-semibold mb-4 leading-tight">Legal</h4>
-          <ul class="space-y-2 text-gray-400">
-            <li><a href="#" class="hover:text-white transition">Termos de Uso</a></li>
-            <li><a href="#" class="hover:text-white transition">Política de Privacidade</a></li>
+          <h4 class="font-bold text-lg mb-6">Legal</h4>
+          <ul class="space-y-4 text-gray-400">
+            <li><a href="#" class="hover:text-white transition-colors">Termos de Uso</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">Privacidade</a></li>
           </ul>
         </div>
       </div>
-      <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-        <p class="leading-relaxed">&copy; 2024 ISPC F�cil. Todos os direitos reservados.</p>
+      <div class="border-t border-gray-800 pt-8 flex flex-col md:row justify-between items-center gap-4 text-gray-500 text-sm">
+        <p>&copy; 2024 ISPC Fácil. Todos os direitos reservados.</p>
       </div>
     </div>
   </footer>
