@@ -30,7 +30,8 @@ import { CompanyService } from '../../core/services/company.service';
     <h2 mat-dialog-title>{{ data ? 'Editar' : 'Novo' }} {{ form.get('type')?.value === 'produto' ? 'Produto' : 'Serviço' }}</h2>
     <mat-dialog-content class="!pt-4">
       <form [formGroup]="form" class="space-y-4">
-        <mat-form-field appearance="outline" class="w-full">
+        <!-- Tipo hidden as per requirements -->
+        <!-- <mat-form-field appearance="outline" class="w-full">
           <mat-label>Tipo</mat-label>
           <mat-select formControlName="type">
             <mat-option value="produto">Produto</mat-option>
@@ -39,7 +40,7 @@ import { CompanyService } from '../../core/services/company.service';
           @if (form.get('type')?.hasError('required') && form.get('type')?.touched) {
             <mat-error>Tipo é obrigatório</mat-error>
           }
-        </mat-form-field>
+        </mat-form-field> -->
 
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Nome</mat-label>
@@ -102,7 +103,7 @@ export class ProductDialogComponent {
     public dialog: MatDialog
   ) {
     this.form = this.fb.group({
-      type: ['produto', Validators.required],
+      type: ['servico', Validators.required],
       name: ['', Validators.required],
       description: [''],
       price: ['', [Validators.required, Validators.min(0)]],
