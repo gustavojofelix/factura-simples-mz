@@ -141,6 +141,30 @@ export class ClientService {
     return this.updateClient(id, { is_active: !currentStatus });
   }
 
+  async isNuitDuplicate(nuit: string, excludeClientId?: string): Promise<boolean> {
+    const company = this.companyService.activeCompany();
+    if (!company || !nuit) return false;
+
+    try {
+      let query = this.supabase.db
+        .from('clients')
+        .select('id', { count: 'exact', head: true })
+        .eq('company_id', company.id)
+        .eq('nuit', nuit);
+
+      if (excludeClientId) {
+        query = query.not('id', 'eq', excludeClientId);
+      }
+
+      const { count, error } = await query;
+      if (error) throw error;
+      return (count || 0) > 0;
+    } catch (error) {
+      console.error('Erro ao verificar NUIT duplicado:', error);
+      return false;
+    }
+  }
+
   getClientById(id: string): Client | undefined {
     return this.clients().find(c => c.id === id);
   }

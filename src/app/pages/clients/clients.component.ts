@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -10,8 +10,11 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ClientService, Client } from '../../core/services/client.service';
 import { CompanyService } from '../../core/services/company.service';
+import { ExportService } from '../../core/services/export.service';
 import { nuitValidator } from '../../core/validators/nuit.validator';
 
 @Component({
@@ -41,7 +44,10 @@ import { nuitValidator } from '../../core/validators/nuit.validator';
         <div class="space-y-2">
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>NUIT</mat-label>
-            <input matInput formControlName="nuit" placeholder="Número de identificação">
+            <input matInput formControlName="nuit" placeholder="Número de identificação" required>
+            @if (form.get('nuit')?.hasError('required') && form.get('nuit')?.touched) {
+              <mat-error>NUIT é obrigatório</mat-error>
+            }
           </mat-form-field>
 
           @if (form.get('nuit')?.value) {
@@ -98,7 +104,10 @@ import { nuitValidator } from '../../core/validators/nuit.validator';
 
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Email</mat-label>
-          <input matInput type="email" formControlName="email" placeholder="email@exemplo.com">
+          <input matInput type="email" formControlName="email" placeholder="email@exemplo.com" required>
+          @if (form.get('email')?.hasError('required') && form.get('email')?.touched) {
+            <mat-error>Email é obrigatório</mat-error>
+          }
           @if (form.get('email')?.hasError('email') && form.get('email')?.touched) {
             <mat-error>Email inválido</mat-error>
           }
@@ -111,7 +120,10 @@ import { nuitValidator } from '../../core/validators/nuit.validator';
 
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Endereço</mat-label>
-          <textarea matInput formControlName="address" rows="3" placeholder="Endereço completo"></textarea>
+          <textarea matInput formControlName="address" rows="3" placeholder="Endereço completo" required></textarea>
+          @if (form.get('address')?.hasError('required') && form.get('address')?.touched) {
+            <mat-error>Endereço é obrigatório</mat-error>
+          }
         </mat-form-field>
       </form>
     </mat-dialog-content>
@@ -142,10 +154,10 @@ export class ClientDialogComponent {
   ) {
     this.form = this.fb.group({
       name: ['', Validators.required],
-      nuit: ['', nuitValidator()],
-      email: ['', Validators.email],
+      nuit: ['', [Validators.required, nuitValidator()]],
+      email: ['', [Validators.required, Validators.email]],
       phone: [''],
-      address: [''],
+      address: ['', Validators.required],
       document_url: [''],
       document_type: ['NUIT']
     });
@@ -215,6 +227,17 @@ export class ClientDialogComponent {
 
     try {
       const formData = this.form.value;
+      const nuit = formData.nuit;
+
+      // Verificar NUIT duplicado
+      const isDuplicate = await this.clientService.isNuitDuplicate(nuit, this.data?.id);
+      if (isDuplicate) {
+        this.snackBar.open('Já existe um cliente registado com este NUIT nesta empresa.', 'Fechar', { 
+          duration: 5000
+        });
+        this.saving.set(false);
+        return;
+      }
 
       if (this.data) {
         const success = await this.clientService.updateClient(this.data.id, formData);
@@ -250,7 +273,9 @@ export class ClientDialogComponent {
     MatTableModule,
     MatDialogModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatMenuModule,
+    MatTooltipModule
   ],
   templateUrl: './clients.component.html',
   styleUrls: ['./clients.component.css']
@@ -279,7 +304,8 @@ export class ClientsComponent implements OnInit {
     public clientService: ClientService,
     public companyService: CompanyService,
     private dialog: MatDialog,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private exportService: ExportService
   ) {}
 
   ngOnInit() {
@@ -331,5 +357,29 @@ export class ClientsComponent implements OnInit {
     } else {
       this.snackBar.open(result.error || 'Erro ao eliminar cliente', 'Fechar', { duration: 5000 });
     }
+  }
+
+  exportAsCSV() {
+    const data = this.clientService.clients().map(c => ({
+      'Nome': c.name,
+      'NUIT': c.nuit || '',
+      'Email': c.email || '',
+      'Telefone': c.phone || '',
+      'Endereço': c.address || '',
+      'Estado': c.is_active ? 'Activo' : 'Inactivo'
+    }));
+    this.exportService.exportToCsv(data, `clientes_${new Date().toISOString().split('T')[0]}`);
+  }
+
+  exportAsExcel() {
+    const data = this.clientService.clients().map(c => ({
+      'Nome': c.name,
+      'NUIT': c.nuit || '',
+      'Email': c.email || '',
+      'Telefone': c.phone || '',
+      'Endereço': c.address || '',
+      'Estado': c.is_active ? 'Activo' : 'Inactivo'
+    }));
+    this.exportService.exportToExcel(data, `clientes_${new Date().toISOString().split('T')[0]}`);
   }
 }

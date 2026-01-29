@@ -4,14 +4,36 @@
       <h1 class="text-3xl font-bold text-gray-900 mb-2">Clientes</h1>
       <p class="text-gray-600">Gerir clientes de {{ companyService.activeCompany()?.name }}</p>
     </div>
-    <button
-      mat-raised-button
-      class="!bg-moz-green !text-white"
-      (click)="openDialog()"
-    >
-      <mat-icon class="mr-2">add</mat-icon>
-      Novo Cliente
-    </button>
+    <div class="flex gap-2">
+      <button
+        mat-stroked-button
+        class="!border-moz-green !text-moz-green"
+        [matMenuTriggerFor]="exportMenu"
+        [disabled]="clientService.clients().length === 0"
+      >
+        <mat-icon class="mr-2">file_download</mat-icon>
+        Exportar
+      </button>
+      <mat-menu #exportMenu="matMenu">
+        <button mat-menu-item (click)="exportAsCSV()">
+          <mat-icon>text_format</mat-icon>
+          <span>CSV</span>
+        </button>
+        <button mat-menu-item (click)="exportAsExcel()">
+          <mat-icon>description</mat-icon>
+          <span>Excel</span>
+        </button>
+      </mat-menu>
+
+      <button
+        mat-raised-button
+        class="!bg-moz-green !text-white"
+        (click)="openDialog()"
+      >
+        <mat-icon class="mr-2">add</mat-icon>
+        Novo Cliente
+      </button>
+    </div>
   </div>
 
   <mat-card class="!shadow-md">
