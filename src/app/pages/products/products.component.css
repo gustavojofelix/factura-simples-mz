@@ -11,3 +11,7 @@
 ::ng-deep .mat-mdc-dialog-container .mdc-dialog__surface {
   border-radius: 12px;
 }
+
+::ng-deep .hide-subscript .mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}

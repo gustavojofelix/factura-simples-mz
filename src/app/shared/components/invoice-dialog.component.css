@@ -1,6 +1,26 @@
 .invoice-dialog {
   width: 100%;
-  max-width: 900px;
+  max-width: 1000px;
+  min-height: 400px;
+}
+
+::ng-deep .hide-subscript .mat-mdc-form-field-subscript-wrapper {
+  display: none !important;
+}
+
+::ng-deep .compact-select .mat-mdc-text-field-wrapper {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  min-height: 32px !important;
+}
+
+::ng-deep .compact-select .mat-mdc-form-field-flex {
+  height: 32px !important;
+  align-items: center !important;
+}
+
+::ng-deep .compact-select .mat-mdc-select-value {
+  font-size: 12px !important;
 }
 
 ::ng-deep .mat-mdc-dialog-container .mdc-dialog__surface {
@@ -25,4 +45,14 @@
 
 ::ng-deep .mat-mdc-cell {
   padding: 12px 16px;
+}
+
+@keyframes pulse-subtle {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.005); }
+  100% { transform: scale(1); }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s infinite ease-in-out;
 }

@@ -122,6 +122,29 @@ export class InvoiceDialogComponent implements OnInit {
   selectedProduct = signal<Product | null>(null);
   quantity = signal(1);
 
+  // Product filtering
+  productSearchTerm = signal('');
+
+  filteredProducts = computed(() => {
+    const term = this.productSearchTerm().toLowerCase();
+    const products = [...this.productService.products()];
+
+    // 1. Filtering
+    let filtered = products;
+    if (term) {
+      filtered = products.filter(product =>
+        product.name.toLowerCase().includes(term) ||
+        product.description?.toLowerCase().includes(term) ||
+        String(product.code).includes(term)
+      );
+    }
+
+    // 2. Default Sorting by Name
+    filtered.sort((a, b) => a.name.localeCompare(b.name));
+
+    return filtered;
+  });
+
   saving = signal(false);
   isEditing = signal(false);
 
@@ -202,6 +225,17 @@ export class InvoiceDialogComponent implements OnInit {
   onProductChange(productId: string) {
     const product = this.productService.getProductById(productId);
     this.selectedProduct.set(product || null);
+  }
+
+  onProductSearchChange(event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    this.productSearchTerm.set(value);
+  }
+
+  onProductSelected(product: Product) {
+    this.selectedProduct.set(product);
+    this.productSearchTerm.set(product.name);
+    this.step2Form.patchValue({ product_id: product.id });
   }
 
   addProduct() {

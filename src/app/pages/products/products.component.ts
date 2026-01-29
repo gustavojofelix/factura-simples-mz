@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -9,8 +9,9 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ProductService, Product } from '../../core/services/product.service';
 import { CompanyService } from '../../core/services/company.service';
 
@@ -27,7 +28,9 @@ import { CompanyService } from '../../core/services/company.service';
     MatButtonModule
   ],
   template: `
-    <h2 mat-dialog-title>{{ data ? 'Editar' : 'Novo' }} {{ form.get('type')?.value === 'produto' ? 'Produto' : 'Serviço' }}</h2>
+    <h2 mat-dialog-title>
+      Produto / Serviço
+    </h2>
     <mat-dialog-content class="!pt-4">
       <form [formGroup]="form" class="space-y-4">
         <!-- Tipo hidden as per requirements -->
@@ -87,12 +90,14 @@ import { CompanyService } from '../../core/services/company.service';
         [disabled]="form.invalid || saving()"
         (click)="save()"
       >
-        {{ saving() ? 'A guardar...' : 'Guardar' }}
+        <span>
+          @if (saving()) { A guardar... } @else { Guardar }
+        </span>
       </button>
     </mat-dialog-actions>
   `
 })
-export class ProductDialogComponent {
+export class ProductDialogComponent implements OnInit {
   form: FormGroup;
   saving = signal(false);
 
@@ -100,7 +105,8 @@ export class ProductDialogComponent {
     private fb: FormBuilder,
     private productService: ProductService,
     private snackBar: MatSnackBar,
-    public dialog: MatDialog
+    private dialogRef: MatDialogRef<ProductDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public product: Product | null
   ) {
     this.form = this.fb.group({
       type: ['servico', Validators.required],
@@ -112,11 +118,9 @@ export class ProductDialogComponent {
     });
   }
 
-  data: Product | null = null;
-
   ngOnInit() {
-    if (this.data) {
-      this.form.patchValue(this.data);
+    if (this.product) {
+      this.form.patchValue(this.product);
     }
   }
 
@@ -134,15 +138,15 @@ export class ProductDialogComponent {
         formData.stock = null;
       }
 
-      if (this.data) {
-        const success = await this.productService.updateProduct(this.data.id, formData);
+      if (this.product) {
+        const success = await this.productService.updateProduct(this.product.id, formData);
         if (success) {
           this.snackBar.open(
             `${formData.type === 'produto' ? 'Produto' : 'Serviço'} actualizado com sucesso!`,
             'Fechar',
             { duration: 3000 }
           );
-          this.dialog.closeAll();
+          this.dialogRef.close();
         } else {
           this.snackBar.open('Erro ao actualizar', 'Fechar', { duration: 3000 });
         }
@@ -154,7 +158,7 @@ export class ProductDialogComponent {
             'Fechar',
             { duration: 3000 }
           );
-          this.dialog.closeAll();
+          this.dialogRef.close();
         } else {
           this.snackBar.open('Erro ao criar', 'Fechar', { duration: 3000 });
         }
@@ -178,6 +182,7 @@ export class ProductDialogComponent {
     MatIconModule,
     MatTableModule,
     MatDialogModule,
+    MatSelectModule,
     MatProgressSpinnerModule,
     MatSnackBarModule
   ],
@@ -185,10 +190,65 @@ export class ProductDialogComponent {
   styleUrls: ['./products.component.css']
 })
 export class ProductsComponent implements OnInit {
-  displayedColumns = ['name', 'price', 'unit', 'stock', 'actions'];
+  displayedColumns = ['code', 'name', 'price', 'unit', 'stock', 'actions'];
   searchTerm = signal('');
+  sortField = signal<string>('name');
+  sortDirection = signal<'asc' | 'desc'>('asc');
 
-  filteredProducts = signal<Product[]>([]);
+  filteredProducts = computed(() => {
+    const term = this.searchTerm().toLowerCase();
+    const products = [...this.productService.products()];
+    const field = this.sortField();
+    const direction = this.sortDirection();
+
+    // 1. Filtering
+    let filtered = products;
+    if (term) {
+      filtered = products.filter(product =>
+        product.name.toLowerCase().includes(term) ||
+        product.description?.toLowerCase().includes(term) ||
+        String(product.code).includes(term)
+      );
+    }
+
+    // 2. Sorting
+    filtered.sort((a, b) => {
+      let valA: any;
+      let valB: any;
+
+      switch (field) {
+        case 'code':
+          valA = a.code;
+          valB = b.code;
+          break;
+        case 'name':
+          valA = a.name.toLowerCase();
+          valB = b.name.toLowerCase();
+          break;
+        case 'price':
+          valA = a.price;
+          valB = b.price;
+          break;
+        case 'stock':
+          valA = a.stock || 0;
+          valB = b.stock || 0;
+          break;
+        case 'date':
+          valA = new Date(a.created_at).getTime();
+          valB = new Date(b.created_at).getTime();
+          break;
+        default:
+          valA = a.name.toLowerCase();
+          valB = b.name.toLowerCase();
+      }
+
+      if (valA < valB) return direction === 'asc' ? -1 : 1;
+      if (valA > valB) return direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  });
 
   constructor(
     public productService: ProductService,
@@ -199,29 +259,19 @@ export class ProductsComponent implements OnInit {
 
   ngOnInit() {
     this.productService.loadProducts();
-    this.updateFilteredProducts();
-  }
-
-  updateFilteredProducts() {
-    const term = this.searchTerm().toLowerCase();
-    const products = this.productService.products();
-
-    if (!term) {
-      this.filteredProducts.set(products);
-    } else {
-      this.filteredProducts.set(
-        products.filter(product =>
-          product.name.toLowerCase().includes(term) ||
-          product.description?.toLowerCase().includes(term)
-        )
-      );
-    }
   }
 
   onSearchChange(event: Event) {
     const value = (event.target as HTMLInputElement).value;
     this.searchTerm.set(value);
-    this.updateFilteredProducts();
+  }
+
+  toggleSortDirection() {
+    this.sortDirection.update(d => d === 'asc' ? 'desc' : 'asc');
+  }
+
+  onSortFieldChange(field: string) {
+    this.sortField.set(field);
   }
 
   openDialog(product?: Product) {
@@ -230,12 +280,8 @@ export class ProductsComponent implements OnInit {
       data: product || null
     });
 
-    const instance = dialogRef.componentInstance;
-    instance.data = product || null;
-
     dialogRef.afterClosed().subscribe(() => {
       this.productService.loadProducts();
-      this.updateFilteredProducts();
     });
   }
 
@@ -248,7 +294,6 @@ export class ProductsComponent implements OnInit {
 
     if (success) {
       this.snackBar.open('Produto eliminado com sucesso!', 'Fechar', { duration: 3000 });
-      this.updateFilteredProducts();
     } else {
       this.snackBar.open('Erro ao eliminar produto', 'Fechar', { duration: 3000 });
     }

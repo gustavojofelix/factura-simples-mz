@@ -190,7 +190,7 @@ export class InvoicesComponent implements OnInit {
 
   openNewInvoiceDialog() {
     const dialogRef = this.dialog.open(InvoiceDialogComponent, {
-      width: '900px',
+      width: '1000px',
       maxWidth: '95vw',
       disableClose: true
     });
@@ -232,7 +232,7 @@ export class InvoicesComponent implements OnInit {
     if (!fullInvoice) return;
 
     const dialogRef = this.dialog.open(InvoiceDialogComponent, {
-      width: '900px',
+      width: '1000px',
       maxWidth: '95vw',
       disableClose: true,
       data: { invoice: fullInvoice }
