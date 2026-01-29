@@ -15,6 +15,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { Company } from '../../core/services/company.service';
 import { DocumentProcessingService } from '../../core/services/document-processing.service';
 import { nuitValidator } from '../../core/validators/nuit.validator';
+import { MAIN_ACTIVITIES, SECONDARY_ACTIVITIES } from '../../core/constants/business-activities';
 
 @Component({
   selector: 'app-company-dialog',
@@ -236,9 +237,22 @@ import { nuitValidator } from '../../core/validators/nuit.validator';
 
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Actividade Principal</mat-label>
-                <input matInput formControlName="mainActivity">
+                <mat-select formControlName="mainActivity">
+                  @for (activity of mainActivities; track activity) {
+                    <mat-option [value]="activity">{{ activity }}</mat-option>
+                  }
+                </mat-select>
               </mat-form-field>
             </div>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Actividade Secundária</mat-label>
+              <mat-select formControlName="secondaryActivity">
+                @for (activity of secondaryActivities; track activity) {
+                  <mat-option [value]="activity">{{ activity }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Tipo de Negócio</mat-label>
@@ -340,6 +354,9 @@ export class CompanyDialogComponent {
     'Zambézia', 'Nampula', 'Niassa', 'Cabo Delgado'
   ];
 
+  mainActivities = MAIN_ACTIVITIES;
+  secondaryActivities = SECONDARY_ACTIVITIES;
+
   constructor(
     private fb: FormBuilder,
     private dialogRef: MatDialogRef<CompanyDialogComponent>,
@@ -363,7 +380,8 @@ export class CompanyDialogComponent {
       province: [metadata.province || ''],
       district: [metadata.district || ''],
       administrativePost: [metadata.administrativePost || ''],
-      mainActivity: [metadata.mainActivity || '']
+      mainActivity: [metadata.mainActivity || ''],
+      secondaryActivity: [metadata.secondaryActivity || '']
     });
 
     if (data.company) {
@@ -508,7 +526,8 @@ export class CompanyDialogComponent {
           province: this.form.value.province,
           district: this.form.value.district,
           administrativePost: this.form.value.administrativePost,
-          mainActivity: this.form.value.mainActivity
+          mainActivity: this.form.value.mainActivity,
+          secondaryActivity: this.form.value.secondaryActivity
         }
       };
       this.dialogRef.close(formData);

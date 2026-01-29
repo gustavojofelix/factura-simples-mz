@@ -16,6 +16,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { DocumentProcessingService } from '../../core/services/document-processing.service';
 import { nuitValidator } from '../../core/validators/nuit.validator';
+import { MAIN_ACTIVITIES, SECONDARY_ACTIVITIES } from '../../core/constants/business-activities';
 
 @Component({
   selector: 'app-company-setup',
@@ -69,6 +70,9 @@ export class CompanySetupComponent {
     'Zambézia', 'Nampula', 'Niassa', 'Cabo Delgado'
   ];
 
+  mainActivities = MAIN_ACTIVITIES;
+  secondaryActivities = SECONDARY_ACTIVITIES;
+
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
@@ -85,7 +89,8 @@ export class CompanySetupComponent {
       province: [''],
       district: [''],
       administrativePost: [''],
-      mainActivity: ['']
+      mainActivity: [''],
+      secondaryActivity: ['']
     });
 
     this.businessTypeForm = this.fb.group({
@@ -259,7 +264,8 @@ export class CompanySetupComponent {
         province: this.companyInfoForm.value.province,
         district: this.companyInfoForm.value.district,
         administrativePost: this.companyInfoForm.value.administrativePost,
-        mainActivity: this.companyInfoForm.value.mainActivity
+        mainActivity: this.companyInfoForm.value.mainActivity,
+        secondaryActivity: this.companyInfoForm.value.secondaryActivity
       }
     };
 

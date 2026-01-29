@@ -223,8 +223,24 @@
 
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>Actividade Principal</mat-label>
-                  <input matInput formControlName="mainActivity" placeholder="Ex: Comércio a retalho" />
+                  <mat-select formControlName="mainActivity">
+                    @for (activity of mainActivities; track activity) {
+                      <mat-option [value]="activity">{{ activity }}</mat-option>
+                    }
+                  </mat-select>
                   <mat-icon matPrefix class="text-gray-400">business_center</mat-icon>
+                </mat-form-field>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Actividade Secundária</mat-label>
+                  <mat-select formControlName="secondaryActivity">
+                    @for (activity of secondaryActivities; track activity) {
+                      <mat-option [value]="activity">{{ activity }}</mat-option>
+                    }
+                  </mat-select>
+                  <mat-icon matPrefix class="text-gray-400">store</mat-icon>
                 </mat-form-field>
               </div>
             </div>

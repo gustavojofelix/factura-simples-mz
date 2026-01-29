@@ -29,6 +29,7 @@ export interface Company {
     district?: string;
     administrativePost?: string;
     mainActivity?: string;
+    secondaryActivity?: string;
   };
   created_at: string;
   updated_at: string;
