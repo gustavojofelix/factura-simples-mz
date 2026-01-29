@@ -254,10 +254,6 @@ import { MAIN_ACTIVITIES, SECONDARY_ACTIVITIES } from '../../core/constants/busi
               </mat-select>
             </mat-form-field>
 
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Tipo de Negócio</mat-label>
-              <input matInput formControlName="business_type">
-            </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Tipo de Atividade (ISPC)</mat-label>
@@ -373,7 +369,6 @@ export class CompanyDialogComponent {
       address: [data.company?.address || ''],
       phone: [data.company?.phone || ''],
       email: [data.company?.email || '', Validators.email],
-      business_type: [data.company?.business_type || ''],
       business_activity_type: [(data.company as any)?.business_activity_type || 'comercio_ate_1m', Validators.required],
       currency: [data.company?.currency || 'MZN'],
       invoice_prefix: [data.company?.invoice_prefix || 'FAC'],

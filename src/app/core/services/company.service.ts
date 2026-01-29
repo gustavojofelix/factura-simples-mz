@@ -11,7 +11,6 @@ export interface Company {
   address: string;
   phone?: string;
   email?: string;
-  business_type: string;
   currency: string;
   invoice_prefix: string;
   invoice_number: number;

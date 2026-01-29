@@ -254,48 +254,6 @@
           </form>
         </mat-step>
 
-        <mat-step [stepControl]="businessTypeForm" label="Tipo de Actividade">
-          <form [formGroup]="businessTypeForm" class="mt-6 space-y-6">
-            <div>
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Tipo de Actividade</mat-label>
-                <mat-select formControlName="businessType">
-                  @for (type of businessTypes; track type.value) {
-                    <mat-option [value]="type.value">{{ type.label }}</mat-option>
-                  }
-                </mat-select>
-                <mat-icon matPrefix class="text-gray-400">work</mat-icon>
-                @if (getErrorMessage(businessTypeForm, 'businessType')) {
-                  <mat-error>{{ getErrorMessage(businessTypeForm, 'businessType') }}</mat-error>
-                }
-              </mat-form-field>
-            </div>
-
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div class="flex items-start">
-                <mat-icon class="text-blue-600 mr-3">info</mat-icon>
-                <div>
-                  <h4 class="font-semibold text-blue-900 mb-1">Porquê esta informação?</h4>
-                  <p class="text-sm text-blue-800">
-                    O tipo de actividade ajuda-nos a configurar automaticamente as taxas de ISPC
-                    correctas para os seus produtos e serviços.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div class="flex justify-between">
-              <button mat-stroked-button matStepperPrevious>
-                <mat-icon>arrow_back</mat-icon>
-                Anterior
-              </button>
-              <button mat-raised-button matStepperNext class="!bg-moz-green !text-white">
-                Próximo
-                <mat-icon class="ml-2">arrow_forward</mat-icon>
-              </button>
-            </div>
-          </form>
-        </mat-step>
 
         <mat-step [stepControl]="settingsForm" label="Configuração Inicial">
           <form [formGroup]="settingsForm" class="mt-6 space-y-6">

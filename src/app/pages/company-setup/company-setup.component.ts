@@ -40,7 +40,6 @@ import { MAIN_ACTIVITIES, SECONDARY_ACTIVITIES } from '../../core/constants/busi
 })
 export class CompanySetupComponent {
   companyInfoForm: FormGroup;
-  businessTypeForm: FormGroup;
   settingsForm: FormGroup;
   isLoading = signal(false);
   isProcessingDocument = signal(false);
@@ -52,18 +51,6 @@ export class CompanySetupComponent {
     registrationCertificate: { file: null as File | null, url: '', extractedData: false }
   });
 
-  businessTypes = [
-    { value: 'servicos_consultoria', label: 'Serviços de Consultoria' },
-    { value: 'comercio_geral', label: 'Comércio Geral' },
-    { value: 'restauracao', label: 'Restauração e Hotelaria' },
-    { value: 'construcao', label: 'Construção Civil' },
-    { value: 'tecnologia', label: 'Tecnologia e Software' },
-    { value: 'saude', label: 'Saúde e Bem-estar' },
-    { value: 'educacao', label: 'Educação e Formação' },
-    { value: 'agricultura', label: 'Agricultura e Pecuária' },
-    { value: 'transporte', label: 'Transporte e Logística' },
-    { value: 'outro', label: 'Outro' }
-  ];
 
   provinces = [
     'Maputo', 'Gaza', 'Inhambane', 'Sofala', 'Manica', 'Tete',
@@ -93,9 +80,6 @@ export class CompanySetupComponent {
       secondaryActivity: ['']
     });
 
-    this.businessTypeForm = this.fb.group({
-      businessType: ['', Validators.required]
-    });
 
     this.settingsForm = this.fb.group({
       currency: ['MZN'],
@@ -225,7 +209,7 @@ export class CompanySetupComponent {
   }
 
   async onSubmit() {
-    if (this.companyInfoForm.invalid || this.businessTypeForm.invalid || this.settingsForm.invalid) {
+    if (this.companyInfoForm.invalid || this.settingsForm.invalid) {
       this.snackBar.open('Por favor, preencha todos os campos obrigatórios', 'Fechar', {
         duration: 3000,
         panelClass: ['error-snackbar']
@@ -252,7 +236,6 @@ export class CompanySetupComponent {
       entity_type: this.companyInfoForm.value.entityType,
       nuit: this.companyInfoForm.value.nuit,
       address: this.companyInfoForm.value.address,
-      business_type: this.businessTypeForm.value.businessType,
       currency: this.settingsForm.value.currency,
       invoice_prefix: this.settingsForm.value.invoicePrefix,
       invoice_number: 1,

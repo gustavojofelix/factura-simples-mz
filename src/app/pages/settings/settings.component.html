@@ -243,7 +243,7 @@
                     <td mat-cell *matCellDef="let company">
                       <div>
                         <p class="font-medium">{{ company.name }}</p>
-                        <p class="text-sm text-gray-600">{{ company.business_type || '-' }}</p>
+                        <p class="text-sm text-gray-600">{{ company.documents_metadata?.mainActivity || '-' }}</p>
                       </div>
                     </td>
                   </ng-container>
