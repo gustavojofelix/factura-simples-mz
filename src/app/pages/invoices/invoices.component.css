@@ -29,3 +29,7 @@
   background-color: #EF4444;
   color: white;
 }
+
+::ng-deep .hide-subscript .mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}

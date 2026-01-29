@@ -59,20 +59,42 @@
 
   <mat-card class="!shadow-md">
     <mat-card-content class="!p-6">
-      <div class="mb-4 flex items-center gap-4">
+      <div class="mb-4 flex flex-wrap items-center gap-4">
         <input
           type="text"
           placeholder="Pesquisar facturas..."
-          class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-moz-green focus:border-transparent"
+          class="flex-1 min-w-[300px] px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-moz-green focus:border-transparent"
           (input)="onSearchChange($event)"
         >
-        @if (statusFilter() !== 'todas') {
+        
+        <div class="flex items-center gap-2">
+          <mat-form-field appearance="outline" class="w-48 hide-subscript">
+            <mat-label>Ordenar por</mat-label>
+            <mat-select [value]="sortField()" (selectionChange)="onSortFieldChange($event.value)">
+              <mat-option value="date">Data</mat-option>
+              <mat-option value="client">Cliente</mat-option>
+              <mat-option value="invoice_number">Número</mat-option>
+              <mat-option value="total">Valor</mat-option>
+            </mat-select>
+          </mat-form-field>
+          
+          <button 
+            mat-icon-button 
+            (click)="toggleSortDirection()" 
+            [title]="sortDirection() === 'asc' ? 'Crescente' : 'Decrescente'"
+            class="text-gray-600"
+          >
+            <mat-icon>{{ sortDirection() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+          </button>
+        </div>
+
+        @if (statusFilter() !== 'todas' || searchTerm() || sortField() !== 'date' || sortDirection() !== 'desc') {
           <button
             mat-stroked-button
-            (click)="filterByStatus('todas')"
+            (click)="filterByStatus('todas'); searchTerm.set(''); sortField.set('date'); sortDirection.set('desc')"
           >
             <mat-icon class="mr-2">clear</mat-icon>
-            Limpar Filtro
+            Limpar Filtros
           </button>
         }
       </div>

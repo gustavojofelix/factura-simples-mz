@@ -12,6 +12,7 @@ import { PaymentService, Payment } from '../../core/services/payment.service';
 import { CompanyService } from '../../core/services/company.service';
 import { PaymentDialogComponent } from './payment-dialog.component';
 import { ReceiptDetailComponent } from './receipt-detail.component';
+import { InvoiceDialogComponent } from './invoice-dialog.component';
 
 @Component({
   selector: 'app-invoice-detail',
@@ -22,7 +23,8 @@ import { ReceiptDetailComponent } from './receipt-detail.component';
     MatIconModule,
     MatCardModule,
     MatChipsModule,
-    MatTableModule
+    MatTableModule,
+    InvoiceDialogComponent
   ],
   template: `
     <div class="max-w-5xl mx-auto p-6">
@@ -51,6 +53,12 @@ import { ReceiptDetailComponent } from './receipt-detail.component';
                   <mat-icon>email</mat-icon>
                   Enviar Email
                 </button>
+                @if (invoiceService.canEditInvoice(invoice()!)) {
+                  <button mat-raised-button class="!bg-moz-green !text-white" (click)="editInvoice()">
+                    <mat-icon>edit</mat-icon>
+                    Editar
+                  </button>
+                }
               </div>
             </div>
 
@@ -304,6 +312,25 @@ export class InvoiceDetailComponent {
         await this.invoiceService.loadInvoices();
       }
     }
+  }
+
+  async editInvoice() {
+    const invoice = this.invoice();
+    if (!invoice || !this.invoiceService.canEditInvoice(invoice)) return;
+
+    const dialogRef = this.dialog.open(InvoiceDialogComponent, {
+      width: '900px',
+      maxWidth: '95vw',
+      disableClose: true,
+      data: { invoice }
+    });
+
+    dialogRef.afterClosed().subscribe(async (result) => {
+      if (result) {
+        await this.loadInvoice(invoice.id);
+        await this.invoiceService.loadInvoices();
+      }
+    });
   }
 
   printInvoice() {

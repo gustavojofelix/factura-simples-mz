@@ -11,6 +11,8 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 import { InvoiceService, Invoice } from '../../core/services/invoice.service';
 import { CompanyService } from '../../core/services/company.service';
 import { InvoiceDialogComponent } from '../../shared/components/invoice-dialog.component';
@@ -30,7 +32,9 @@ import { PaymentDialogComponent } from '../../shared/components/payment-dialog.c
     MatMenuModule,
     MatDividerModule,
     MatSnackBarModule,
-    MatDialogModule
+    MatDialogModule,
+    MatFormFieldModule,
+    MatSelectModule
   ],
   templateUrl: './invoices.component.html',
   styleUrls: ['./invoices.component.css']
@@ -40,22 +44,60 @@ export class InvoicesComponent implements OnInit {
 
   searchTerm = signal('');
   statusFilter = signal<string>('todas');
+  sortField = signal<string>('date');
+  sortDirection = signal<'asc' | 'desc'>('desc');
 
   filteredInvoices = computed(() => {
     const term = this.searchTerm().toLowerCase();
     const status = this.statusFilter();
-    let invoices = this.invoiceService.invoices();
+    const field = this.sortField();
+    const direction = this.sortDirection();
+    let invoices = [...this.invoiceService.invoices()]; // Create a copy to sort
 
+    // 1. Filtering by Status
     if (status !== 'todas') {
       invoices = invoices.filter(inv => inv.status === status);
     }
 
+    // 2. Filtering by Search Term
     if (term) {
       invoices = invoices.filter(inv =>
         inv.invoice_number.toLowerCase().includes(term) ||
         inv.client?.name.toLowerCase().includes(term)
       );
     }
+
+    // 3. Sorting
+    invoices.sort((a, b) => {
+      let valA: any;
+      let valB: any;
+
+      switch (field) {
+        case 'invoice_number':
+          valA = a.invoice_number;
+          valB = b.invoice_number;
+          break;
+        case 'client':
+          valA = a.client?.name || '';
+          valB = b.client?.name || '';
+          break;
+        case 'date':
+          valA = new Date(a.date).getTime();
+          valB = new Date(b.date).getTime();
+          break;
+        case 'total':
+          valA = a.total;
+          valB = b.total;
+          break;
+        default:
+          valA = a.created_at;
+          valB = b.created_at;
+      }
+
+      if (valA < valB) return direction === 'asc' ? -1 : 1;
+      if (valA > valB) return direction === 'asc' ? 1 : -1;
+      return 0;
+    });
 
     return invoices;
   });
@@ -89,6 +131,14 @@ export class InvoicesComponent implements OnInit {
 
   filterByStatus(status: string) {
     this.statusFilter.set(status);
+  }
+
+  toggleSortDirection() {
+    this.sortDirection.update(d => d === 'asc' ? 'desc' : 'asc');
+  }
+
+  onSortFieldChange(field: string) {
+    this.sortField.set(field);
   }
 
   viewInvoice(invoice: Invoice) {
