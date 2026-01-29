@@ -156,11 +156,19 @@ export class InvoiceService {
   }
 
   canEditInvoice(invoice: Invoice): boolean {
-    return invoice.status !== 'paga';
+    // Cannot edit if there are any payments (partial or full)
+    return invoice.amount_paid === 0;
   }
 
   canDeleteInvoice(invoice: Invoice): boolean {
-    return invoice.status !== 'paga';
+    // Cannot delete if there are any payments (partial or full)
+    return invoice.amount_paid === 0;
+  }
+
+  canManagePayments(invoice: Invoice): boolean {
+    // Can manage payments (add/delete) if invoice is not voided/cancelled (future proofing)
+    // For now, allow unless strictly locked by some other means
+    return true; 
   }
 
   getStatusLabel(status: string): string {
@@ -245,6 +253,70 @@ export class InvoiceService {
       return invoice;
     } catch (error) {
       console.error('Erro ao criar factura:', error);
+      return null;
+    }
+  }
+
+  async updateInvoice(
+    id: string,
+    clientId: string,
+    items: Omit<InvoiceItem, 'id' | 'invoice_id'>[],
+    notes?: string
+  ): Promise<Invoice | null> {
+    const invoice = this.invoices().find(i => i.id === id);
+    if (!invoice || !this.canEditInvoice(invoice)) {
+      console.error('Factura não pode ser editada');
+      return null;
+    }
+
+    try {
+      const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
+      const total = subtotal;
+
+      // Update Header
+      const { data: updatedInvoice, error: updateError } = await this.supabase.db
+        .from('invoices')
+        .update({
+          client_id: clientId,
+          subtotal,
+          total,
+          amount_pending: total - invoice.amount_paid, // Should be 0 paid, but safe calculation
+          notes
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+
+      // Replace Items (Delete all and Insert new)
+      const { error: deleteItemsError } = await this.supabase.db
+        .from('invoice_items')
+        .delete()
+        .eq('invoice_id', id);
+
+      if (deleteItemsError) throw deleteItemsError;
+
+      const itemsToInsert = items.map(item => ({
+        invoice_id: id,
+        product_id: item.product_id,
+        product_name: item.product_name,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        subtotal: item.subtotal,
+        total: item.total
+      }));
+
+      const { error: insertItemsError } = await this.supabase.db
+        .from('invoice_items')
+        .insert(itemsToInsert);
+
+      if (insertItemsError) throw insertItemsError;
+
+      await this.loadInvoices();
+      return updatedInvoice;
+    } catch (error) {
+      console.error('Erro ao actualizar factura:', error);
       return null;
     }
   }

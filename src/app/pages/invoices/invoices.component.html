@@ -185,11 +185,11 @@
                       <span>Enviar Email</span>
                     </button>
                   }
-                  @if (invoiceService.canDeleteInvoice(invoice)) {
+                  @if (invoiceService.canEditInvoice(invoice)) {
                     <mat-divider></mat-divider>
-                    <button mat-menu-item (click)="deleteInvoice(invoice)" class="!text-red-600">
-                      <mat-icon>delete</mat-icon>
-                      <span>Eliminar</span>
+                    <button mat-menu-item (click)="editInvoice(invoice)">
+                      <mat-icon>edit</mat-icon>
+                      <span>Editar</span>
                     </button>
                   }
                 </mat-menu>

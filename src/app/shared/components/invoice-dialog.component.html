@@ -1,6 +1,6 @@
 <div class="invoice-dialog">
   <h2 mat-dialog-title class="flex items-center justify-between">
-    <span>Nova Factura</span>
+    <span>{{ isEditing() ? 'Editar Factura' : 'Nova Factura' }}</span>
     <button mat-icon-button (click)="cancel()">
       <mat-icon>close</mat-icon>
     </button>
@@ -31,16 +31,18 @@
                   }
                 </mat-select>
               </mat-form-field>
-
-              <button
-                mat-stroked-button
-                type="button"
-                (click)="openQuickClientDialog()"
-                class="!border-moz-green !text-moz-green"
-              >
-                <mat-icon>add</mat-icon>
-                Novo
-              </button>
+              
+              @if (!isEditing()) {
+                <button
+                  mat-stroked-button
+                  type="button"
+                  (click)="openQuickClientDialog()"
+                  class="!border-moz-green !text-moz-green"
+                >
+                  <mat-icon>add</mat-icon>
+                  Novo
+                </button>
+              }
             </div>
 
             @if (selectedClient()) {
@@ -217,10 +219,10 @@
                 mat-raised-button
                 class="!bg-moz-green !text-white"
                 [disabled]="invoiceItems().length === 0 || saving()"
-                (click)="createInvoice()"
+                (click)="save()"
               >
                 <mat-icon class="mr-2">check</mat-icon>
-                {{ saving() ? 'A criar...' : 'Criar Factura' }}
+                {{ saving() ? 'A guardar...' : (isEditing() ? 'Actualizar Factura' : 'Criar Factura') }}
               </button>
             </div>
           </div>

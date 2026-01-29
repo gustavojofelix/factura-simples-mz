@@ -171,4 +171,27 @@ export class InvoicesComponent implements OnInit {
       }
     });
   }
+
+  async editInvoice(invoice: Invoice) {
+    if (!this.invoiceService.canEditInvoice(invoice)) {
+      this.snackBar.open('Não é possível editar esta factura', 'Fechar', { duration: 3000 });
+      return;
+    }
+
+    const fullInvoice = await this.invoiceService.getInvoiceWithItems(invoice.id);
+    if (!fullInvoice) return;
+
+    const dialogRef = this.dialog.open(InvoiceDialogComponent, {
+      width: '900px',
+      maxWidth: '95vw',
+      disableClose: true,
+      data: { invoice: fullInvoice }
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        this.invoiceService.loadInvoices();
+      }
+    });
+  }
 }

@@ -160,9 +160,9 @@ import { ReceiptDetailComponent } from './receipt-detail.component';
           }
 
           <div class="p-6 border-t border-gray-200">
-            <div class="flex justify-between items-center mb-4">
+              <div class="flex justify-between items-center mb-4">
               <h3 class="text-lg font-semibold">Pagamentos</h3>
-              @if (invoiceService.canEditInvoice(invoice()!)) {
+              @if (invoiceService.canManagePayments(invoice()!)) {
                 <button mat-raised-button color="primary" (click)="openPaymentDialog()">
                   <mat-icon>add</mat-icon>
                   Registar Pagamento
@@ -198,7 +198,7 @@ import { ReceiptDetailComponent } from './receipt-detail.component';
                     <button mat-icon-button (click)="viewReceipt(payment.id)">
                       <mat-icon>receipt</mat-icon>
                     </button>
-                    @if (invoiceService.canEditInvoice(invoice()!)) {
+                    @if (invoiceService.canManagePayments(invoice()!)) {
                       <button mat-icon-button (click)="deletePayment(payment.id)" color="warn">
                         <mat-icon>delete</mat-icon>
                       </button>

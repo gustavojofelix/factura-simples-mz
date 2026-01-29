@@ -1,7 +1,7 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatDialogModule, MatDialogRef, MatDialog } from '@angular/material/dialog';
+import { MatDialogModule, MatDialogRef, MatDialog, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -13,7 +13,7 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ClientService, Client } from '../../core/services/client.service';
 import { ProductService, Product } from '../../core/services/product.service';
-import { InvoiceService, InvoiceItem } from '../../core/services/invoice.service';
+import { InvoiceService, InvoiceItem, Invoice } from '../../core/services/invoice.service';
 import { nuitValidator } from '../../core/validators/nuit.validator';
 
 @Component({
@@ -123,6 +123,7 @@ export class InvoiceDialogComponent implements OnInit {
   quantity = signal(1);
 
   saving = signal(false);
+  isEditing = signal(false);
 
   displayedColumns = ['product', 'quantity', 'price', 'total', 'actions'];
 
@@ -139,7 +140,8 @@ export class InvoiceDialogComponent implements OnInit {
     public productService: ProductService,
     private invoiceService: InvoiceService,
     private snackBar: MatSnackBar,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    @Inject(MAT_DIALOG_DATA) public data: { invoice?: Invoice }
   ) {
     this.step1Form = this.fb.group({
       client_id: ['', Validators.required]
@@ -150,11 +152,33 @@ export class InvoiceDialogComponent implements OnInit {
       quantity: [1, [Validators.required, Validators.min(1)]],
       notes: ['']
     });
+
+    if (data?.invoice) {
+      this.isEditing.set(true);
+    }
   }
 
   ngOnInit() {
-    this.clientService.loadClients();
+    this.clientService.loadClients().then(() => {
+      // Patch client if editing
+      if (this.data?.invoice) {
+        this.step1Form.patchValue({ client_id: this.data.invoice.client_id });
+        const client = this.clientService.getClientById(this.data.invoice.client_id);
+        this.selectedClient.set(client || null);
+      }
+    });
+
     this.productService.loadProducts();
+
+    if (this.data?.invoice) {
+      // Load items
+      const items = this.data.invoice.items || [];
+      // Map invoice items to match our type if needed, but they should be compatible
+      this.invoiceItems.set(items);
+      
+      // Patch notes
+      this.step2Form.patchValue({ notes: this.data.invoice.notes || '' });
+    }
   }
 
   onClientChange(clientId: string) {
@@ -212,7 +236,7 @@ export class InvoiceDialogComponent implements OnInit {
     this.invoiceItems.update(items => items.filter((_, i) => i !== index));
   }
 
-  async createInvoice() {
+  async save() {
     if (this.step1Form.invalid || this.invoiceItems().length === 0) {
       this.snackBar.open('Selecione cliente e adicione produtos', 'Fechar', { duration: 3000 });
       return;
@@ -224,18 +248,32 @@ export class InvoiceDialogComponent implements OnInit {
       const clientId = this.step1Form.get('client_id')?.value;
       const notes = this.step2Form.get('notes')?.value;
 
-      const invoice = await this.invoiceService.createInvoice(
-        clientId,
-        this.invoiceItems(),
-        undefined,
-        notes
-      );
+      let result: Invoice | null = null;
+      let message = '';
 
-      if (invoice) {
-        this.snackBar.open('Factura criada com sucesso!', 'Fechar', { duration: 3000 });
-        this.dialogRef.close(invoice);
+      if (this.isEditing() && this.data.invoice) {
+         result = await this.invoiceService.updateInvoice(
+          this.data.invoice.id,
+          clientId,
+          this.invoiceItems(),
+          notes
+        );
+        message = 'Factura actualizada com sucesso!';
       } else {
-        this.snackBar.open('Erro ao criar factura', 'Fechar', { duration: 3000 });
+        result = await this.invoiceService.createInvoice(
+          clientId,
+          this.invoiceItems(),
+          undefined,
+          notes
+        );
+        message = 'Factura criada com sucesso!';
+      }
+
+      if (result) {
+        this.snackBar.open(message, 'Fechar', { duration: 3000 });
+        this.dialogRef.close(result);
+      } else {
+        this.snackBar.open('Erro ao guardar factura', 'Fechar', { duration: 3000 });
       }
     } finally {
       this.saving.set(false);
