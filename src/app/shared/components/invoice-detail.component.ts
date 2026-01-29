@@ -41,15 +41,21 @@ import { InvoiceDialogComponent } from './invoice-dialog.component';
                 <p class="text-sm text-gray-500 mt-1">{{ formatDate(invoice()!.date) }}</p>
               </div>
               <div class="flex gap-2">
+                @if (invoice()!.status === 'rascunho') {
+                  <button mat-raised-button class="!bg-moz-green !text-white" (click)="emitDraft()">
+                    <mat-icon>check_circle</mat-icon>
+                    Validar e Emitir
+                  </button>
+                }
                 <button mat-stroked-button (click)="goBack()">
                   <mat-icon>arrow_back</mat-icon>
                   Voltar
                 </button>
-                <button mat-stroked-button (click)="printInvoice()">
+                <button mat-stroked-button (click)="printInvoice()" [disabled]="invoice()!.status === 'rascunho'">
                   <mat-icon>print</mat-icon>
                   Imprimir PDF
                 </button>
-                <button mat-stroked-button (click)="sendEmail()" [disabled]="!invoice()!.client?.email">
+                <button mat-stroked-button (click)="sendEmail()" [disabled]="!invoice()!.client?.email || invoice()!.status === 'rascunho'">
                   <mat-icon>email</mat-icon>
                   Enviar Email
                 </button>
@@ -64,7 +70,7 @@ import { InvoiceDialogComponent } from './invoice-dialog.component';
 
             <div class="flex items-center gap-2">
               <mat-chip [class]="invoiceService.getStatusColor(invoice()!.status)">
-                {{ invoiceService.getStatusLabel(invoice()!.status) }}
+                {{ invoiceService.getStatusLabel(invoice()!.status).toUpperCase() }}
               </mat-chip>
               @if (invoice()!.due_date) {
                 <span class="text-sm text-gray-600">
@@ -170,7 +176,7 @@ import { InvoiceDialogComponent } from './invoice-dialog.component';
           <div class="p-6 border-t border-gray-200">
               <div class="flex justify-between items-center mb-4">
               <h3 class="text-lg font-semibold">Pagamentos</h3>
-              @if (invoiceService.canManagePayments(invoice()!)) {
+              @if (invoice()!.status !== 'rascunho' && invoiceService.canManagePayments(invoice()!)) {
                 <button mat-raised-button color="primary" (click)="openPaymentDialog()">
                   <mat-icon>add</mat-icon>
                   Registar Pagamento
@@ -335,6 +341,23 @@ export class InvoiceDetailComponent {
 
   printInvoice() {
     alert('Funcionalidade de impressão PDF em desenvolvimento');
+  }
+
+  async emitDraft() {
+    const invoice = this.invoice();
+    if (!invoice || invoice.status !== 'rascunho') return;
+
+    if (!confirm(`Deseja validar e emitir esta factura? Esta acção irá atribuir o número sequencial final.`)) {
+      return;
+    }
+
+    const success = await this.invoiceService.emitInvoice(invoice.id);
+    if (success) {
+      await this.loadInvoice(invoice.id);
+      alert('Factura emitida com sucesso!');
+    } else {
+      alert('Erro ao emitir factura');
+    }
   }
 
   sendEmail() {

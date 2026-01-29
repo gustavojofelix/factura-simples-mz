@@ -62,7 +62,7 @@ import { TaxDeclaration } from '../../core/services/tax.service';
           <mat-option value="transferencia">Transferência Bancária</mat-option>
           <mat-option value="cheque">Cheque</mat-option>
           <mat-option value="dinheiro">Dinheiro</mat-option>
-          <mat-option value="mpesa">M-Pesa</mat-option>
+          <mat-option value="carteira_movel">Carteira Móvel</mat-option>
           <mat-option value="outro">Outro</mat-option>
         </mat-select>
       </mat-form-field>

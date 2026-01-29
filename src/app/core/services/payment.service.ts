@@ -95,8 +95,7 @@ export class PaymentService {
       'dinheiro': 'Dinheiro',
       'transferencia': 'Transferência Bancária',
       'cheque': 'Cheque',
-      'mbway': 'MBWay',
-      'mpesa': 'M-Pesa',
+      'carteira_movel': 'Carteira Móvel',
       'outro': 'Outro'
     };
     return methods[method] || method;
