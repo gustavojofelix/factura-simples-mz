@@ -6,15 +6,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
-import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatTabsModule } from '@angular/material/tabs';
 import { Company } from '../../core/services/company.service';
-import { DocumentProcessingService } from '../../core/services/document-processing.service';
-import { nuitValidator } from '../../core/validators/nuit.validator';
 import { MAIN_ACTIVITIES, SECONDARY_ACTIVITIES } from '../../core/constants/business-activities';
 
 @Component({
@@ -28,279 +21,155 @@ import { MAIN_ACTIVITIES, SECONDARY_ACTIVITIES } from '../../core/constants/busi
     MatInputModule,
     MatButtonModule,
     MatSelectModule,
-    MatCardModule,
-    MatIconModule,
-    MatChipsModule,
-    MatProgressSpinnerModule,
-    MatSnackBarModule,
-    MatTabsModule
+    MatIconModule
   ],
   template: `
     <h2 mat-dialog-title>{{ data.company ? 'Editar Empresa' : 'Nova Empresa' }}</h2>
     <mat-dialog-content>
-      <mat-tab-group>
-        <mat-tab label="Documentos">
-          <div class="pt-4 space-y-4">
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div class="flex items-start">
-                <mat-icon class="text-blue-600 mr-3">cloud_upload</mat-icon>
-                <div>
-                  <h4 class="font-semibold text-blue-900 mb-1">Upload de Documentos</h4>
-                  <p class="text-sm text-blue-800">
-                    Faça upload dos documentos e preencheremos automaticamente os campos!
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <mat-card class="!shadow-sm hover:!shadow-md transition-shadow">
-                <mat-card-content>
-                  <div class="flex items-center justify-between mb-3">
-                    <span class="text-sm font-medium">Comunicação NUIT</span>
-                    @if (uploadedDocuments().nuit.extractedData) {
-                      <mat-chip class="!bg-green-100 !text-green-800">
-                        <mat-icon class="!text-base mr-1">check_circle</mat-icon>
-                        Dados extraídos
-                      </mat-chip>
-                    }
-                  </div>
-                  @if (!uploadedDocuments().nuit.file && !uploadedDocuments().nuit.url) {
-                    <label class="flex flex-col items-center justify-center h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                      <mat-icon class="text-gray-400 mb-2">upload_file</mat-icon>
-                      <span class="text-xs text-gray-600">PDF, JPG ou PNG</span>
-                      <input type="file" class="hidden" accept=".pdf,.jpg,.jpeg,.png" (change)="onFileSelected($event, 'nuit')">
-                    </label>
-                  } @else {
-                    <div class="flex items-center justify-between bg-gray-50 p-3 rounded">
-                      <span class="text-sm truncate">{{ uploadedDocuments().nuit.file?.name || 'Documento carregado' }}</span>
-                      <button mat-icon-button (click)="removeDocument('nuit')">
-                        <mat-icon class="!text-red-500">close</mat-icon>
-                      </button>
-                    </div>
-                  }
-                </mat-card-content>
-              </mat-card>
-
-              <mat-card class="!shadow-sm hover:!shadow-md transition-shadow">
-                <mat-card-content>
-                  <div class="flex items-center justify-between mb-3">
-                    <span class="text-sm font-medium">Comunicado Início Atividades</span>
-                    @if (uploadedDocuments().activityStart.extractedData) {
-                      <mat-chip class="!bg-green-100 !text-green-800">
-                        <mat-icon class="!text-base mr-1">check_circle</mat-icon>
-                        Dados extraídos
-                      </mat-chip>
-                    }
-                  </div>
-                  @if (!uploadedDocuments().activityStart.file && !uploadedDocuments().activityStart.url) {
-                    <label class="flex flex-col items-center justify-center h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                      <mat-icon class="text-gray-400 mb-2">upload_file</mat-icon>
-                      <span class="text-xs text-gray-600">PDF, JPG ou PNG</span>
-                      <input type="file" class="hidden" accept=".pdf,.jpg,.jpeg,.png" (change)="onFileSelected($event, 'activityStart')">
-                    </label>
-                  } @else {
-                    <div class="flex items-center justify-between bg-gray-50 p-3 rounded">
-                      <span class="text-sm truncate">{{ uploadedDocuments().activityStart.file?.name || 'Documento carregado' }}</span>
-                      <button mat-icon-button (click)="removeDocument('activityStart')">
-                        <mat-icon class="!text-red-500">close</mat-icon>
-                      </button>
-                    </div>
-                  }
-                </mat-card-content>
-              </mat-card>
-
-              <mat-card class="!shadow-sm hover:!shadow-md transition-shadow">
-                <mat-card-content>
-                  <div class="flex items-center justify-between mb-3">
-                    <span class="text-sm font-medium">Exercício Atividade Comercial</span>
-                  </div>
-                  @if (!uploadedDocuments().commercialActivity.file && !uploadedDocuments().commercialActivity.url) {
-                    <label class="flex flex-col items-center justify-center h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                      <mat-icon class="text-gray-400 mb-2">upload_file</mat-icon>
-                      <span class="text-xs text-gray-600">PDF, JPG ou PNG</span>
-                      <input type="file" class="hidden" accept=".pdf,.jpg,.jpeg,.png" (change)="onFileSelected($event, 'commercialActivity')">
-                    </label>
-                  } @else {
-                    <div class="flex items-center justify-between bg-gray-50 p-3 rounded">
-                      <span class="text-sm truncate">{{ uploadedDocuments().commercialActivity.file?.name || 'Documento carregado' }}</span>
-                      <button mat-icon-button (click)="removeDocument('commercialActivity')">
-                        <mat-icon class="!text-red-500">close</mat-icon>
-                      </button>
-                    </div>
-                  }
-                </mat-card-content>
-              </mat-card>
-
-              <mat-card class="!shadow-sm hover:!shadow-md transition-shadow">
-                <mat-card-content>
-                  <div class="flex items-center justify-between mb-3">
-                    <span class="text-sm font-medium">Certificado Registo Definitivo</span>
-                  </div>
-                  @if (!uploadedDocuments().registrationCertificate.file && !uploadedDocuments().registrationCertificate.url) {
-                    <label class="flex flex-col items-center justify-center h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                      <mat-icon class="text-gray-400 mb-2">upload_file</mat-icon>
-                      <span class="text-xs text-gray-600">PDF, JPG ou PNG</span>
-                      <input type="file" class="hidden" accept=".pdf,.jpg,.jpeg,.png" (change)="onFileSelected($event, 'registrationCertificate')">
-                    </label>
-                  } @else {
-                    <div class="flex items-center justify-between bg-gray-50 p-3 rounded">
-                      <span class="text-sm truncate">{{ uploadedDocuments().registrationCertificate.file?.name || 'Documento carregado' }}</span>
-                      <button mat-icon-button (click)="removeDocument('registrationCertificate')">
-                        <mat-icon class="!text-red-500">close</mat-icon>
-                      </button>
-                    </div>
-                  }
-                </mat-card-content>
-              </mat-card>
-            </div>
-
-            @if (isProcessingDocument()) {
-              <div class="flex items-center justify-center py-4 bg-blue-50 rounded-lg">
-                <mat-spinner diameter="24" class="mr-3"></mat-spinner>
-                <span class="text-sm text-blue-900">Processando documento e extraindo dados...</span>
-              </div>
+      <div class="px-6 py-4 overflow-y-auto max-h-[calc(80vh-140px)]">
+        <form [formGroup]="form" class="space-y-6">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Tipo de Entidade</mat-label>
+            <mat-select formControlName="entity_type" required>
+              <mat-option value="singular">Pessoa Singular</mat-option>
+              <mat-option value="collective">Pessoa Colectiva</mat-option>
+            </mat-select>
+            <mat-icon matPrefix class="text-gray-400">person</mat-icon>
+            @if (form.get('entity_type')?.hasError('required')) {
+              <mat-error>Tipo de entidade é obrigatório</mat-error>
             }
-          </div>
-        </mat-tab>
+          </mat-form-field>
 
-        <mat-tab label="Informações Básicas">
-          <form [formGroup]="form" class="space-y-4 pt-4">
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Tipo de Entidade</mat-label>
-              <mat-select formControlName="entity_type" required>
-                <mat-option value="singular">Pessoa Singular</mat-option>
-                <mat-option value="collective">Pessoa Colectiva</mat-option>
-              </mat-select>
-              <mat-error *ngIf="form.get('entity_type')?.hasError('required')">
-                Tipo de entidade é obrigatório
-              </mat-error>
-            </mat-form-field>
-
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Nome da Empresa</mat-label>
-              <input matInput formControlName="name" required>
-              <mat-error *ngIf="form.get('name')?.hasError('required')">
-                Nome é obrigatório
-              </mat-error>
+              <input matInput formControlName="name" placeholder="Ex: Comercial Silva Lda">
+              <mat-icon matPrefix class="text-gray-400">business</mat-icon>
+              @if (form.get('name')?.hasError('required')) {
+                <mat-error>O nome é obrigatório</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>NUIT</mat-label>
-              <input matInput formControlName="nuit" required>
-              <mat-error *ngIf="form.get('nuit')?.hasError('required')">
-                NUIT é obrigatório
-              </mat-error>
+              <input matInput formControlName="nuit" placeholder="Ex: 123456789" maxlength="9" (input)="formatNuit()">
+              <mat-icon matPrefix class="text-gray-400">badge</mat-icon>
+              @if (form.get('nuit')?.hasError('required')) {
+                <mat-error>O NUIT é obrigatório</mat-error>
+              }
+              @if (form.get('nuit')?.hasError('invalidNuit')) {
+                <mat-error>NUIT inválido</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Endereço</mat-label>
+            <textarea matInput formControlName="address" rows="2" placeholder="Ex: Av. Julius Nyerere, nº 123"></textarea>
+            <mat-icon matPrefix class="text-gray-400">location_on</mat-icon>
+          </mat-form-field>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Email</mat-label>
+              <input matInput formControlName="email" type="email" placeholder="Ex: contacto@empresa.com">
+              <mat-icon matPrefix class="text-gray-400">email</mat-icon>
+              @if (form.get('email')?.hasError('email')) {
+                <mat-error>Email inválido</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Endereço</mat-label>
-              <textarea matInput formControlName="address" rows="2"></textarea>
+              <mat-label>Telefone</mat-label>
+              <input matInput formControlName="phone" placeholder="Ex: +258 84 123 4567">
+              <mat-icon matPrefix class="text-gray-400">phone</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+             <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Actividade Principal</mat-label>
+              <mat-select formControlName="mainActivity">
+                @for (activity of mainActivities; track activity) {
+                  <mat-option [value]="activity">{{ activity }}</mat-option>
+                }
+              </mat-select>
+              <mat-icon matPrefix class="text-gray-400">business_center</mat-icon>
             </mat-form-field>
 
-            <div class="grid grid-cols-2 gap-4">
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Telefone</mat-label>
-                <input matInput formControlName="phone">
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Email</mat-label>
-                <input matInput type="email" formControlName="email">
-                <mat-error *ngIf="form.get('email')?.hasError('email')">
-                  Email inválido
-                </mat-error>
-              </mat-form-field>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Província</mat-label>
-                <mat-select formControlName="province">
-                  @for (province of provinces; track province) {
-                    <mat-option [value]="province">{{ province }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Distrito</mat-label>
-                <input matInput formControlName="district">
-              </mat-form-field>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Posto Administrativo</mat-label>
-                <input matInput formControlName="administrativePost">
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Actividade Principal</mat-label>
-                <mat-select formControlName="mainActivity">
-                  @for (activity of mainActivities; track activity) {
-                    <mat-option [value]="activity">{{ activity }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-            </div>
-
-            <mat-form-field appearance="outline" class="w-full">
+             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Actividade Secundária</mat-label>
               <mat-select formControlName="secondaryActivity">
                 @for (activity of secondaryActivities; track activity) {
                   <mat-option [value]="activity">{{ activity }}</mat-option>
                 }
               </mat-select>
+              <mat-icon matPrefix class="text-gray-400">store</mat-icon>
             </mat-form-field>
+          </div>
 
-
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Tipo de Atividade (ISPC)</mat-label>
-              <mat-select formControlName="business_activity_type" required>
-                <mat-option value="comercio_ate_1m">
-                  Comércio/Indústria - até 1M MT/ano (Taxa 3%)
-                </mat-option>
-                <mat-option value="comercio_1m_2.5m">
-                  Comércio/Indústria - 1M a 2.5M MT/ano (Taxa 4%)
-                </mat-option>
-                <mat-option value="comercio_2.5m_4m">
-                  Comércio/Indústria - 2.5M a 4M MT/ano (Taxa 5%)
-                </mat-option>
-                <mat-option value="agricola_pecuaria">
-                  Agrícola, Pecuária, Silvícola, Pesqueira, Avícola, Apícola
-                </mat-option>
-                <mat-option value="servicos_gerais">
-                  Serviços Gerais - Canalização, Carpintaria, Pedreiro, etc (Taxa 12%)
-                </mat-option>
-                <mat-option value="servicos_liberais">
-                  Profissões Liberais - Advogados, Engenheiros, Contabilistas (Taxa 15%)
-                </mat-option>
+              <mat-select formControlName="business_activity_type">
+                <mat-option value="comercio_ate_1m">Comércio (até 1M)</mat-option>
+                <mat-option value="comercio_mais_1m">Comércio (> 1M)</mat-option>
+                <mat-option value="industrial_ate_1m">Industrial (até 1M)</mat-option>
+                <mat-option value="industrial_mais_1m">Industrial (> 1M)</mat-option>
+                <mat-option value="servicos_ate_1m">Serviços (até 1M)</mat-option>
+                <mat-option value="servicos_mais_1m">Serviços (> 1M)</mat-option>
+                <mat-option value="outros">Outros</mat-option>
               </mat-select>
-              <mat-hint>Selecione o tipo de atividade para cálculo correto do ISPC</mat-hint>
-              <mat-error *ngIf="form.get('business_activity_type')?.hasError('required')">
-                Tipo de atividade é obrigatório
-              </mat-error>
+              <mat-icon matPrefix class="text-gray-400">category</mat-icon>
             </mat-form-field>
 
-            <div class="grid grid-cols-2 gap-4">
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Moeda</mat-label>
-                <mat-select formControlName="currency">
-                  <mat-option value="MZN">Metical (MZN)</mat-option>
-                  <mat-option value="USD">Dólar (USD)</mat-option>
-                  <mat-option value="EUR">Euro (EUR)</mat-option>
-                </mat-select>
-              </mat-form-field>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Moeda</mat-label>
+              <mat-select formControlName="currency">
+                <mat-option value="MZN">MZN - Metical Moçambicano</mat-option>
+                <mat-option value="USD">USD - Dólar Americano</mat-option>
+                <mat-option value="EUR">EUR - Euro</mat-option>
+                <mat-option value="ZAR">ZAR - Rand Sul-Africano</mat-option>
+              </mat-select>
+              <mat-icon matPrefix class="text-gray-400">payments</mat-icon>
+            </mat-form-field>
+          </div>
 
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Prefixo de Fatura</mat-label>
-                <input matInput formControlName="invoice_prefix">
-              </mat-form-field>
-            </div>
-          </form>
-        </mat-tab>
-      </mat-tab-group>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Prefixo da Fatura</mat-label>
+              <input matInput formControlName="invoice_prefix" placeholder="Ex: FAC">
+              <mat-icon matPrefix class="text-gray-400">tag</mat-icon>
+            </mat-form-field>
+
+             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Província</mat-label>
+                  <mat-select formControlName="province">
+                    @for (province of provinces; track province) {
+                      <mat-option [value]="province">{{ province }}</mat-option>
+                    }
+                  </mat-select>
+                  <mat-icon matPrefix class="text-gray-400">map</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Distrito</mat-label>
+                  <input matInput formControlName="district" placeholder="Ex: Maputo" />
+                  <mat-icon matPrefix class="text-gray-400">location_city</mat-icon>
+                </mat-form-field>
+              </div>
+          </div>
+           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Posto Administrativo</mat-label>
+                  <input matInput formControlName="administrativePost" placeholder="Ex: KaMpfumo" />
+                  <mat-icon matPrefix class="text-gray-400">apartment</mat-icon>
+                </mat-form-field>
+              </div>
+
+        </form>
+      </div>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button (click)="onCancel()">Cancelar</button>
@@ -336,14 +205,7 @@ import { MAIN_ACTIVITIES, SECONDARY_ACTIVITIES } from '../../core/constants/busi
 export class CompanyDialogComponent {
   form: FormGroup;
   loading = signal(false);
-  isProcessingDocument = signal(false);
 
-  uploadedDocuments = signal({
-    nuit: { file: null as File | null, url: '', extractedData: false },
-    activityStart: { file: null as File | null, url: '', extractedData: false },
-    commercialActivity: { file: null as File | null, url: '', extractedData: false },
-    registrationCertificate: { file: null as File | null, url: '', extractedData: false }
-  });
 
   provinces = [
     'Maputo', 'Gaza', 'Inhambane', 'Sofala', 'Manica', 'Tete',
@@ -356,151 +218,35 @@ export class CompanyDialogComponent {
   constructor(
     private fb: FormBuilder,
     private dialogRef: MatDialogRef<CompanyDialogComponent>,
-    private documentService: DocumentProcessingService,
-    private snackBar: MatSnackBar,
     @Inject(MAT_DIALOG_DATA) public data: { company?: Company }
   ) {
-    const metadata = data.company?.documents_metadata as any || {};
-
     this.form = this.fb.group({
       name: [data.company?.name || '', Validators.required],
       entity_type: [data.company?.entity_type || '', Validators.required],
-      nuit: [data.company?.nuit || '', [Validators.required, nuitValidator()]],
+      nuit: [data.company?.nuit || '', [Validators.required]],
       address: [data.company?.address || ''],
       phone: [data.company?.phone || ''],
       email: [data.company?.email || '', Validators.email],
       business_activity_type: [(data.company as any)?.business_activity_type || 'comercio_ate_1m', Validators.required],
       currency: [data.company?.currency || 'MZN'],
       invoice_prefix: [data.company?.invoice_prefix || 'FAC'],
-      province: [metadata.province || ''],
-      district: [metadata.district || ''],
-      administrativePost: [metadata.administrativePost || ''],
-      mainActivity: [metadata.mainActivity || ''],
-      secondaryActivity: [metadata.secondaryActivity || '']
+      province: [data.company?.documents_metadata?.province || ''],
+      district: [data.company?.documents_metadata?.district || ''],
+      administrativePost: [data.company?.documents_metadata?.administrativePost || ''],
+      mainActivity: [data.company?.documents_metadata?.mainActivity || ''],
+      secondaryActivity: [data.company?.documents_metadata?.secondaryActivity || '']
     });
-
-    if (data.company) {
-      const docs = this.uploadedDocuments();
-      if (data.company.nuit_document_url) {
-        docs.nuit.url = data.company.nuit_document_url;
-      }
-      if (data.company.activity_start_document_url) {
-        docs.activityStart.url = data.company.activity_start_document_url;
-      }
-      if (data.company.commercial_activity_document_url) {
-        docs.commercialActivity.url = data.company.commercial_activity_document_url;
-      }
-      if (data.company.registration_certificate_url) {
-        docs.registrationCertificate.url = data.company.registration_certificate_url;
-      }
-      this.uploadedDocuments.set(docs);
-    }
   }
 
-  async onFileSelected(event: Event, documentType: 'nuit' | 'activityStart' | 'commercialActivity' | 'registrationCertificate') {
-    const input = event.target as HTMLInputElement;
-    if (!input.files || input.files.length === 0) return;
+  formatNuit() {
+    const nuitControl = this.form.get('nuit');
+    if (!nuitControl) return;
 
-    const file = input.files[0];
-    const maxSize = 10 * 1024 * 1024;
-
-    if (file.size > maxSize) {
-      this.snackBar.open('Arquivo muito grande. Máximo: 10MB', 'Fechar', {
-        duration: 3000
-      });
-      return;
+    let value = nuitControl.value.replace(/\D/g, '');
+    if (value.length > 9) {
+      value = value.substring(0, 9);
     }
-
-    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
-    if (!allowedTypes.includes(file.type)) {
-      this.snackBar.open('Apenas PDF, JPG e PNG são permitidos', 'Fechar', {
-        duration: 3000
-      });
-      return;
-    }
-
-    const docs = this.uploadedDocuments();
-    const docKey = documentType === 'activityStart' ? 'activityStart' :
-                   documentType === 'commercialActivity' ? 'commercialActivity' :
-                   documentType === 'registrationCertificate' ? 'registrationCertificate' : 'nuit';
-
-    docs[docKey].file = file;
-    this.uploadedDocuments.set(docs);
-
-    if (documentType === 'nuit' || documentType === 'activityStart') {
-      await this.processDocument(file, documentType);
-    }
-  }
-
-  async processDocument(file: File, documentType: 'nuit' | 'activityStart') {
-    this.isProcessingDocument.set(true);
-
-    try {
-      const companyId = this.data.company?.id || 'temp';
-      const docTypeMap = {
-        'nuit': 'nuit' as const,
-        'activityStart': 'activity_start' as const
-      };
-
-      const result = await this.documentService.uploadDocument(
-        file,
-        companyId,
-        docTypeMap[documentType]
-      );
-
-      const docs = this.uploadedDocuments();
-      const docKey = documentType === 'activityStart' ? 'activityStart' : 'nuit';
-      docs[docKey].url = result.url;
-      docs[docKey].extractedData = !!result.extractedData;
-      this.uploadedDocuments.set(docs);
-
-      if (result.extractedData) {
-        if (result.extractedData.nuit) {
-          this.form.patchValue({ nuit: result.extractedData.nuit });
-        }
-        if (result.extractedData.tradeName) {
-          this.form.patchValue({ name: result.extractedData.tradeName });
-        }
-        if (result.extractedData.address) {
-          this.form.patchValue({ address: result.extractedData.address });
-        }
-        if (result.extractedData.province) {
-          this.form.patchValue({ province: result.extractedData.province });
-        }
-        if (result.extractedData.district) {
-          this.form.patchValue({ district: result.extractedData.district });
-        }
-        if (result.extractedData.administrativePost) {
-          this.form.patchValue({ administrativePost: result.extractedData.administrativePost });
-        }
-        if (result.extractedData.mainActivity) {
-          this.form.patchValue({ mainActivity: result.extractedData.mainActivity });
-        }
-
-        this.snackBar.open('Dados extraídos automaticamente!', 'Fechar', {
-          duration: 3000
-        });
-      }
-    } catch (error: any) {
-      console.error('Erro ao processar documento:', error);
-      this.snackBar.open('Erro ao processar documento. Preencha manualmente.', 'Fechar', {
-        duration: 4000
-      });
-    } finally {
-      this.isProcessingDocument.set(false);
-    }
-  }
-
-  removeDocument(documentType: 'nuit' | 'activityStart' | 'commercialActivity' | 'registrationCertificate') {
-    const docs = this.uploadedDocuments();
-    const docKey = documentType === 'activityStart' ? 'activityStart' :
-                   documentType === 'commercialActivity' ? 'commercialActivity' :
-                   documentType === 'registrationCertificate' ? 'registrationCertificate' : 'nuit';
-
-    docs[docKey].file = null;
-    docs[docKey].url = '';
-    docs[docKey].extractedData = false;
-    this.uploadedDocuments.set(docs);
+    nuitControl.setValue(value, { emitEvent: false });
   }
 
   onCancel(): void {
@@ -509,22 +255,25 @@ export class CompanyDialogComponent {
 
   onSave(): void {
     if (this.form.valid) {
-      const docs = this.uploadedDocuments();
-      const formData = {
-        ...this.form.value,
-        entity_type: this.form.value.entity_type,
-        nuit_document_url: docs.nuit.url || null,
-        activity_start_document_url: docs.activityStart.url || null,
-        commercial_activity_document_url: docs.commercialActivity.url || null,
-        registration_certificate_url: docs.registrationCertificate.url || null,
+      const formValue = this.form.value;
+      const formData: Partial<Company> = {
+        name: formValue.name,
+        nuit: formValue.nuit,
+        entity_type: formValue.entity_type,
+        address: formValue.address,
+        phone: formValue.phone,
+        email: formValue.email,
+        currency: formValue.currency,
+        invoice_prefix: formValue.invoice_prefix,
         documents_metadata: {
-          province: this.form.value.province,
-          district: this.form.value.district,
-          administrativePost: this.form.value.administrativePost,
-          mainActivity: this.form.value.mainActivity,
-          secondaryActivity: this.form.value.secondaryActivity
+          province: formValue.province,
+          district: formValue.district,
+          administrativePost: formValue.administrativePost,
+          mainActivity: formValue.mainActivity,
+          secondaryActivity: formValue.secondaryActivity
         }
       };
+      
       this.dialogRef.close(formData);
     }
   }

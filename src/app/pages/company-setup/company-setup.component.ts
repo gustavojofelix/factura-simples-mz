@@ -9,14 +9,15 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { AuthService } from '../../core/services/auth.service';
-import { SupabaseService } from '../../core/services/supabase.service';
-import { DocumentProcessingService } from '../../core/services/document-processing.service';
 import { nuitValidator } from '../../core/validators/nuit.validator';
 import { MAIN_ACTIVITIES, SECONDARY_ACTIVITIES } from '../../core/constants/business-activities';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { SupabaseService } from '../../core/services/supabase.service';
+
 
 @Component({
   selector: 'app-company-setup',
@@ -42,15 +43,6 @@ export class CompanySetupComponent {
   companyInfoForm: FormGroup;
   settingsForm: FormGroup;
   isLoading = signal(false);
-  isProcessingDocument = signal(false);
-
-  uploadedDocuments = signal({
-    nuit: { file: null as File | null, url: '', extractedData: false },
-    activityStart: { file: null as File | null, url: '', extractedData: false },
-    commercialActivity: { file: null as File | null, url: '', extractedData: false },
-    registrationCertificate: { file: null as File | null, url: '', extractedData: false }
-  });
-
 
   provinces = [
     'Maputo', 'Gaza', 'Inhambane', 'Sofala', 'Manica', 'Tete',
@@ -65,8 +57,7 @@ export class CompanySetupComponent {
     private authService: AuthService,
     private supabase: SupabaseService,
     private router: Router,
-    private snackBar: MatSnackBar,
-    private documentService: DocumentProcessingService
+    private snackBar: MatSnackBar
   ) {
     this.companyInfoForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
@@ -98,116 +89,6 @@ export class CompanySetupComponent {
     nuitControl.setValue(value, { emitEvent: false });
   }
 
-  async onFileSelected(event: Event, documentType: 'nuit' | 'activityStart' | 'commercialActivity' | 'registrationCertificate') {
-    const input = event.target as HTMLInputElement;
-    if (!input.files || input.files.length === 0) return;
-
-    const file = input.files[0];
-    const maxSize = 10 * 1024 * 1024;
-
-    if (file.size > maxSize) {
-      this.snackBar.open('Arquivo muito grande. Máximo: 10MB', 'Fechar', {
-        duration: 3000,
-        panelClass: ['error-snackbar']
-      });
-      return;
-    }
-
-    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
-    if (!allowedTypes.includes(file.type)) {
-      this.snackBar.open('Apenas PDF, JPG e PNG são permitidos', 'Fechar', {
-        duration: 3000,
-        panelClass: ['error-snackbar']
-      });
-      return;
-    }
-
-    const docs = this.uploadedDocuments();
-    const docKey = documentType === 'activityStart' ? 'activityStart' :
-                   documentType === 'commercialActivity' ? 'commercialActivity' :
-                   documentType === 'registrationCertificate' ? 'registrationCertificate' : 'nuit';
-
-    docs[docKey].file = file;
-    this.uploadedDocuments.set(docs);
-
-    if (documentType === 'nuit' || documentType === 'activityStart') {
-      await this.processDocument(file, documentType);
-    }
-  }
-
-  async processDocument(file: File, documentType: 'nuit' | 'activityStart') {
-    this.isProcessingDocument.set(true);
-
-    try {
-      const companyId = 'temp';
-      const docTypeMap = {
-        'nuit': 'nuit' as const,
-        'activityStart': 'activity_start' as const
-      };
-
-      const result = await this.documentService.uploadDocument(
-        file,
-        companyId,
-        docTypeMap[documentType]
-      );
-
-      const docs = this.uploadedDocuments();
-      const docKey = documentType === 'activityStart' ? 'activityStart' : 'nuit';
-      docs[docKey].url = result.url;
-      docs[docKey].extractedData = !!result.extractedData;
-      this.uploadedDocuments.set(docs);
-
-      if (result.extractedData) {
-        if (result.extractedData.nuit) {
-          this.companyInfoForm.patchValue({ nuit: result.extractedData.nuit });
-        }
-        if (result.extractedData.tradeName) {
-          this.companyInfoForm.patchValue({ name: result.extractedData.tradeName });
-        }
-        if (result.extractedData.address) {
-          this.companyInfoForm.patchValue({ address: result.extractedData.address });
-        }
-        if (result.extractedData.province) {
-          this.companyInfoForm.patchValue({ province: result.extractedData.province });
-        }
-        if (result.extractedData.district) {
-          this.companyInfoForm.patchValue({ district: result.extractedData.district });
-        }
-        if (result.extractedData.administrativePost) {
-          this.companyInfoForm.patchValue({ administrativePost: result.extractedData.administrativePost });
-        }
-        if (result.extractedData.mainActivity) {
-          this.companyInfoForm.patchValue({ mainActivity: result.extractedData.mainActivity });
-        }
-
-        this.snackBar.open('Dados extraídos automaticamente!', 'Fechar', {
-          duration: 3000,
-          panelClass: ['success-snackbar']
-        });
-      }
-    } catch (error: any) {
-      console.error('Erro ao processar documento:', error);
-      this.snackBar.open('Erro ao processar documento. Preencha manualmente.', 'Fechar', {
-        duration: 4000,
-        panelClass: ['error-snackbar']
-      });
-    } finally {
-      this.isProcessingDocument.set(false);
-    }
-  }
-
-  removeDocument(documentType: 'nuit' | 'activityStart' | 'commercialActivity' | 'registrationCertificate') {
-    const docs = this.uploadedDocuments();
-    const docKey = documentType === 'activityStart' ? 'activityStart' :
-                   documentType === 'commercialActivity' ? 'commercialActivity' :
-                   documentType === 'registrationCertificate' ? 'registrationCertificate' : 'nuit';
-
-    docs[docKey].file = null;
-    docs[docKey].url = '';
-    docs[docKey].extractedData = false;
-    this.uploadedDocuments.set(docs);
-  }
-
   async onSubmit() {
     if (this.companyInfoForm.invalid || this.settingsForm.invalid) {
       this.snackBar.open('Por favor, preencha todos os campos obrigatórios', 'Fechar', {
@@ -219,7 +100,7 @@ export class CompanySetupComponent {
 
     this.isLoading.set(true);
 
-    const user = this.authService.currentUser();
+    const user = (await this.supabase.auth.getUser()).data.user;
     if (!user) {
       this.snackBar.open('Utilizador não autenticado', 'Fechar', {
         duration: 3000,
@@ -229,7 +110,6 @@ export class CompanySetupComponent {
       return;
     }
 
-    const docs = this.uploadedDocuments();
     const companyData = {
       user_id: user.id,
       name: this.companyInfoForm.value.name,
@@ -239,10 +119,6 @@ export class CompanySetupComponent {
       currency: this.settingsForm.value.currency,
       invoice_prefix: this.settingsForm.value.invoicePrefix,
       invoice_number: 1,
-      nuit_document_url: docs.nuit.url || null,
-      activity_start_document_url: docs.activityStart.url || null,
-      commercial_activity_document_url: docs.commercialActivity.url || null,
-      registration_certificate_url: docs.registrationCertificate.url || null,
       documents_metadata: {
         province: this.companyInfoForm.value.province,
         district: this.companyInfoForm.value.district,
