@@ -81,17 +81,24 @@ import { InvoiceDialogComponent } from './invoice-dialog.component';
           </div>
 
           <div class="p-6 grid grid-cols-2 gap-8">
-            <div>
-              <h3 class="text-sm font-semibold text-gray-700 mb-2">EMPRESA</h3>
-              @if (company()) {
-                <p class="font-medium">{{ company()!.name }}</p>
-                @if (company()!.nuit) {
-                  <p class="text-sm text-gray-600">NUIT: {{ company()!.nuit }}</p>
-                }
-                @if (company()!.address) {
-                  <p class="text-sm text-gray-600">{{ company()!.address }}</p>
-                }
+            <div class="flex items-start gap-4">
+              @if (company()?.logo_url) {
+                <div class="w-24 h-24 bg-gray-50 rounded border border-gray-100 p-2">
+                  <img [src]="company()!.logo_url" alt="Logo" class="w-full h-full object-contain">
+                </div>
               }
+              <div>
+                <h3 class="text-sm font-semibold text-gray-700 mb-2">EMPRESA</h3>
+                @if (company()) {
+                  <p class="font-medium">{{ company()!.name }}</p>
+                  @if (company()!.nuit) {
+                    <p class="text-sm text-gray-600">NUIT: {{ company()!.nuit }}</p>
+                  }
+                  @if (company()!.address) {
+                    <p class="text-sm text-gray-600">{{ company()!.address }}</p>
+                  }
+                }
+              </div>
             </div>
 
             <div>
@@ -170,6 +177,41 @@ import { InvoiceDialogComponent } from './invoice-dialog.component';
             <div class="p-6 border-t border-gray-200">
               <h3 class="text-sm font-semibold text-gray-700 mb-2">OBSERVAÇÕES</h3>
               <p class="text-sm text-gray-600">{{ invoice()!.notes }}</p>
+            </div>
+          }
+
+          @if (company()?.bank_name) {
+            <div class="p-6 border-t border-gray-200 bg-blue-50/30">
+              <h3 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                <mat-icon class="!text-sm !w-4 !h-4 mr-2">account_balance</mat-icon>
+                COORDENADAS BANCÁRIAS
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
+                @if (company()?.bank_name) {
+                  <div>
+                    <span class="text-gray-500 block text-xs uppercase mb-1">Banco</span>
+                    <span class="font-medium text-gray-800">{{ company()?.bank_name }}</span>
+                  </div>
+                }
+                @if (company()?.bank_account) {
+                  <div>
+                    <span class="text-gray-500 block text-xs uppercase mb-1">Conta</span>
+                    <span class="font-medium text-gray-800">{{ company()?.bank_account }}</span>
+                  </div>
+                }
+                @if (company()?.bank_iban) {
+                  <div class="col-span-1 md:col-span-2">
+                    <span class="text-gray-500 block text-xs uppercase mb-1">IBAN</span>
+                    <span class="font-medium text-gray-800 break-all">{{ company()?.bank_iban }}</span>
+                  </div>
+                }
+                @if (company()?.bank_swift) {
+                  <div>
+                    <span class="text-gray-500 block text-xs uppercase mb-1">SWIFT/BIC</span>
+                    <span class="font-medium text-gray-800">{{ company()?.bank_swift }}</span>
+                  </div>
+                }
+              </div>
             </div>
           }
 

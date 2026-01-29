@@ -7,6 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Company } from '../../core/services/company.service';
 import { MAIN_ACTIVITIES, SECONDARY_ACTIVITIES } from '../../core/constants/business-activities';
 
@@ -21,12 +22,52 @@ import { MAIN_ACTIVITIES, SECONDARY_ACTIVITIES } from '../../core/constants/busi
     MatInputModule,
     MatButtonModule,
     MatSelectModule,
-    MatIconModule
+    MatIconModule,
+    MatTooltipModule
   ],
   template: `
     <h2 mat-dialog-title>{{ data.company ? 'Editar Empresa' : 'Nova Empresa' }}</h2>
     <mat-dialog-content>
       <div class="px-6 py-4 overflow-y-auto max-h-[calc(80vh-140px)]">
+        <!-- Logo Upload -->
+        <div class="flex flex-col items-center mb-8 pb-6 border-b border-gray-100">
+          <div class="relative group">
+            <div 
+              class="w-32 h-32 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50 overflow-hidden cursor-pointer hover:border-moz-green transition-colors"
+              (click)="logoInput.click()"
+            >
+              @if (logoUrl()) {
+                <img [src]="logoUrl()" class="w-full h-full object-contain">
+              } @else {
+                <div class="text-center p-4">
+                  <mat-icon class="!text-gray-400 !text-3xl">add_photo_alternate</mat-icon>
+                  <p class="text-xs text-gray-500 mt-1">Logotipo</p>
+                </div>
+              }
+            </div>
+            
+            @if (logoUrl()) {
+              <button 
+                type="button"
+                mat-mini-fab 
+                class="!absolute -top-2 -right-2 !bg-red-500 !text-white !w-8 !h-8"
+                (click)="removeLogo($event)"
+                matTooltip="Remover Logotipo"
+              >
+                <mat-icon class="!text-lg">close</mat-icon>
+              </button>
+            }
+          </div>
+          <p class="text-xs text-gray-400 mt-2">Formatos: PNG, JPG (Máx. 2MB)</p>
+          <input 
+            type="file" 
+            #logoInput 
+            class="hidden" 
+            accept="image/*" 
+            (change)="onLogoSelected($event)"
+          >
+        </div>
+
         <form [formGroup]="form" class="space-y-6">
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Tipo de Entidade</mat-label>
@@ -142,7 +183,7 @@ import { MAIN_ACTIVITIES, SECONDARY_ACTIVITIES } from '../../core/constants/busi
               <mat-icon matPrefix class="text-gray-400">tag</mat-icon>
             </mat-form-field>
 
-             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>Província</mat-label>
                   <mat-select formControlName="province">
@@ -160,13 +201,42 @@ import { MAIN_ACTIVITIES, SECONDARY_ACTIVITIES } from '../../core/constants/busi
                 </mat-form-field>
               </div>
           </div>
-           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Posto Administrativo</mat-label>
-                  <input matInput formControlName="administrativePost" placeholder="Ex: KaMpfumo" />
-                  <mat-icon matPrefix class="text-gray-400">apartment</mat-icon>
-                </mat-form-field>
-              </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Posto Administrativo</mat-label>
+              <input matInput formControlName="administrativePost" placeholder="Ex: KaMpfumo" />
+              <mat-icon matPrefix class="text-gray-400">apartment</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <div class="border-t border-gray-100 pt-6 mt-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <mat-icon class="mr-2 text-moz-green">account_balance</mat-icon>
+              Dados Bancários
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Nome do Banco</mat-label>
+                <input matInput formControlName="bank_name" placeholder="Ex: BIM, BCI, Standard Bank">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Número de Conta</mat-label>
+                <input matInput formControlName="bank_account" placeholder="Ex: 123456789">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>IBAN</mat-label>
+                <input matInput formControlName="bank_iban" placeholder="MZ59 0000...">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>SWIFT/BIC</mat-label>
+                <input matInput formControlName="bank_swift" placeholder="Ex: ABCDMZMM">
+              </mat-form-field>
+            </div>
+          </div>
 
         </form>
       </div>
@@ -205,6 +275,7 @@ import { MAIN_ACTIVITIES, SECONDARY_ACTIVITIES } from '../../core/constants/busi
 export class CompanyDialogComponent {
   form: FormGroup;
   loading = signal(false);
+  logoUrl = signal<string | null>(this.data.company?.logo_url || null);
 
 
   provinces = [
@@ -234,8 +305,33 @@ export class CompanyDialogComponent {
       district: [data.company?.documents_metadata?.district || ''],
       administrativePost: [data.company?.documents_metadata?.administrativePost || ''],
       mainActivity: [data.company?.documents_metadata?.mainActivity || ''],
-      secondaryActivity: [data.company?.documents_metadata?.secondaryActivity || '']
+      secondaryActivity: [data.company?.documents_metadata?.secondaryActivity || ''],
+      bank_name: [data.company?.bank_name || ''],
+      bank_account: [data.company?.bank_account || ''],
+      bank_iban: [data.company?.bank_iban || ''],
+      bank_swift: [data.company?.bank_swift || '']
     });
+  }
+
+  onLogoSelected(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        alert('O ficheiro é muito grande. Tamanho máximo: 2MB');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.logoUrl.set(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  removeLogo(event: Event) {
+    event.stopPropagation();
+    this.logoUrl.set(null);
   }
 
   formatNuit() {
@@ -265,13 +361,18 @@ export class CompanyDialogComponent {
         email: formValue.email,
         currency: formValue.currency,
         invoice_prefix: formValue.invoice_prefix,
+        logo_url: this.logoUrl() || undefined,
         documents_metadata: {
           province: formValue.province,
           district: formValue.district,
           administrativePost: formValue.administrativePost,
           mainActivity: formValue.mainActivity,
           secondaryActivity: formValue.secondaryActivity
-        }
+        },
+        bank_name: formValue.bank_name,
+        bank_account: formValue.bank_account,
+        bank_iban: formValue.bank_iban,
+        bank_swift: formValue.bank_swift
       };
       
       this.dialogRef.close(formData);

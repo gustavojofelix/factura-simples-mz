@@ -170,9 +170,8 @@ export class InvoiceService {
   }
 
   canManagePayments(invoice: Invoice): boolean {
-    // Can manage payments (add/delete) if invoice is not voided/cancelled (future proofing)
-    // For now, allow unless strictly locked by some other means
-    return true; 
+    // Can manage payments if not already fully paid and not a draft
+    return invoice.status !== 'paga' && invoice.status !== 'rascunho' && invoice.amount_pending > 0;
   }
 
   getStatusLabel(status: string): string {

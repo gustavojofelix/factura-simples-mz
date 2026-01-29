@@ -206,7 +206,7 @@
                     <mat-icon>visibility</mat-icon>
                     <span>Ver Detalhes</span>
                   </button>
-                  @if (invoice.status !== 'paga' && invoice.status !== 'rascunho') {
+                  @if (invoiceService.canManagePayments(invoice)) {
                     <button mat-menu-item (click)="openPaymentDialog(invoice)">
                       <mat-icon>payments</mat-icon>
                       <span>Registar Pagamento</span>
