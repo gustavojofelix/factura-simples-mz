@@ -12,6 +12,7 @@ export interface Client {
   address?: string;
   document_url?: string;
   document_type?: string;
+  is_active: boolean;
   created_at: string;
 }
 
@@ -59,7 +60,8 @@ export class ClientService {
         .from('clients')
         .insert({
           ...clientData,
-          company_id: company.id
+          company_id: company.id,
+          is_active: true
         })
         .select()
         .single();
@@ -94,8 +96,17 @@ export class ClientService {
     }
   }
 
-  async deleteClient(id: string): Promise<boolean> {
+  async deleteClient(id: string): Promise<{ success: boolean; error?: string }> {
     try {
+      // Verificar se o cliente já possui facturas
+      const used = await this.isClientUsed(id);
+      if (used) {
+        return { 
+          success: false, 
+          error: 'Este cliente possui facturas associadas e não pode ser eliminado. Desative-o em vez disso.' 
+        };
+      }
+
       const { error } = await this.supabase.db
         .from('clients')
         .delete()
@@ -104,11 +115,30 @@ export class ClientService {
       if (error) throw error;
 
       this.clients.update(clients => clients.filter(c => c.id !== id));
-      return true;
-    } catch (error) {
+      return { success: true };
+    } catch (error: any) {
       console.error('Erro ao eliminar cliente:', error);
+      return { success: false, error: 'Erro inesperado ao eliminar cliente' };
+    }
+  }
+
+  async isClientUsed(clientId: string): Promise<boolean> {
+    try {
+      const { count, error } = await this.supabase.db
+        .from('invoices')
+        .select('*', { count: 'exact', head: true })
+        .eq('client_id', clientId);
+
+      if (error) throw error;
+      return (count || 0) > 0;
+    } catch (error) {
+      console.error('Erro ao verificar facturas do cliente:', error);
       return false;
     }
+  }
+
+  async toggleClientActiveStatus(id: string, currentStatus: boolean): Promise<boolean> {
+    return this.updateClient(id, { is_active: !currentStatus });
   }
 
   getClientById(id: string): Client | undefined {

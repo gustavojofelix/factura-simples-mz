@@ -12,6 +12,7 @@ export interface Product {
   type: 'produto' | 'servico';
   stock?: number;
   unit?: string;
+  is_active: boolean;
   created_at: string;
 }
 
@@ -59,7 +60,8 @@ export class ProductService {
         .from('products')
         .insert({
           ...productData,
-          company_id: company.id
+          company_id: company.id,
+          is_active: true
         })
         .select()
         .single();
@@ -94,8 +96,17 @@ export class ProductService {
     }
   }
 
-  async deleteProduct(id: string): Promise<boolean> {
+  async deleteProduct(id: string): Promise<{ success: boolean; error?: string }> {
     try {
+      // Verificar se o produto já foi vendido
+      const sold = await this.isProductSold(id);
+      if (sold) {
+        return { 
+          success: false, 
+          error: 'Este item já possui vendas registadas e não pode ser eliminado. Desative-o em vez disso.' 
+        };
+      }
+
       const { error } = await this.supabase.db
         .from('products')
         .delete()
@@ -104,11 +115,30 @@ export class ProductService {
       if (error) throw error;
 
       this.products.update(products => products.filter(p => p.id !== id));
-      return true;
-    } catch (error) {
+      return { success: true };
+    } catch (error: any) {
       console.error('Erro ao eliminar produto:', error);
+      return { success: false, error: 'Erro inesperado ao eliminar produto' };
+    }
+  }
+
+  async isProductSold(productId: string): Promise<boolean> {
+    try {
+      const { count, error } = await this.supabase.db
+        .from('invoice_items')
+        .select('*', { count: 'exact', head: true })
+        .eq('product_id', productId);
+
+      if (error) throw error;
+      return (count || 0) > 0;
+    } catch (error) {
+      console.error('Erro ao verificar vendas do produto:', error);
       return false;
     }
+  }
+
+  async toggleProductActiveStatus(id: string, currentStatus: boolean): Promise<boolean> {
+    return this.updateProduct(id, { is_active: !currentStatus });
   }
 
   getProductById(id: string): Product | undefined {

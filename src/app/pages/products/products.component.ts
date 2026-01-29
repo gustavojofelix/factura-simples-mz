@@ -190,7 +190,7 @@ export class ProductDialogComponent implements OnInit {
   styleUrls: ['./products.component.css']
 })
 export class ProductsComponent implements OnInit {
-  displayedColumns = ['code', 'name', 'price', 'unit', 'stock', 'actions'];
+  displayedColumns = ['code', 'name', 'price', 'unit', 'stock', 'status', 'actions'];
   searchTerm = signal('');
   sortField = signal<string>('name');
   sortDirection = signal<'asc' | 'desc'>('asc');
@@ -285,17 +285,30 @@ export class ProductsComponent implements OnInit {
     });
   }
 
+  async toggleStatus(product: Product) {
+    const success = await this.productService.toggleProductActiveStatus(product.id, product.is_active);
+    if (success) {
+      this.snackBar.open(
+        `Produto ${!product.is_active ? 'activado' : 'desactivado'} com sucesso!`,
+        'Fechar',
+        { duration: 3000 }
+      );
+    } else {
+      this.snackBar.open('Erro ao alterar estado do produto', 'Fechar', { duration: 3000 });
+    }
+  }
+
   async deleteProduct(product: Product) {
     if (!confirm(`Tem certeza que deseja eliminar o produto "${product.name}"?`)) {
       return;
     }
 
-    const success = await this.productService.deleteProduct(product.id);
+    const result = await this.productService.deleteProduct(product.id);
 
-    if (success) {
+    if (result.success) {
       this.snackBar.open('Produto eliminado com sucesso!', 'Fechar', { duration: 3000 });
     } else {
-      this.snackBar.open('Erro ao eliminar produto', 'Fechar', { duration: 3000 });
+      this.snackBar.open(result.error || 'Erro ao eliminar produto', 'Fechar', { duration: 5000 });
     }
   }
 

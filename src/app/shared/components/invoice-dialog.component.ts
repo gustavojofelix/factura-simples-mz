@@ -118,6 +118,7 @@ export class InvoiceDialogComponent implements OnInit {
   step2Form: FormGroup;
 
   selectedClient = signal<Client | null>(null);
+  activeClients = computed(() => this.clientService.clients().filter(c => c.is_active || c.id === this.selectedClient()?.id));
   invoiceItems = signal<InvoiceItem[]>([]);
   selectedProduct = signal<Product | null>(null);
   quantity = signal(1);
@@ -131,6 +132,11 @@ export class InvoiceDialogComponent implements OnInit {
 
     // 1. Filtering
     let filtered = products;
+    
+    // Always filter by activity unless editing an old invoice that might have inactive products
+    // But for NEW items to add, we should only see active ones.
+    filtered = filtered.filter(p => p.is_active);
+
     if (term) {
       filtered = products.filter(product =>
         product.name.toLowerCase().includes(term) ||

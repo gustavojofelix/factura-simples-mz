@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -256,10 +256,24 @@ export class ClientDialogComponent {
   styleUrls: ['./clients.component.css']
 })
 export class ClientsComponent implements OnInit {
-  displayedColumns = ['name', 'nuit', 'email', 'phone', 'actions'];
+  displayedColumns = ['name', 'nuit', 'email', 'phone', 'status', 'actions'];
   searchTerm = signal('');
 
-  filteredClients = signal<Client[]>([]);
+  filteredClients = computed(() => {
+    const term = this.searchTerm().toLowerCase();
+    const clients = this.clientService.clients();
+
+    if (!term) {
+      return clients;
+    }
+
+    return clients.filter(client =>
+      client.name.toLowerCase().includes(term) ||
+      client.nuit?.toLowerCase().includes(term) ||
+      client.email?.toLowerCase().includes(term) ||
+      client.phone?.toLowerCase().includes(term)
+    );
+  });
 
   constructor(
     public clientService: ClientService,
@@ -270,31 +284,12 @@ export class ClientsComponent implements OnInit {
 
   ngOnInit() {
     this.clientService.loadClients();
-    this.updateFilteredClients();
   }
 
-  updateFilteredClients() {
-    const term = this.searchTerm().toLowerCase();
-    const clients = this.clientService.clients();
-
-    if (!term) {
-      this.filteredClients.set(clients);
-    } else {
-      this.filteredClients.set(
-        clients.filter(client =>
-          client.name.toLowerCase().includes(term) ||
-          client.nuit?.toLowerCase().includes(term) ||
-          client.email?.toLowerCase().includes(term) ||
-          client.phone?.toLowerCase().includes(term)
-        )
-      );
-    }
-  }
 
   onSearchChange(event: Event) {
     const value = (event.target as HTMLInputElement).value;
     this.searchTerm.set(value);
-    this.updateFilteredClients();
   }
 
   openDialog(client?: Client) {
@@ -308,8 +303,20 @@ export class ClientsComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(() => {
       this.clientService.loadClients();
-      this.updateFilteredClients();
     });
+  }
+
+  async toggleStatus(client: Client) {
+    const success = await this.clientService.toggleClientActiveStatus(client.id, client.is_active);
+    if (success) {
+      this.snackBar.open(
+        `Cliente ${!client.is_active ? 'activado' : 'desactivado'} com sucesso!`,
+        'Fechar',
+        { duration: 3000 }
+      );
+    } else {
+      this.snackBar.open('Erro ao alterar estado do cliente', 'Fechar', { duration: 3000 });
+    }
   }
 
   async deleteClient(client: Client) {
@@ -317,13 +324,12 @@ export class ClientsComponent implements OnInit {
       return;
     }
 
-    const success = await this.clientService.deleteClient(client.id);
+    const result = await this.clientService.deleteClient(client.id);
 
-    if (success) {
+    if (result.success) {
       this.snackBar.open('Cliente eliminado com sucesso!', 'Fechar', { duration: 3000 });
-      this.updateFilteredClients();
     } else {
-      this.snackBar.open('Erro ao eliminar cliente', 'Fechar', { duration: 3000 });
+      this.snackBar.open(result.error || 'Erro ao eliminar cliente', 'Fechar', { duration: 5000 });
     }
   }
 }

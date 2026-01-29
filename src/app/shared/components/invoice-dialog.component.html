@@ -24,7 +24,7 @@
                   formControlName="client_id"
                   (selectionChange)="onClientChange($event.value)"
                 >
-                  @for (client of clientService.clients(); track client.id) {
+                  @for (client of activeClients(); track client.id) {
                     <mat-option [value]="client.id">
                       {{ client.name }}
                       @if (client.nuit) {
