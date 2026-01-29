@@ -166,6 +166,17 @@ import { nuitValidator } from '../../core/validators/nuit.validator';
         <mat-tab label="Informações Básicas">
           <form [formGroup]="form" class="space-y-4 pt-4">
             <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Tipo de Entidade</mat-label>
+              <mat-select formControlName="entity_type" required>
+                <mat-option value="singular">Pessoa Singular</mat-option>
+                <mat-option value="collective">Pessoa Colectiva</mat-option>
+              </mat-select>
+              <mat-error *ngIf="form.get('entity_type')?.hasError('required')">
+                Tipo de entidade é obrigatório
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
               <mat-label>Nome da Empresa</mat-label>
               <input matInput formControlName="name" required>
               <mat-error *ngIf="form.get('name')?.hasError('required')">
@@ -340,6 +351,7 @@ export class CompanyDialogComponent {
 
     this.form = this.fb.group({
       name: [data.company?.name || '', Validators.required],
+      entity_type: [data.company?.entity_type || '', Validators.required],
       nuit: [data.company?.nuit || '', [Validators.required, nuitValidator()]],
       address: [data.company?.address || ''],
       phone: [data.company?.phone || ''],
@@ -487,6 +499,7 @@ export class CompanyDialogComponent {
       const docs = this.uploadedDocuments();
       const formData = {
         ...this.form.value,
+        entity_type: this.form.value.entity_type,
         nuit_document_url: docs.nuit.url || null,
         activity_start_document_url: docs.activityStart.url || null,
         commercial_activity_document_url: docs.commercialActivity.url || null,

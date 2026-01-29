@@ -7,6 +7,7 @@ export interface Company {
   user_id: string;
   name: string;
   nuit: string;
+  entity_type?: 'singular' | 'collective';
   address: string;
   phone?: string;
   email?: string;

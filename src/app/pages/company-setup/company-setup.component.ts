@@ -79,6 +79,7 @@ export class CompanySetupComponent {
   ) {
     this.companyInfoForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
+      entityType: ['', Validators.required],
       nuit: ['', [Validators.required, nuitValidator()]],
       address: ['', Validators.required],
       province: [''],
@@ -243,6 +244,7 @@ export class CompanySetupComponent {
     const companyData = {
       user_id: user.id,
       name: this.companyInfoForm.value.name,
+      entity_type: this.companyInfoForm.value.entityType,
       nuit: this.companyInfoForm.value.nuit,
       address: this.companyInfoForm.value.address,
       business_type: this.businessTypeForm.value.businessType,

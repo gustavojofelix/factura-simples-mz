@@ -134,6 +134,19 @@
             <div class="border-t pt-6">
               <div>
                 <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Tipo de Entidade</mat-label>
+                  <mat-select formControlName="entityType" required>
+                    <mat-option value="singular">Pessoa Singular</mat-option>
+                    <mat-option value="collective">Pessoa Colectiva</mat-option>
+                  </mat-select>
+                  <mat-icon matPrefix class="text-gray-400">category</mat-icon>
+                  @if (getErrorMessage(companyInfoForm, 'entityType')) {
+                    <mat-error>{{ getErrorMessage(companyInfoForm, 'entityType') }}</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+              <div>
+                <mat-form-field appearance="outline" class="w-full">
                   <mat-label>Nome da Empresa</mat-label>
                   <input
                     matInput
