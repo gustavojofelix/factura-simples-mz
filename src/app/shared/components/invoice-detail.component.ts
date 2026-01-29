@@ -13,6 +13,8 @@ import { CompanyService } from '../../core/services/company.service';
 import { PaymentDialogComponent } from './payment-dialog.component';
 import { ReceiptDetailComponent } from './receipt-detail.component';
 import { InvoiceDialogComponent } from './invoice-dialog.component';
+import { PdfService } from '../../core/services/pdf.service';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 @Component({
   selector: 'app-invoice-detail',
@@ -24,23 +26,31 @@ import { InvoiceDialogComponent } from './invoice-dialog.component';
     MatCardModule,
     MatChipsModule,
     MatTableModule,
+    MatProgressSpinnerModule,
     InvoiceDialogComponent
   ],
   template: `
-    <div class="max-w-5xl mx-auto p-6">
+    <div class="max-w-5xl mx-auto p-6 printable-content">
       @if (isLoading()) {
         <div class="text-center py-8">
+          <mat-spinner diameter="40" class="mx-auto mb-4"></mat-spinner>
           <p class="text-gray-500">A carregar...</p>
         </div>
       } @else if (invoice()) {
-        <div class="bg-white rounded-lg shadow-sm">
+        <div id="invoice-card" class="bg-white rounded-lg shadow-sm relative">
+          @if (isGeneratingPdf()) {
+            <div class="absolute inset-0 bg-white/80 z-50 flex flex-col items-center justify-center rounded-lg no-print">
+              <mat-spinner diameter="40" class="mb-2"></mat-spinner>
+              <p class="text-sm font-medium text-gray-600">A gerar PDF...</p>
+            </div>
+          }
           <div class="p-6 border-b border-gray-200">
             <div class="flex justify-between items-start mb-4">
               <div>
                 <h1 class="text-2xl font-bold text-gray-900">Factura {{ invoice()!.invoice_number }}</h1>
                 <p class="text-sm text-gray-500 mt-1">{{ formatDate(invoice()!.date) }}</p>
               </div>
-              <div class="flex gap-2">
+              <div class="flex gap-2 no-print">
                 @if (invoice()!.status === 'rascunho') {
                   <button mat-raised-button class="!bg-moz-green !text-white" (click)="emitDraft()">
                     <mat-icon>check_circle</mat-icon>
@@ -51,9 +61,13 @@ import { InvoiceDialogComponent } from './invoice-dialog.component';
                   <mat-icon>arrow_back</mat-icon>
                   Voltar
                 </button>
-                <button mat-stroked-button (click)="printInvoice()" [disabled]="invoice()!.status === 'rascunho'">
+                <button mat-stroked-button (click)="downloadInvoicePdf()" [disabled]="invoice()!.status === 'rascunho' || isGeneratingPdf()">
+                  <mat-icon>file_download</mat-icon>
+                  Descarregar PDF
+                </button>
+                <button mat-stroked-button (click)="printInvoice()" [disabled]="invoice()!.status === 'rascunho' || isGeneratingPdf()">
                   <mat-icon>print</mat-icon>
-                  Imprimir PDF
+                  Imprimir
                 </button>
                 <button mat-stroked-button (click)="sendEmail()" [disabled]="!invoice()!.client?.email || invoice()!.status === 'rascunho'">
                   <mat-icon>email</mat-icon>
@@ -69,9 +83,12 @@ import { InvoiceDialogComponent } from './invoice-dialog.component';
             </div>
 
             <div class="flex items-center gap-2">
-              <mat-chip [class]="invoiceService.getStatusColor(invoice()!.status)">
+              <span 
+                class="px-3 py-1 rounded-full text-xs font-semibold"
+                [class]="invoiceService.getStatusColor(invoice()!.status)"
+              >
                 {{ invoiceService.getStatusLabel(invoice()!.status).toUpperCase() }}
-              </mat-chip>
+              </span>
               @if (invoice()!.due_date) {
                 <span class="text-sm text-gray-600">
                   Vencimento: {{ formatDate(invoice()!.due_date!) }}
@@ -123,34 +140,27 @@ import { InvoiceDialogComponent } from './invoice-dialog.component';
 
           <div class="p-6 border-t border-gray-200">
             <h3 class="text-lg font-semibold mb-4">Itens da Factura</h3>
-            <table mat-table [dataSource]="invoice()!.items || []" class="w-full">
-              <ng-container matColumnDef="product">
-                <th mat-header-cell *matHeaderCellDef class="text-left">Produto/Serviço</th>
-                <td mat-cell *matCellDef="let item">{{ item.product_name }}</td>
-              </ng-container>
-
-              <ng-container matColumnDef="quantity">
-                <th mat-header-cell *matHeaderCellDef class="text-center">Quantidade</th>
-                <td mat-cell *matCellDef="let item" class="text-center">{{ item.quantity }}</td>
-              </ng-container>
-
-              <ng-container matColumnDef="price">
-                <th mat-header-cell *matHeaderCellDef class="text-right">Preço Unit.</th>
-                <td mat-cell *matCellDef="let item" class="text-right">{{ formatCurrency(item.unit_price) }}</td>
-              </ng-container>
-
-              <ng-container matColumnDef="subtotal">
-                <th mat-header-cell *matHeaderCellDef class="text-right">Subtotal</th>
-                <td mat-cell *matCellDef="let item" class="text-right">{{ formatCurrency(item.subtotal) }}</td>
-              </ng-container>
-
-              <ng-container matColumnDef="total">
-                <th mat-header-cell *matHeaderCellDef class="text-right">Total</th>
-                <td mat-cell *matCellDef="let item" class="text-right font-medium">{{ formatCurrency(item.total) }}</td>
-              </ng-container>
-
-              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="text-left p-3 font-semibold text-gray-700">Produto/Serviço</th>
+                  <th class="text-center p-3 font-semibold text-gray-700">Quantidade</th>
+                  <th class="text-right p-3 font-semibold text-gray-700">Preço Unit.</th>
+                  <th class="text-right p-3 font-semibold text-gray-700">Subtotal</th>
+                  <th class="text-right p-3 font-semibold text-gray-700">Total</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                @for (item of invoice()!.items || []; track item.id) {
+                  <tr>
+                    <td class="p-3">{{ item.product_name }}</td>
+                    <td class="p-3 text-center">{{ item.quantity }}</td>
+                    <td class="p-3 text-right">{{ formatCurrency(item.unit_price) }}</td>
+                    <td class="p-3 text-right">{{ formatCurrency(item.subtotal) }}</td>
+                    <td class="p-3 text-right font-medium">{{ formatCurrency(item.total) }}</td>
+                  </tr>
+                }
+              </tbody>
             </table>
           </div>
 
@@ -181,9 +191,9 @@ import { InvoiceDialogComponent } from './invoice-dialog.component';
           }
 
           @if (company()?.bank_name) {
-            <div class="p-6 border-t border-gray-200 bg-blue-50/30">
+            <div class="p-6 border-t border-gray-200 bg-blue-50/30" style="background-color: rgba(239, 246, 255, 0.3);">
               <h3 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                <mat-icon class="!text-sm !w-4 !h-4 mr-2">account_balance</mat-icon>
+                <span class="mr-2 text-blue-600">🏛️</span>
                 COORDENADAS BANCÁRIAS
               </h3>
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
@@ -219,7 +229,7 @@ import { InvoiceDialogComponent } from './invoice-dialog.component';
               <div class="flex justify-between items-center mb-4">
               <h3 class="text-lg font-semibold">Pagamentos</h3>
               @if (invoice()!.status !== 'rascunho' && invoiceService.canManagePayments(invoice()!)) {
-                <button mat-raised-button color="primary" (click)="openPaymentDialog()">
+                <button mat-raised-button color="primary" (click)="openPaymentDialog()" class="no-print">
                   <mat-icon>add</mat-icon>
                   Registar Pagamento
                 </button>
@@ -227,43 +237,36 @@ import { InvoiceDialogComponent } from './invoice-dialog.component';
             </div>
 
             @if (payments().length > 0) {
-              <table mat-table [dataSource]="payments()" class="w-full">
-                <ng-container matColumnDef="date">
-                  <th mat-header-cell *matHeaderCellDef>Data</th>
-                  <td mat-cell *matCellDef="let payment">{{ formatDate(payment.payment_date) }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="method">
-                  <th mat-header-cell *matHeaderCellDef>Método</th>
-                  <td mat-cell *matCellDef="let payment">{{ paymentService.getPaymentMethodLabel(payment.payment_method) }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="reference">
-                  <th mat-header-cell *matHeaderCellDef>Referência</th>
-                  <td mat-cell *matCellDef="let payment">{{ payment.reference || '-' }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="amount">
-                  <th mat-header-cell *matHeaderCellDef class="text-right">Valor</th>
-                  <td mat-cell *matCellDef="let payment" class="text-right font-medium">{{ formatCurrency(payment.amount) }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="actions">
-                  <th mat-header-cell *matHeaderCellDef></th>
-                  <td mat-cell *matCellDef="let payment">
-                    <button mat-icon-button (click)="viewReceipt(payment.id)">
-                      <mat-icon>receipt</mat-icon>
-                    </button>
-                    @if (invoiceService.canManagePayments(invoice()!)) {
-                      <button mat-icon-button (click)="deletePayment(payment.id)" color="warn">
-                        <mat-icon>delete</mat-icon>
-                      </button>
-                    }
-                  </td>
-                </ng-container>
-
-                <tr mat-header-row *matHeaderRowDef="paymentColumns"></tr>
-                <tr mat-row *matRowDef="let row; columns: paymentColumns;"></tr>
+              <table class="w-full text-sm">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="text-left p-3 font-semibold text-gray-700">Data</th>
+                    <th class="text-left p-3 font-semibold text-gray-700">Método</th>
+                    <th class="text-left p-3 font-semibold text-gray-700">Referência</th>
+                    <th class="text-right p-3 font-semibold text-gray-700">Valor</th>
+                    <th class="text-right p-3 font-semibold text-gray-700 no-print">Ações</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                  @for (payment of payments(); track payment.id) {
+                    <tr>
+                      <td class="p-3">{{ formatDate(payment.payment_date) }}</td>
+                      <td class="p-3">{{ paymentService.getPaymentMethodLabel(payment.payment_method) }}</td>
+                      <td class="p-3">{{ payment.reference || '-' }}</td>
+                      <td class="p-3 text-right font-medium text-moz-green">{{ formatCurrency(payment.amount) }}</td>
+                      <td class="p-3 text-right no-print">
+                        <button mat-icon-button (click)="viewReceipt(payment.id)">
+                          <mat-icon>receipt</mat-icon>
+                        </button>
+                        @if (invoiceService.canManagePayments(invoice()!)) {
+                          <button mat-icon-button (click)="deletePayment(payment.id)" color="warn">
+                            <mat-icon>delete</mat-icon>
+                          </button>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
               </table>
             } @else {
               <p class="text-gray-500 text-center py-4">Nenhum pagamento registado</p>
@@ -276,7 +279,93 @@ import { InvoiceDialogComponent } from './invoice-dialog.component';
         </div>
       }
     </div>
-  `
+  `,
+  styles: [`
+    @media print {
+      /* Hide everything except the invoice container */
+      :host ::ng-deep body, 
+      :host ::ng-deep .mat-drawer-container,
+      :host ::ng-deep .mat-drawer-content {
+        background: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: auto !important;
+        min-height: auto !important;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      .printable-content {
+        visibility: visible;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+
+      /* Reset card styles for print */
+      mat-card {
+        box-shadow: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+      }
+
+      .bg-white {
+        background: white !important;
+      }
+
+      .bg-gray-50 {
+        background: white !important;
+        border-top: 1px solid #e5e7eb !important;
+      }
+
+      .bg-blue-50/30 {
+        background: #f8fafc !important;
+        border: 1px solid #e5e7eb !important;
+        margin-top: 1rem !important;
+      }
+
+      .border-b {
+        border-bottom: 1px solid #e5e7eb !important;
+      }
+
+      .border-t {
+        border-top: 1px solid #e5e7eb !important;
+      }
+
+      /* Table styles for print */
+      table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+      }
+
+      th {
+        background-color: #f9fafb !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        border-bottom: 2px solid #e5e7eb !important;
+        padding: 8px !important;
+      }
+
+      td {
+        border-bottom: 1px solid #f3f4f6 !important;
+        padding: 8px !important;
+      }
+
+      /* Force background colors to print */
+      .mat-mdc-chip {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+  `]
 })
 export class InvoiceDetailComponent {
   private route = inject(ActivatedRoute);
@@ -286,11 +375,13 @@ export class InvoiceDetailComponent {
   invoiceService = inject(InvoiceService);
   paymentService = inject(PaymentService);
   private companyService = inject(CompanyService);
+  private pdfService = inject(PdfService);
 
   invoice = signal<Invoice | null>(null);
   payments = signal<Payment[]>([]);
   company = this.companyService.activeCompany;
   isLoading = signal(true);
+  isGeneratingPdf = signal(false);
 
   displayedColumns = ['product', 'quantity', 'price', 'subtotal', 'total'];
   paymentColumns = ['date', 'method', 'reference', 'amount', 'actions'];
@@ -310,6 +401,12 @@ export class InvoiceDetailComponent {
     if (invoice) {
       const payments = await this.paymentService.loadPaymentsByInvoice(invoiceId);
       this.payments.set(payments);
+      
+      // Check for print parameter
+      const print = this.route.snapshot.queryParamMap.get('print');
+      if (print) {
+        setTimeout(() => this.printInvoice(), 800);
+      }
     }
 
     this.isLoading.set(false);
@@ -381,8 +478,43 @@ export class InvoiceDetailComponent {
     });
   }
 
-  printInvoice() {
-    alert('Funcionalidade de impressão PDF em desenvolvimento');
+  async printInvoice() {
+    try {
+      this.isGeneratingPdf.set(true);
+      const blob = await this.pdfService.generatePdf('invoice-card', this.invoice()!.invoice_number);
+      const url = window.URL.createObjectURL(blob);
+      const printWindow = window.open(url);
+      if (printWindow) {
+        printWindow.onload = () => {
+          printWindow.print();
+          // Optionally revoke URL after some time
+        };
+      } else {
+        // Fallback to direct print if popup blocked
+        window.print();
+      }
+    } catch (error) {
+      console.error('Erro ao preparar impressão:', error);
+      window.print();
+    } finally {
+      this.isGeneratingPdf.set(false);
+    }
+  }
+
+  async downloadInvoicePdf() {
+    const invoice = this.invoice();
+    if (!invoice) return;
+
+    try {
+      this.isGeneratingPdf.set(true);
+      const blob = await this.pdfService.generatePdf('invoice-card', invoice.invoice_number);
+      this.pdfService.downloadPdf(blob, `Factura_${invoice.invoice_number}`);
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      alert('Erro ao gerar o ficheiro PDF. Por favor, tente novamente.');
+    } finally {
+      this.isGeneratingPdf.set(false);
+    }
   }
 
   async emitDraft() {
@@ -402,8 +534,23 @@ export class InvoiceDetailComponent {
     }
   }
 
-  sendEmail() {
-    alert('Funcionalidade de envio de email em desenvolvimento');
+  async sendEmail() {
+    const invoice = this.invoice();
+    if (!invoice) return;
+
+    try {
+      this.isGeneratingPdf.set(true);
+      const blob = await this.pdfService.generatePdf('invoice-card', invoice.invoice_number);
+      // Here you would typically upload the blob to a storage bucket 
+      // and send the URL to a backend function that sends the email.
+      // For now, we'll inform the user.
+      alert(`O PDF da factura ${invoice.invoice_number} foi gerado. O envio automático por email está a ser configurado.`);
+      this.pdfService.downloadPdf(blob, `Factura_${invoice.invoice_number}`);
+    } catch (error) {
+      console.error('Erro ao preparar email:', error);
+    } finally {
+      this.isGeneratingPdf.set(false);
+    }
   }
 
   goBack() {
