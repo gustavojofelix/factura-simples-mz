@@ -114,9 +114,9 @@
           <mat-checkbox formControlName="acceptTerms" color="primary" class="text-sm">
             <span class="text-gray-700">
               Aceito os
-              <a href="#" class="text-moz-green hover:underline">Termos de Uso</a>
+              <a href="#" class="text-ispc-orange hover:underline">Termos de Uso</a>
               e
-              <a href="#" class="text-moz-green hover:underline">Política de Privacidade</a>
+              <a href="#" class="text-ispc-orange hover:underline">Política de Privacidade</a>
             </span>
           </mat-checkbox>
           @if (registerForm.get('acceptTerms')?.touched && registerForm.get('acceptTerms')?.hasError('required')) {
@@ -129,7 +129,7 @@
         <button
           mat-raised-button
           type="submit"
-          class="w-full !bg-moz-green !text-white !py-3 !text-lg"
+          class="w-full !bg-ispc-orange !text-white !py-3 !text-lg"
           [disabled]="isLoading()"
         >
           @if (isLoading()) {
@@ -154,7 +154,7 @@
         <div class="mt-6 text-center">
           <a
             routerLink="/entrar"
-            class="font-medium text-moz-green hover:text-moz-green/80"
+            class="font-medium text-ispc-orange hover:text-ispc-orange/80"
           >
             Entrar na sua conta
           </a>

@@ -1,68 +1,54 @@
-<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+﻿<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
   <div class="max-w-md w-full">
+    <!-- Logo Section -->
+    <div class="text-center mb-8">
+      <img src="assets/ISPC.png" alt="ISPC Fácil" class="mx-auto h-24 w-auto mb-4">
+      <h2 class="text-3xl font-bold text-gray-900 mb-2">Bem-vindo de volta</h2>
+      <p class="text-gray-600">Entre na sua conta para continuar</p>
+    </div>
+
+    <!-- Login Card -->
     <div class="bg-white rounded-2xl shadow-xl p-8">
-      <div class="text-center mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">Bem-vindo de volta</h1>
-        <p class="text-gray-600">Entre na sua conta ISPC Facil</p>
-      </div>
-
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
-        <div>
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Email</mat-label>
-            <input
-              matInput
-              type="email"
-              formControlName="email"
-              placeholder="seu@email.com"
-              autocomplete="email"
-            />
-            <mat-icon matPrefix class="text-gray-400">email</mat-icon>
-            @if (getErrorMessage('email')) {
-              <mat-error>{{ getErrorMessage('email') }}</mat-error>
-            }
-          </mat-form-field>
-        </div>
+        <!-- Email Field -->
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" formControlName="email" placeholder="seu@email.com">
+          <mat-icon matPrefix class="!text-gray-400">email</mat-icon>
+          @if (getErrorMessage('email')) {
+            <mat-error>{{ getErrorMessage('email') }}</mat-error>
+          }
+        </mat-form-field>
 
-        <div>
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Palavra-passe</mat-label>
-            <input
-              matInput
-              [type]="hidePassword() ? 'password' : 'text'"
-              formControlName="password"
-              placeholder="••••••••"
-              autocomplete="current-password"
-            />
-            <mat-icon matPrefix class="text-gray-400">lock</mat-icon>
-            <button
-              mat-icon-button
-              matSuffix
-              type="button"
-              (click)="hidePassword.set(!hidePassword())"
-            >
-              <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
-            </button>
-            @if (getErrorMessage('password')) {
-              <mat-error>{{ getErrorMessage('password') }}</mat-error>
-            }
-          </mat-form-field>
-        </div>
+        <!-- Password Field -->
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Palavra-passe</mat-label>
+          <input 
+            matInput 
+            [type]="hidePassword() ? 'password' : 'text'" 
+            formControlName="password"
+            placeholder="">
+          <mat-icon matPrefix class="!text-gray-400">lock</mat-icon>
+          <button 
+            mat-icon-button 
+            matSuffix 
+            type="button"
+            (click)="hidePassword.set(!hidePassword())"
+            [attr.aria-label]="'Mostrar palavra-passe'"
+            [attr.aria-pressed]="!hidePassword()">
+            <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          @if (getErrorMessage('password')) {
+            <mat-error>{{ getErrorMessage('password') }}</mat-error>
+          }
+        </mat-form-field>
 
-        <div class="flex items-center justify-between">
-          <div class="text-sm">
-            <a routerLink="/recuperar-senha" class="text-moz-green hover:text-moz-green/80 font-medium">
-              Esqueceu a palavra-passe?
-            </a>
-          </div>
-        </div>
-
-        <button
-          mat-raised-button
+        <!-- Submit Button -->
+        <button 
+          mat-raised-button 
           type="submit"
-          class="w-full !bg-moz-green !text-white !py-3 !text-lg"
-          [disabled]="isLoading()"
-        >
+          class="w-full !bg-ispc-orange !text-white !py-3 !text-lg !font-semibold !rounded-lg hover:!bg-ispc-orange/90 transition-all"
+          [disabled]="isLoading()">
           @if (isLoading()) {
             <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
             <span>A entrar...</span>
@@ -72,32 +58,30 @@
         </button>
       </form>
 
-      <div class="mt-6">
-        <div class="relative">
-          <div class="absolute inset-0 flex items-center">
-            <div class="w-full border-t border-gray-300"></div>
-          </div>
-          <div class="relative flex justify-center text-sm">
-            <span class="px-2 bg-white text-gray-500">Não tem conta?</span>
-          </div>
-        </div>
+      <!-- Divider -->
+      <div class="mt-6 flex items-center justify-center">
+        <div class="border-t border-gray-300 flex-1"></div>
+        <span class="px-4 text-sm text-gray-500">ou</span>
+        <div class="border-t border-gray-300 flex-1"></div>
+      </div>
 
-        <div class="mt-6 text-center">
-          <a
-            routerLink="/registar"
-            class="font-medium text-moz-green hover:text-moz-green/80"
-          >
+      <!-- Register Link -->
+      <div class="mt-6 text-center">
+        <p class="text-gray-600">
+          Ainda não tem conta?
+          <a routerLink="/registar" class="text-ispc-orange font-semibold hover:text-ispc-orange/80 transition-colors ml-1">
             Criar conta grátis
           </a>
-        </div>
+        </p>
       </div>
+    </div>
 
-      <div class="mt-8 text-center">
-        <a routerLink="/" class="text-sm text-gray-600 hover:text-gray-900">
-          <mat-icon class="inline-block align-middle mr-1 !text-base">arrow_back</mat-icon>
-          Voltar ao início
-        </a>
-      </div>
+    <!-- Back to Landing -->
+    <div class="mt-8 text-center">
+      <a routerLink="/" class="inline-flex items-center text-gray-600 hover:text-ispc-orange transition-colors">
+        <mat-icon class="!text-base mr-1">arrow_back</mat-icon>
+        Voltar ao início
+      </a>
     </div>
   </div>
 </div>

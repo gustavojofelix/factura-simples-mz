@@ -102,25 +102,54 @@ export class DashboardComponent implements OnInit {
 
     const { data: invoices } = await this.supabase.db
       .from('invoices')
-      .select('total, ispc_amount, status, date')
-      .eq('company_id', companyId);
+      .select('total, status, date, amount_paid, due_date')
+      .eq('company_id', companyId)
+      .neq('status', 'rascunho');
 
     const { data: clients } = await this.supabase.db
       .from('clients')
       .select('id')
-      .eq('company_id', companyId);
+      .eq('company_id', companyId)
+      .eq('is_active', true);
 
-    const monthInvoices = invoices?.filter(inv =>
+    // Calculate actual status for each invoice (same logic as InvoiceService)
+    const invoicesWithCalculatedStatus = (invoices || []).map(inv => {
+      let calculatedStatus = inv.status;
+      
+      // If fully paid, status is 'paga'
+      if (inv.amount_paid >= inv.total) {
+        calculatedStatus = 'paga';
+      }
+      // If has due date and is overdue and not fully paid
+      else if (inv.due_date) {
+        const dueDate = new Date(inv.due_date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        dueDate.setHours(0, 0, 0, 0);
+        
+        if (dueDate < today && inv.amount_paid < inv.total) {
+          calculatedStatus = 'vencida';
+        }
+      }
+      
+      return { ...inv, calculatedStatus };
+    });
+
+    const monthInvoices = invoicesWithCalculatedStatus.filter(inv =>
       inv.date?.startsWith(currentMonth)
-    ) || [];
+    );
 
-    const pendingInvoices = invoices?.filter(inv =>
-      inv.status === 'pendente'
-    ) || [];
+    const pendingInvoices = invoicesWithCalculatedStatus.filter(inv =>
+      inv.calculatedStatus === 'pendente'
+    );
+
+    // ISPC is calculated quarterly based on annual volume, not per invoice
+    // For now, we estimate 3% of monthly sales as a placeholder
+    const estimatedIspc = monthInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0) * 0.03;
 
     this.metrics.set({
       monthSales: monthInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0),
-      ispcToPay: monthInvoices.reduce((sum, inv) => sum + (inv.ispc_amount || 0), 0),
+      ispcToPay: estimatedIspc,
       pendingInvoices: pendingInvoices.length,
       activeClients: clients?.length || 0
     });

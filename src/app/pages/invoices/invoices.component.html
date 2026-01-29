@@ -6,7 +6,7 @@
     </div>
     <button
       mat-raised-button
-      class="!bg-moz-green !text-white"
+      class="!bg-ispc-orange !text-white"
       (click)="openNewInvoiceDialog()"
     >
       <mat-icon class="mr-2">add</mat-icon>
@@ -18,8 +18,8 @@
   <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
     <button
       (click)="filterByStatus('todas')"
-      class="bg-white p-4 rounded-lg border-2 transition-all hover:border-moz-green"
-      [class.border-moz-green]="statusFilter() === 'todas'"
+      class="bg-white p-4 rounded-lg border-2 transition-all hover:border-ispc-orange"
+      [class.border-ispc-orange]="statusFilter() === 'todas'"
       [class.border-gray-200]="statusFilter() !== 'todas'"
     >
       <div class="text-2xl font-bold text-gray-900">{{ stats().total }}</div>
@@ -63,7 +63,7 @@
         <input
           type="text"
           placeholder="Pesquisar facturas..."
-          class="flex-1 min-w-[300px] px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-moz-green focus:border-transparent"
+          class="flex-1 min-w-[300px] px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ispc-orange focus:border-transparent"
           (input)="onSearchChange($event)"
         >
         
@@ -115,7 +115,7 @@
             <p class="text-gray-600 mb-4">Ainda não tem facturas</p>
             <button
               mat-raised-button
-              class="!bg-moz-green !text-white"
+              class="!bg-ispc-orange !text-white"
               (click)="openNewInvoiceDialog()"
             >
               <mat-icon class="mr-2">add</mat-icon>
@@ -197,8 +197,8 @@
                 <mat-menu #menu="matMenu">
                   @if (invoice.status === 'rascunho') {
                     <button mat-menu-item (click)="emitDraft(invoice)">
-                      <mat-icon class="!text-moz-green">check_circle</mat-icon>
-                      <span class="!font-semibold !text-moz-green">Validar e Emitir</span>
+                      <mat-icon class="!text-ispc-orange">check_circle</mat-icon>
+                      <span class="!font-semibold !text-ispc-orange">Validar e Emitir</span>
                     </button>
                     <mat-divider></mat-divider>
                   }
@@ -254,7 +254,7 @@
   <button
     mat-fab
     extended
-    class="!fixed !bottom-6 !right-6 !bg-moz-green !text-white !shadow-lg hover:!shadow-xl"
+    class="!fixed !bottom-6 !right-6 !bg-ispc-orange !text-white !shadow-lg hover:!shadow-xl"
     (click)="openNewInvoiceDialog()"
   >
     <mat-icon class="mr-2">add</mat-icon>

@@ -4,7 +4,7 @@
       <h1 class="text-3xl font-bold text-gray-900 mb-2">Produtos e Serviços</h1>
       <p class="text-gray-600">Catálogo de {{ companyService.activeCompany()?.name }}</p>
     </div>
-    <button mat-raised-button class="!bg-moz-green !text-white" (click)="openDialog()">
+    <button mat-raised-button class="!bg-ispc-orange !text-white" (click)="openDialog()">
       <mat-icon>add</mat-icon>
       <span>Novo Produto</span>
     </button>
@@ -16,7 +16,7 @@
         <input
           type="text"
           placeholder="Pesquisar produtos (Nome, Descrição ou ID)..."
-          class="flex-1 min-w-[300px] px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-moz-green focus:border-transparent"
+          class="flex-1 min-w-[300px] px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ispc-orange focus:border-transparent"
           (input)="onSearchChange($event)"
           [value]="searchTerm()"
         >
@@ -64,7 +64,7 @@
               <button mat-button (click)="searchTerm.set('')">Limpar pesquisa</button>
             } @else {
               <p class="text-gray-600 mb-4">Ainda não tem produtos cadastrados</p>
-              <button mat-raised-button class="!bg-moz-green !text-white" (click)="openDialog()">
+              <button mat-raised-button class="!bg-ispc-orange !text-white" (click)="openDialog()">
                 <mat-icon>add</mat-icon>
                 <span>Adicionar Primeiro Produto</span>
               </button>
@@ -140,7 +140,7 @@
                     mat-icon-button 
                     (click)="toggleStatus(product)" 
                     [title]="product.is_active ? 'Desactivar' : 'Activar'"
-                    [class]="product.is_active ? 'text-gray-400' : 'text-moz-green'"
+                    [class]="product.is_active ? 'text-gray-400' : 'text-ispc-orange'"
                   >
                     <mat-icon>{{ product.is_active ? 'visibility_off' : 'visibility' }}</mat-icon>
                   </button>

@@ -6,11 +6,10 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        'moz-green': '#007a5e',
-        'moz-yellow': '#FCD116',
-        'moz-red': '#CE1126',
-        'primary': '#007a5e',
-        'secondary': '#FCD116',
+        'ispc-orange': '#f16c39',
+        'ispc-dark': '#332d2a',
+        'primary': '#f16c39',
+        'secondary': '#332d2a',
         'accent': '#CE1126',
       },
       fontFamily: {

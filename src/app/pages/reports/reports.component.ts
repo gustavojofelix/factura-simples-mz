@@ -102,7 +102,7 @@ interface SalesReport {
 
               <button
                 mat-raised-button
-                class="!bg-moz-green !text-white"
+                class="!bg-ispc-orange !text-white"
                 (click)="generateReport()"
                 [disabled]="isLoading() || filterForm.invalid"
               >

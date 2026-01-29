@@ -187,9 +187,9 @@ export class InvoiceService {
   getStatusColor(status: string): string {
     const colors: { [key: string]: string } = {
       'rascunho': 'bg-gray-100 text-gray-600 border border-gray-300',
-      'pendente': 'bg-yellow-100 text-yellow-800',
-      'paga': 'bg-green-100 text-green-800',
-      'vencida': 'bg-red-100 text-red-800'
+      'pendente': 'bg-ispc-orange/10 text-ispc-orange border border-ispc-orange/20',
+      'paga': 'bg-ispc-dark text-white',
+      'vencida': 'bg-red-50 text-red-700 border border-red-200'
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   }

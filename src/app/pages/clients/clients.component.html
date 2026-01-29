@@ -7,7 +7,7 @@
     <div class="flex gap-2">
       <button
         mat-stroked-button
-        class="!border-moz-green !text-moz-green"
+        class="!border-ispc-orange !text-ispc-orange"
         [matMenuTriggerFor]="exportMenu"
         [disabled]="clientService.clients().length === 0"
       >
@@ -27,7 +27,7 @@
 
       <button
         mat-raised-button
-        class="!bg-moz-green !text-white"
+        class="!bg-ispc-orange !text-white"
         (click)="openDialog()"
       >
         <mat-icon class="mr-2">add</mat-icon>
@@ -42,7 +42,7 @@
         <input
           type="text"
           placeholder="Pesquisar clientes..."
-          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-moz-green focus:border-transparent"
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ispc-orange focus:border-transparent"
           (input)="onSearchChange($event)"
         >
       </div>
@@ -63,7 +63,7 @@
             <p class="text-gray-600 mb-4">Ainda não tem clientes cadastrados</p>
             <button
               mat-raised-button
-              class="!bg-moz-green !text-white"
+              class="!bg-ispc-orange !text-white"
               (click)="openDialog()"
             >
               <mat-icon class="mr-2">add</mat-icon>
@@ -78,8 +78,8 @@
               <th mat-header-cell *matHeaderCellDef class="!font-semibold">Nome</th>
               <td mat-cell *matCellDef="let client">
                 <div class="flex items-center">
-                  <div class="w-10 h-10 bg-moz-green/10 rounded-full flex items-center justify-center mr-3">
-                    <mat-icon class="!text-moz-green">person</mat-icon>
+                  <div class="w-10 h-10 bg-ispc-orange/10 rounded-full flex items-center justify-center mr-3">
+                    <mat-icon class="!text-ispc-orange">person</mat-icon>
                   </div>
                   <span class="font-medium">{{ client.name }}</span>
                 </div>
@@ -126,7 +126,7 @@
                   mat-icon-button 
                   (click)="toggleStatus(client)" 
                   [title]="client.is_active ? 'Desactivar' : 'Activar'"
-                  [class]="client.is_active ? 'text-gray-400' : 'text-moz-green'"
+                  [class]="client.is_active ? 'text-gray-400' : 'text-ispc-orange'"
                 >
                   <mat-icon>{{ client.is_active ? 'visibility_off' : 'visibility' }}</mat-icon>
                 </button>

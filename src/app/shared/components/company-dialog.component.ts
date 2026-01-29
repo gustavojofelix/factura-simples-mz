@@ -33,7 +33,7 @@ import { MAIN_ACTIVITIES, SECONDARY_ACTIVITIES } from '../../core/constants/busi
         <div class="flex flex-col items-center mb-8 pb-6 border-b border-gray-100">
           <div class="relative group">
             <div 
-              class="w-32 h-32 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50 overflow-hidden cursor-pointer hover:border-moz-green transition-colors"
+              class="w-32 h-32 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50 overflow-hidden cursor-pointer hover:border-ispc-orange transition-colors"
               (click)="logoInput.click()"
             >
               @if (logoUrl()) {
@@ -212,7 +212,7 @@ import { MAIN_ACTIVITIES, SECONDARY_ACTIVITIES } from '../../core/constants/busi
 
           <div class="border-t border-gray-100 pt-6 mt-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <mat-icon class="mr-2 text-moz-green">account_balance</mat-icon>
+              <mat-icon class="mr-2 text-ispc-orange">account_balance</mat-icon>
               Dados Bancários
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

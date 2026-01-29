@@ -1,14 +1,14 @@
 @import '@angular/material/prebuilt-themes/indigo-pink.css';
 
 :root {
-  --moz-green: #007a5e;
-  --moz-yellow: #FCD116;
-  --moz-red: #CE1126;
-  --primary-color: #007a5e;
-  --accent-color: #FCD116;
+  --moz-orange: #f16c39;
+  --moz-dark: #332d2a;
+  --primary-color: #f16c39;
+  --accent-color: #332d2a;
 }
 
-html, body {
+html,
+body {
   height: 100%;
 }
 
@@ -17,18 +17,26 @@ body {
   font-family: 'Inter', sans-serif;
 }
 
-.mat-mdc-raised-button.mat-primary {
-  --mdc-protected-button-container-color: var(--moz-green);
-  --mdc-protected-button-label-text-color: white;
+.mat-mdc-raised-button.mat-primary,
+.mat-mdc-unelevated-button.mat-primary {
+  --mdc-protected-button-container-color: #f16c39 !important;
+  --mdc-protected-button-label-text-color: white !important;
+  --mdc-filled-button-container-color: #f16c39 !important;
+  --mdc-filled-button-label-text-color: white !important;
+  background-color: #f16c39 !important;
+  color: white !important;
 }
 
 .mat-mdc-button.mat-primary {
-  --mdc-text-button-label-text-color: var(--moz-green);
+  --mdc-text-button-label-text-color: #f16c39 !important;
+  color: #f16c39 !important;
 }
 
 .mat-mdc-outlined-button.mat-primary {
-  --mdc-outlined-button-label-text-color: var(--moz-green);
-  --mdc-outlined-button-outline-color: var(--moz-green);
+  --mdc-outlined-button-label-text-color: #f16c39 !important;
+  --mdc-outlined-button-outline-color: #f16c39 !important;
+  color: #f16c39 !important;
+  border-color: #f16c39 !important;
 }
 
 .mat-mdc-card {

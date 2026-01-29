@@ -26,8 +26,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
     MatCardModule,
     MatChipsModule,
     MatTableModule,
-    MatProgressSpinnerModule,
-    InvoiceDialogComponent
+    MatProgressSpinnerModule
   ],
   template: `
     <div class="max-w-5xl mx-auto p-6 printable-content">
@@ -52,7 +51,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
               </div>
               <div class="flex gap-2 no-print">
                 @if (invoice()!.status === 'rascunho') {
-                  <button mat-raised-button class="!bg-moz-green !text-white" (click)="emitDraft()">
+                  <button mat-raised-button class="!bg-ispc-orange !text-white" (click)="emitDraft()">
                     <mat-icon>check_circle</mat-icon>
                     Validar e Emitir
                   </button>
@@ -74,7 +73,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
                   Enviar Email
                 </button>
                 @if (invoiceService.canEditInvoice(invoice()!)) {
-                  <button mat-raised-button class="!bg-moz-green !text-white" (click)="editInvoice()">
+                  <button mat-raised-button class="!bg-ispc-orange !text-white" (click)="editInvoice()">
                     <mat-icon>edit</mat-icon>
                     Editar
                   </button>
@@ -253,7 +252,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
                       <td class="p-3">{{ formatDate(payment.payment_date) }}</td>
                       <td class="p-3">{{ paymentService.getPaymentMethodLabel(payment.payment_method) }}</td>
                       <td class="p-3">{{ payment.reference || '-' }}</td>
-                      <td class="p-3 text-right font-medium text-moz-green">{{ formatCurrency(payment.amount) }}</td>
+                      <td class="p-3 text-right font-medium text-ispc-orange">{{ formatCurrency(payment.amount) }}</td>
                       <td class="p-3 text-right no-print">
                         <button mat-icon-button (click)="viewReceipt(payment.id)">
                           <mat-icon>receipt</mat-icon>
@@ -324,12 +323,6 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
       .bg-gray-50 {
         background: white !important;
         border-top: 1px solid #e5e7eb !important;
-      }
-
-      .bg-blue-50/30 {
-        background: #f8fafc !important;
-        border: 1px solid #e5e7eb !important;
-        margin-top: 1rem !important;
       }
 
       .border-b {

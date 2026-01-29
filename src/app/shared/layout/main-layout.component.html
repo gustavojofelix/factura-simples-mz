@@ -3,8 +3,8 @@
   <aside class="hidden md:flex md:flex-shrink-0">
     <div class="flex flex-col w-64 bg-white border-r border-gray-200">
       <!-- Logo -->
-      <div class="flex items-center justify-center h-16 px-4 bg-moz-green">
-        <h1 class="text-xl font-bold text-white">ISPC Facil</h1>
+      <div class="flex items-center justify-center h-16 px-4 bg-ispc-orange">
+        <h1 class="text-xl font-bold text-white">ISPC Fácil</h1>
       </div>
 
       <!-- Company Selector -->
@@ -30,7 +30,7 @@
         @for (item of menuItems; track item.route) {
           <a
             [routerLink]="item.route"
-            routerLinkActive="bg-moz-green/10 text-moz-green"
+            routerLinkActive="bg-ispc-orange/10 text-ispc-orange"
             class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
           >
             <mat-icon class="mr-3">{{ item.icon }}</mat-icon>
@@ -78,7 +78,7 @@
         <button mat-icon-button (click)="toggleMobileMenu()">
           <mat-icon>menu</mat-icon>
         </button>
-        <h1 class="text-lg font-bold text-moz-green">ISPC Facil</h1>
+        <h1 class="text-lg font-bold text-ispc-orange">ISPC Fácil</h1>
         <button mat-icon-button [matMenuTriggerFor]="mobileUserMenu">
           <mat-icon>account_circle</mat-icon>
         </button>
@@ -102,7 +102,7 @@
         <div class="absolute inset-0 bg-gray-600 bg-opacity-75" (click)="toggleMobileMenu()"></div>
         <div class="relative flex flex-col w-64 h-full bg-white">
           <div class="flex items-center justify-between h-16 px-4 border-b">
-            <h1 class="text-lg font-bold text-moz-green">Menu</h1>
+            <h1 class="text-lg font-bold text-ispc-orange">Menu</h1>
             <button mat-icon-button (click)="toggleMobileMenu()">
               <mat-icon>close</mat-icon>
             </button>
@@ -113,7 +113,7 @@
               <a
                 [routerLink]="item.route"
                 (click)="toggleMobileMenu()"
-                routerLinkActive="bg-moz-green/10 text-moz-green"
+                routerLinkActive="bg-ispc-orange/10 text-ispc-orange"
                 class="flex items-center px-4 py-3 text-gray-700 rounded-lg"
               >
                 <mat-icon class="mr-3">{{ item.icon }}</mat-icon>

@@ -51,7 +51,7 @@ import { nuitValidator } from '../../core/validators/nuit.validator';
       <button mat-button mat-dialog-close>Cancelar</button>
       <button
         mat-raised-button
-        class="!bg-moz-green !text-white"
+        class="!bg-ispc-orange !text-white"
         [disabled]="form.invalid || saving()"
         (click)="save()"
       >
