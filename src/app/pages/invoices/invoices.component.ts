@@ -40,7 +40,7 @@ import { PaymentDialogComponent } from '../../shared/components/payment-dialog.c
   styleUrls: ['./invoices.component.css']
 })
 export class InvoicesComponent implements OnInit {
-  displayedColumns = ['invoice_number', 'client', 'date', 'total', 'status', 'actions'];
+  displayedColumns = ['invoice_number', 'client', 'date', 'due_date', 'total', 'status', 'actions'];
 
   searchTerm = signal('');
   statusFilter = signal<string>('todas');
@@ -147,6 +147,19 @@ export class InvoicesComponent implements OnInit {
 
   printInvoice(invoice: Invoice) {
     this.router.navigate(['/facturas', invoice.id], { queryParams: { print: true } });
+  }
+
+  async emitDraft(invoice: Invoice) {
+    if (!confirm(`Deseja validar e emitir esta factura? Esta acção irá atribuir o número sequencial final.`)) {
+      return;
+    }
+
+    const success = await this.invoiceService.emitInvoice(invoice.id);
+    if (success) {
+      this.snackBar.open('Factura emitida com sucesso!', 'Fechar', { duration: 3000 });
+    } else {
+      this.snackBar.open('Erro ao emitir factura', 'Fechar', { duration: 3000 });
+    }
   }
 
   sendEmail(invoice: Invoice) {

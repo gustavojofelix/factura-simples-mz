@@ -151,6 +151,17 @@ export class InvoiceDialogComponent implements OnInit {
     return filtered;
   });
 
+  paymentTerms = [
+    { label: 'Imediato', days: 0 },
+    { label: '5 Dias', days: 5 },
+    { label: '10 Dias', days: 10 },
+    { label: '15 Dias', days: 15 },
+    { label: '30 Dias', days: 30 },
+    { label: '45 Dias', days: 45 },
+    { label: '60 Dias', days: 60 },
+    { label: '90 Dias', days: 90 }
+  ];
+
   saving = signal(false);
   isEditing = signal(false);
 
@@ -179,6 +190,7 @@ export class InvoiceDialogComponent implements OnInit {
     this.step2Form = this.fb.group({
       product_id: [''],
       quantity: [1, [Validators.required, Validators.min(1)]],
+      due_date_term: [0, Validators.required],
       notes: ['']
     });
 
@@ -207,6 +219,20 @@ export class InvoiceDialogComponent implements OnInit {
       
       // Patch notes
       this.step2Form.patchValue({ notes: this.data.invoice.notes || '' });
+
+      // Patch due date term if possible
+      if (this.data.invoice.date && this.data.invoice.due_date) {
+        const date = new Date(this.data.invoice.date);
+        const dueDate = new Date(this.data.invoice.due_date);
+        const diffTime = Math.abs(dueDate.getTime() - date.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        // Find closest term
+        const closestTerm = this.paymentTerms.reduce((prev, curr) => 
+          Math.abs(curr.days - diffDays) < Math.abs(prev.days - diffDays) ? curr : prev
+        );
+        this.step2Form.patchValue({ due_date_term: closestTerm.days });
+      }
     }
   }
 
@@ -293,7 +319,7 @@ export class InvoiceDialogComponent implements OnInit {
     });
   }
 
-  async save() {
+  async save(status: string = 'pendente') {
     if (this.step1Form.invalid || this.invoiceItems().length === 0) {
       this.snackBar.open('Selecione cliente e adicione produtos', 'Fechar', { duration: 3000 });
       return;
@@ -304,6 +330,11 @@ export class InvoiceDialogComponent implements OnInit {
     try {
       const clientId = this.step1Form.get('client_id')?.value;
       const notes = this.step2Form.get('notes')?.value;
+      const days = this.step2Form.get('due_date_term')?.value || 0;
+      
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + days);
+      const dueDateString = dueDate.toISOString().split('T')[0];
 
       let result: Invoice | null = null;
       let message = '';
@@ -313,6 +344,7 @@ export class InvoiceDialogComponent implements OnInit {
           this.data.invoice.id,
           clientId,
           this.invoiceItems(),
+          dueDateString,
           notes
         );
         message = 'Factura actualizada com sucesso!';
@@ -320,10 +352,11 @@ export class InvoiceDialogComponent implements OnInit {
         result = await this.invoiceService.createInvoice(
           clientId,
           this.invoiceItems(),
-          undefined,
-          notes
+          dueDateString,
+          notes,
+          status
         );
-        message = 'Factura criada com sucesso!';
+        message = status === 'rascunho' ? 'Rascunho guardado!' : 'Factura emitida com sucesso!';
       }
 
       if (result) {

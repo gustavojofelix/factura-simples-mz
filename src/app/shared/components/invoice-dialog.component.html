@@ -244,7 +244,17 @@
               </div>
 
               <!-- Content and Notes -->
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Prazo de Pagamento</mat-label>
+                  <mat-select formControlName="due_date_term">
+                    @for (term of paymentTerms; track term.days) {
+                      <mat-option [value]="term.days">{{ term.label }}</mat-option>
+                    }
+                  </mat-select>
+                  <mat-hint>A factura será marcada como vencida após este prazo</mat-hint>
+                </mat-form-field>
+
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>Notas da Factura</mat-label>
                   <textarea
@@ -275,17 +285,32 @@
                 Selecionar Cliente
               </button>
 
-              <button
-                mat-raised-button
-                class="!bg-moz-green !text-white px-10 py-2 !rounded-lg"
-                [disabled]="invoiceItems().length === 0 || saving()"
-                (click)="save()"
-              >
-                <mat-icon class="mr-2">check_circle</mat-icon>
-                <span class="text-lg">
-                  {{ saving() ? 'A guardar...' : (isEditing() ? 'Actualizar Factura' : 'Finalizar e Emitir Factura') }}
-                </span>
-              </button>
+              <div class="flex gap-3">
+                @if (!isEditing()) {
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    class="!border-moz-green !text-moz-green"
+                    [disabled]="invoiceItems().length === 0 || saving()"
+                    (click)="save('rascunho')"
+                  >
+                    <mat-icon>save_alt</mat-icon>
+                    Rascunho
+                  </button>
+                }
+
+                <button
+                  mat-raised-button
+                  class="!bg-moz-green !text-white px-8 h-[40px] !rounded-lg flex items-center"
+                  [disabled]="invoiceItems().length === 0 || saving()"
+                  (click)="save('pendente')"
+                >
+                  <mat-icon class="mr-2">check_circle</mat-icon>
+                  <span>
+                    {{ saving() ? 'A guardar...' : (isEditing() ? 'Actualizar' : 'Emitir Factura') }}
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
         </form>

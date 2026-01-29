@@ -84,6 +84,10 @@ export class InvoiceService {
   }
 
   private calculateInvoiceStatus(invoice: any): string {
+    if (invoice.status === 'rascunho') {
+      return 'rascunho';
+    }
+
     if (invoice.amount_paid >= invoice.total) {
       return 'paga';
     }
@@ -156,13 +160,13 @@ export class InvoiceService {
   }
 
   canEditInvoice(invoice: Invoice): boolean {
-    // Cannot edit if there are any payments (partial or full)
-    return invoice.amount_paid === 0;
+    // Can edit if it's a draft or if it's pending with no payments
+    return invoice.status === 'rascunho' || invoice.amount_paid === 0;
   }
 
   canDeleteInvoice(invoice: Invoice): boolean {
-    // Cannot delete if there are any payments (partial or full)
-    return invoice.amount_paid === 0;
+    // Can delete if it's a draft or if it's pending with no payments
+    return invoice.status === 'rascunho' || invoice.amount_paid === 0;
   }
 
   canManagePayments(invoice: Invoice): boolean {
@@ -173,6 +177,7 @@ export class InvoiceService {
 
   getStatusLabel(status: string): string {
     const labels: { [key: string]: string } = {
+      'rascunho': 'Rascunho',
       'pendente': 'Pendente',
       'paga': 'Paga',
       'vencida': 'Vencida'
@@ -182,6 +187,7 @@ export class InvoiceService {
 
   getStatusColor(status: string): string {
     const colors: { [key: string]: string } = {
+      'rascunho': 'bg-gray-100 text-gray-600 border border-gray-300',
       'pendente': 'bg-yellow-100 text-yellow-800',
       'paga': 'bg-green-100 text-green-800',
       'vencida': 'bg-red-100 text-red-800'
@@ -193,7 +199,8 @@ export class InvoiceService {
     clientId: string,
     items: Omit<InvoiceItem, 'id' | 'invoice_id'>[],
     dueDate?: string,
-    notes?: string
+    notes?: string,
+    status: string = 'pendente'
   ): Promise<Invoice | null> {
     const company = this.companyService.activeCompany();
     if (!company) return null;
@@ -202,7 +209,12 @@ export class InvoiceService {
       const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
       const total = subtotal;
 
-      const invoiceNumber = `${company.invoice_prefix}${String(company.invoice_number).padStart(5, '0')}`;
+      let invoiceNumber = '';
+      if (status === 'rascunho') {
+        invoiceNumber = `RSC-${Date.now().toString().slice(-6)}`;
+      } else {
+        invoiceNumber = `${company.invoice_prefix}${String(company.invoice_number).padStart(5, '0')}`;
+      }
 
       const { data: invoice, error: invoiceError } = await this.supabase.db
         .from('invoices')
@@ -216,7 +228,7 @@ export class InvoiceService {
           total,
           amount_paid: 0,
           amount_pending: total,
-          status: 'pendente',
+          status,
           notes
         })
         .select()
@@ -240,12 +252,14 @@ export class InvoiceService {
 
       if (itemsError) throw itemsError;
 
-      const updateSuccess = await this.companyService.updateCompany(company.id, {
-        invoice_number: company.invoice_number + 1
-      });
+      if (status !== 'rascunho') {
+        const updateSuccess = await this.companyService.updateCompany(company.id, {
+          invoice_number: company.invoice_number + 1
+        });
 
-      if (!updateSuccess) {
-        console.error('Erro ao actualizar número da factura');
+        if (!updateSuccess) {
+          console.error('Erro ao actualizar número da factura');
+        }
       }
 
       await this.loadInvoices();
@@ -257,10 +271,44 @@ export class InvoiceService {
     }
   }
 
+  async emitInvoice(invoiceId: string): Promise<boolean> {
+    const invoice = this.invoices().find(i => i.id === invoiceId);
+    if (!invoice || invoice.status !== 'rascunho') return false;
+
+    const company = this.companyService.activeCompany();
+    if (!company) return false;
+
+    const invoiceNumber = `${company.invoice_prefix}${String(company.invoice_number).padStart(5, '0')}`;
+
+    try {
+      const { error } = await this.supabase.db
+        .from('invoices')
+        .update({
+          status: 'pendente',
+          invoice_number: invoiceNumber,
+          date: new Date().toISOString().split('T')[0]
+        })
+        .eq('id', invoiceId);
+
+      if (error) throw error;
+
+      await this.companyService.updateCompany(company.id, {
+        invoice_number: company.invoice_number + 1
+      });
+
+      await this.loadInvoices();
+      return true;
+    } catch (error) {
+      console.error('Erro ao emitir factura:', error);
+      return false;
+    }
+  }
+
   async updateInvoice(
     id: string,
     clientId: string,
     items: Omit<InvoiceItem, 'id' | 'invoice_id'>[],
+    dueDate?: string,
     notes?: string
   ): Promise<Invoice | null> {
     const invoice = this.invoices().find(i => i.id === id);
@@ -278,9 +326,10 @@ export class InvoiceService {
         .from('invoices')
         .update({
           client_id: clientId,
+          due_date: dueDate,
           subtotal,
           total,
-          amount_pending: total - invoice.amount_paid, // Should be 0 paid, but safe calculation
+          amount_pending: total - invoice.amount_paid,
           notes
         })
         .eq('id', id)
