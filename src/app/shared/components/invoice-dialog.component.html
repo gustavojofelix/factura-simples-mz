@@ -144,8 +144,26 @@
 
                   <ng-container matColumnDef="quantity">
                     <th mat-header-cell *matHeaderCellDef class="!text-center">Qtd</th>
-                    <td mat-cell *matCellDef="let item" class="!text-center">
-                      {{ item.quantity }}
+                    <td mat-cell *matCellDef="let item; let i = index" class="!text-center">
+                      <div class="flex items-center justify-center gap-1">
+                        <button 
+                          mat-icon-button 
+                          class="!w-6 !h-6 !p-0 !leading-none bg-gray-100 hover:bg-gray-200" 
+                          (click)="updateItemQuantity(i, -1)"
+                        >
+                          <mat-icon class="!text-sm">remove</mat-icon>
+                        </button>
+                        
+                        <span class="w-8">{{ item.quantity }}</span>
+
+                        <button 
+                          mat-icon-button 
+                          class="!w-6 !h-6 !p-0 !leading-none bg-gray-100 hover:bg-gray-200" 
+                          (click)="updateItemQuantity(i, 1)"
+                        >
+                          <mat-icon class="!text-sm">add</mat-icon>
+                        </button>
+                      </div>
                     </td>
                   </ng-container>
 

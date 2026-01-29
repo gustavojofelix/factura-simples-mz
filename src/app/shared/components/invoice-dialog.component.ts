@@ -236,6 +236,23 @@ export class InvoiceDialogComponent implements OnInit {
     this.invoiceItems.update(items => items.filter((_, i) => i !== index));
   }
 
+  updateItemQuantity(index: number, change: number) {
+    this.invoiceItems.update(items => {
+      const newItems = [...items];
+      const item = { ...newItems[index] };
+      item.quantity += change;
+
+      if (item.quantity <= 0) {
+        return newItems.filter((_, i) => i !== index);
+      }
+
+      item.subtotal = item.unit_price * item.quantity;
+      item.total = item.subtotal;
+      newItems[index] = item;
+      return newItems;
+    });
+  }
+
   async save() {
     if (this.step1Form.invalid || this.invoiceItems().length === 0) {
       this.snackBar.open('Selecione cliente e adicione produtos', 'Fechar', { duration: 3000 });
