@@ -1,0 +1,67 @@
+<div class="bg-white rounded-2xl shadow-xl p-8">
+  <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
+    <!-- Email Field -->
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Email</mat-label>
+      <input matInput type="email" formControlName="email" placeholder="seu@email.com">
+      <mat-icon matPrefix class="!text-gray-400">email</mat-icon>
+      @if (getErrorMessage('email')) {
+        <mat-error>{{ getErrorMessage('email') }}</mat-error>
+      }
+    </mat-form-field>
+
+    <!-- Password Field -->
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Palavra-passe</mat-label>
+      <input 
+        matInput 
+        [type]="hidePassword() ? 'password' : 'text'" 
+        formControlName="password"
+        placeholder="">
+      <mat-icon matPrefix class="!text-gray-400">lock</mat-icon>
+      <button 
+        mat-icon-button 
+        matSuffix 
+        type="button"
+        (click)="hidePassword.set(!hidePassword())"
+        [attr.aria-label]="'Mostrar palavra-passe'"
+        [attr.aria-pressed]="!hidePassword()">
+        <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+      @if (getErrorMessage('password')) {
+        <mat-error>{{ getErrorMessage('password') }}</mat-error>
+      }
+    </mat-form-field>
+
+    <!-- Submit Button -->
+    <button 
+      mat-raised-button 
+      type="submit"
+      class="w-full !bg-ispc-orange !text-white !py-3 !text-lg !font-semibold !rounded-lg hover:!bg-ispc-orange/90 transition-all"
+      [disabled]="isLoading()">
+      @if (isLoading()) {
+        <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
+        <span>A entrar...</span>
+      } @else {
+        <span>Entrar</span>
+      }
+    </button>
+  </form>
+
+  <!-- Divider -->
+  <div class="mt-6 flex items-center justify-center">
+    <div class="border-t border-gray-300 flex-1"></div>
+    <span class="px-4 text-sm text-gray-500">ou</span>
+    <div class="border-t border-gray-300 flex-1"></div>
+  </div>
+
+  <!-- Register Link -->
+  <div class="mt-6 text-center">
+    <p class="text-gray-600">
+      Ainda não tem conta?
+      <a routerLink="/registar" class="text-ispc-orange font-semibold hover:text-ispc-orange/80 transition-colors ml-1">
+        Criar conta grátis
+      </a>
+    </p>
+  </div>
+</div>
