@@ -101,25 +101,15 @@ export class TaxService {
   }
 
   /**
-   * Calcula a taxa de ISPC baseada no tipo de atividade da empresa e volume anual de negócios
+   * Retorna a taxa de ISPC baseada nas categorias de atividade e volume selecionado
    */
-  private calculateISPCRate(businessActivityType: string, annualSales: number): number {
-    switch (businessActivityType) {
-      case 'comercio_ate_1m':
-        return annualSales <= 1000000 ? 3 : this.calculateISPCRate('comercio_1m_2.5m', annualSales);
-      case 'comercio_1m_2.5m':
-        return annualSales <= 2500000 ? 4 : this.calculateISPCRate('comercio_2.5m_4m', annualSales);
-      case 'comercio_2.5m_4m':
-        return annualSales <= 4000000 ? 5 : 20;
-      case 'servicos_gerais':
-        return 12;
-      case 'servicos_liberais':
-        return 15;
-      case 'agricola_pecuaria':
-        return annualSales <= 1000000 ? 3 : (annualSales <= 2500000 ? 4 : (annualSales <= 4000000 ? 5 : 20));
-      default:
-        return 3;
-    }
+  private calculateISPCRate(company: any): number {
+    const cat2 = company.category2;
+    
+    if (cat2 === 'servicos_nao_liberais') return 12;
+    if (cat2 === 'servicos_liberais') return 15;
+    
+    return parseInt(company.business_volume || '3');
   }
 
   async calculateTaxForPeriod(year: number, period: number): Promise<TaxCalculation | null> {
@@ -146,30 +136,39 @@ export class TaxService {
       const yearStart = `${year}-01-01`;
       const { data: yearInvoices, error: yearError } = await this.supabase.db
         .from('invoices')
-        .select('total')
+        .select('total, date')
         .eq('company_id', company.id)
         .gte('date', yearStart)
         .lte('date', endDate);
 
       if (yearError) throw yearError;
 
-      const annualSales = yearInvoices?.reduce((sum, inv) => sum + (inv.total || 0), 0) || 0;
+      const annualSalesBeforeQuarter = (yearInvoices || [])
+        .filter(inv => inv.date < startDate)
+        .reduce((sum, inv) => sum + (inv.total || 0), 0);
+      
+      const annualSales = (yearInvoices || [])
+        .reduce((sum, inv) => sum + (inv.total || 0), 0);
 
       // Determinar a taxa baseada no tipo de atividade e volume anual
-      const businessActivityType = (company as any).business_activity_type || 'comercio_ate_1m';
-      const ispcRate = this.calculateISPCRate(businessActivityType, annualSales);
+      const ispcRate = this.calculateISPCRate(company);
 
       // Calcular ISPC
-      const ispcBase = totalSales;
-      let ispcAmount = (ispcBase * ispcRate) / 100;
+      let ispcAmount = 0;
+      const threshold = 4000000;
 
-      // Se o volume ultrapassou 4M, cobrar 20% sobre o excesso
-      if (businessActivityType.startsWith('comercio_') || businessActivityType === 'agricola_pecuaria') {
-        if (annualSales > 4000000) {
-          const excess = annualSales - 4000000;
-          const excessTax = (excess * 20) / 100;
-          ispcAmount = ((4000000 * 5) / 100) + excessTax;
-        }
+      if (annualSales <= threshold) {
+        // Todo o volume do trimestre está dentro do limite normal
+        ispcAmount = (totalSales * ispcRate) / 100;
+      } else if (annualSalesBeforeQuarter >= threshold) {
+        // Já ultrapassou o limite no trimestre anterior, tudo a 20%
+        ispcAmount = (totalSales * 20) / 100;
+      } else {
+        // Ultrapassou o limite NESTE trimestre
+        const portionNormal = threshold - annualSalesBeforeQuarter;
+        const portionExcess = totalSales - portionNormal;
+        
+        ispcAmount = ((portionNormal * ispcRate) / 100) + ((portionExcess * 20) / 100);
       }
 
       return {
@@ -178,8 +177,8 @@ export class TaxService {
         startDate,
         endDate,
         totalSales,
-        ispcBase,
-        ispcRate,
+        ispcBase: totalSales,
+        ispcRate: annualSales > threshold ? 20 : ispcRate,
         ispcAmount,
         invoiceCount: invoices?.length || 0
       };
@@ -189,31 +188,63 @@ export class TaxService {
     }
   }
 
+  isEndOfQuarter(year: number, period: number): boolean {
+    const today = new Date();
+    const periodEndMonth = period * 3 - 1; // 0-indexed: 2, 5, 8, 11
+    const lastDay = new Date(year, periodEndMonth + 1, 0);
+    return today >= lastDay;
+  }
+
   async createDeclaration(calculation: TaxCalculation, notes?: string): Promise<TaxDeclaration | null> {
     const company = this.companyService.activeCompany();
     if (!company) return null;
 
     try {
       const dueDate = this.calculateDueDate(calculation.year, calculation.period);
+      const isExpired = this.isEndOfQuarter(calculation.year, calculation.period);
+      const status = isExpired ? 'pendente' : 'rascunho';
 
-      const { data, error } = await this.supabase.db
+      // Check for existing declaration to upsert
+      const { data: existing } = await this.supabase.db
         .from('tax_declarations')
-        .insert({
-          company_id: company.id,
-          period: calculation.period,
-          year: calculation.year,
-          start_date: calculation.startDate,
-          end_date: calculation.endDate,
-          total_sales: calculation.totalSales,
-          ispc_base: calculation.ispcBase,
-          ispc_rate: calculation.ispcRate,
-          ispc_amount: calculation.ispcAmount,
-          due_date: dueDate,
-          status: 'pendente',
-          notes
-        })
-        .select()
-        .single();
+        .select('id, status, notes')
+        .eq('company_id', company.id)
+        .eq('period', calculation.period)
+        .eq('year', calculation.year)
+        .maybeSingle();
+
+      const declarationData = {
+        company_id: company.id,
+        period: calculation.period,
+        year: calculation.year,
+        start_date: calculation.startDate,
+        end_date: calculation.endDate,
+        total_sales: calculation.totalSales,
+        ispc_base: calculation.ispcBase,
+        ispc_rate: calculation.ispcRate,
+        ispc_amount: calculation.ispcAmount,
+        due_date: dueDate,
+        status: existing?.status === 'paga' || existing?.status === 'submetida' ? existing.status : status,
+        notes: notes || existing?.notes
+      };
+
+      let result;
+      if (existing) {
+        result = await this.supabase.db
+          .from('tax_declarations')
+          .update(declarationData)
+          .eq('id', existing.id)
+          .select()
+          .single();
+      } else {
+        result = await this.supabase.db
+          .from('tax_declarations')
+          .insert(declarationData)
+          .select()
+          .single();
+      }
+
+      const { data, error } = result;
 
       if (error) throw error;
 
@@ -378,18 +409,20 @@ export class TaxService {
 
   getStatusLabel(status: string): string {
     const labels: { [key: string]: string } = {
+      'rascunho': 'Rascunho',
       'pendente': 'Pendente',
       'submetida': 'Submetida',
       'paga': 'Paga',
-      'atrasada': 'Atrasada'
+      'atrasada': 'Em Atraso'
     };
     return labels[status] || status;
   }
 
   getStatusColor(status: string): string {
     const colors: { [key: string]: string } = {
+      'rascunho': 'default',
       'pendente': 'warn',
-      'submetida': 'accent',
+      'submetida': 'primary',
       'paga': 'success',
       'atrasada': 'error'
     };

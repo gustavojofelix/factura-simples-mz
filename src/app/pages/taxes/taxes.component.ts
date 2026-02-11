@@ -45,6 +45,7 @@ export class TaxesComponent implements OnInit {
   selectedPeriod = signal(Math.ceil((new Date().getMonth() + 1) / 3));
   calculation = signal<TaxCalculation | null>(null);
   isCalculating = signal(false);
+  selectedTabIndex = signal(0);
   summary = signal<TaxSummary>({
     yearToDate: 0,
     currentQuarter: 0,
@@ -117,6 +118,7 @@ export class TaxesComponent implements OnInit {
     if (result) {
       this.calculation.set(null);
       await this.updateSummary();
+      this.selectedTabIndex.set(1); // Switch to "Declarações" tab
     }
   }
 

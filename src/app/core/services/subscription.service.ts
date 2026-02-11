@@ -96,6 +96,8 @@ export class SubscriptionService {
       .from('subscriptions')
       .select('*')
       .eq('company_id', companyId)
+      .order('created_at', { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     if (error) {

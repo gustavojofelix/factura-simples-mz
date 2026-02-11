@@ -123,6 +123,7 @@ export class AuthService {
         .from('profiles')
         .select('*')
         .eq('id', user.id)
+        .limit(1)
         .maybeSingle();
 
       if (error) throw error;

@@ -13,7 +13,6 @@ interface ExtractedData {
   province?: string;
   district?: string;
   administrativePost?: string;
-  mainActivity?: string;
 }
 
 Deno.serve(async (req: Request) => {
@@ -158,19 +157,6 @@ function parseDocumentText(
   const postMatch = text.match(/Posto\s+Administrativo[:\s]*([^\n]+)/i);
   if (postMatch) {
     data.administrativePost = postMatch[1].trim();
-  }
-
-  const activityMatches = [
-    /Actividade\s+Principal[:\s]*([^\n]+)/i,
-    /Atividade\s+Principal[:\s]*([^\n]+)/i,
-    /Objecto[:\s]*([^\n]+)/i,
-  ];
-  for (const pattern of activityMatches) {
-    const match = text.match(pattern);
-    if (match) {
-      data.mainActivity = match[1].trim();
-      break;
-    }
   }
 
   return data;

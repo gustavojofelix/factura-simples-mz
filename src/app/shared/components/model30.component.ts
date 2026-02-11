@@ -140,7 +140,7 @@ import { Company } from '../../core/services/company.service';
               <p style="font-size: 9pt; font-weight: bold; margin: 0;">5 – DESIGNAÇÃO DA ACTIVIDADE PRINCIPAL</p>
             </div>
             <div class="border-b border-black p-2">
-              <p style="font-size: 9pt; margin: 0; border-bottom: 1px dotted black; padding-bottom: 2px;">{{ company()!.documents_metadata?.mainActivity }}</p>
+              <p style="font-size: 9pt; margin: 0; border-bottom: 1px dotted black; padding-bottom: 2px;">{{ company()!.category1 || '' }}</p>
               <div class="flex justify-end items-center gap-2 mt-1" style="font-size: 8pt;">
                 <span>Código de Actividade Económica (CAE)</span>
                 <div class="flex gap-0.5">

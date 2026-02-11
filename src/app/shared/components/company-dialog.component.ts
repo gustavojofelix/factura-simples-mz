@@ -8,8 +8,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { DocumentProcessingService, CompanyDocument } from '../../core/services/document-processing.service';
 import { Company } from '../../core/services/company.service';
-import { MAIN_ACTIVITIES, SECONDARY_ACTIVITIES } from '../../core/constants/business-activities';
+import { ACTIVITY_HIERARCHY } from '../../core/constants/activity-categories';
 
 @Component({
   selector: 'app-company-dialog',
@@ -23,7 +26,9 @@ import { MAIN_ACTIVITIES, SECONDARY_ACTIVITIES } from '../../core/constants/busi
     MatButtonModule,
     MatSelectModule,
     MatIconModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatSnackBarModule,
+    MatProgressSpinnerModule
   ],
   template: `
     <h2 mat-dialog-title>{{ data.company ? 'Editar Empresa' : 'Nova Empresa' }}</h2>
@@ -86,6 +91,28 @@ import { MAIN_ACTIVITIES, SECONDARY_ACTIVITIES } from '../../core/constants/busi
               <mat-label>Nome da Empresa</mat-label>
               <input matInput formControlName="name" placeholder="Ex: Comercial Silva Lda">
               <mat-icon matPrefix class="text-gray-400">business</mat-icon>
+              
+              <div matSuffix class="flex items-center">
+                @if (isUploadingCommercial()) {
+                  <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+                } @else {
+                  @if (commercialActivityUrl()) {
+                    <mat-icon class="text-green-500 mr-2" matTooltip="Documento carregado">check_circle</mat-icon>
+                    <button type="button" mat-icon-button (click)="viewCommercialDocument()" matTooltip="Visualizar Exercício de Actividade Comercial">
+                      <mat-icon class="text-blue-500">visibility</mat-icon>
+                    </button>
+                    <button type="button" mat-icon-button (click)="commercialInput.click()" matTooltip="Alterar Documento">
+                      <mat-icon class="text-gray-400">file_upload</mat-icon>
+                    </button>
+                  } @else {
+                    <button type="button" mat-icon-button (click)="commercialInput.click()" matTooltip="Fazer upload do Exercício de Actividade Comercial (Opcional)">
+                      <mat-icon class="text-gray-400">file_upload</mat-icon>
+                    </button>
+                  }
+                }
+                <input type="file" #commercialInput class="hidden" accept=".pdf,.jpg,.jpeg,.png" (change)="onCommercialDocumentSelected($event)">
+              </div>
+
               @if (form.get('name')?.hasError('required')) {
                 <mat-error>O nome é obrigatório</mat-error>
               }
@@ -95,6 +122,28 @@ import { MAIN_ACTIVITIES, SECONDARY_ACTIVITIES } from '../../core/constants/busi
               <mat-label>NUIT</mat-label>
               <input matInput formControlName="nuit" placeholder="Ex: 123456789" maxlength="9" (input)="formatNuit()">
               <mat-icon matPrefix class="text-gray-400">badge</mat-icon>
+              
+              <div matSuffix class="flex items-center">
+                @if (isUploadingNuit()) {
+                  <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+                } @else {
+                  @if (nuitDocumentUrl()) {
+                    <mat-icon class="text-green-500 mr-2" matTooltip="Documento carregado">check_circle</mat-icon>
+                    <button type="button" mat-icon-button (click)="viewDocument()" matTooltip="Visualizar Documento">
+                      <mat-icon class="text-blue-500">visibility</mat-icon>
+                    </button>
+                    <button type="button" mat-icon-button (click)="nuitInput.click()" matTooltip="Alterar Documento">
+                      <mat-icon class="text-gray-400">file_upload</mat-icon>
+                    </button>
+                  } @else {
+                    <button type="button" mat-icon-button (click)="nuitInput.click()" matTooltip="Fazer upload do NUIT (Opcional)">
+                      <mat-icon class="text-gray-400">file_upload</mat-icon>
+                    </button>
+                  }
+                }
+                <input type="file" #nuitInput class="hidden" accept=".pdf,.jpg,.jpeg,.png" (change)="onNuitDocumentSelected($event)">
+              </div>
+
               @if (form.get('nuit')?.hasError('required')) {
                 <mat-error>O NUIT é obrigatório</mat-error>
               }
@@ -127,41 +176,65 @@ import { MAIN_ACTIVITIES, SECONDARY_ACTIVITIES } from '../../core/constants/busi
             </mat-form-field>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Actividade Principal</mat-label>
-              <mat-select formControlName="mainActivity">
-                @for (activity of mainActivities; track activity) {
-                  <mat-option [value]="activity">{{ activity }}</mat-option>
-                }
-              </mat-select>
-              <mat-icon matPrefix class="text-gray-400">business_center</mat-icon>
-            </mat-form-field>
+          <div class="border-t border-gray-100 pt-6 mt-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <mat-icon class="mr-2 text-ispc-orange">business_center</mat-icon>
+              Tipo de Actividades
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>1ª Categoria</mat-label>
+                <mat-select formControlName="category1">
+                  @for (cat of getCat1Options(); track cat.id) {
+                    <mat-option [value]="cat.id">{{ cat.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
 
-             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Actividade Secundária</mat-label>
-              <mat-select formControlName="secondaryActivity">
-                @for (activity of secondaryActivities; track activity) {
-                  <mat-option [value]="activity">{{ activity }}</mat-option>
-                }
-              </mat-select>
-              <mat-icon matPrefix class="text-gray-400">store</mat-icon>
-            </mat-form-field>
+              @if (getCat2Options().length > 0) {
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>2ª Categoria</mat-label>
+                  <mat-select formControlName="category2">
+                    @for (cat of getCat2Options(); track cat.id) {
+                      <mat-option [value]="cat.id">{{ cat.label }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              }
+
+              @if (getCat3Options().length > 0) {
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>3ª Categoria</mat-label>
+                  <mat-select formControlName="category3">
+                    @for (cat of getCat3Options(); track cat) {
+                      <mat-option [value]="cat">{{ cat }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              }
+            </div>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Tipo de Atividade (ISPC)</mat-label>
-              <mat-select formControlName="business_activity_type">
-                <mat-option value="comercio_ate_1m">Comércio (até 1M)</mat-option>
-                <mat-option value="comercio_mais_1m">Comércio (> 1M)</mat-option>
-                <mat-option value="industrial_ate_1m">Industrial (até 1M)</mat-option>
-                <mat-option value="industrial_mais_1m">Industrial (> 1M)</mat-option>
-                <mat-option value="servicos_ate_1m">Serviços (até 1M)</mat-option>
-                <mat-option value="servicos_mais_1m">Serviços (> 1M)</mat-option>
-                <mat-option value="outros">Outros</mat-option>
+              <mat-label>Volume de Negócio</mat-label>
+              <mat-select formControlName="business_volume">
+                @if (isISPCScaleActivity()) {
+                  <mat-option value="3">3% (até 1.000.000,00MT)</mat-option>
+                  <mat-option value="4">4% (> 1.001.000,00MT e ≤ 2.500.000,00MT)</mat-option>
+                  <mat-option value="5">5% (> 2.501.000,00MT e ≤ 4.000.000,00MT)</mat-option>
+                } @else {
+                  @if (getServiceType() === 'nao_liberais') {
+                    <mat-option value="12">12% s/ volume ≤ 4.000.000,00MT</mat-option>
+                    <mat-option value="20">20% s/ volume > 4.000.000,00MT</mat-option>
+                  } @else if (getServiceType() === 'liberal') {
+                    <mat-option value="15">15% s/ volume ≤ 4.000.000,00MT</mat-option>
+                    <mat-option value="20">20% s/ volume > 4.000.000,00MT</mat-option>
+                  }
+                }
               </mat-select>
-              <mat-icon matPrefix class="text-gray-400">category</mat-icon>
+              <mat-icon matPrefix class="text-gray-400">trending_up</mat-icon>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
@@ -238,6 +311,73 @@ import { MAIN_ACTIVITIES, SECONDARY_ACTIVITIES } from '../../core/constants/busi
             </div>
           </div>
 
+          <!-- Seccao de Documentos Adicionais -->
+          <div class="border-t border-gray-100 pt-6 mt-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <mat-icon class="mr-2 text-ispc-orange">folder</mat-icon>
+              Outros Documentos
+            </h3>
+
+            <div class="bg-gray-50 p-4 rounded-lg mb-4">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Tipo de Documento</mat-label>
+                  <mat-select [formControl]="newDocType">
+                    @for (type of documentTypes; track type) {
+                      <mat-option [value]="type" [disabled]="isDocTypeSelected(type)">
+                        {{ type }}
+                      </mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+
+                <div class="flex items-center gap-2 mb-2">
+                  <button type="button" mat-raised-button (click)="otherInput.click()" [disabled]="!newDocType.value || isUploadingOther()">
+                    <mat-icon>file_upload</mat-icon>
+                    {{ isUploadingOther() ? 'Carregando...' : 'Fazer Upload' }}
+                  </button>
+                  <input type="file" #otherInput class="hidden" accept=".pdf,.jpg,.jpeg,.png" (change)="onOtherDocumentSelected($event)">
+                </div>
+
+                <div class="text-xs text-gray-500 mb-2">
+                  * Apenas um ficheiro por tipo. Para substituir, apague o anterior.
+                </div>
+              </div>
+            </div>
+
+            @if (otherDocuments().length > 0) {
+              <div class="border rounded-lg overflow-hidden">
+                <table class="w-full text-sm text-left">
+                  <thead class="bg-gray-50 text-gray-700 uppercase text-xs">
+                    <tr>
+                      <th class="px-4 py-2">Tipo</th>
+                      <th class="px-4 py-2">Ficheiro</th>
+                      <th class="px-4 py-2 text-right">Acções</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y">
+                    @for (doc of otherDocuments(); track doc.id) {
+                      <tr>
+                        <td class="px-4 py-3 font-medium">{{ doc.type }}</td>
+                        <td class="px-4 py-3 text-gray-500">{{ doc.file_name }}</td>
+                        <td class="px-4 py-3 text-right">
+                          <button type="button" mat-icon-button color="primary" (click)="viewOtherDocument(doc)" matTooltip="Visualizar">
+                            <mat-icon>visibility</mat-icon>
+                          </button>
+                          <button type="button" mat-icon-button color="warn" (click)="removeOtherDocument(doc)" matTooltip="Remover">
+                            <mat-icon>delete</mat-icon>
+                          </button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @else {
+              <p class="text-center text-gray-500 py-4 italic">Nenhum documento adicional adicionado.</p>
+            }
+          </div>
+
         </form>
       </div>
     </mat-dialog-content>
@@ -276,6 +416,23 @@ export class CompanyDialogComponent {
   form: FormGroup;
   loading = signal(false);
   logoUrl = signal<string | null>(this.data.company?.logo_url || null);
+  nuitDocumentUrl = signal<string | null>(this.data.company?.nuit_document_url || null);
+  isUploadingNuit = signal(false);
+  commercialActivityUrl = signal<string | null>(this.data.company?.commercial_activity_document_url || null);
+  isUploadingCommercial = signal(false);
+  
+  otherDocuments = signal<CompanyDocument[]>([]);
+  isUploadingOther = signal(false);
+  newDocType = this.fb.control('');
+
+  documentTypes = [
+    'Alvará',
+    'Certidão de Registo Comercial',
+    'Boletim da República',
+    'Documento de Identificação (Sócios)',
+    'Contrato de Arrendamento',
+    'Outros'
+  ];
 
 
   provinces = [
@@ -283,12 +440,13 @@ export class CompanyDialogComponent {
     'Zambézia', 'Nampula', 'Niassa', 'Cabo Delgado'
   ];
 
-  mainActivities = MAIN_ACTIVITIES;
-  secondaryActivities = SECONDARY_ACTIVITIES;
+  activityHierarchy = ACTIVITY_HIERARCHY;
 
   constructor(
     private fb: FormBuilder,
     private dialogRef: MatDialogRef<CompanyDialogComponent>,
+    private documentService: DocumentProcessingService,
+    private snackBar: MatSnackBar,
     @Inject(MAT_DIALOG_DATA) public data: { company?: Company }
   ) {
     this.form = this.fb.group({
@@ -298,19 +456,89 @@ export class CompanyDialogComponent {
       address: [data.company?.address || ''],
       phone: [data.company?.phone || ''],
       email: [data.company?.email || '', Validators.email],
-      business_activity_type: [(data.company as any)?.business_activity_type || 'comercio_ate_1m', Validators.required],
+      business_volume: [(data.company as any)?.business_volume || '3', Validators.required],
       currency: [data.company?.currency || 'MZN'],
       invoice_prefix: [data.company?.invoice_prefix || 'FAC'],
       province: [data.company?.documents_metadata?.province || ''],
       district: [data.company?.documents_metadata?.district || ''],
       administrativePost: [data.company?.documents_metadata?.administrativePost || ''],
-      mainActivity: [data.company?.documents_metadata?.mainActivity || ''],
-      secondaryActivity: [data.company?.documents_metadata?.secondaryActivity || ''],
       bank_name: [data.company?.bank_name || ''],
       bank_account: [data.company?.bank_account || ''],
       bank_iban: [data.company?.bank_iban || ''],
-      bank_swift: [data.company?.bank_swift || '']
+      bank_swift: [data.company?.bank_swift || ''],
+      category1: [data.company?.category1 || ''],
+      category2: [data.company?.category2 || ''],
+      category3: [data.company?.category3 || '']
     });
+
+    this.setupCategoryWatchers();
+    this.loadOtherDocuments();
+  }
+
+  async loadOtherDocuments() {
+    if (this.data.company?.id) {
+      const docs = await this.documentService.getCompanyDocuments(this.data.company.id);
+      this.otherDocuments.set(docs);
+    }
+  }
+
+  setupCategoryWatchers() {
+    this.form.get('category1')?.valueChanges.subscribe(() => {
+      this.form.patchValue({ category2: '', category3: '' }, { emitEvent: false });
+    });
+
+    this.form.get('category2')?.valueChanges.subscribe((cat2) => {
+      this.form.patchValue({ category3: '' }, { emitEvent: false });
+      
+      if (cat2 === 'servicos_nao_liberais') {
+        this.form.patchValue({ business_volume: '12' });
+      } else if (cat2 === 'servicos_liberais') {
+        this.form.patchValue({ business_volume: '15' });
+      } else {
+        const currentVol = this.form.get('business_volume')?.value;
+        if (currentVol === '12' || currentVol === '15' || currentVol === '20') {
+          this.form.patchValue({ business_volume: '3' });
+        }
+      }
+    });
+  }
+
+  isISPCScaleActivity() {
+    const cat2 = this.form.get('category2')?.value;
+    return cat2 !== 'servicos_nao_liberais' && cat2 !== 'servicos_liberais';
+  }
+
+  getServiceType(): 'liberal' | 'nao_liberais' | null {
+    const cat2 = this.form.get('category2')?.value;
+    if (cat2 === 'servicos_nao_liberais') return 'nao_liberais';
+    if (cat2 === 'servicos_liberais') return 'liberal';
+    return null;
+  }
+
+  getCat1Options() {
+    return Object.entries(this.activityHierarchy).map(([id, cat]) => ({ id, label: cat.label }));
+  }
+
+  getCat2Options() {
+    const cat1 = this.form.get('category1')?.value;
+    if (!cat1 || !this.activityHierarchy[cat1]?.subcategories) return [];
+    
+    return Object.entries(this.activityHierarchy[cat1].subcategories!).map(([id, cat]) => ({ 
+      id, 
+      label: cat.label 
+    }));
+  }
+
+  getCat3Options() {
+    const cat1 = this.form.get('category1')?.value;
+    const cat2 = this.form.get('category2')?.value;
+    
+    if (!cat1 || !cat2) return [];
+    
+    const cat2Obj = (this.activityHierarchy[cat1]?.subcategories as any)?.[cat2];
+    if (!cat2Obj || !cat2Obj.subcategories) return [];
+    
+    return cat2Obj.subcategories;
   }
 
   onLogoSelected(event: Event) {
@@ -332,6 +560,152 @@ export class CompanyDialogComponent {
   removeLogo(event: Event) {
     event.stopPropagation();
     this.logoUrl.set(null);
+  }
+
+  async onNuitDocumentSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    this.isUploadingNuit.set(true);
+
+    try {
+      const companyId = this.data.company?.id || 'temp';
+      const result = await this.documentService.uploadDocument(file, companyId, 'nuit');
+      
+      this.nuitDocumentUrl.set(result.url);
+      
+      if (result.extractedData) {
+        if (result.extractedData.nuit) {
+          this.form.patchValue({ nuit: result.extractedData.nuit });
+          this.formatNuit();
+        }
+        if (result.extractedData.tradeName && !this.form.get('name')?.value) {
+          this.form.patchValue({ name: result.extractedData.tradeName });
+        }
+        if (result.extractedData.address && !this.form.get('address')?.value) {
+          this.form.patchValue({ address: result.extractedData.address });
+        }
+        
+        this.snackBar.open('Dados extraídos do documento!', 'Fechar', { duration: 3000 });
+      } else {
+        this.snackBar.open('Documento carregado com sucesso!', 'Fechar', { duration: 3000 });
+      }
+    } catch (error: any) {
+      console.error('Erro ao subir NUIT:', error);
+      this.snackBar.open('Erro ao carregar documento', 'Fechar', { duration: 3000 });
+    } finally {
+      this.isUploadingNuit.set(false);
+      input.value = '';
+    }
+  }
+
+  async onCommercialDocumentSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    this.isUploadingCommercial.set(true);
+
+    try {
+      const companyId = this.data.company?.id || 'temp';
+      const result = await this.documentService.uploadDocument(file, companyId, 'commercial_activity');
+      
+      this.commercialActivityUrl.set(result.url);
+
+      if (result.extractedData) {
+        if (result.extractedData.tradeName && !this.form.get('name')?.value) {
+          this.form.patchValue({ name: result.extractedData.tradeName });
+        }
+        this.snackBar.open('Dados extraídos do documento!', 'Fechar', { duration: 3000 });
+      } else {
+        this.snackBar.open('Documento carregado com sucesso!', 'Fechar', { duration: 3000 });
+      }
+    } catch (error: any) {
+      console.error('Erro ao subir Exercício de Actividade Comercial:', error);
+      this.snackBar.open('Erro ao carregar documento', 'Fechar', { duration: 3000 });
+    } finally {
+      this.isUploadingCommercial.set(false);
+      input.value = '';
+    }
+  }
+
+  async onOtherDocumentSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const type = this.newDocType.value;
+    
+    if (!input.files || input.files.length === 0 || !type) return;
+
+    if (this.isDocTypeSelected(type)) {
+      this.snackBar.open(`Já existe um documento do tipo "${type}"`, 'Fechar', { duration: 3000 });
+      input.value = '';
+      return;
+    }
+
+    const file = input.files[0];
+    this.isUploadingOther.set(true);
+
+    try {
+      const companyId = this.data.company?.id;
+      if (!companyId) {
+        this.snackBar.open('Salve a empresa primeiro antes de adicionar outros documentos.', 'Fechar', { duration: 3000 });
+        return;
+      }
+
+      const result = await this.documentService.uploadDocument(file, companyId, 'other' as any);
+      const savedDoc = await this.documentService.saveDocument(companyId, type, result.url, file.name);
+      
+      if (savedDoc) {
+        this.otherDocuments.update(docs => [...docs, savedDoc]);
+        this.newDocType.setValue('');
+        this.snackBar.open('Documento adicionado com sucesso!', 'Fechar', { duration: 3000 });
+      }
+    } catch (error: any) {
+      console.error('Erro ao subir documento:', error);
+      this.snackBar.open('Erro ao carregar documento', 'Fechar', { duration: 3000 });
+    } finally {
+      this.isUploadingOther.set(false);
+      input.value = '';
+    }
+  }
+
+  isDocTypeSelected(type: string): boolean {
+    return this.otherDocuments().some(d => d.type === type);
+  }
+
+  async viewOtherDocument(doc: CompanyDocument) {
+    const signedUrl = await this.documentService.getSignedUrl(doc.url);
+    window.open(signedUrl, '_blank');
+  }
+
+  async removeOtherDocument(doc: CompanyDocument) {
+    if (confirm(`Tem certeza que deseja remover o documento "${doc.type}"?`)) {
+      try {
+        await this.documentService.deleteDocument(doc.url);
+        await this.documentService.deleteCompanyDocument(doc.id);
+        this.otherDocuments.update(docs => docs.filter(d => d.id !== doc.id));
+        this.snackBar.open('Documento removido com sucesso!', 'Fechar', { duration: 3000 });
+      } catch (error) {
+        console.error('Erro ao remover documento:', error);
+        this.snackBar.open('Erro ao remover documento', 'Fechar', { duration: 3000 });
+      }
+    }
+  }
+
+  async viewDocument() {
+    const url = this.nuitDocumentUrl();
+    if (url) {
+      const signedUrl = await this.documentService.getSignedUrl(url);
+      window.open(signedUrl, '_blank');
+    }
+  }
+
+  async viewCommercialDocument() {
+    const url = this.commercialActivityUrl();
+    if (url) {
+      const signedUrl = await this.documentService.getSignedUrl(url);
+      window.open(signedUrl, '_blank');
+    }
   }
 
   formatNuit() {
@@ -362,17 +736,21 @@ export class CompanyDialogComponent {
         currency: formValue.currency,
         invoice_prefix: formValue.invoice_prefix,
         logo_url: this.logoUrl() || undefined,
+        nuit_document_url: this.nuitDocumentUrl() || undefined,
+        commercial_activity_document_url: this.commercialActivityUrl() || undefined,
         documents_metadata: {
           province: formValue.province,
           district: formValue.district,
-          administrativePost: formValue.administrativePost,
-          mainActivity: formValue.mainActivity,
-          secondaryActivity: formValue.secondaryActivity
+          administrativePost: formValue.administrativePost
         },
         bank_name: formValue.bank_name,
         bank_account: formValue.bank_account,
         bank_iban: formValue.bank_iban,
-        bank_swift: formValue.bank_swift
+        bank_swift: formValue.bank_swift,
+        category1: formValue.category1,
+        category2: formValue.category2,
+        category3: formValue.category3,
+        business_volume: formValue.business_volume
       };
       
       this.dialogRef.close(formData);

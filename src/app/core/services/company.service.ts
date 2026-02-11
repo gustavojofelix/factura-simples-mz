@@ -15,6 +15,12 @@ export interface Company {
   invoice_prefix: string;
   invoice_number: number;
   logo_url?: string;
+  nuit_document_url?: string;
+  commercial_activity_document_url?: string;
+  category1?: string;
+  category2?: string;
+  category3?: string;
+  business_volume?: string;
   bank_name?: string;
   bank_account?: string;
   bank_iban?: string;
@@ -23,8 +29,6 @@ export interface Company {
     province?: string;
     district?: string;
     administrativePost?: string;
-    mainActivity?: string;
-    secondaryActivity?: string;
   };
   created_at: string;
   updated_at: string;
@@ -187,6 +191,7 @@ export class CompanyService {
       .select('role')
       .eq('company_id', companyId)
       .eq('user_id', user.id)
+      .limit(1)
       .maybeSingle();
 
     if (error || !data) return null;

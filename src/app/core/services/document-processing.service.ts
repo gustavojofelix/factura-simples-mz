@@ -8,12 +8,20 @@ export interface ExtractedCompanyData {
   province?: string;
   district?: string;
   administrativePost?: string;
-  mainActivity?: string;
 }
 
 export interface DocumentUploadResult {
   url: string;
   extractedData?: ExtractedCompanyData;
+}
+
+export interface CompanyDocument {
+  id: string;
+  company_id: string;
+  type: string;
+  url: string;
+  file_name: string;
+  created_at: string;
 }
 
 @Injectable({
@@ -22,25 +30,7 @@ export interface DocumentUploadResult {
 export class DocumentProcessingService {
   private readonly BUCKET_NAME = 'company-documents';
 
-  constructor(private supabase: SupabaseService) {
-    this.initializeBucket();
-  }
-
-  private async initializeBucket() {
-    try {
-      const { data: buckets } = await this.supabase.client.storage.listBuckets();
-      const bucketExists = buckets?.some(b => b.name === this.BUCKET_NAME);
-
-      if (!bucketExists) {
-        await this.supabase.client.storage.createBucket(this.BUCKET_NAME, {
-          public: false,
-          fileSizeLimit: 10485760
-        });
-      }
-    } catch (error) {
-      console.error('Error initializing bucket:', error);
-    }
-  }
+  constructor(private supabase: SupabaseService) {}
 
   async uploadDocument(
     file: File,
@@ -58,6 +48,9 @@ export class DocumentProcessingService {
       });
 
     if (error) {
+      if (error.message === 'Bucket not found') {
+        throw new Error('O sistema de arquivos (bucket) "company-documents" não existe no Supabase. Por favor, crie-o no Dashboard.');
+      }
       throw new Error(`Erro ao fazer upload: ${error.message}`);
     }
 
@@ -67,7 +60,7 @@ export class DocumentProcessingService {
 
     let extractedData: ExtractedCompanyData | undefined;
 
-    if (documentType === 'nuit' || documentType === 'activity_start') {
+    if (documentType === 'nuit' || documentType === 'activity_start' || documentType === 'commercial_activity') {
       extractedData = await this.extractDataFromDocument(file, documentType);
     }
 
@@ -79,7 +72,7 @@ export class DocumentProcessingService {
 
   private async extractDataFromDocument(
     file: File,
-    documentType: 'nuit' | 'activity_start'
+    documentType: 'nuit' | 'activity_start' | 'commercial_activity'
   ): Promise<ExtractedCompanyData> {
     try {
       const base64 = await this.fileToBase64(file);
@@ -116,6 +109,54 @@ export class DocumentProcessingService {
     });
   }
 
+  async getCompanyDocuments(companyId: string): Promise<CompanyDocument[]> {
+    const { data, error } = await this.supabase.client
+      .from('company_documents')
+      .select('*')
+      .eq('company_id', companyId)
+      .order('type', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching company documents:', error);
+      return [];
+    }
+
+    return data || [];
+  }
+
+  async saveDocument(companyId: string, type: string, url: string, fileName: string): Promise<CompanyDocument | null> {
+    const { data, error } = await this.supabase.client
+      .from('company_documents')
+      .upsert({
+        company_id: companyId,
+        type,
+        url,
+        file_name: fileName,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'company_id, type' })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error saving document info:', error);
+      throw error;
+    }
+
+    return data;
+  }
+
+  async deleteCompanyDocument(id: string): Promise<void> {
+    const { error } = await this.supabase.client
+      .from('company_documents')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting document info:', error);
+      throw error;
+    }
+  }
+
   async deleteDocument(url: string): Promise<void> {
     try {
       const path = url.split('/').slice(-2).join('/');
@@ -149,6 +190,29 @@ export class DocumentProcessingService {
 
     if (error) {
       throw new Error(`Erro ao atualizar documentos: ${error.message}`);
+    }
+  }
+
+  async getSignedUrl(urlOrPath: string): Promise<string> {
+    try {
+      // Se já for uma URL assinada ou segura (tokens), retornamos
+      if (urlOrPath.includes('token=')) return urlOrPath;
+
+      // Extrair o caminho relativo se for uma URL completa
+      let path = urlOrPath;
+      if (urlOrPath.includes(this.BUCKET_NAME)) {
+        path = urlOrPath.split(`${this.BUCKET_NAME}/`)[1];
+      }
+
+      const { data, error } = await this.supabase.client.storage
+        .from(this.BUCKET_NAME)
+        .createSignedUrl(path, 3600); // 1 hora de validade
+
+      if (error) throw error;
+      return data.signedUrl;
+    } catch (error) {
+      console.error('Erro ao gerar URL assinada:', error);
+      return urlOrPath; // Fallback para a URL original
     }
   }
 }

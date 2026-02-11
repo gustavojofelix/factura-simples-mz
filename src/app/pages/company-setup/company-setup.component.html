@@ -25,7 +25,84 @@
                   }
                 </mat-form-field>
               </div>
-              <div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Email</mat-label>
+                  <input matInput type="email" formControlName="email" placeholder="Ex: info@empresa.com" />
+                  <mat-icon matPrefix class="text-gray-400">email</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Telefone</mat-label>
+                  <input matInput type="tel" formControlName="phone" placeholder="Ex: +258 84 123 4567" />
+                  <mat-icon matPrefix class="text-gray-400">phone</mat-icon>
+                </mat-form-field>
+              </div>
+
+              <div class="border-t border-gray-100 pt-6 mt-4">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <mat-icon class="mr-2 text-ispc-orange">business_center</mat-icon>
+                  Tipo de Actividades
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>1ª Categoria</mat-label>
+                    <mat-select formControlName="category1">
+                      @for (cat of getCat1Options(); track cat.id) {
+                        <mat-option [value]="cat.id">{{ cat.label }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+
+                  @if (getCat2Options().length > 0) {
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>2ª Categoria</mat-label>
+                      <mat-select formControlName="category2">
+                        @for (cat of getCat2Options(); track cat.id) {
+                          <mat-option [value]="cat.id">{{ cat.label }}</mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
+                  }
+
+                  @if (getCat3Options().length > 0) {
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>3ª Categoria</mat-label>
+                      <mat-select formControlName="category3">
+                        @for (cat of getCat3Options(); track cat) {
+                          <mat-option [value]="cat">{{ cat }}</mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
+                  }
+                </div>
+
+                <div class="mt-4">
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Volume de Negócio / Taxa ISPC</mat-label>
+                    <mat-select formControlName="business_volume" required>
+                      @if (isISPCScaleActivity()) {
+                        <mat-option value="3">3% (até 1.000.000,00MT)</mat-option>
+                        <mat-option value="4">4% (> 1.001.000,00MT e ≤ 2.500.000,00MT)</mat-option>
+                        <mat-option value="5">5% (> 2.501.000,00MT e ≤ 4.000.000,00MT)</mat-option>
+                      } @else {
+                        @if (getServiceType() === 'nao_liberais') {
+                          <mat-option value="12">12% s/ volume ≤ 4.000.000,00MT</mat-option>
+                          <mat-option value="20">20% s/ volume > 4.000.000,00MT</mat-option>
+                        } @else if (getServiceType() === 'liberal') {
+                          <mat-option value="15">15% s/ volume ≤ 4.000.000,00MT</mat-option>
+                          <mat-option value="20">20% s/ volume > 4.000.000,00MT</mat-option>
+                        }
+                      }
+                    </mat-select>
+                    <mat-icon matPrefix class="text-gray-400">trending_up</mat-icon>
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <div class="border-t border-gray-100 pt-6 mt-6">
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>Nome da Empresa</mat-label>
                   <input
@@ -35,6 +112,28 @@
                     placeholder="Ex: Comercial Silva Lda"
                   />
                   <mat-icon matPrefix class="text-gray-400">business</mat-icon>
+                  
+                  <div matSuffix class="flex items-center">
+                    @if (isUploadingCommercial()) {
+                      <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+                    } @else {
+                      @if (commercialActivityUrl()) {
+                        <mat-icon class="text-green-500 mr-2" matTooltip="Documento carregado">check_circle</mat-icon>
+                        <button type="button" mat-icon-button (click)="viewCommercialDocument()" matTooltip="Visualizar Exercício de Actividade Comercial">
+                          <mat-icon class="text-blue-500">visibility</mat-icon>
+                        </button>
+                        <button type="button" mat-icon-button (click)="commercialInput.click()" matTooltip="Alterar Documento">
+                          <mat-icon class="text-gray-400">file_upload</mat-icon>
+                        </button>
+                      } @else {
+                        <button type="button" mat-icon-button (click)="commercialInput.click()" matTooltip="Fazer upload do Exercício de Actividade Comercial (Opcional)">
+                          <mat-icon class="text-gray-400">file_upload</mat-icon>
+                        </button>
+                      }
+                    }
+                    <input type="file" #commercialInput class="hidden" accept=".pdf,.jpg,.jpeg,.png" (change)="onCommercialDocumentSelected($event)">
+                  </div>
+
                   @if (getErrorMessage(companyInfoForm, 'name')) {
                     <mat-error>{{ getErrorMessage(companyInfoForm, 'name') }}</mat-error>
                   }
@@ -53,6 +152,28 @@
                     (input)="formatNuit()"
                   />
                   <mat-icon matPrefix class="text-gray-400">badge</mat-icon>
+                  
+                  <div matSuffix class="flex items-center">
+                    @if (isUploadingNuit()) {
+                      <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+                    } @else {
+                      @if (nuitDocumentUrl()) {
+                        <mat-icon class="text-green-500 mr-2" matTooltip="Documento carregado">check_circle</mat-icon>
+                        <button type="button" mat-icon-button (click)="viewDocument()" matTooltip="Visualizar Documento">
+                          <mat-icon class="text-blue-500">visibility</mat-icon>
+                        </button>
+                        <button type="button" mat-icon-button (click)="nuitInput.click()" matTooltip="Alterar Documento">
+                          <mat-icon class="text-gray-400">file_upload</mat-icon>
+                        </button>
+                      } @else {
+                        <button type="button" mat-icon-button (click)="nuitInput.click()" matTooltip="Fazer upload do NUIT (Opcional)">
+                          <mat-icon class="text-gray-400">file_upload</mat-icon>
+                        </button>
+                      }
+                    }
+                    <input type="file" #nuitInput class="hidden" accept=".pdf,.jpg,.jpeg,.png" (change)="onNuitDocumentSelected($event)">
+                  </div>
+
                   @if (getErrorMessage(companyInfoForm, 'nuit')) {
                     <mat-error>{{ getErrorMessage(companyInfoForm, 'nuit') }}</mat-error>
                   }
@@ -94,34 +215,78 @@
                 </mat-form-field>
               </div>
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>Posto Administrativo</mat-label>
                   <input matInput formControlName="administrativePost" placeholder="Ex: KaMpfumo" />
                   <mat-icon matPrefix class="text-gray-400">apartment</mat-icon>
                 </mat-form-field>
-
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Actividade Principal</mat-label>
-                  <mat-select formControlName="mainActivity">
-                    @for (activity of mainActivities; track activity) {
-                      <mat-option [value]="activity">{{ activity }}</mat-option>
-                    }
-                  </mat-select>
-                  <mat-icon matPrefix class="text-gray-400">business_center</mat-icon>
-                </mat-form-field>
               </div>
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Actividade Secundária</mat-label>
-                  <mat-select formControlName="secondaryActivity">
-                    @for (activity of secondaryActivities; track activity) {
-                      <mat-option [value]="activity">{{ activity }}</mat-option>
-                    }
-                  </mat-select>
-                  <mat-icon matPrefix class="text-gray-400">store</mat-icon>
-                </mat-form-field>
+              <!-- Seccao de Documentos Adicionais -->
+              <div class="border-t border-gray-100 pt-6 mt-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <mat-icon class="mr-2 text-ispc-orange">folder</mat-icon>
+                  Outros Documentos
+                </h3>
+
+                <div class="bg-gray-100 p-4 rounded-lg mb-4">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>Tipo de Documento</mat-label>
+                      <mat-select [formControl]="newDocType">
+                        @for (type of documentTypes; track type) {
+                          <mat-option [value]="type" [disabled]="isDocTypeSelected(type)">
+                            {{ type }}
+                          </mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
+
+                    <div class="flex items-center gap-2 mb-2">
+                      <button type="button" mat-raised-button (click)="otherInput.click()" [disabled]="!newDocType.value || isUploadingOther()">
+                        <mat-icon>file_upload</mat-icon>
+                        {{ isUploadingOther() ? 'Carregando...' : 'Fazer Upload' }}
+                      </button>
+                      <input type="file" #otherInput class="hidden" accept=".pdf,.jpg,.jpeg,.png" (change)="onOtherDocumentSelected($event)">
+                    </div>
+                  </div>
+                  <p class="text-[10px] text-gray-500 mt-2">
+                    * Apenas um ficheiro por tipo. Para substituir, apague o anterior da lista abaixo.
+                  </p>
+                </div>
+
+                @if (otherDocuments().length > 0) {
+                  <div class="border rounded-lg overflow-hidden bg-white">
+                    <table class="w-full text-sm text-left">
+                      <thead class="bg-gray-50 text-gray-700 uppercase text-[10px]">
+                        <tr>
+                          <th class="px-3 py-2">Tipo</th>
+                          <th class="px-3 py-2">Ficheiro</th>
+                          <th class="px-3 py-2 text-right">Acções</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y">
+                        @for (doc of otherDocuments(); track doc) {
+                          <tr>
+                            <td class="px-3 py-2 font-medium">{{ doc.type }}</td>
+                            <td class="px-3 py-2 text-gray-500 truncate max-w-[150px]">{{ doc.file_name }}</td>
+                            <td class="px-3 py-2 text-right whitespace-nowrap">
+                              <button type="button" mat-icon-button color="primary" (click)="viewOtherDocument(doc)" matTooltip="Visualizar">
+                                <mat-icon class="!text-lg">visibility</mat-icon>
+                              </button>
+                              <button type="button" mat-icon-button color="warn" (click)="removeOtherDocument(doc)" matTooltip="Remover">
+                                <mat-icon class="!text-lg">delete</mat-icon>
+                              </button>
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                } @else {
+                  <p class="text-center text-gray-400 py-4 text-sm italic">Nenhum documento adicional adicionado.</p>
+                }
               </div>
             </div>
 
