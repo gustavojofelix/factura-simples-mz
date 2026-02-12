@@ -73,7 +73,7 @@ export class UserManagementService {
           id,
           name
         ),
-        profiles:user_id (
+        profiles (
           email,
           full_name
         )
@@ -118,7 +118,7 @@ export class UserManagementService {
       .from('company_users')
       .select(`
         *,
-        profiles:user_id (
+        profiles (
           email,
           full_name
         )

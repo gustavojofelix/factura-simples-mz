@@ -151,24 +151,59 @@ export class TaxService {
         .reduce((sum, inv) => sum + (inv.total || 0), 0);
 
       // Determinar a taxa baseada no tipo de atividade e volume anual
-      const ispcRate = this.calculateISPCRate(company);
+      const baseRate = this.calculateISPCRate(company);
+      const isScaleActivity = company.category2 !== 'servicos_nao_liberais' && company.category2 !== 'servicos_liberais';
 
-      // Calcular ISPC
+      // Calcular ISPC com escalões progressivos
       let ispcAmount = 0;
-      const threshold = 4000000;
+      let remaining = totalSales;
+      let currentAcc = annualSalesBeforeQuarter;
 
-      if (annualSales <= threshold) {
-        // Todo o volume do trimestre está dentro do limite normal
-        ispcAmount = (totalSales * ispcRate) / 100;
-      } else if (annualSalesBeforeQuarter >= threshold) {
-        // Já ultrapassou o limite no trimestre anterior, tudo a 20%
-        ispcAmount = (totalSales * 20) / 100;
+      const thresholds = [1000000, 2500000, 4000000];
+      const scaleRates = [3, 4, 5, 20];
+      const serviceRates = [baseRate, baseRate, baseRate, 20];
+      const rates = isScaleActivity ? scaleRates : serviceRates;
+
+      let newVolume = company.business_volume;
+
+      // Percorrer os escalões
+      for (let i = 0; i < thresholds.length; i++) {
+        if (remaining <= 0) break;
+
+        if (currentAcc < thresholds[i]) {
+          const chunk = Math.min(remaining, thresholds[i] - currentAcc);
+          ispcAmount += (chunk * rates[i]) / 100;
+          remaining -= chunk;
+          currentAcc += chunk;
+        }
+      }
+
+      // Valor excedente ao último threshold (4M)
+      if (remaining > 0) {
+        ispcAmount += (remaining * rates[3]) / 100;
+        currentAcc += remaining;
+      }
+
+      // Determinar o novo volume sugerido baseado no acumulado
+      if (isScaleActivity) {
+        if (currentAcc > thresholds[2]) newVolume = '20';
+        else if (currentAcc > thresholds[1]) newVolume = '5';
+        else if (currentAcc > thresholds[0]) newVolume = '4';
+        else newVolume = '3';
       } else {
-        // Ultrapassou o limite NESTE trimestre
-        const portionNormal = threshold - annualSalesBeforeQuarter;
-        const portionExcess = totalSales - portionNormal;
+        if (currentAcc > thresholds[2]) newVolume = '20';
+        else newVolume = baseRate.toString();
+      }
+
+      // Se o volume mudou, atualizar a empresa (proativamente)
+      if (newVolume !== company.business_volume) {
+        await this.supabase.db
+          .from('companies')
+          .update({ business_volume: newVolume })
+          .eq('id', company.id);
         
-        ispcAmount = ((portionNormal * ispcRate) / 100) + ((portionExcess * 20) / 100);
+        // Recarregar dados da empresa no serviço
+        await this.companyService.loadCompanies();
       }
 
       return {
@@ -178,7 +213,7 @@ export class TaxService {
         endDate,
         totalSales,
         ispcBase: totalSales,
-        ispcRate: annualSales > threshold ? 20 : ispcRate,
+        ispcRate: currentAcc > thresholds[2] ? 20 : (isScaleActivity ? parseInt(newVolume) : baseRate),
         ispcAmount,
         invoiceCount: invoices?.length || 0
       };

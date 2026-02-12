@@ -222,8 +222,9 @@ import { ACTIVITY_HIERARCHY } from '../../core/constants/activity-categories';
               <mat-select formControlName="business_volume">
                 @if (isISPCScaleActivity()) {
                   <mat-option value="3">3% (até 1.000.000,00MT)</mat-option>
-                  <mat-option value="4">4% (> 1.001.000,00MT e ≤ 2.500.000,00MT)</mat-option>
-                  <mat-option value="5">5% (> 2.501.000,00MT e ≤ 4.000.000,00MT)</mat-option>
+                  <mat-option value="4">4% (> 1.000.000,00MT e ≤ 2.500.000,00MT)</mat-option>
+                  <mat-option value="5">5% (> 2.500.000,00MT e ≤ 4.000.000,00MT)</mat-option>
+                  <mat-option value="20">20% (> 4.000.000,00MT)</mat-option>
                 } @else {
                   @if (getServiceType() === 'nao_liberais') {
                     <mat-option value="12">12% s/ volume ≤ 4.000.000,00MT</mat-option>

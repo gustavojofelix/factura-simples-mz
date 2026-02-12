@@ -206,7 +206,7 @@ import { Company } from '../../core/services/company.service';
                 </div>
                 <label class="flex items-center gap-2 border-l border-black pl-4">
                   <span class="checkbox-box small checked">☑</span>
-                  <span>Se optou pela taxa de 3%</span>
+                  <span>Se optou pela taxa de {{ data.declaration.ispc_rate }}%</span>
                 </label>
               </div>
             </div>
@@ -218,7 +218,7 @@ import { Company } from '../../core/services/company.service';
               <div class="grid grid-cols-[1fr_200px]" style="font-size: 8pt;">
                 <div class="p-3">
                   <p style="margin: 4px 0; border-bottom: 1px dotted black; padding-bottom: 2px;">Total de vendas e / ou serviços prestados</p>
-                  <p style="margin: 4px 0; border-bottom: 1px dotted black; padding-bottom: 2px;">Imposto apurado à taxa de 3% (=01 x 3%)</p>
+                  <p style="margin: 4px 0; border-bottom: 1px dotted black; padding-bottom: 2px;">Imposto apurado à taxa de {{ data.declaration.ispc_rate }}% (=01 x {{ data.declaration.ispc_rate }}%)</p>
                   <p style="margin: 4px 0; border-bottom: 1px dotted black; padding-bottom: 2px;">Imposto a pagar a taxa fixa</p>
                   <p style="margin: 4px 0; border-bottom: 1px dotted black; padding-bottom: 2px;">Juros compensatórios</p>
                   <p style="margin: 4px 0; border-bottom: 1px dotted black; padding-bottom: 2px;">Importância a pagar</p>
@@ -245,7 +245,7 @@ import { Company } from '../../core/services/company.service';
                   </div>
                   <div class="value-box highlight">
                     <div style="font-size: 7pt; text-align: center; margin-bottom: 2px;">
-                      05 = 02 + 04 (Taxa 3%)<br>05 = 03 + 04 (Taxa Fixa)
+                      05 = 02 + 04 (Taxa {{ data.declaration.ispc_rate }}%)<br>05 = 03 + 04 (Taxa Fixa)
                     </div>
                     <div class="flex items-center">
                       <span class="font-bold">05</span>
