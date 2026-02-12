@@ -12,6 +12,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSelectModule } from '@angular/material/select';
 import { ClientService, Client } from '../../core/services/client.service';
 import { CompanyService } from '../../core/services/company.service';
 import { ExportService } from '../../core/services/export.service';
@@ -27,7 +28,8 @@ import { nuitValidator } from '../../core/validators/nuit.validator';
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
-    MatIconModule
+    MatIconModule,
+    MatSelectModule
   ],
   template: `
     <h2 mat-dialog-title>{{ data ? 'Editar Cliente' : 'Novo Cliente' }}</h2>
@@ -113,10 +115,21 @@ import { nuitValidator } from '../../core/validators/nuit.validator';
           }
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Telefone</mat-label>
-          <input matInput formControlName="phone" placeholder="+258 XX XXX XXXX">
-        </mat-form-field>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Telefone</mat-label>
+            <input matInput formControlName="phone" placeholder="+258 XX XXX XXXX">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Indústria / Sector</mat-label>
+            <mat-select formControlName="industry">
+              @for (ind of industries; track ind) {
+                <mat-option [value]="ind">{{ ind }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
 
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Endereço</mat-label>
@@ -146,6 +159,18 @@ export class ClientDialogComponent {
   uploading = signal(false);
   documentUrl = signal<string | null>(null);
 
+  industries = [
+    'Comércio',
+    'Serviços',
+    'Indústria',
+    'Agricultura',
+    'Construção',
+    'Tecnologia',
+    'Saúde',
+    'Educação',
+    'Outros'
+  ];
+
   constructor(
     private fb: FormBuilder,
     private clientService: ClientService,
@@ -157,6 +182,7 @@ export class ClientDialogComponent {
       nuit: ['', [Validators.required, nuitValidator()]],
       email: ['', [Validators.required, Validators.email]],
       phone: [''],
+      industry: [''],
       address: ['', Validators.required],
       document_url: [''],
       document_type: ['NUIT']
@@ -281,7 +307,7 @@ export class ClientDialogComponent {
   styleUrls: ['./clients.component.css']
 })
 export class ClientsComponent implements OnInit {
-  displayedColumns = ['name', 'nuit', 'email', 'phone', 'status', 'actions'];
+  displayedColumns = ['name', 'nuit', 'email', 'industry', 'status', 'actions'];
   searchTerm = signal('');
 
   filteredClients = computed(() => {

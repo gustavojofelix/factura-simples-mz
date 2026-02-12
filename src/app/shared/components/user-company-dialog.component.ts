@@ -32,6 +32,21 @@ import { UserManagementService } from '../../core/services/user-management.servi
     <mat-dialog-content>
       @if (!data.userId) {
         <form [formGroup]="form" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Nome Completo</mat-label>
+              <input matInput formControlName="fullName" required>
+              <mat-error *ngIf="form.get('fullName')?.hasError('required')">
+                Nome é obrigatório
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Telefone</mat-label>
+              <input matInput formControlName="phone">
+            </mat-form-field>
+          </div>
+
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Email do Utilizador</mat-label>
             <input matInput type="email" formControlName="email" required>
@@ -54,7 +69,7 @@ import { UserManagementService } from '../../core/services/user-management.servi
                     {{ company.name }}
                   </mat-checkbox>
                   @if (isCompanySelected(company.id)) {
-                    <mat-form-field appearance="outline" class="flex-1">
+                    <mat-form-field appearance="outline" class="flex-1 !mb-[-1.25em]">
                       <mat-label>Papel</mat-label>
                       <mat-select [value]="getCompanyRole(company.id)" (selectionChange)="updateCompanyRole(company.id, $event.value)">
                         <mat-option value="admin">Administrador</mat-option>
@@ -80,7 +95,7 @@ import { UserManagementService } from '../../core/services/user-management.servi
                   {{ company.name }}
                 </mat-checkbox>
                 @if (isCompanySelected(company.id)) {
-                  <mat-form-field appearance="outline" class="flex-1">
+                  <mat-form-field appearance="outline" class="flex-1 !mb-[-1.25em]">
                     <mat-label>Papel</mat-label>
                     <mat-select [value]="getCompanyRole(company.id)" (selectionChange)="updateCompanyRole(company.id, $event.value)">
                       <mat-option value="admin">Administrador</mat-option>
@@ -141,6 +156,8 @@ export class UserCompanyDialogComponent implements OnInit {
     }
   ) {
     this.form = this.fb.group({
+      fullName: ['', Validators.required],
+      phone: [''],
       email: ['', [Validators.required, Validators.email]]
     });
   }
@@ -189,6 +206,8 @@ export class UserCompanyDialogComponent implements OnInit {
 
     const result = {
       email: this.data.userId ? this.data.userEmail : this.form.value.email,
+      fullName: this.form.value.fullName,
+      phone: this.form.value.phone,
       companies: Array.from(this.selectedCompanies().entries()).map(([company_id, role]) => ({
         company_id,
         role

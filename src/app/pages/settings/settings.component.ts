@@ -233,11 +233,18 @@ export class SettingsComponent implements OnInit {
       if (result) {
         this.loading.set(true);
 
-        for (const { company_id, role } of result.companies) {
+        // Adicionar utilizador (convidar se não existir)
+        for (let i = 0; i < result.companies.length; i++) {
+          const { company_id, role } = result.companies[i];
+          // Só passamos fullName/phone na primeira iteração para evitar convites duplicados
+          // ou o serviço tratará de convidar apenas se não existir.
+          // Mas como o serviço atual já faz listUsers e find, ele lidará com isso.
           await this.userManagementService.addUserToCompany(
             result.email,
             company_id,
-            role as any
+            role as any,
+            i === 0 ? result.fullName : undefined,
+            i === 0 ? result.phone : undefined
           );
         }
 

@@ -10,6 +10,7 @@ export interface Client {
   email?: string;
   phone?: string;
   address?: string;
+  industry?: string;
   document_url?: string;
   document_type?: string;
   is_active: boolean;

@@ -170,6 +170,7 @@ export class AuthService {
         .insert({
           id: userId,
           full_name: fullName,
+          email: fullName.includes('@') ? fullName : undefined, // Fallback if email is passed as fullName (unlikely but safe)
           phone: phone
         });
     } catch (error) {

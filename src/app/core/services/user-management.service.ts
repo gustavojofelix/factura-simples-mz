@@ -72,6 +72,10 @@ export class UserManagementService {
         companies (
           id,
           name
+        ),
+        profiles:user_id (
+          email,
+          full_name
         )
       `)
       .order('created_at', { ascending: true });
@@ -85,11 +89,12 @@ export class UserManagementService {
 
     for (const row of data || []) {
       const userId = row.user_id;
+      const profile = (row as any).profiles;
 
       if (!usersMap.has(userId)) {
         usersMap.set(userId, {
           user_id: userId,
-          user_email: '',
+          user_email: profile?.email || 'N/A',
           companies: []
         });
       }
@@ -105,25 +110,19 @@ export class UserManagementService {
 
     const usersArray = Array.from(usersMap.values());
 
-    for (const user of usersArray) {
-      try {
-        const { data: { users } } = await this.supabase.client.auth.admin.listUsers();
-        const userData = users?.find(u => u.id === user.user_id);
-        if (userData) {
-          user.user_email = userData.email || user.user_id;
-        }
-      } catch (error) {
-        user.user_email = user.user_id;
-      }
-    }
-
     this.allUsersSignal.set(usersArray);
   }
 
   async loadCompanyUsers(companyId: string): Promise<void> {
     const { data, error } = await this.supabase.client
       .from('company_users')
-      .select('*')
+      .select(`
+        *,
+        profiles:user_id (
+          email,
+          full_name
+        )
+      `)
       .eq('company_id', companyId)
       .order('created_at', { ascending: true });
 
@@ -132,36 +131,46 @@ export class UserManagementService {
       return;
     }
 
-    const usersWithEmails = await Promise.all(
-      (data || []).map(async (user) => {
-        try {
-          const { data: { users } } = await this.supabase.client.auth.admin.listUsers();
-          const userData = users?.find(u => u.id === user.user_id);
-          return {
-            ...user,
-            user_email: userData?.email || user.user_id
-          };
-        } catch (error) {
-          return {
-            ...user,
-            user_email: user.user_id
-          };
-        }
-      })
-    );
+    const usersWithEmails = (data || []).map((row: any) => ({
+      ...row,
+      user_email: row.profiles?.email || row.user_id
+    }));
 
     this.companyUsersSignal.set(usersWithEmails);
   }
 
-  async addUserToCompany(email: string, companyId: string, role: CompanyUser['role']): Promise<boolean> {
+  async addUserToCompany(
+    email: string, 
+    companyId: string, 
+    role: CompanyUser['role'],
+    fullName?: string,
+    phone?: string
+  ): Promise<boolean> {
     try {
-      const { data: { users } } = await this.supabase.client.auth.admin.listUsers();
-      const targetUser = users?.find(u => u.email === email);
+      // Usar a nossa nova RPC para encontrar o ID do utilizador pelo email de forma segura
+      const { data: targetUserId, error: rpcError } = await this.supabase.client
+        .rpc('get_user_id_by_email', { email_query: email });
 
-      if (!targetUser) {
-        console.error('User not found');
+      if (rpcError || !targetUserId) {
+        console.error('User not found or access denied:', rpcError);
         return false;
       }
+
+      const targetUser = { id: targetUserId };
+      
+      // Sincronizar dados extras no perfil se necessário (se o perfil já existir)
+      if (fullName) {
+        await this.supabase.client
+          .from('profiles')
+          .upsert({
+            id: targetUserId,
+            full_name: fullName,
+            email: email,
+            phone: phone
+          });
+      }
+
+      if (!targetUser) return false;
 
       const { data: existingUser } = await this.supabase.client
         .from('company_users')
@@ -171,8 +180,11 @@ export class UserManagementService {
         .maybeSingle();
 
       if (existingUser) {
-        console.error('User already exists in this company');
-        return false;
+        // Se já existe, apenas atualizamos o papel se for diferente
+        if (existingUser.role !== role) {
+          await this.updateUserRole(targetUser.id, companyId, role);
+        }
+        return true;
       }
 
       const { error } = await this.supabase.client
