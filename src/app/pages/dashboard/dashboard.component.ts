@@ -12,7 +12,7 @@ import { CompanyService } from '../../core/services/company.service';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { InvoiceDialogComponent } from '../../shared/components/invoice-dialog.component';
-import { Invoice } from '../../core/services/invoice.service';
+import { InvoiceService, Invoice } from '../../core/services/invoice.service';
 
 interface DashboardMetrics {
   quarterSales: number;
@@ -63,6 +63,7 @@ export class DashboardComponent implements OnInit {
   constructor(
     public companyService: CompanyService,
     public subscriptionService: SubscriptionService,
+    public invoiceService: InvoiceService,
     private supabase: SupabaseService,
     private dialog: MatDialog
   ) {
@@ -213,21 +214,11 @@ export class DashboardComponent implements OnInit {
   }
 
   getStatusColor(status: string): string {
-    const colors: { [key: string]: string } = {
-      'paga': 'success',
-      'pendente': 'warn',
-      'vencida': 'error'
-    };
-    return colors[status] || 'default';
+    return this.invoiceService.getStatusColor(status);
   }
 
   getStatusLabel(status: string): string {
-    const labels: { [key: string]: string } = {
-      'paga': 'PAGA',
-      'pendente': 'PENDENTE',
-      'vencida': 'VENCIDA'
-    };
-    return labels[status] || status.toUpperCase();
+    return this.invoiceService.getStatusLabel(status);
   }
 
   openNewInvoiceDialog() {

@@ -84,8 +84,11 @@ export class InvoiceService {
   }
 
   private calculateInvoiceStatus(invoice: any): string {
-    if (invoice.status === 'rascunho') {
-      return 'rascunho';
+    const currentStatus = (invoice.status || '').toLowerCase();
+    
+    // Drafts and Annulled are terminal or special states that shouldn't be auto-recalculated by date/payment
+    if (currentStatus === 'rascunho' || currentStatus === 'anulada') {
+      return currentStatus;
     }
 
     if (invoice.amount_paid >= invoice.total) {
@@ -98,7 +101,7 @@ export class InvoiceService {
       today.setHours(0, 0, 0, 0);
       dueDate.setHours(0, 0, 0, 0);
 
-      if (dueDate < today && invoice.amount_paid < invoice.total) {
+      if (dueDate < today && (invoice.amount_paid || 0) < invoice.total) {
         return 'vencida';
       }
     }
@@ -191,14 +194,15 @@ export class InvoiceService {
   }
 
   getStatusColor(status: string): string {
+    const s = (status || '').toLowerCase();
     const colors: { [key: string]: string } = {
-      'rascunho': 'bg-gray-100 text-gray-600 border border-gray-300',
-      'pendente': 'bg-ispc-orange/10 text-ispc-orange border border-ispc-orange/20',
-      'paga': 'bg-ispc-dark text-white',
-      'vencida': 'bg-red-50 text-red-700 border border-red-200',
+      'rascunho': 'bg-gray-100 text-gray-800 border-gray-300',
+      'pendente': 'bg-blue-100 text-blue-800 border-blue-200',
+      'paga': 'bg-green-100 text-green-800 border-green-200',
+      'vencida': 'bg-red-100 text-red-800 border-red-200',
       'anulada': 'bg-red-600 text-white'
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return colors[s] || 'bg-gray-100 text-gray-800';
   }
 
   async createInvoice(
