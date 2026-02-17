@@ -47,7 +47,13 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
             <div class="flex justify-between items-start mb-4">
               <div>
                 <h1 class="text-2xl font-bold text-gray-900">Factura {{ invoice()!.invoice_number }}</h1>
-                <p class="text-sm text-gray-500 mt-1">{{ formatDate(invoice()!.date) }}</p>
+                <div class="flex flex-col gap-0.5 mt-1">
+                  <p class="text-sm text-gray-500">{{ formatDate(invoice()!.date) }}</p>
+                  <p class="text-xs text-gray-400 flex items-center">
+                    <mat-icon class="!text-[12px] !w-3 !h-3 !mr-1">person</mat-icon>
+                    Emitido por: {{ invoice()!.issuer_name || '-' }}
+                  </p>
+                </div>
               </div>
               <div class="flex gap-2 no-print">
                 @if (invoice()!.status === 'rascunho') {

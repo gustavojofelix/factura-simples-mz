@@ -58,7 +58,7 @@ export class DashboardComponent implements OnInit {
   recentInvoices = signal<RecentInvoice[]>([]);
   isLoading = signal(true);
 
-  displayedColumns = ['invoice_number', 'client', 'date', 'total', 'status'];
+  displayedColumns = ['invoice_number', 'client', 'issuer_name', 'date', 'total', 'status'];
 
   constructor(
     public companyService: CompanyService,
@@ -176,7 +176,8 @@ export class DashboardComponent implements OnInit {
         date,
         total,
         status,
-        clients (name)
+        clients (name),
+        issuer:profiles (full_name)
       `)
       .eq('company_id', companyId)
       .order('created_at', { ascending: false })
@@ -190,7 +191,8 @@ export class DashboardComponent implements OnInit {
           client_name: (inv.clients as any)?.name || 'Cliente',
           date: inv.date,
           total: inv.total,
-          status: inv.status
+          status: inv.status,
+          issuer_name: (inv.issuer as any)?.full_name
         }))
       );
     }

@@ -184,7 +184,7 @@ import { ACTIVITY_HIERARCHY } from '../../core/constants/activity-categories';
             
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <mat-form-field appearance="outline" class="w-full">
-                <mat-label>1ª Categoria</mat-label>
+                <mat-label>Actividade Principal</mat-label>
                 <mat-select formControlName="category1">
                   @for (cat of getCat1Options(); track cat.id) {
                     <mat-option [value]="cat.id">{{ cat.label }}</mat-option>
@@ -194,7 +194,7 @@ import { ACTIVITY_HIERARCHY } from '../../core/constants/activity-categories';
 
               @if (getCat2Options().length > 0) {
                 <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>2ª Categoria</mat-label>
+                  <mat-label>Actividade(s) Comerciais</mat-label>
                   <mat-select formControlName="category2">
                     @for (cat of getCat2Options(); track cat.id) {
                       <mat-option [value]="cat.id">{{ cat.label }}</mat-option>
@@ -205,7 +205,7 @@ import { ACTIVITY_HIERARCHY } from '../../core/constants/activity-categories';
 
               @if (getCat3Options().length > 0) {
                 <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>3ª Categoria</mat-label>
+                  <mat-label>Actividade(s) de Prestação de Serviços</mat-label>
                   <mat-select formControlName="category3">
                     @for (cat of getCat3Options(); track cat) {
                       <mat-option [value]="cat">{{ cat }}</mat-option>

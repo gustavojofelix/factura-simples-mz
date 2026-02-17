@@ -40,7 +40,7 @@ import { PaymentDialogComponent } from '../../shared/components/payment-dialog.c
   styleUrls: ['./invoices.component.css']
 })
 export class InvoicesComponent implements OnInit {
-  displayedColumns = ['invoice_number', 'client', 'date', 'due_date', 'total', 'status', 'actions'];
+  displayedColumns = ['invoice_number', 'client', 'issuer_name', 'date', 'due_date', 'total', 'status', 'actions'];
 
   searchTerm = signal('');
   statusFilter = signal<string>('todas');

@@ -27,6 +27,8 @@ export interface Invoice {
   status: string;
   notes?: string;
   created_at: string;
+  created_by?: string;
+  issuer_name?: string;
   client?: {
     name: string;
     nuit?: string;
@@ -61,7 +63,8 @@ export class InvoiceService {
         .from('invoices')
         .select(`
           *,
-          client:clients (name, nuit, email, phone, address, document_type)
+          client:clients (name, nuit, email, phone, address, document_type),
+          issuer:profiles (full_name)
         `)
         .eq('company_id', company.id)
         .order('created_at', { ascending: false });
@@ -70,7 +73,8 @@ export class InvoiceService {
 
       const invoicesWithStatus = (data || []).map(invoice => ({
         ...invoice,
-        status: this.calculateInvoiceStatus(invoice)
+        status: this.calculateInvoiceStatus(invoice),
+        issuer_name: (invoice.issuer as any)?.full_name
       }));
 
       await this.updateInvoiceStatusesIfNeeded(invoicesWithStatus);
@@ -135,7 +139,8 @@ export class InvoiceService {
         .from('invoices')
         .select(`
           *,
-          client:clients (name, nuit, email, phone, address, document_type)
+          client:clients (name, nuit, email, phone, address, document_type),
+          issuer:profiles (full_name)
         `)
         .eq('id', invoiceId)
         .single();
@@ -152,7 +157,8 @@ export class InvoiceService {
       const invoiceWithStatus = {
         ...invoice,
         status: this.calculateInvoiceStatus(invoice),
-        items: items || []
+        items: items || [],
+        issuer_name: (invoice.issuer as any)?.full_name
       };
 
       return invoiceWithStatus;
@@ -239,7 +245,8 @@ export class InvoiceService {
           amount_paid: 0,
           amount_pending: total,
           status,
-          notes
+          notes,
+          created_by: (await this.supabase.auth.getUser()).data.user?.id
         })
         .select()
         .single();
