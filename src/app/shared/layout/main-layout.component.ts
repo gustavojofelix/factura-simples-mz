@@ -8,8 +8,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSelectModule } from '@angular/material/select';
+import { MatCardModule } from '@angular/material/card';
 import { AuthService } from '../../core/services/auth.service';
 import { CompanyService } from '../../core/services/company.service';
+import { SubscriptionService } from '../../core/services/subscription.service';
+import { effect } from '@angular/core';
 
 @Component({
   selector: 'app-main-layout',
@@ -24,7 +27,8 @@ import { CompanyService } from '../../core/services/company.service';
     MatIconModule,
     MatButtonModule,
     MatMenuModule,
-    MatSelectModule
+    MatSelectModule,
+    MatCardModule
   ],
   templateUrl: './main-layout.component.html',
   styleUrls: ['./main-layout.component.css']
@@ -45,8 +49,16 @@ export class MainLayoutComponent {
   constructor(
     public authService: AuthService,
     public companyService: CompanyService,
+    public subscriptionService: SubscriptionService,
     private router: Router
-  ) {}
+  ) {
+    effect(() => {
+      const company = this.companyService.activeCompany();
+      if (company) {
+        this.subscriptionService.loadSubscription(company.id);
+      }
+    });
+  }
 
   async logout() {
     await this.authService.signOut();

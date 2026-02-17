@@ -1,54 +1,4 @@
-<div class="p-6">
-  <!-- Trial Warning Banner -->
-  @if (subscriptionService.isTrialing() && subscriptionService.getDaysRemainingInTrial() > 0) {
-    <mat-card class="!shadow-md mb-6 !border-l-4"
-              [class.!border-yellow-500]="subscriptionService.getDaysRemainingInTrial() > 3"
-              [class.!border-red-500]="subscriptionService.getDaysRemainingInTrial() <= 3">
-      <mat-card-content class="p-4">
-        <div class="flex items-start">
-          <mat-icon class="mr-3 !text-2xl"
-                    [class.!text-yellow-600]="subscriptionService.getDaysRemainingInTrial() > 3"
-                    [class.!text-red-600]="subscriptionService.getDaysRemainingInTrial() <= 3">
-            schedule
-          </mat-icon>
-          <div class="flex-1">
-            <h3 class="font-semibold text-gray-900 mb-1">
-              Período de Teste - {{ subscriptionService.getDaysRemainingInTrial() }}
-              {{ subscriptionService.getDaysRemainingInTrial() === 1 ? 'dia restante' : 'dias restantes' }}
-            </h3>
-            <p class="text-sm text-gray-600 mb-3">
-              O seu período de teste termina em breve. Escolha um plano para continuar a utilizar todas as funcionalidades.
-            </p>
-            <button mat-raised-button routerLink="/configuracoes" class="!bg-ispc-orange !text-white">
-              Ver Planos
-            </button>
-          </div>
-        </div>
-      </mat-card-content>
-    </mat-card>
-  }
-
-  @if (subscriptionService.isTrialExpired()) {
-    <mat-card class="!shadow-md mb-6 !border-l-4 !border-red-500 !bg-red-50">
-      <mat-card-content class="p-4">
-        <div class="flex items-start">
-          <mat-icon class="mr-3 !text-2xl !text-red-600">error</mat-icon>
-          <div class="flex-1">
-            <h3 class="font-semibold text-red-900 mb-1">
-              Período de Teste Expirado
-            </h3>
-            <p class="text-sm text-red-700 mb-3">
-              O seu período de teste terminou. Por favor, escolha um plano para continuar a utilizar o ISPC F�cil.
-            </p>
-            <button mat-raised-button routerLink="/configuracoes" class="!bg-red-600 !text-white">
-              Escolher Plano Agora
-            </button>
-          </div>
-        </div>
-      </mat-card-content>
-    </mat-card>
-  }
-
+﻿<div class="p-6">
   <!-- Header -->
   <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-900 mb-2">Painel de Controlo</h1>
@@ -262,3 +212,4 @@
     NOVA FACTURA
   </button>
 </div>
+
