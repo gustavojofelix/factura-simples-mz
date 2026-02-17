@@ -156,8 +156,33 @@ export class CompanyService {
     }
   }
 
-  async deleteCompany(id: string): Promise<boolean> {
+  async deleteCompany(id: string): Promise<{ success: boolean; error?: string }> {
     try {
+      // 1. Check for dependent records
+      const checks = [
+        { table: 'invoices', label: 'facturas' },
+        { table: 'products', label: 'produtos' },
+        { table: 'clients', label: 'clientes' },
+        { table: 'tax_declarations', label: 'declarações' }
+      ];
+
+      for (const check of checks) {
+        const { count, error: countError } = await this.supabase.db
+          .from(check.table)
+          .select('*', { count: 'exact', head: true })
+          .eq('company_id', id);
+
+        if (countError) throw countError;
+
+        if (count && count > 0) {
+          return { 
+            success: false, 
+            error: `Não é possível eliminar uma empresa que já possui registos (${check.label}).` 
+          };
+        }
+      }
+
+      // 2. Perform deletion if no records found
       const { error } = await this.supabase.db
         .from('companies')
         .delete()
@@ -172,10 +197,10 @@ export class CompanyService {
         this.activeCompany.set(remaining.length > 0 ? remaining[0] : null);
       }
 
-      return true;
-    } catch (error) {
+      return { success: true };
+    } catch (error: any) {
       console.error('Erro ao deletar empresa:', error);
-      return false;
+      return { success: false, error: error.message || 'Erro ao eliminar empresa' };
     }
   }
 

@@ -135,6 +135,8 @@ export class TaxService {
         .from('invoices')
         .select('total, date')
         .eq('company_id', company.id)
+        .neq('status', 'rascunho')
+        .neq('status', 'anulada')
         .gte('date', startDate)
         .lte('date', endDate);
 
@@ -149,6 +151,8 @@ export class TaxService {
         .from('invoices')
         .select('total, date')
         .eq('company_id', company.id)
+        .neq('status', 'rascunho')
+        .neq('status', 'anulada')
         .gte('date', yearStart)
         .lte('date', endDate);
 

@@ -78,6 +78,12 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
                     Editar
                   </button>
                 }
+                @if (invoiceService.canAnnulInvoice(invoice()!)) {
+                  <button mat-raised-button color="warn" (click)="annulInvoice()">
+                    <mat-icon>block</mat-icon>
+                    Anular
+                  </button>
+                }
               </div>
             </div>
 
@@ -357,6 +363,47 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
+
+      .watermark-print {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-45deg);
+        font-size: 150px;
+        font-weight: 800;
+        color: rgba(220, 38, 38, 0.2);
+        z-index: 100;
+        pointer-events: none;
+        white-space: nowrap;
+        border: 20px solid rgba(220, 38, 38, 0.2);
+        padding: 40px;
+        border-radius: 20px;
+      }
+
+      .only-print {
+        display: block !important;
+      }
+    }
+
+    .watermark {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-45deg);
+      font-size: 120px;
+      font-weight: 800;
+      color: rgba(220, 38, 38, 0.15);
+      z-index: 10;
+      pointer-events: none;
+      white-space: nowrap;
+      border: 15px solid rgba(220, 38, 38, 0.15);
+      padding: 30px;
+      border-radius: 15px;
+      user-select: none;
+    }
+
+    .only-print {
+      display: none;
     }
   `]
 })
@@ -507,6 +554,23 @@ export class InvoiceDetailComponent {
       alert('Erro ao gerar o ficheiro PDF. Por favor, tente novamente.');
     } finally {
       this.isGeneratingPdf.set(false);
+    }
+  }
+
+  async annulInvoice() {
+    const invoice = this.invoice();
+    if (!invoice || !this.invoiceService.canAnnulInvoice(invoice)) return;
+
+    if (!confirm(`Tem certeza que deseja ANULAR a factura ${invoice.invoice_number}? Esta acção irá restaurar o stock e excluir a factura dos cálculos de impostos.`)) {
+      return;
+    }
+
+    const success = await this.invoiceService.annulInvoice(invoice.id);
+    if (success) {
+      await this.loadInvoice(invoice.id);
+      alert('Factura anulada com sucesso!');
+    } else {
+      alert('Erro ao anular factura');
     }
   }
 

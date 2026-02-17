@@ -202,11 +202,11 @@ export class SettingsComponent implements OnInit {
   async deleteCompany(company: Company) {
     if (!confirm(`Tem certeza que deseja eliminar a empresa "${company.name}"?`)) return;
 
-    const success = await this.companyService.deleteCompany(company.id);
-    if (success) {
+    const result = await this.companyService.deleteCompany(company.id);
+    if (result.success) {
       this.snackBar.open('Empresa eliminada com sucesso', 'Fechar', { duration: 3000 });
     } else {
-      this.snackBar.open('Erro ao eliminar empresa', 'Fechar', { duration: 3000 });
+      this.snackBar.open(result.error || 'Erro ao eliminar empresa', 'Fechar', { duration: 5000 });
     }
   }
 

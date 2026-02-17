@@ -230,6 +230,20 @@
                       <span>Editar</span>
                     </button>
                   }
+                  
+                  @if (invoiceService.canDeleteInvoice(invoice)) {
+                    <button mat-menu-item (click)="deleteInvoice(invoice)" class="!text-red-600">
+                      <mat-icon class="!text-red-600">delete</mat-icon>
+                      <span>Eliminar Rascunho</span>
+                    </button>
+                  }
+
+                  @if (invoiceService.canAnnulInvoice(invoice)) {
+                    <button mat-menu-item (click)="annulInvoice(invoice)" class="!text-red-600">
+                      <mat-icon class="!text-red-600">block</mat-icon>
+                      <span>Anular Factura</span>
+                    </button>
+                  }
                 </mat-menu>
               </td>
             </ng-container>

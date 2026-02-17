@@ -167,21 +167,30 @@ export class InvoicesComponent implements OnInit {
   }
 
   async deleteInvoice(invoice: Invoice) {
-    if (!confirm(`Tem certeza que deseja eliminar a factura ${invoice.invoice_number}?`)) {
-      return;
-    }
-
-    if (!this.invoiceService.canDeleteInvoice(invoice)) {
-      this.snackBar.open('Não é possível eliminar facturas pagas', 'Fechar', { duration: 3000 });
+    if (!confirm(`Tem certeza que deseja eliminar o rascunho ${invoice.invoice_number}?`)) {
       return;
     }
 
     const success = await this.invoiceService.deleteInvoice(invoice.id);
 
     if (success) {
-      this.snackBar.open('Factura eliminada!', 'Fechar', { duration: 2000 });
+      this.snackBar.open('Rascunho eliminado!', 'Fechar', { duration: 2000 });
     } else {
-      this.snackBar.open('Erro ao eliminar factura', 'Fechar', { duration: 3000 });
+      this.snackBar.open('Erro ao eliminar rascunho', 'Fechar', { duration: 3000 });
+    }
+  }
+
+  async annulInvoice(invoice: Invoice) {
+    if (!confirm(`Tem certeza que deseja ANULAR a factura ${invoice.invoice_number}? Esta acção irá restaurar o stock e excluir a factura dos cálculos de impostos.`)) {
+      return;
+    }
+
+    const success = await this.invoiceService.annulInvoice(invoice.id);
+
+    if (success) {
+      this.snackBar.open('Factura anulada com sucesso!', 'Fechar', { duration: 3000 });
+    } else {
+      this.snackBar.open('Erro ao anular factura', 'Fechar', { duration: 3000 });
     }
   }
 

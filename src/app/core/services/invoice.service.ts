@@ -160,13 +160,18 @@ export class InvoiceService {
   }
 
   canEditInvoice(invoice: Invoice): boolean {
-    // Can edit if it's a draft or if it's pending with no payments
-    return invoice.status === 'rascunho' || invoice.amount_paid === 0;
+    // Can edit only if it's a draft
+    return invoice.status === 'rascunho';
   }
 
   canDeleteInvoice(invoice: Invoice): boolean {
-    // Can delete if it's a draft or if it's pending with no payments
-    return invoice.status === 'rascunho' || invoice.amount_paid === 0;
+    // Can delete only if it's a draft
+    return invoice.status === 'rascunho';
+  }
+
+  canAnnulInvoice(invoice: Invoice): boolean {
+    // Can annul if it's not a draft and not already annulled
+    return invoice.status !== 'rascunho' && invoice.status !== 'anulada';
   }
 
   canManagePayments(invoice: Invoice): boolean {
@@ -179,7 +184,8 @@ export class InvoiceService {
       'rascunho': 'Rascunho',
       'pendente': 'Pendente',
       'paga': 'Paga',
-      'vencida': 'Vencida'
+      'vencida': 'Vencida',
+      'anulada': 'Anulada'
     };
     return labels[status] || status;
   }
@@ -189,7 +195,8 @@ export class InvoiceService {
       'rascunho': 'bg-gray-100 text-gray-600 border border-gray-300',
       'pendente': 'bg-ispc-orange/10 text-ispc-orange border border-ispc-orange/20',
       'paga': 'bg-ispc-dark text-white',
-      'vencida': 'bg-red-50 text-red-700 border border-red-200'
+      'vencida': 'bg-red-50 text-red-700 border border-red-200',
+      'anulada': 'bg-red-600 text-white'
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   }
@@ -404,7 +411,7 @@ export class InvoiceService {
   async deleteInvoice(invoiceId: string): Promise<boolean> {
     const invoice = this.invoices().find(inv => inv.id === invoiceId);
     if (invoice && !this.canDeleteInvoice(invoice)) {
-      console.error('Não é possível eliminar facturas pagas');
+      console.error('Não é possível eliminar facturas emitidas. Utilize a opção "Anular" em vez disso.');
       return false;
     }
     try {
@@ -414,18 +421,6 @@ export class InvoiceService {
         .eq('invoice_id', invoiceId);
 
       if (itemsError) throw itemsError;
-
-      // Stock management: Restore stock if not a draft
-      if (invoice && invoice.status !== 'rascunho') {
-        const items = await this.supabase.db
-          .from('invoice_items')
-          .select('*')
-          .eq('invoice_id', invoiceId);
-        
-        if (items.data && items.data.length > 0) {
-          await this.handleStockUpdate(items.data, 'increment');
-        }
-      }
 
       const { error } = await this.supabase.db
         .from('invoices')
@@ -438,6 +433,41 @@ export class InvoiceService {
       return true;
     } catch (error) {
       console.error('Erro ao eliminar factura:', error);
+      return false;
+    }
+  }
+
+  async annulInvoice(id: string): Promise<boolean> {
+    try {
+      const { data: invoice, error: fetchError } = await this.supabase.client
+        .from('invoices')
+        .select('*, items:invoice_items(*)')
+        .eq('id', id)
+        .single();
+
+      if (fetchError || !invoice) throw fetchError || new Error('Factura não encontrada');
+
+      // 1. Update status to 'anulada'
+      const { error: updateError } = await this.supabase.db
+        .from('invoices')
+        .update({ 
+          status: 'anulada',
+          amount_paid: 0,
+          amount_pending: 0
+        })
+        .eq('id', id);
+
+      if (updateError) throw updateError;
+
+      // 2. Restore stock for items
+      if (invoice.items && invoice.items.length > 0) {
+        await this.handleStockUpdate(invoice.items, 'increment');
+      }
+
+      await this.loadInvoices();
+      return true;
+    } catch (error) {
+      console.error('Erro ao anular factura:', error);
       return false;
     }
   }

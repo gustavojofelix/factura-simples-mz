@@ -104,7 +104,8 @@ export class DashboardComponent implements OnInit {
       .from('invoices')
       .select('total, status, date, amount_paid, due_date')
       .eq('company_id', companyId)
-      .neq('status', 'rascunho');
+      .neq('status', 'rascunho')
+      .neq('status', 'anulada');
 
     const { data: clients } = await this.supabase.db
       .from('clients')
