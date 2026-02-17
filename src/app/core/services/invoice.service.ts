@@ -250,6 +250,11 @@ export class InvoiceService {
         .insert(itemsToInsert);
 
       if (itemsError) throw itemsError;
+      
+      // Stock management: Decrement stock if not a draft
+      if (status !== 'rascunho') {
+        await this.handleStockUpdate(items, 'decrement');
+      }
 
       if (status !== 'rascunho') {
         const updateSuccess = await this.companyService.updateCompany(company.id, {
@@ -295,6 +300,16 @@ export class InvoiceService {
         invoice_number: company.invoice_number + 1
       });
 
+      // Stock management: Decrement stock when emitting draft
+      const { data: items } = await this.supabase.db
+        .from('invoice_items')
+        .select('*')
+        .eq('invoice_id', invoiceId);
+      
+      if (items && items.length > 0) {
+        await this.handleStockUpdate(items, 'decrement');
+      }
+
       await this.loadInvoices();
       return true;
     } catch (error) {
@@ -337,6 +352,18 @@ export class InvoiceService {
 
       if (updateError) throw updateError;
 
+      // Stock management: Restore old items stock if not a draft
+      if (invoice.status !== 'rascunho') {
+        const { data: oldItems } = await this.supabase.db
+          .from('invoice_items')
+          .select('*')
+          .eq('invoice_id', id);
+        
+        if (oldItems && oldItems.length > 0) {
+          await this.handleStockUpdate(oldItems, 'increment');
+        }
+      }
+
       // Replace Items (Delete all and Insert new)
       const { error: deleteItemsError } = await this.supabase.db
         .from('invoice_items')
@@ -361,6 +388,11 @@ export class InvoiceService {
 
       if (insertItemsError) throw insertItemsError;
 
+      // Stock management: Decrement new items stock if not a draft
+      if (invoice.status !== 'rascunho') {
+        await this.handleStockUpdate(items, 'decrement');
+      }
+
       await this.loadInvoices();
       return updatedInvoice;
     } catch (error) {
@@ -382,6 +414,18 @@ export class InvoiceService {
         .eq('invoice_id', invoiceId);
 
       if (itemsError) throw itemsError;
+
+      // Stock management: Restore stock if not a draft
+      if (invoice && invoice.status !== 'rascunho') {
+        const items = await this.supabase.db
+          .from('invoice_items')
+          .select('*')
+          .eq('invoice_id', invoiceId);
+        
+        if (items.data && items.data.length > 0) {
+          await this.handleStockUpdate(items.data, 'increment');
+        }
+      }
 
       const { error } = await this.supabase.db
         .from('invoices')
@@ -413,5 +457,32 @@ export class InvoiceService {
       month: '2-digit',
       year: 'numeric'
     });
+  }
+
+  private async handleStockUpdate(items: any[], type: 'decrement' | 'increment') {
+    for (const item of items) {
+      if (!item.product_id) continue;
+
+      // Fetch product to check type and current stock
+      // We do this inside the loop to get the most recent stock for each item
+      const { data: product, error } = await this.supabase.db
+        .from('products')
+        .select('type, stock')
+        .eq('id', item.product_id)
+        .single();
+
+      if (error || !product || product.type !== 'produto') continue;
+
+      // If stock is null, we assume it's not being tracked or is 0
+      const currentStock = product.stock || 0;
+      const newStock = type === 'decrement' 
+        ? currentStock - item.quantity 
+        : currentStock + item.quantity;
+
+      await this.supabase.db
+        .from('products')
+        .update({ stock: newStock })
+        .eq('id', item.product_id);
+    }
   }
 }

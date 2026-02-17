@@ -12,6 +12,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ProductService, Product } from '../../core/services/product.service';
 import { CompanyService } from '../../core/services/company.service';
 
@@ -34,7 +35,7 @@ import { CompanyService } from '../../core/services/company.service';
     <mat-dialog-content class="!pt-4">
       <form [formGroup]="form" class="space-y-4">
         <!-- Tipo hidden as per requirements -->
-        <!-- <mat-form-field appearance="outline" class="w-full">
+        <mat-form-field appearance="outline" class="w-full">
           <mat-label>Tipo</mat-label>
           <mat-select formControlName="type">
             <mat-option value="produto">Produto</mat-option>
@@ -43,7 +44,7 @@ import { CompanyService } from '../../core/services/company.service';
           @if (form.get('type')?.hasError('required') && form.get('type')?.touched) {
             <mat-error>Tipo é obrigatório</mat-error>
           }
-        </mat-form-field> -->
+        </mat-form-field> 
 
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Nome</mat-label>
@@ -184,7 +185,8 @@ export class ProductDialogComponent implements OnInit {
     MatDialogModule,
     MatSelectModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatTooltipModule
   ],
   templateUrl: './products.component.html',
   styleUrls: ['./products.component.css']
@@ -194,12 +196,16 @@ export class ProductsComponent implements OnInit {
   searchTerm = signal('');
   sortField = signal<string>('name');
   sortDirection = signal<'asc' | 'desc'>('asc');
+  minPriceFilter = signal<number | null>(null);
+  maxPriceFilter = signal<number | null>(null);
 
   filteredProducts = computed(() => {
     const term = this.searchTerm().toLowerCase();
     const products = [...this.productService.products()];
     const field = this.sortField();
     const direction = this.sortDirection();
+    const minPrice = this.minPriceFilter();
+    const maxPrice = this.maxPriceFilter();
 
     // 1. Filtering
     let filtered = products;
@@ -209,6 +215,14 @@ export class ProductsComponent implements OnInit {
         product.description?.toLowerCase().includes(term) ||
         String(product.code).includes(term)
       );
+    }
+
+    // 2. Price Filtering
+    if (minPrice !== null) {
+      filtered = filtered.filter(product => product.price >= minPrice);
+    }
+    if (maxPrice !== null) {
+      filtered = filtered.filter(product => product.price <= maxPrice);
     }
 
     // 2. Sorting
@@ -272,6 +286,24 @@ export class ProductsComponent implements OnInit {
 
   onSortFieldChange(field: string) {
     this.sortField.set(field);
+  }
+
+  onMinPriceChange(event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    this.minPriceFilter.set(value ? Number(value) : null);
+  }
+
+  onMaxPriceChange(event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    this.maxPriceFilter.set(value ? Number(value) : null);
+  }
+
+  clearFilters() {
+    this.searchTerm.set('');
+    this.sortField.set('name');
+    this.sortDirection.set('asc');
+    this.minPriceFilter.set(null);
+    this.maxPriceFilter.set(null);
   }
 
   openDialog(product?: Product) {

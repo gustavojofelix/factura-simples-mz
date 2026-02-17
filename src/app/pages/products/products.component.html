@@ -12,43 +12,72 @@
 
   <mat-card class="!shadow-md">
     <mat-card-content class="!p-6">
-      <div class="mb-4 flex flex-wrap items-center gap-4">
-        <input
-          type="text"
-          placeholder="Pesquisar produtos (Nome, Descrição ou ID)..."
-          class="flex-1 min-w-[300px] px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ispc-orange focus:border-transparent"
-          (input)="onSearchChange($event)"
-          [value]="searchTerm()"
-        >
-        
-        <div class="flex items-center gap-2">
-          <mat-form-field appearance="outline" class="w-48 !mb-0 hide-subscript">
-            <mat-label>Ordenar por</mat-label>
-            <mat-select [value]="sortField()" (selectionChange)="onSortFieldChange($event.value)">
-              <mat-option value="code">ID (Código)</mat-option>
-              <mat-option value="name">Nome</mat-option>
-              <mat-option value="price">Preço</mat-option>
-              <mat-option value="stock">Stock</mat-option>
-              <mat-option value="date">Data de Criação</mat-option>
-            </mat-select>
-          </mat-form-field>
-          
-          <button 
-            mat-icon-button 
-            (click)="toggleSortDirection()" 
-            [title]="sortDirection() === 'asc' ? 'Crescente' : 'Decrescente'"
-            class="text-gray-600"
+      <!-- Search & Filter Toolbar -->
+      <div class="flex flex-col md:flex-row items-stretch gap-4 mb-8">
+        <!-- Search Field -->
+        <mat-form-field appearance="outline" class="flex-1 max-w-md" subscriptSizing="dynamic">
+          <mat-icon matPrefix class="text-gray-400 mr-2">search</mat-icon>
+          <mat-label>Pesquisar produtos</mat-label>
+          <input 
+            matInput 
+            [value]="searchTerm()" 
+            (input)="onSearchChange($event)"
+            placeholder="Nome, código ou descrição..."
           >
-            <mat-icon>{{ sortDirection() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
-          </button>
-        </div>
+          @if (searchTerm()) {
+            <button matSuffix mat-icon-button (click)="searchTerm.set('')">
+              <mat-icon>clear</mat-icon>
+            </button>
+          }
+        </mat-form-field>
 
-        @if (searchTerm() !== '' || sortField() !== 'name' || sortDirection() !== 'asc') {
-          <button mat-stroked-button (click)="searchTerm.set(''); sortField.set('name'); sortDirection.set('asc')">
-            <mat-icon>clear</mat-icon>
-            <span>Limpar Filtros</span>
-          </button>
-        }
+        <div class="hidden md:block w-[1px] bg-gray-200 self-stretch my-1"></div>
+
+        <div class="flex flex-wrap items-center gap-4">
+          <!-- Sort Group -->
+          <div class="flex items-center">
+            <mat-form-field appearance="outline" class="w-48" subscriptSizing="dynamic">
+              <mat-label>Ordenar por</mat-label>
+              <mat-select [value]="sortField()" (selectionChange)="onSortFieldChange($event.value)">
+                <mat-option value="code">Código</mat-option>
+                <mat-option value="name">Nome</mat-option>
+                <mat-option value="price">Preço</mat-option>
+                <mat-option value="stock">Stock</mat-option>
+                <mat-option value="date">Data</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <button 
+              mat-icon-button 
+              (click)="toggleSortDirection()" 
+              class="ml-1 text-ispc-orange"
+              [matTooltip]="sortDirection() === 'asc' ? 'Crescente' : 'Decrescente'"
+            >
+              <mat-icon>{{ sortDirection() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+            </button>
+          </div>
+
+          <!-- Price Group -->
+          <div class="flex items-center gap-2 border border-gray-200 rounded-lg pr-3 pl-1 h-[56px] transition-all hover:border-gray-300">
+            <div class="bg-gray-50 h-full flex items-center px-3 rounded-l-lg border-r border-gray-200">
+              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Preço</span>
+            </div>
+            <mat-form-field appearance="fill" class="w-20 no-border-field" subscriptSizing="dynamic">
+              <input matInput type="number" [value]="minPriceFilter()" (input)="onMinPriceChange($event)" placeholder="Min">
+            </mat-form-field>
+            <span class="text-gray-300">—</span>
+            <mat-form-field appearance="fill" class="w-20 no-border-field" subscriptSizing="dynamic">
+              <input matInput type="number" [value]="maxPriceFilter()" (input)="onMaxPriceChange($event)" placeholder="Max">
+            </mat-form-field>
+          </div>
+
+          <!-- Clear Button -->
+          @if (searchTerm() !== '' || sortField() !== 'name' || sortDirection() !== 'asc' || minPriceFilter() !== null || maxPriceFilter() !== null) {
+            <button mat-button color="warn" (click)="clearFilters()" class="!h-[56px] rounded-lg">
+              <mat-icon>filter_list_off</mat-icon>
+              <span>Limpar</span>
+            </button>
+          }
+        </div>
       </div>
 
       @if (productService.isLoading()) {

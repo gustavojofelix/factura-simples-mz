@@ -301,29 +301,56 @@ export class ClientDialogComponent {
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatMenuModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule
   ],
   templateUrl: './clients.component.html',
   styleUrls: ['./clients.component.css']
 })
 export class ClientsComponent implements OnInit {
-  displayedColumns = ['name', 'nuit', 'email', 'industry', 'status', 'actions'];
+  displayedColumns = ['id', 'name', 'nuit', 'email', 'industry', 'status', 'actions'];
   searchTerm = signal('');
+  industryFilter = signal('');
+  statusFilter = signal<'all' | 'active' | 'inactive'>('all');
+
+  industries = [
+    'Comércio',
+    'Serviços',
+    'Indústria',
+    'Agricultura',
+    'Construção',
+    'Tecnologia',
+    'Saúde',
+    'Educação',
+    'Outros'
+  ];
 
   filteredClients = computed(() => {
     const term = this.searchTerm().toLowerCase();
+    const industry = this.industryFilter();
+    const status = this.statusFilter();
     const clients = this.clientService.clients();
 
-    if (!term) {
-      return clients;
-    }
+    return clients.filter(client => {
+      // Name/Search Term Filter
+      const matchesSearch = !term || 
+        client.name.toLowerCase().includes(term) ||
+        client.nuit?.toLowerCase().includes(term) ||
+        client.email?.toLowerCase().includes(term) ||
+        client.phone?.toLowerCase().includes(term);
 
-    return clients.filter(client =>
-      client.name.toLowerCase().includes(term) ||
-      client.nuit?.toLowerCase().includes(term) ||
-      client.email?.toLowerCase().includes(term) ||
-      client.phone?.toLowerCase().includes(term)
-    );
+      // Industry Filter
+      const matchesIndustry = !industry || client.industry === industry;
+
+      // Status Filter
+      const matchesStatus = status === 'all' || 
+        (status === 'active' && client.is_active) ||
+        (status === 'inactive' && !client.is_active);
+
+      return matchesSearch && matchesIndustry && matchesStatus;
+    });
   });
 
   constructor(
@@ -342,6 +369,20 @@ export class ClientsComponent implements OnInit {
   onSearchChange(event: Event) {
     const value = (event.target as HTMLInputElement).value;
     this.searchTerm.set(value);
+  }
+
+  onIndustryChange(value: string) {
+    this.industryFilter.set(value);
+  }
+
+  onStatusChange(value: 'all' | 'active' | 'inactive') {
+    this.statusFilter.set(value);
+  }
+
+  clearFilters() {
+    this.searchTerm.set('');
+    this.industryFilter.set('');
+    this.statusFilter.set('all');
   }
 
   openDialog(client?: Client) {

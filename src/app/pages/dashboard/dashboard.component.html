@@ -19,9 +19,9 @@
         <mat-card-content class="p-6">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm font-medium text-gray-600 mb-1">Vendas do Mês</p>
+              <p class="text-sm font-medium text-gray-600 mb-1">Vendas do Trimestre</p>
               <p class="text-2xl font-bold text-gray-900">
-                {{ formatCurrency(metrics().monthSales) }}
+                {{ formatCurrency(metrics().quarterSales) }}
               </p>
             </div>
             <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -146,14 +146,6 @@
           <div class="p-12 text-center">
             <mat-icon class="!text-6xl text-gray-300 mb-4">receipt_long</mat-icon>
             <p class="text-gray-600 mb-4">Ainda não tem facturas</p>
-            <button
-              mat-raised-button
-              class="!bg-ispc-orange !text-white"
-              (click)="openNewInvoiceDialog()"
-            >
-              <mat-icon class="mr-2">add</mat-icon>
-              Criar Primeira Factura
-            </button>
           </div>
         } @else {
           <div class="overflow-x-auto">
@@ -200,16 +192,4 @@
       </mat-card-content>
     </mat-card>
   }
-
-  <!-- Floating Action Button -->
-  <button
-    mat-fab
-    extended
-    class="!fixed !bottom-6 !right-6 !bg-ispc-orange !text-white !shadow-lg hover:!shadow-xl"
-    (click)="openNewInvoiceDialog()"
-  >
-    <mat-icon class="mr-2">add</mat-icon>
-    NOVA FACTURA
-  </button>
 </div>
-

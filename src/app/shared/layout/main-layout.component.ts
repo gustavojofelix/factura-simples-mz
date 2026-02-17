@@ -40,7 +40,7 @@ export class MainLayoutComponent {
     { icon: 'dashboard', label: 'Painel', route: '/painel' },
     { icon: 'receipt_long', label: 'Facturas', route: '/facturas' },
     { icon: 'people', label: 'Clientes', route: '/clientes' },
-    { icon: 'inventory_2', label: 'Produtos', route: '/produtos' },
+    { icon: 'inventory_2', label: 'Produtos e Serviços', route: '/produtos' },
     { icon: 'account_balance', label: 'Impostos', route: '/impostos' },
     { icon: 'assessment', label: 'Relatórios', route: '/relatorios' },
     { icon: 'settings', label: 'Configurações', route: '/configuracoes' }

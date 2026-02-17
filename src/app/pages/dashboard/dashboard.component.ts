@@ -15,7 +15,7 @@ import { InvoiceDialogComponent } from '../../shared/components/invoice-dialog.c
 import { Invoice } from '../../core/services/invoice.service';
 
 interface DashboardMetrics {
-  monthSales: number;
+  quarterSales: number;
   ispcToPay: number;
   pendingInvoices: number;
   activeClients: number;
@@ -49,7 +49,7 @@ interface RecentInvoice {
 })
 export class DashboardComponent implements OnInit {
   metrics = signal<DashboardMetrics>({
-    monthSales: 0,
+    quarterSales: 0,
     ispcToPay: 0,
     pendingInvoices: 0,
     activeClients: 0
@@ -135,20 +135,30 @@ export class DashboardComponent implements OnInit {
       return { ...inv, calculatedStatus };
     });
 
-    const monthInvoices = invoicesWithCalculatedStatus.filter(inv =>
-      inv.date?.startsWith(currentMonth)
-    );
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonthIndex = now.getMonth();
+    const quarterStartMonth = Math.floor(currentMonthIndex / 3) * 3;
+
+    const quarterInvoices = invoicesWithCalculatedStatus.filter(inv => {
+      if (!inv.date) return false;
+      const invDate = new Date(inv.date);
+      return invDate.getFullYear() === currentYear && 
+             invDate.getMonth() >= quarterStartMonth &&
+             invDate.getMonth() <= quarterStartMonth + 2;
+    });
 
     const pendingInvoices = invoicesWithCalculatedStatus.filter(inv =>
       inv.calculatedStatus === 'pendente'
     );
 
     // ISPC is calculated quarterly based on annual volume, not per invoice
-    // For now, we estimate 3% of monthly sales as a placeholder
-    const estimatedIspc = monthInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0) * 0.03;
+    // We estimate 3% of quarterly sales as a placeholder
+    const totalQuarterSales = quarterInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
+    const estimatedIspc = totalQuarterSales * 0.03;
 
     this.metrics.set({
-      monthSales: monthInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0),
+      quarterSales: totalQuarterSales,
       ispcToPay: estimatedIspc,
       pendingInvoices: pendingInvoices.length,
       activeClients: clients?.length || 0
