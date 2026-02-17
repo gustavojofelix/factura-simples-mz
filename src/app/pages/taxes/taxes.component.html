@@ -117,17 +117,40 @@
                     <p class="font-semibold">{{ calculation()!.invoiceCount }}</p>
                   </div>
                   <div>
-                    <p class="text-sm text-gray-600">Base Tributável</p>
+                    <p class="text-sm text-gray-600">Base Tributável Total</p>
                     <p class="font-semibold text-lg">{{ formatCurrency(calculation()!.ispcBase) }}</p>
                   </div>
                   <div>
-                    <p class="text-sm text-gray-600">Taxa ISPC</p>
+                    <p class="text-sm text-gray-600">Taxa ISPC Médio</p>
                     <p class="font-semibold">{{ calculation()!.ispcRate }}%</p>
                   </div>
+
+                  @if (calculation()!.ispcSplits.length > 1) {
+                    <div class="col-span-full border-t border-gray-200 pt-4 mt-2">
+                      <p class="text-sm font-semibold text-gray-900 mb-3">Detalhamento por Escalão</p>
+                      <div class="space-y-3">
+                        @for (split of calculation()!.ispcSplits; track $index) {
+                          <div class="flex items-center justify-between p-3 bg-white rounded-md border border-gray-100 shadow-sm">
+                            <div>
+                              <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">{{ split.label }}</p>
+                              <div class="flex items-center gap-2">
+                                <span class="text-sm font-bold text-gray-900">{{ formatCurrency(split.base) }}</span>
+                                <span class="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">{{ split.rate }}%</span>
+                              </div>
+                            </div>
+                            <div class="text-right">
+                              <p class="text-xs text-gray-500 mb-1">Imposto</p>
+                              <p class="text-sm font-bold text-blue-600">{{ formatCurrency(split.amount) }}</p>
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
                 </div>
 
-                <div class="p-4 bg-blue-100 rounded-lg mb-4">
-                  <p class="text-sm text-gray-700">ISPC a Pagar</p>
+                <div class="p-4 bg-blue-100 rounded-lg mb-4 mt-2">
+                  <p class="text-sm text-gray-700">ISPC Total a Pagar</p>
                   <p class="text-3xl font-bold text-blue-700">{{ formatCurrency(calculation()!.ispcAmount) }}</p>
                 </div>
 

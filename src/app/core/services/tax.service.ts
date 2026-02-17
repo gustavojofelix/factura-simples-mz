@@ -22,6 +22,7 @@ export interface TaxDeclaration {
   created_at: string;
   updated_at: string;
   payments?: TaxPayment[];
+  ispc_splits?: IspcSplit[];
 }
 
 export interface TaxPayment {
@@ -46,6 +47,15 @@ export interface TaxCalculation {
   ispcRate: number;
   ispcAmount: number;
   invoiceCount: number;
+  ispcSplits: IspcSplit[];
+}
+
+export interface IspcSplit {
+  base: number;
+  rate: number;
+  amount: number;
+  isExcess: boolean;
+  label: string;
 }
 
 export interface TaxSummary {
@@ -88,7 +98,8 @@ export class TaxService {
       const declarationsWithPayments = await Promise.all(
         (data || []).map(async (declaration) => {
           const payments = await this.getDeclarationPayments(declaration.id);
-          return { ...declaration, payments };
+          const ispc_splits = declaration.model_30_data?.ispc_splits;
+          return { ...declaration, payments, ispc_splits };
         })
       );
 
@@ -158,6 +169,7 @@ export class TaxService {
       let ispcAmount = 0;
       let remaining = totalSales;
       let currentAcc = annualSalesBeforeQuarter;
+      const ispcSplits: IspcSplit[] = [];
 
       const thresholds = [1000000, 2500000, 4000000];
       const scaleRates = [3, 4, 5, 20];
@@ -172,7 +184,17 @@ export class TaxService {
 
         if (currentAcc < thresholds[i]) {
           const chunk = Math.min(remaining, thresholds[i] - currentAcc);
-          ispcAmount += (chunk * rates[i]) / 100;
+          const chunkAmount = (chunk * rates[i]) / 100;
+          ispcAmount += chunkAmount;
+          
+          ispcSplits.push({
+            base: chunk,
+            rate: rates[i],
+            amount: chunkAmount,
+            isExcess: currentAcc >= 1000000,
+            label: currentAcc < 1000000 && ispcSplits.length === 0 ? 'Base Tributável' : 'Excesso de Base Tributável'
+          });
+
           remaining -= chunk;
           currentAcc += chunk;
         }
@@ -180,7 +202,17 @@ export class TaxService {
 
       // Valor excedente ao último threshold (4M)
       if (remaining > 0) {
-        ispcAmount += (remaining * rates[3]) / 100;
+        const chunkAmount = (remaining * rates[3]) / 100;
+        ispcAmount += chunkAmount;
+        
+        ispcSplits.push({
+          base: remaining,
+          rate: rates[3],
+          amount: chunkAmount,
+          isExcess: true,
+          label: 'Excesso de Base Tributável'
+        });
+
         currentAcc += remaining;
       }
 
@@ -206,6 +238,8 @@ export class TaxService {
         await this.companyService.loadCompanies();
       }
 
+      const ispcRate = currentAcc > thresholds[2] ? 20 : (isScaleActivity ? parseInt(newVolume) : baseRate);
+
       return {
         period,
         year,
@@ -213,9 +247,10 @@ export class TaxService {
         endDate,
         totalSales,
         ispcBase: totalSales,
-        ispcRate: currentAcc > thresholds[2] ? 20 : (isScaleActivity ? parseInt(newVolume) : baseRate),
+        ispcRate,
         ispcAmount,
-        invoiceCount: invoices?.length || 0
+        invoiceCount: invoices?.length || 0,
+        ispcSplits
       };
     } catch (error) {
       console.error('Erro ao calcular impostos:', error);
@@ -242,7 +277,7 @@ export class TaxService {
       // Check for existing declaration to upsert
       const { data: existing } = await this.supabase.db
         .from('tax_declarations')
-        .select('id, status, notes')
+        .select('id, status, notes, model_30_data')
         .eq('company_id', company.id)
         .eq('period', calculation.period)
         .eq('year', calculation.year)
@@ -260,7 +295,8 @@ export class TaxService {
         ispc_amount: calculation.ispcAmount,
         due_date: dueDate,
         status: existing?.status === 'paga' || existing?.status === 'submetida' ? existing.status : status,
-        notes: notes || existing?.notes
+        notes: notes || existing?.notes,
+        model_30_data: { ...existing?.model_30_data, ispc_splits: calculation.ispcSplits }
       };
 
       let result;
