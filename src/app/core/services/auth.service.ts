@@ -14,6 +14,7 @@ export interface UserProfile {
   full_name: string;
   phone?: string;
   email: string;
+  role: 'user' | 'admin';
 }
 
 @Injectable({
@@ -22,6 +23,10 @@ export interface UserProfile {
 export class AuthService {
   currentUser = signal<User | null>(null);
   isLoading = signal<boolean>(true);
+  private authInitialized = new Promise<void>((resolve) => {
+    this.resolveAuth = resolve;
+  });
+  private resolveAuth!: () => void;
 
   constructor(
     private supabase: SupabaseService,
@@ -34,14 +39,20 @@ export class AuthService {
     this.supabase.auth.getSession().then(({ data: { session } }) => {
       this.currentUser.set(session?.user ?? null);
       this.isLoading.set(false);
+      this.resolveAuth();
     });
 
     this.supabase.auth.onAuthStateChange((event, session) => {
       (() => {
         this.currentUser.set(session?.user ?? null);
         this.isLoading.set(false);
+        this.resolveAuth();
       })();
     });
+  }
+
+  async waitForInitialization(): Promise<void> {
+    return this.authInitialized;
   }
 
   async signUp(email: string, password: string, fullName: string, phone?: string): Promise<AuthResponse> {
@@ -133,7 +144,8 @@ export class AuthService {
           id: data.id,
           full_name: data.full_name,
           phone: data.phone,
-          email: user.email!
+          email: user.email!,
+          role: data.role as 'user' | 'admin'
         };
       }
 
@@ -142,6 +154,11 @@ export class AuthService {
       console.error('Erro ao carregar perfil:', error);
       return null;
     }
+  }
+
+  async isAdmin(): Promise<boolean> {
+    const profile = await this.getCurrentProfile();
+    return profile?.role === 'admin';
   }
 
   async getUserCompanies() {

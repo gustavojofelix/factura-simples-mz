@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard } from './core/guards/auth.guard';
+import { adminGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
   {
@@ -57,6 +58,29 @@ export const routes: Routes = [
       {
         path: 'configuracoes',
         loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent)
+      }
+    ]
+  },
+  {
+    path: 'admin',
+    canActivate: [adminGuard],
+    loadComponent: () => import('./pages/admin/layout/admin-layout.component').then(m => m.AdminLayoutComponent),
+    children: [
+      {
+        path: '',
+        loadComponent: () => import('./pages/admin/dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent)
+      },
+      {
+        path: 'subscritores',
+        loadComponent: () => import('./pages/admin/subscribers/admin-subscribers.component').then(m => m.AdminSubscribersComponent)
+      },
+      {
+        path: 'empresas',
+        loadComponent: () => import('./pages/admin/companies/admin-companies.component').then(m => m.AdminCompaniesComponent)
+      },
+      {
+        path: 'financeiro',
+        loadComponent: () => import('./pages/admin/revenue/admin-revenue.component').then(m => m.AdminRevenueComponent)
       }
     ]
   },
