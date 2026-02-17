@@ -14,6 +14,8 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatSelectModule } from '@angular/material/select';
 import { InvoiceService } from '../../core/services/invoice.service';
 import { CompanyService } from '../../core/services/company.service';
+import { ExportService } from '../../core/services/export.service';
+import { ClientService } from '../../core/services/client.service';
 
 interface SalesReport {
   totalSales: number;
@@ -99,6 +101,16 @@ interface SalesReport {
                   <mat-datepicker #endPicker></mat-datepicker>
                 </mat-form-field>
               }
+
+              <mat-form-field appearance="outline">
+                <mat-label>Cliente</mat-label>
+                <mat-select formControlName="clientId">
+                  <mat-option value="all">Todos os Clientes</mat-option>
+                  @for (client of clients(); track client.id) {
+                    <mat-option [value]="client.id">{{ client.name }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
 
               <button
                 mat-raised-button
@@ -295,6 +307,10 @@ interface SalesReport {
         }
 
         <div class="flex justify-end gap-4">
+          <button mat-stroked-button (click)="exportToExcel()" [disabled]="isLoading()">
+            <mat-icon>table_view</mat-icon>
+            Exportar Excel
+          </button>
           <button mat-stroked-button (click)="exportToCSV()">
             <mat-icon>download</mat-icon>
             Exportar CSV
@@ -323,6 +339,7 @@ export class ReportsComponent implements OnInit {
   filterForm: FormGroup;
   report = signal<SalesReport | null>(null);
   isLoading = signal(false);
+  clients = this.clientService.clients;
 
   topClientsColumns = ['client', 'invoices', 'total'];
   dailySalesColumns = ['date', 'invoices', 'amount'];
@@ -330,7 +347,9 @@ export class ReportsComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private invoiceService: InvoiceService,
-    private companyService: CompanyService
+    private companyService: CompanyService,
+    private exportService: ExportService,
+    private clientService: ClientService
   ) {
     const today = new Date();
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -338,11 +357,13 @@ export class ReportsComponent implements OnInit {
     this.filterForm = this.fb.group({
       period: ['this_month'],
       startDate: [firstDayOfMonth, Validators.required],
-      endDate: [today, Validators.required]
+      endDate: [today, Validators.required],
+      clientId: ['all']
     });
   }
 
   ngOnInit() {
+    this.clientService.loadClients();
     this.onPeriodChange();
     this.generateReport();
   }
@@ -422,7 +443,10 @@ export class ReportsComponent implements OnInit {
       const allInvoices = this.invoiceService.invoices();
 
       const filteredInvoices = allInvoices.filter(inv => {
-        return inv.date >= startDate && inv.date <= endDate;
+        const matchesDate = inv.date >= startDate && inv.date <= endDate;
+        const clientId = this.filterForm.get('clientId')?.value;
+        const matchesClient = clientId === 'all' || inv.client_id === clientId;
+        return matchesDate && matchesClient;
       });
 
       const totalSales = filteredInvoices.reduce((sum, inv) => sum + inv.total, 0);
@@ -541,6 +565,67 @@ export class ReportsComponent implements OnInit {
     link.href = URL.createObjectURL(blob);
     link.download = `relatorio_vendas_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
+  }
+
+  async exportToExcel() {
+    const report = this.report();
+    if (!report) return;
+
+    this.isLoading.set(true);
+    try {
+      const startDate = this.formatDateForDB(this.filterForm.get('startDate')?.value);
+      const endDate = this.formatDateForDB(this.filterForm.get('endDate')?.value);
+      
+      let detailedInvoices = await this.invoiceService.getDetailedInvoices(startDate, endDate);
+      
+      const clientId = this.filterForm.get('clientId')?.value;
+      if (clientId !== 'all') {
+        detailedInvoices = detailedInvoices.filter(inv => inv.client_id === clientId);
+      }
+      
+      if (!detailedInvoices || detailedInvoices.length === 0) {
+        alert('Nenhum dado encontrado para o período seleccionado.');
+        return;
+      }
+
+      // Flatten data for Excel: one row per invoice item
+      const exportData = detailedInvoices.flatMap(inv => {
+        if (!inv.items || inv.items.length === 0) {
+          return [{
+            'Nº Factura': inv.invoice_number,
+            'Data': this.formatDate(inv.date),
+            'Cliente': inv.client?.name || '-',
+            'Emitente': inv.issuer_name || '-',
+            'Status': inv.status.toUpperCase(),
+            'Produto': '-',
+            'Qtd': 0,
+            'Preço Unit.': 0,
+            'Total Item': 0,
+            'Total Factura': inv.total
+          }];
+        }
+
+        return inv.items.map(item => ({
+          'Nº Factura': inv.invoice_number,
+          'Data': this.formatDate(inv.date),
+          'Cliente': inv.client?.name || '-',
+          'Emitente': inv.issuer_name || '-',
+          'Status': inv.status.toUpperCase(),
+          'Produto': item.product_name,
+          'Qtd': item.quantity,
+          'Preço Unit.': item.unit_price,
+          'Total Item': item.subtotal,
+          'Total Factura': inv.total
+        }));
+      });
+
+      const fileName = `relatorio_vendas_detalhado_${new Date().toISOString().split('T')[0]}`;
+      this.exportService.exportToExcel(exportData, fileName, 'Vendas');
+    } catch (error) {
+      console.error('Erro ao exportar para Excel:', error);
+    } finally {
+      this.isLoading.set(false);
+    }
   }
 
   printReport() {

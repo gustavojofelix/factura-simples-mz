@@ -500,6 +500,51 @@ export class InvoiceService {
     });
   }
 
+  async getDetailedInvoices(startDate?: string, endDate?: string): Promise<Invoice[]> {
+    const company = this.companyService.activeCompany();
+    if (!company) return [];
+
+    let query = this.supabase.db
+      .from('invoices')
+      .select(`
+        *,
+        client:clients (*),
+        items:invoice_items (*),
+        issuer:profiles (full_name)
+      `)
+      .eq('company_id', company.id)
+      .order('date', { ascending: false });
+
+    if (startDate) {
+      query = query.gte('date', startDate);
+    }
+    if (endDate) {
+      query = query.lte('date', endDate);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Erro ao procurar facturas detalhadas:', error);
+      return [];
+    }
+
+    return (data || []).map(inv => ({
+      ...inv,
+      issuer_name: inv.issuer?.full_name || '-',
+      status: this.calculateStatus(inv)
+    }));
+  }
+
+  private calculateStatus(invoice: any): string {
+    if (invoice.status === 'anulada') return 'anulada';
+    if (invoice.status === 'rascunho') return 'rascunho';
+    
+    // Logic from getStatusLabel/Color could be moved or reused here
+    // For now, respect the stored status if not draft/annulled
+    return invoice.status;
+  }
+
   private async handleStockUpdate(items: any[], type: 'decrement' | 'increment') {
     for (const item of items) {
       if (!item.product_id) continue;
