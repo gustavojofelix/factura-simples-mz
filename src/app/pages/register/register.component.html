@@ -114,9 +114,9 @@
           <mat-checkbox formControlName="acceptTerms" color="primary" class="text-sm">
             <span class="text-gray-700">
               Aceito os
-              <a href="#" class="text-ispc-orange hover:underline">Termos de Uso</a>
+              <a href="javascript:void(0)" (click)="openTerms($event)" class="text-ispc-orange hover:underline">Termos de Uso</a>
               e
-              <a href="#" class="text-ispc-orange hover:underline">Política de Privacidade</a>
+              <a href="javascript:void(0)" (click)="openPrivacy($event)" class="text-ispc-orange hover:underline">Política de Privacidade</a>
             </span>
           </mat-checkbox>
           @if (registerForm.get('acceptTerms')?.touched && registerForm.get('acceptTerms')?.hasError('required')) {
