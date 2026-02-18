@@ -62,6 +62,19 @@ export class UserManagementService {
     const user = this.authService.currentUser();
     if (!user) return;
 
+    // First, get the list of company IDs the current user belongs to
+    const { data: userCompanies } = await this.supabase.client
+      .from('company_users')
+      .select('company_id')
+      .eq('user_id', user.id);
+
+    const companyIds = (userCompanies || []).map(c => c.company_id);
+
+    if (companyIds.length === 0) {
+      this.allUsersSignal.set([]);
+      return;
+    }
+
     const { data, error } = await this.supabase.client
       .from('company_users')
       .select(`
@@ -73,11 +86,12 @@ export class UserManagementService {
           id,
           name
         ),
-        profiles (
+        profiles!company_users_user_id_fkey (
           email,
           full_name
         )
       `)
+      .in('company_id', companyIds)
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -118,7 +132,7 @@ export class UserManagementService {
       .from('company_users')
       .select(`
         *,
-        profiles (
+        profiles!company_users_user_id_fkey (
           email,
           full_name
         )
