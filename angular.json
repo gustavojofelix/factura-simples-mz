@@ -27,7 +27,8 @@
           },
           "options": {
             "assets": [
-              "src/assets"
+              "src/assets",
+              "src/.htaccess"
             ],
             "index": "src/index.html",
             "browser": "src/main.ts",
