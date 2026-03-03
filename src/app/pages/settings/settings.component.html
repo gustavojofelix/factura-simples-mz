@@ -4,7 +4,7 @@
       <h1 class="text-3xl font-bold text-gray-900">Configurações</h1>
       <p class="text-gray-600 mt-2">Gerencie as configurações do sistema, subscrições, empresas e utilizadores</p>
     </div>
-
+    <div class="text-center py-2 text-gray-600 text-sm">YasinMagno_teste</div>
     <mat-tab-group [(selectedIndex)]="selectedTab" class="bg-white rounded-lg shadow">
       <mat-tab label="Sistema">
         <div class="p-6">
@@ -15,7 +15,7 @@
               <mat-label>Selecione uma Empresa</mat-label>
               <mat-select [(value)]="selectedCompanyId" (selectionChange)="loadCompanySettings($event.value)">
                 @for (company of companies(); track company.id) {
-                  <mat-option [value]="company.id">{{ company.name }}</mat-option>
+                <mat-option [value]="company.id">{{ company.name }}</mat-option>
                 }
               </mat-select>
               <mat-hint>Selecione a empresa para configurar</mat-hint>
@@ -23,74 +23,75 @@
           </div>
 
           @if (selectedCompanyId()) {
-            <form [formGroup]="systemForm" (ngSubmit)="saveSystemSettings()" class="space-y-6">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Idioma</mat-label>
-                  <mat-select formControlName="language">
-                    @for (lang of languages; track lang.value) {
-                      <mat-option [value]="lang.value">{{ lang.label }}</mat-option>
-                    }
-                  </mat-select>
-                </mat-form-field>
+          <form [formGroup]="systemForm" (ngSubmit)="saveSystemSettings()" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Idioma</mat-label>
+                <mat-select formControlName="language">
+                  @for (lang of languages; track lang.value) {
+                  <mat-option [value]="lang.value">{{ lang.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
 
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Fuso Horário</mat-label>
-                  <mat-select formControlName="timezone">
-                    @for (tz of timezones; track tz.value) {
-                      <mat-option [value]="tz.value">{{ tz.label }}</mat-option>
-                    }
-                  </mat-select>
-                </mat-form-field>
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Fuso Horário</mat-label>
+                <mat-select formControlName="timezone">
+                  @for (tz of timezones; track tz.value) {
+                  <mat-option [value]="tz.value">{{ tz.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
 
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Moeda Padrão</mat-label>
-                  <mat-select formControlName="currency">
-                    @for (curr of currencies; track curr.value) {
-                      <mat-option [value]="curr.value">{{ curr.label }}</mat-option>
-                    }
-                  </mat-select>
-                </mat-form-field>
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Moeda Padrão</mat-label>
+                <mat-select formControlName="currency">
+                  @for (curr of currencies; track curr.value) {
+                  <mat-option [value]="curr.value">{{ curr.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
 
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Formato de Data</mat-label>
-                  <mat-select formControlName="date_format">
-                    @for (format of dateFormats; track format.value) {
-                      <mat-option [value]="format.value">{{ format.label }}</mat-option>
-                    }
-                  </mat-select>
-                </mat-form-field>
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Formato de Data</mat-label>
+                <mat-select formControlName="date_format">
+                  @for (format of dateFormats; track format.value) {
+                  <mat-option [value]="format.value">{{ format.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
 
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Início do Ano Fiscal</mat-label>
-                  <input matInput formControlName="fiscal_year_start" placeholder="01-01">
-                  <mat-hint>Formato: MM-DD</mat-hint>
-                </mat-form-field>
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Início do Ano Fiscal</mat-label>
+                <input matInput formControlName="fiscal_year_start" placeholder="01-01">
+                <mat-hint>Formato: MM-DD</mat-hint>
+              </mat-form-field>
 
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Email para Notificações</mat-label>
-                  <input matInput type="email" formControlName="notification_email" placeholder="notificacoes@empresa.com">
-                </mat-form-field>
-              </div>
-
-              <div class="flex items-center">
-                <mat-slide-toggle formControlName="enable_notifications">
-                  Habilitar Notificações
-                </mat-slide-toggle>
-              </div>
-
-              <div class="flex justify-end">
-                <button mat-raised-button color="primary" type="submit" [disabled]="systemForm.invalid || loading()">
-                  <mat-icon>save</mat-icon>
-                  Guardar Configurações
-                </button>
-              </div>
-            </form>
-          } @else {
-            <div class="text-center py-8 text-gray-500">
-              <mat-icon class="text-6xl mb-2">settings</mat-icon>
-              <p>Selecione uma empresa para configurar</p>
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Email para Notificações</mat-label>
+                <input matInput type="email" formControlName="notification_email"
+                  placeholder="notificacoes@empresa.com">
+              </mat-form-field>
             </div>
+
+            <div class="flex items-center">
+              <mat-slide-toggle formControlName="enable_notifications">
+                Habilitar Notificações
+              </mat-slide-toggle>
+            </div>
+
+            <div class="flex justify-end">
+              <button mat-raised-button color="primary" type="submit" [disabled]="systemForm.invalid || loading()">
+                <mat-icon>save</mat-icon>
+                Guardar Configurações
+              </button>
+            </div>
+          </form>
+          } @else {
+          <div class="text-center py-8 text-gray-500">
+            <mat-icon class="text-6xl mb-2">settings</mat-icon>
+            <p>Selecione uma empresa para configurar</p>
+          </div>
           }
         </div>
       </mat-tab>
@@ -104,7 +105,7 @@
               <mat-label>Selecione uma Empresa</mat-label>
               <mat-select [(value)]="selectedCompanyId" (selectionChange)="loadCompanySettings($event.value)">
                 @for (company of companies(); track company.id) {
-                  <mat-option [value]="company.id">{{ company.name }}</mat-option>
+                <mat-option [value]="company.id">{{ company.name }}</mat-option>
                 }
               </mat-select>
               <mat-hint>Selecione a empresa para ver a subscrição</mat-hint>
@@ -112,111 +113,113 @@
           </div>
 
           @if (subscription(); as sub) {
-            <mat-card class="mb-6">
-              <mat-card-content>
-                <div class="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 class="text-lg font-semibold">Plano Actual: {{ sub.plan_name }}</h3>
-                    <p class="text-gray-600">{{ sub.billing_cycle === 'monthly' ? 'Mensal' : 'Anual' }}</p>
-                  </div>
-                  <span class="px-3 py-1 rounded-full text-white text-sm" [ngClass]="getStatusColor(sub.status)">
-                    {{ getStatusLabel(sub.status) }}
-                  </span>
+          <mat-card class="mb-6">
+            <mat-card-content>
+              <div class="flex justify-between items-start mb-4">
+                <div>
+                  <h3 class="text-lg font-semibold">Plano Actual: {{ sub.plan_name }}</h3>
+                  <p class="text-gray-600">{{ sub.billing_cycle === 'monthly' ? 'Mensal' : 'Anual' }}</p>
                 </div>
+                <span class="px-3 py-1 rounded-full text-white text-sm" [ngClass]="getStatusColor(sub.status)">
+                  {{ getStatusLabel(sub.status) }}
+                </span>
+              </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  <div>
-                    <p class="text-sm text-gray-600">Valor</p>
-                    <p class="text-lg font-semibold">{{ formatCurrency(sub.amount) }}</p>
-                  </div>
-                  <div>
-                    <p class="text-sm text-gray-600">Próxima Cobrança</p>
-                    <p class="text-lg font-semibold">{{ sub.next_billing_date ? formatDate(sub.next_billing_date) : '-' }}</p>
-                  </div>
-                  <div>
-                    <p class="text-sm text-gray-600">Método de Pagamento</p>
-                    <p class="text-lg font-semibold">{{ sub.payment_method || 'Não definido' }}</p>
-                  </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <p class="text-sm text-gray-600">Valor</p>
+                  <p class="text-lg font-semibold">{{ formatCurrency(sub.amount) }}</p>
                 </div>
+                <div>
+                  <p class="text-sm text-gray-600">Próxima Cobrança</p>
+                  <p class="text-lg font-semibold">{{ sub.next_billing_date ? formatDate(sub.next_billing_date) : '-' }}
+                  </p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-600">Método de Pagamento</p>
+                  <p class="text-lg font-semibold">{{ sub.payment_method || 'Não definido' }}</p>
+                </div>
+              </div>
 
-                @if (sub.status === 'past_due') {
-                  <div class="bg-red-50 border border-red-200 rounded p-4 mb-4">
-                    <div class="flex items-center gap-2">
-                      <mat-icon class="text-red-600">warning</mat-icon>
-                      <p class="text-red-800 font-semibold">Pagamento em Atraso</p>
-                    </div>
-                    <p class="text-red-600 mt-2">Por favor, atualize seu método de pagamento para continuar usando o serviço.</p>
-                  </div>
+              @if (sub.status === 'past_due') {
+              <div class="bg-red-50 border border-red-200 rounded p-4 mb-4">
+                <div class="flex items-center gap-2">
+                  <mat-icon class="text-red-600">warning</mat-icon>
+                  <p class="text-red-800 font-semibold">Pagamento em Atraso</p>
+                </div>
+                <p class="text-red-600 mt-2">Por favor, atualize seu método de pagamento para continuar usando o
+                  serviço.</p>
+              </div>
+              }
+
+              <div class="flex gap-2">
+                <button mat-raised-button color="primary">
+                  <mat-icon>payment</mat-icon>
+                  Atualizar Método de Pagamento
+                </button>
+                @if (sub.status === 'cancelled') {
+                <button mat-raised-button color="accent">
+                  <mat-icon>refresh</mat-icon>
+                  Reativar Subscrição
+                </button>
                 }
+              </div>
+            </mat-card-content>
+          </mat-card>
 
-                <div class="flex gap-2">
-                  <button mat-raised-button color="primary">
-                    <mat-icon>payment</mat-icon>
-                    Atualizar Método de Pagamento
-                  </button>
-                  @if (sub.status === 'cancelled') {
-                    <button mat-raised-button color="accent">
-                      <mat-icon>refresh</mat-icon>
-                      Reativar Subscrição
-                    </button>
-                  }
+          <h3 class="text-lg font-semibold mb-4">Planos Disponíveis</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            @for (plan of availablePlans; track plan.name) {
+            <mat-card class="plan-card" [class.current-plan]="sub.plan_name === plan.name">
+              <mat-card-header>
+                <mat-card-title>{{ plan.name }}</mat-card-title>
+                <mat-card-subtitle>{{ plan.description }}</mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="text-center my-4">
+                  <p class="text-3xl font-bold">{{ formatCurrency(plan.monthly_price) }}</p>
+                  <p class="text-gray-600 text-sm">por mês</p>
+                  <p class="text-lg font-semibold mt-2">{{ formatCurrency(plan.yearly_price) }}</p>
+                  <p class="text-gray-600 text-sm">por ano</p>
                 </div>
+
+                <ul class="space-y-2 mb-4">
+                  @for (feature of plan.features; track feature) {
+                  <li class="flex items-start gap-2 text-sm">
+                    <mat-icon class="text-green-600 text-base">check_circle</mat-icon>
+                    <span>{{ feature }}</span>
+                  </li>
+                  }
+                </ul>
+
+                @if (sub.plan_name !== plan.name) {
+                <div class="flex flex-col gap-2">
+                  <button mat-raised-button color="primary" (click)="changePlan(plan, 'monthly')">
+                    Mudar para Mensal
+                  </button>
+                  <button mat-stroked-button color="primary" (click)="changePlan(plan, 'yearly')">
+                    Mudar para Anual
+                  </button>
+                </div>
+                } @else {
+                <div class="text-center py-2">
+                  <span class="text-green-600 font-semibold">Plano Actual</span>
+                </div>
+                }
               </mat-card-content>
             </mat-card>
-
-            <h3 class="text-lg font-semibold mb-4">Planos Disponíveis</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              @for (plan of availablePlans; track plan.name) {
-                <mat-card class="plan-card" [class.current-plan]="sub.plan_name === plan.name">
-                  <mat-card-header>
-                    <mat-card-title>{{ plan.name }}</mat-card-title>
-                    <mat-card-subtitle>{{ plan.description }}</mat-card-subtitle>
-                  </mat-card-header>
-                  <mat-card-content>
-                    <div class="text-center my-4">
-                      <p class="text-3xl font-bold">{{ formatCurrency(plan.monthly_price) }}</p>
-                      <p class="text-gray-600 text-sm">por mês</p>
-                      <p class="text-lg font-semibold mt-2">{{ formatCurrency(plan.yearly_price) }}</p>
-                      <p class="text-gray-600 text-sm">por ano</p>
-                    </div>
-
-                    <ul class="space-y-2 mb-4">
-                      @for (feature of plan.features; track feature) {
-                        <li class="flex items-start gap-2 text-sm">
-                          <mat-icon class="text-green-600 text-base">check_circle</mat-icon>
-                          <span>{{ feature }}</span>
-                        </li>
-                      }
-                    </ul>
-
-                    @if (sub.plan_name !== plan.name) {
-                      <div class="flex flex-col gap-2">
-                        <button mat-raised-button color="primary" (click)="changePlan(plan, 'monthly')">
-                          Mudar para Mensal
-                        </button>
-                        <button mat-stroked-button color="primary" (click)="changePlan(plan, 'yearly')">
-                          Mudar para Anual
-                        </button>
-                      </div>
-                    } @else {
-                      <div class="text-center py-2">
-                        <span class="text-green-600 font-semibold">Plano Actual</span>
-                      </div>
-                    }
-                  </mat-card-content>
-                </mat-card>
-              }
-            </div>
+            }
+          </div>
           } @else if (selectedCompanyId()) {
-            <div class="text-center py-8 text-gray-500">
-              <mat-icon class="text-6xl mb-2">error_outline</mat-icon>
-              <p>Nenhuma subscrição encontrada</p>
-            </div>
+          <div class="text-center py-8 text-gray-500">
+            <mat-icon class="text-6xl mb-2">error_outline</mat-icon>
+            <p>Nenhuma subscrição encontrada</p>
+          </div>
           } @else {
-            <div class="text-center py-8 text-gray-500">
-              <mat-icon class="text-6xl mb-2">credit_card</mat-icon>
-              <p>Selecione uma empresa para ver a subscrição</p>
-            </div>
+          <div class="text-center py-8 text-gray-500">
+            <mat-icon class="text-6xl mb-2">credit_card</mat-icon>
+            <p>Selecione uma empresa para ver a subscrição</p>
+          </div>
           }
         </div>
       </mat-tab>
@@ -283,14 +286,14 @@
               </div>
 
               @if (companies().length === 0) {
-                <div class="text-center py-8 text-gray-500">
-                  <mat-icon class="text-6xl mb-2">business</mat-icon>
-                  <p>Nenhuma empresa encontrada</p>
-                  <button mat-raised-button color="primary" (click)="openCompanyDialog()" class="mt-4">
-                    <mat-icon>add</mat-icon>
-                    Criar Primeira Empresa
-                  </button>
-                </div>
+              <div class="text-center py-8 text-gray-500">
+                <mat-icon class="text-6xl mb-2">business</mat-icon>
+                <p>Nenhuma empresa encontrada</p>
+                <button mat-raised-button color="primary" (click)="openCompanyDialog()" class="mt-4">
+                  <mat-icon>add</mat-icon>
+                  Criar Primeira Empresa
+                </button>
+              </div>
               }
             </mat-card-content>
           </mat-card>
@@ -324,13 +327,13 @@
                     <td mat-cell *matCellDef="let user">
                       <div class="flex flex-wrap gap-1">
                         @for (company of user.companies; track company.company_id) {
-                          <mat-chip class="text-xs">
-                            <span class="font-semibold">{{ company.company_name }}</span>
-                            <span class="text-gray-600 ml-1">({{ getRoleLabel(company.role) }})</span>
-                            @if (!company.is_active) {
-                              <span class="text-red-600 ml-1">- Inativo</span>
-                            }
-                          </mat-chip>
+                        <mat-chip class="text-xs">
+                          <span class="font-semibold">{{ company.company_name }}</span>
+                          <span class="text-gray-600 ml-1">({{ getRoleLabel(company.role) }})</span>
+                          @if (!company.is_active) {
+                          <span class="text-red-600 ml-1">- Inativo</span>
+                          }
+                        </mat-chip>
                         }
                       </div>
                     </td>
@@ -353,14 +356,14 @@
               </div>
 
               @if (allUsers().length === 0) {
-                <div class="text-center py-8 text-gray-500">
-                  <mat-icon class="text-6xl mb-2">people_outline</mat-icon>
-                  <p>Nenhum utilizador encontrado</p>
-                  <button mat-raised-button color="primary" (click)="openUserDialog()" class="mt-4">
-                    <mat-icon>add</mat-icon>
-                    Adicionar Primeiro Utilizador
-                  </button>
-                </div>
+              <div class="text-center py-8 text-gray-500">
+                <mat-icon class="text-6xl mb-2">people_outline</mat-icon>
+                <p>Nenhum utilizador encontrado</p>
+                <button mat-raised-button color="primary" (click)="openUserDialog()" class="mt-4">
+                  <mat-icon>add</mat-icon>
+                  Adicionar Primeiro Utilizador
+                </button>
+              </div>
               }
             </mat-card-content>
           </mat-card>
