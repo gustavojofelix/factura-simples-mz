@@ -21,7 +21,7 @@
                   </mat-select>
                   <mat-icon matPrefix class="text-gray-400">category</mat-icon>
                   @if (getErrorMessage(companyInfoForm, 'entityType')) {
-                    <mat-error>{{ getErrorMessage(companyInfoForm, 'entityType') }}</mat-error>
+                  <mat-error>{{ getErrorMessage(companyInfoForm, 'entityType') }}</mat-error>
                   }
                 </mat-form-field>
               </div>
@@ -45,37 +45,37 @@
                   <mat-icon class="mr-2 text-ispc-orange">business_center</mat-icon>
                   Tipo de Actividades
                 </h3>
-                
+
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <mat-form-field appearance="outline" class="w-full">
-                    <mat-label>1ª Categoria</mat-label>
+                    <mat-label>Actividade Principal</mat-label>
                     <mat-select formControlName="category1">
                       @for (cat of getCat1Options(); track cat.id) {
-                        <mat-option [value]="cat.id">{{ cat.label }}</mat-option>
+                      <mat-option [value]="cat.id">{{ cat.label }}</mat-option>
                       }
                     </mat-select>
                   </mat-form-field>
 
                   @if (getCat2Options().length > 0) {
-                    <mat-form-field appearance="outline" class="w-full">
-                      <mat-label>2ª Categoria</mat-label>
-                      <mat-select formControlName="category2">
-                        @for (cat of getCat2Options(); track cat.id) {
-                          <mat-option [value]="cat.id">{{ cat.label }}</mat-option>
-                        }
-                      </mat-select>
-                    </mat-form-field>
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Actividade(s) Comerciais</mat-label>
+                    <mat-select formControlName="category2">
+                      @for (cat of getCat2Options(); track cat.id) {
+                      <mat-option [value]="cat.id">{{ cat.label }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
                   }
 
                   @if (getCat3Options().length > 0) {
-                    <mat-form-field appearance="outline" class="w-full">
-                      <mat-label>3ª Categoria</mat-label>
-                      <mat-select formControlName="category3">
-                        @for (cat of getCat3Options(); track cat) {
-                          <mat-option [value]="cat">{{ cat }}</mat-option>
-                        }
-                      </mat-select>
-                    </mat-form-field>
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Actividade(s) de Prestação de Serviço</mat-label>
+                    <mat-select formControlName="category3">
+                      @for (cat of getCat3Options(); track cat) {
+                      <mat-option [value]="cat">{{ cat }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
                   }
                 </div>
 
@@ -84,17 +84,17 @@
                     <mat-label>Volume de Negócio / Taxa ISPC</mat-label>
                     <mat-select formControlName="business_volume" required>
                       @if (isISPCScaleActivity()) {
-                        <mat-option value="3">3% (até 1.000.000,00MT)</mat-option>
-                        <mat-option value="4">4% (> 1.001.000,00MT e ≤ 2.500.000,00MT)</mat-option>
-                        <mat-option value="5">5% (> 2.501.000,00MT e ≤ 4.000.000,00MT)</mat-option>
+                      <mat-option value="3">3% (até 1.000.000,00MT)</mat-option>
+                      <mat-option value="4">4% (> 1.001.000,00MT e ≤ 2.500.000,00MT)</mat-option>
+                      <mat-option value="5">5% (> 2.501.000,00MT e ≤ 4.000.000,00MT)</mat-option>
                       } @else {
-                        @if (getServiceType() === 'nao_liberais') {
-                          <mat-option value="12">12% s/ volume ≤ 4.000.000,00MT</mat-option>
-                          <mat-option value="20">20% s/ volume > 4.000.000,00MT</mat-option>
-                        } @else if (getServiceType() === 'liberal') {
-                          <mat-option value="15">15% s/ volume ≤ 4.000.000,00MT</mat-option>
-                          <mat-option value="20">20% s/ volume > 4.000.000,00MT</mat-option>
-                        }
+                      @if (getServiceType() === 'nao_liberais') {
+                      <mat-option value="12">12% s/ volume ≤ 4.000.000,00MT</mat-option>
+                      <mat-option value="20">20% s/ volume > 4.000.000,00MT</mat-option>
+                      } @else if (getServiceType() === 'liberal') {
+                      <mat-option value="15">15% s/ volume ≤ 4.000.000,00MT</mat-option>
+                      <mat-option value="20">20% s/ volume > 4.000.000,00MT</mat-option>
+                      }
                       }
                     </mat-select>
                     <mat-icon matPrefix class="text-gray-400">trending_up</mat-icon>
@@ -105,37 +105,36 @@
               <div class="border-t border-gray-100 pt-6 mt-6">
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>Nome da Empresa</mat-label>
-                  <input
-                    matInput
-                    type="text"
-                    formControlName="name"
-                    placeholder="Ex: Comercial Silva Lda"
-                  />
+                  <input matInput type="text" formControlName="name" placeholder="Ex: Comercial Silva Lda" />
                   <mat-icon matPrefix class="text-gray-400">business</mat-icon>
-                  
+
                   <div matSuffix class="flex items-center">
                     @if (isUploadingCommercial()) {
-                      <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+                    <mat-spinner diameter="20" class="mr-2"></mat-spinner>
                     } @else {
-                      @if (commercialActivityUrl()) {
-                        <mat-icon class="text-green-500 mr-2" matTooltip="Documento carregado">check_circle</mat-icon>
-                        <button type="button" mat-icon-button (click)="viewCommercialDocument()" matTooltip="Visualizar Exercício de Actividade Comercial">
-                          <mat-icon class="text-blue-500">visibility</mat-icon>
-                        </button>
-                        <button type="button" mat-icon-button (click)="commercialInput.click()" matTooltip="Alterar Documento">
-                          <mat-icon class="text-gray-400">file_upload</mat-icon>
-                        </button>
-                      } @else {
-                        <button type="button" mat-icon-button (click)="commercialInput.click()" matTooltip="Fazer upload do Exercício de Actividade Comercial (Opcional)">
-                          <mat-icon class="text-gray-400">file_upload</mat-icon>
-                        </button>
-                      }
+                    @if (commercialActivityUrl()) {
+                    <mat-icon class="text-green-500 mr-2" matTooltip="Documento carregado">check_circle</mat-icon>
+                    <button type="button" mat-icon-button (click)="viewCommercialDocument()"
+                      matTooltip="Visualizar Exercício de Actividade Comercial">
+                      <mat-icon class="text-blue-500">visibility</mat-icon>
+                    </button>
+                    <button type="button" mat-icon-button (click)="commercialInput.click()"
+                      matTooltip="Alterar Documento">
+                      <mat-icon class="text-gray-400">file_upload</mat-icon>
+                    </button>
+                    } @else {
+                    <button type="button" mat-icon-button (click)="commercialInput.click()"
+                      matTooltip="Fazer upload do Exercício de Actividade Comercial (Opcional)">
+                      <mat-icon class="text-gray-400">file_upload</mat-icon>
+                    </button>
                     }
-                    <input type="file" #commercialInput class="hidden" accept=".pdf,.jpg,.jpeg,.png" (change)="onCommercialDocumentSelected($event)">
+                    }
+                    <input type="file" #commercialInput class="hidden" accept=".pdf,.jpg,.jpeg,.png"
+                      (change)="onCommercialDocumentSelected($event)">
                   </div>
 
                   @if (getErrorMessage(companyInfoForm, 'name')) {
-                    <mat-error>{{ getErrorMessage(companyInfoForm, 'name') }}</mat-error>
+                  <mat-error>{{ getErrorMessage(companyInfoForm, 'name') }}</mat-error>
                   }
                 </mat-form-field>
               </div>
@@ -143,39 +142,35 @@
               <div>
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>NUIT</mat-label>
-                  <input
-                    matInput
-                    type="text"
-                    formControlName="nuit"
-                    placeholder="9 dígitos"
-                    maxlength="9"
-                    (input)="formatNuit()"
-                  />
+                  <input matInput type="text" formControlName="nuit" placeholder="9 dígitos" maxlength="9"
+                    (input)="formatNuit()" />
                   <mat-icon matPrefix class="text-gray-400">badge</mat-icon>
-                  
+
                   <div matSuffix class="flex items-center">
                     @if (isUploadingNuit()) {
-                      <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+                    <mat-spinner diameter="20" class="mr-2"></mat-spinner>
                     } @else {
-                      @if (nuitDocumentUrl()) {
-                        <mat-icon class="text-green-500 mr-2" matTooltip="Documento carregado">check_circle</mat-icon>
-                        <button type="button" mat-icon-button (click)="viewDocument()" matTooltip="Visualizar Documento">
-                          <mat-icon class="text-blue-500">visibility</mat-icon>
-                        </button>
-                        <button type="button" mat-icon-button (click)="nuitInput.click()" matTooltip="Alterar Documento">
-                          <mat-icon class="text-gray-400">file_upload</mat-icon>
-                        </button>
-                      } @else {
-                        <button type="button" mat-icon-button (click)="nuitInput.click()" matTooltip="Fazer upload do NUIT (Opcional)">
-                          <mat-icon class="text-gray-400">file_upload</mat-icon>
-                        </button>
-                      }
+                    @if (nuitDocumentUrl()) {
+                    <mat-icon class="text-green-500 mr-2" matTooltip="Documento carregado">check_circle</mat-icon>
+                    <button type="button" mat-icon-button (click)="viewDocument()" matTooltip="Visualizar Documento">
+                      <mat-icon class="text-blue-500">visibility</mat-icon>
+                    </button>
+                    <button type="button" mat-icon-button (click)="nuitInput.click()" matTooltip="Alterar Documento">
+                      <mat-icon class="text-gray-400">file_upload</mat-icon>
+                    </button>
+                    } @else {
+                    <button type="button" mat-icon-button (click)="nuitInput.click()"
+                      matTooltip="Fazer upload do NUIT (Opcional)">
+                      <mat-icon class="text-gray-400">file_upload</mat-icon>
+                    </button>
                     }
-                    <input type="file" #nuitInput class="hidden" accept=".pdf,.jpg,.jpeg,.png" (change)="onNuitDocumentSelected($event)">
+                    }
+                    <input type="file" #nuitInput class="hidden" accept=".pdf,.jpg,.jpeg,.png"
+                      (change)="onNuitDocumentSelected($event)">
                   </div>
 
                   @if (getErrorMessage(companyInfoForm, 'nuit')) {
-                    <mat-error>{{ getErrorMessage(companyInfoForm, 'nuit') }}</mat-error>
+                  <mat-error>{{ getErrorMessage(companyInfoForm, 'nuit') }}</mat-error>
                   }
                   <mat-hint>Número Único de Identificação Tributária (9 dígitos)</mat-hint>
                 </mat-form-field>
@@ -184,15 +179,11 @@
               <div>
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>Endereço</mat-label>
-                  <textarea
-                    matInput
-                    formControlName="address"
-                    rows="3"
-                    placeholder="Av. Julius Nyerere, nº 123, Maputo"
-                  ></textarea>
+                  <textarea matInput formControlName="address" rows="3"
+                    placeholder="Av. Julius Nyerere, nº 123, Maputo"></textarea>
                   <mat-icon matPrefix class="text-gray-400">location_on</mat-icon>
                   @if (getErrorMessage(companyInfoForm, 'address')) {
-                    <mat-error>{{ getErrorMessage(companyInfoForm, 'address') }}</mat-error>
+                  <mat-error>{{ getErrorMessage(companyInfoForm, 'address') }}</mat-error>
                   }
                 </mat-form-field>
               </div>
@@ -202,7 +193,7 @@
                   <mat-label>Província</mat-label>
                   <mat-select formControlName="province">
                     @for (province of provinces; track province) {
-                      <mat-option [value]="province">{{ province }}</mat-option>
+                    <mat-option [value]="province">{{ province }}</mat-option>
                     }
                   </mat-select>
                   <mat-icon matPrefix class="text-gray-400">map</mat-icon>
@@ -236,19 +227,21 @@
                       <mat-label>Tipo de Documento</mat-label>
                       <mat-select [formControl]="newDocType">
                         @for (type of documentTypes; track type) {
-                          <mat-option [value]="type" [disabled]="isDocTypeSelected(type)">
-                            {{ type }}
-                          </mat-option>
+                        <mat-option [value]="type" [disabled]="isDocTypeSelected(type)">
+                          {{ type }}
+                        </mat-option>
                         }
                       </mat-select>
                     </mat-form-field>
 
                     <div class="flex items-center gap-2 mb-2">
-                      <button type="button" mat-raised-button (click)="otherInput.click()" [disabled]="!newDocType.value || isUploadingOther()">
+                      <button type="button" mat-raised-button (click)="otherInput.click()"
+                        [disabled]="!newDocType.value || isUploadingOther()">
                         <mat-icon>file_upload</mat-icon>
                         {{ isUploadingOther() ? 'Carregando...' : 'Fazer Upload' }}
                       </button>
-                      <input type="file" #otherInput class="hidden" accept=".pdf,.jpg,.jpeg,.png" (change)="onOtherDocumentSelected($event)">
+                      <input type="file" #otherInput class="hidden" accept=".pdf,.jpg,.jpeg,.png"
+                        (change)="onOtherDocumentSelected($event)">
                     </div>
                   </div>
                   <p class="text-[10px] text-gray-500 mt-2">
@@ -257,35 +250,37 @@
                 </div>
 
                 @if (otherDocuments().length > 0) {
-                  <div class="border rounded-lg overflow-hidden bg-white">
-                    <table class="w-full text-sm text-left">
-                      <thead class="bg-gray-50 text-gray-700 uppercase text-[10px]">
-                        <tr>
-                          <th class="px-3 py-2">Tipo</th>
-                          <th class="px-3 py-2">Ficheiro</th>
-                          <th class="px-3 py-2 text-right">Acções</th>
-                        </tr>
-                      </thead>
-                      <tbody class="divide-y">
-                        @for (doc of otherDocuments(); track doc) {
-                          <tr>
-                            <td class="px-3 py-2 font-medium">{{ doc.type }}</td>
-                            <td class="px-3 py-2 text-gray-500 truncate max-w-[150px]">{{ doc.file_name }}</td>
-                            <td class="px-3 py-2 text-right whitespace-nowrap">
-                              <button type="button" mat-icon-button color="primary" (click)="viewOtherDocument(doc)" matTooltip="Visualizar">
-                                <mat-icon class="!text-lg">visibility</mat-icon>
-                              </button>
-                              <button type="button" mat-icon-button color="warn" (click)="removeOtherDocument(doc)" matTooltip="Remover">
-                                <mat-icon class="!text-lg">delete</mat-icon>
-                              </button>
-                            </td>
-                          </tr>
-                        }
-                      </tbody>
-                    </table>
-                  </div>
+                <div class="border rounded-lg overflow-hidden bg-white">
+                  <table class="w-full text-sm text-left">
+                    <thead class="bg-gray-50 text-gray-700 uppercase text-[10px]">
+                      <tr>
+                        <th class="px-3 py-2">Tipo</th>
+                        <th class="px-3 py-2">Ficheiro</th>
+                        <th class="px-3 py-2 text-right">Acções</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                      @for (doc of otherDocuments(); track doc) {
+                      <tr>
+                        <td class="px-3 py-2 font-medium">{{ doc.type }}</td>
+                        <td class="px-3 py-2 text-gray-500 truncate max-w-[150px]">{{ doc.file_name }}</td>
+                        <td class="px-3 py-2 text-right whitespace-nowrap">
+                          <button type="button" mat-icon-button color="primary" (click)="viewOtherDocument(doc)"
+                            matTooltip="Visualizar">
+                            <mat-icon class="!text-lg">visibility</mat-icon>
+                          </button>
+                          <button type="button" mat-icon-button color="warn" (click)="removeOtherDocument(doc)"
+                            matTooltip="Remover">
+                            <mat-icon class="!text-lg">delete</mat-icon>
+                          </button>
+                        </td>
+                      </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
                 } @else {
-                  <p class="text-center text-gray-400 py-4 text-sm italic">Nenhum documento adicional adicionado.</p>
+                <p class="text-center text-gray-400 py-4 text-sm italic">Nenhum documento adicional adicionado.</p>
                 }
               </div>
             </div>
@@ -315,16 +310,10 @@
             <div>
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Prefixo das Facturas</mat-label>
-                <input
-                  matInput
-                  type="text"
-                  formControlName="invoicePrefix"
-                  placeholder="FAC"
-                  maxlength="10"
-                />
+                <input matInput type="text" formControlName="invoicePrefix" placeholder="FAC" maxlength="10" />
                 <mat-icon matPrefix class="text-gray-400">tag</mat-icon>
                 @if (getErrorMessage(settingsForm, 'invoicePrefix')) {
-                  <mat-error>{{ getErrorMessage(settingsForm, 'invoicePrefix') }}</mat-error>
+                <mat-error>{{ getErrorMessage(settingsForm, 'invoicePrefix') }}</mat-error>
                 }
                 <mat-hint>Ex: FAC0001, FAC0002, etc.</mat-hint>
               </mat-form-field>
@@ -347,20 +336,16 @@
                 <mat-icon>arrow_back</mat-icon>
                 Anterior
               </button>
-              <button
-                mat-raised-button
-                class="!bg-ispc-orange !text-white"
-                (click)="onSubmit()"
-                [disabled]="isLoading()"
-              >
+              <button mat-raised-button class="!bg-ispc-orange !text-white" (click)="onSubmit()"
+                [disabled]="isLoading()">
                 @if (isLoading()) {
-                  <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
-                  <span>A configurar...</span>
+                <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
+                <span>A configurar...</span>
                 } @else {
-                  <ng-container>
-                    <mat-icon class="mr-2">check</mat-icon>
-                    <span>Concluir Configuração</span>
-                  </ng-container>
+                <ng-container>
+                  <mat-icon class="mr-2">check</mat-icon>
+                  <span>Concluir Configuração</span>
+                </ng-container>
                 }
               </button>
             </div>
