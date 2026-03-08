@@ -37,6 +37,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
         </div>
       } @else if (invoice()) {
         <div id="invoice-card" class="bg-white rounded-lg shadow-sm relative">
+          @if (invoice()!.status === 'anulada') {
+            <div class="watermark">ANULADO</div>
+          }
           @if (isGeneratingPdf()) {
             <div class="absolute inset-0 bg-white/80 z-50 flex flex-col items-center justify-center rounded-lg no-print">
               <mat-spinner diameter="40" class="mb-2"></mat-spinner>
@@ -371,42 +374,37 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
       }
 
       .watermark-print {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%) rotate(-45deg);
-        font-size: 150px;
-        font-weight: 800;
-        color: rgba(220, 38, 38, 0.2);
-        z-index: 100;
-        pointer-events: none;
-        white-space: nowrap;
-        border: 20px solid rgba(220, 38, 38, 0.2);
-        padding: 40px;
-        border-radius: 20px;
-      }
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-45deg);
+    font-size: 190px;
+    font-weight: 800;
+    color: rgba(220, 38, 38, 0.5);
+    z-index: 100;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
 
       .only-print {
         display: block !important;
       }
     }
 
-    .watermark {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) rotate(-45deg);
-      font-size: 120px;
-      font-weight: 800;
-      color: rgba(220, 38, 38, 0.15);
-      z-index: 10;
-      pointer-events: none;
-      white-space: nowrap;
-      border: 15px solid rgba(220, 38, 38, 0.15);
-      padding: 30px;
-      border-radius: 15px;
-      user-select: none;
-    }
+      .watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-45deg);
+    font-size: 180px;
+    font-weight: 800;
+    color: rgba(220, 38, 38, 0.5);
+    z-index: 10;
+    pointer-events: none;
+    white-space: nowrap;
+    user-select: none;
+  }
 
     .only-print {
       display: none;
@@ -447,7 +445,7 @@ export class InvoiceDetailComponent {
     if (invoice) {
       const payments = await this.paymentService.loadPaymentsByInvoice(invoiceId);
       this.payments.set(payments);
-      
+
       // Check for print parameter
       const print = this.route.snapshot.queryParamMap.get('print');
       if (print) {
