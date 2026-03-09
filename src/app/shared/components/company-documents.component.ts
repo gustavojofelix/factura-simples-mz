@@ -196,7 +196,7 @@ export class CompanyDocumentsComponent {
   constructor(
     private documentService: DocumentProcessingService,
     private snackBar: MatSnackBar
-  ) {}
+  ) { }
 
   async onFileSelected(event: Event, documentType: 'nuit' | 'activityStart' | 'commercialActivity' | 'registrationCertificate') {
     const input = event.target as HTMLInputElement;

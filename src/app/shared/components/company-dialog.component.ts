@@ -312,6 +312,38 @@ import { ACTIVITY_HIERARCHY } from '../../core/constants/activity-categories';
             </div>
           </div>
 
+           <!-- Seccao Alvará -->
+            <div class="border-t border-gray-100 pt-6 mt-6">
+              <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <mat-icon class="mr-2 text-ispc-orange">verified</mat-icon>
+                Alvará
+              </h3>
+              <div class="bg-gray-50 p-4 rounded-lg">
+                @if (alvaraDoc) {
+                  <div class="flex items-center justify-between bg-white p-3 rounded border">
+                    <span class="text-sm truncate">{{ alvaraDoc.file_name }}</span>
+                    <div class="flex items-center">
+                      <button type="button" mat-icon-button color="primary" (click)="viewOtherDocument(alvaraDoc)" matTooltip="Visualizar">
+                        <mat-icon>visibility</mat-icon>
+                      </button>
+                      <button type="button" mat-icon-button color="warn" (click)="removeOtherDocument(alvaraDoc)" matTooltip="Remover">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                } @else {
+                  <div class="flex items-center gap-3">
+                    <button type="button" mat-raised-button (click)="alvaraInput.click()" [disabled]="isUploadingAlvara()">
+                      <mat-icon>file_upload</mat-icon>
+                      {{ isUploadingAlvara() ? 'Carregando...' : 'Fazer Upload do Alvará' }}
+                    </button>
+                    <span class="text-xs text-gray-500">PDF, JPG ou PNG (máx.10MB)</span>
+                    <input type="file" #alvaraInput class="hidden" accept=".pdf,.jpg,.jpeg,.png" (change)="onAlvaraDocumentSelected($event)">
+                  </div>
+                }
+              </div>
+            </div>
+
           <!-- Seccao de Documentos Adicionais -->
           <div class="border-t border-gray-100 pt-6 mt-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -421,13 +453,13 @@ export class CompanyDialogComponent {
   isUploadingNuit = signal(false);
   commercialActivityUrl = signal<string | null>(this.data.company?.commercial_activity_document_url || null);
   isUploadingCommercial = signal(false);
-  
+
   otherDocuments = signal<CompanyDocument[]>([]);
   isUploadingOther = signal(false);
+  isUploadingAlvara = signal(false);
   newDocType = this.fb.control('');
 
   documentTypes = [
-    'Alvará',
     'Certidão de Registo Comercial',
     'Boletim da República',
     'Documento de Identificação (Sócios)',
@@ -435,13 +467,16 @@ export class CompanyDialogComponent {
     'Outros'
   ];
 
-
   provinces = [
     'Maputo', 'Gaza', 'Inhambane', 'Sofala', 'Manica', 'Tete',
     'Zambézia', 'Nampula', 'Niassa', 'Cabo Delgado'
   ];
 
   activityHierarchy = ACTIVITY_HIERARCHY;
+
+  get alvaraDoc(): CompanyDocument | undefined {
+    return this.otherDocuments().find(d => d.type === 'Alvará');
+  }
 
   constructor(
     private fb: FormBuilder,
@@ -490,7 +525,7 @@ export class CompanyDialogComponent {
 
     this.form.get('category2')?.valueChanges.subscribe((cat2) => {
       this.form.patchValue({ category3: '' }, { emitEvent: false });
-      
+
       if (cat2 === 'servicos_nao_liberais') {
         this.form.patchValue({ business_volume: '12' });
       } else if (cat2 === 'servicos_liberais') {
@@ -523,22 +558,22 @@ export class CompanyDialogComponent {
   getCat2Options() {
     const cat1 = this.form.get('category1')?.value;
     if (!cat1 || !this.activityHierarchy[cat1]?.subcategories) return [];
-    
-    return Object.entries(this.activityHierarchy[cat1].subcategories!).map(([id, cat]) => ({ 
-      id, 
-      label: cat.label 
+
+    return Object.entries(this.activityHierarchy[cat1].subcategories!).map(([id, cat]) => ({
+      id,
+      label: cat.label
     }));
   }
 
   getCat3Options() {
     const cat1 = this.form.get('category1')?.value;
     const cat2 = this.form.get('category2')?.value;
-    
+
     if (!cat1 || !cat2) return [];
-    
+
     const cat2Obj = (this.activityHierarchy[cat1]?.subcategories as any)?.[cat2];
     if (!cat2Obj || !cat2Obj.subcategories) return [];
-    
+
     return cat2Obj.subcategories;
   }
 
@@ -573,9 +608,9 @@ export class CompanyDialogComponent {
     try {
       const companyId = this.data.company?.id || 'temp';
       const result = await this.documentService.uploadDocument(file, companyId, 'nuit');
-      
+
       this.nuitDocumentUrl.set(result.url);
-      
+
       if (result.extractedData) {
         if (result.extractedData.nuit) {
           this.form.patchValue({ nuit: result.extractedData.nuit });
@@ -587,7 +622,7 @@ export class CompanyDialogComponent {
         if (result.extractedData.address && !this.form.get('address')?.value) {
           this.form.patchValue({ address: result.extractedData.address });
         }
-        
+
         this.snackBar.open('Dados extraídos do documento!', 'Fechar', { duration: 3000 });
       } else {
         this.snackBar.open('Documento carregado com sucesso!', 'Fechar', { duration: 3000 });
@@ -611,7 +646,7 @@ export class CompanyDialogComponent {
     try {
       const companyId = this.data.company?.id || 'temp';
       const result = await this.documentService.uploadDocument(file, companyId, 'commercial_activity');
-      
+
       this.commercialActivityUrl.set(result.url);
 
       if (result.extractedData) {
@@ -634,7 +669,7 @@ export class CompanyDialogComponent {
   async onOtherDocumentSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     const type = this.newDocType.value;
-    
+
     if (!input.files || input.files.length === 0 || !type) return;
 
     if (this.isDocTypeSelected(type)) {
@@ -655,7 +690,7 @@ export class CompanyDialogComponent {
 
       const result = await this.documentService.uploadDocument(file, companyId, 'other' as any);
       const savedDoc = await this.documentService.saveDocument(companyId, type, result.url, file.name);
-      
+
       if (savedDoc) {
         this.otherDocuments.update(docs => [...docs, savedDoc]);
         this.newDocType.setValue('');
@@ -666,6 +701,36 @@ export class CompanyDialogComponent {
       this.snackBar.open('Erro ao carregar documento', 'Fechar', { duration: 3000 });
     } finally {
       this.isUploadingOther.set(false);
+      input.value = '';
+    }
+  }
+
+  async onAlvaraDocumentSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    this.isUploadingAlvara.set(true);
+
+    try {
+      const companyId = this.data.company?.id;
+      if (!companyId) {
+        this.snackBar.open('Salve a empresa primeiro antes de adicionar o Alvará.', 'Fechar', { duration: 3000 });
+        return;
+      }
+
+      const result = await this.documentService.uploadDocument(file, companyId, 'other' as any);
+      const savedDoc = await this.documentService.saveDocument(companyId, 'Alvará', result.url, file.name);
+
+      if (savedDoc) {
+        this.otherDocuments.update(docs => [...docs, savedDoc]);
+        this.snackBar.open('Alvará carregado com sucesso!', 'Fechar', { duration: 3000 });
+      }
+    } catch (error: any) {
+      console.error('Erro ao subir alvará:', error);
+      this.snackBar.open('Erro ao carregar o Alvará', 'Fechar', { duration: 3000 });
+    } finally {
+      this.isUploadingAlvara.set(false);
       input.value = '';
     }
   }
@@ -753,7 +818,7 @@ export class CompanyDialogComponent {
         category3: formValue.category3,
         business_volume: formValue.business_volume
       };
-      
+
       this.dialogRef.close(formData);
     }
   }
