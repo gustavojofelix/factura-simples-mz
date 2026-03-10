@@ -211,4 +211,31 @@ export class AuthService {
   isAuthenticated(): boolean {
     return this.currentUser() !== null;
   }
+
+  async updateUserProfile(data: { fullName: string; phone?: string }): Promise<void> {
+  const user = this.currentUser();
+  if (!user) throw new Error('Utilizador não autenticado');
+
+  const { error } = await this.supabase.db
+    .from('profiles')
+    .update({ full_name: data.fullName, phone: data.phone ?? null })
+    .eq('id', user.id);
+
+  if (error) throw error;
+}
+
+async updateUserPassword(currentPassword: string, newPassword: string): Promise<void> {
+  const user = this.currentUser();
+  if (!user?.email) throw new Error('Utilizador não encontrado');
+
+  const { error: signInError } = await this.supabase.auth.signInWithPassword({
+    email: user.email,
+    password: currentPassword
+  });
+
+  if (signInError) throw new Error('Palavra-passe atual incorreta');
+
+  const { error } = await this.supabase.auth.updateUser({ password: newPassword });
+  if (error) throw error;
+}
 }
