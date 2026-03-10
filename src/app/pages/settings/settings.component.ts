@@ -322,7 +322,8 @@ export class SettingsComponent implements OnInit {
       owner: 'Proprietário',
       admin: 'Administrador',
       manager: 'Gestor',
-      user: 'Utilizador'
+      user: 'Utilizador',
+      invited: 'Convidado'
     };
     return labels[role] || role;
   }

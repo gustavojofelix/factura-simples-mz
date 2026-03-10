@@ -165,26 +165,35 @@ export class UserManagementService {
       const { data: targetUserId, error: rpcError } = await this.supabase.client
         .rpc('get_user_id_by_email', { email_query: email });
 
-      if (rpcError || !targetUserId) {
-        console.error('User not found or access denied:', rpcError);
-        return false;
-      }
-
       const targetUser = { id: targetUserId };
       
+      // If user not found, invite them
+      if (!targetUserId) {
+        const { data: inviteData, error: inviteError } = await this.supabase.client.functions.invoke('invite-user', {
+          body: { email, fullName, phone }
+        });
+
+        if (inviteError || !inviteData?.user) {
+          console.error('Error inviting user:', inviteError);
+          return false;
+        }
+
+        targetUser.id = inviteData.user.id;
+      }
+      
       // Sincronizar dados extras no perfil se necessário (se o perfil já existir)
-      if (fullName) {
+      if (fullName && targetUser.id) {
         await this.supabase.client
           .from('profiles')
           .upsert({
-            id: targetUserId,
+            id: targetUser.id,
             full_name: fullName,
             email: email,
             phone: phone
           });
       }
 
-      if (!targetUser) return false;
+      if (!targetUser.id) return false;
 
       const { data: existingUser } = await this.supabase.client
         .from('company_users')
