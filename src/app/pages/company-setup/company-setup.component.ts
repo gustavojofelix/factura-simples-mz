@@ -49,7 +49,7 @@ export class CompanySetupComponent {
   isUploadingNuit = signal(false);
   commercialActivityUrl = signal<string | null>(null);
   isUploadingCommercial = signal(false);
-  
+
   otherDocuments = signal<Partial<CompanyDocument>[]>([]);
   isUploadingOther = signal(false);
   newDocType = new FormControl('');
@@ -110,7 +110,7 @@ export class CompanySetupComponent {
 
     this.companyInfoForm.get('category2')?.valueChanges.subscribe((cat2) => {
       this.companyInfoForm.patchValue({ category3: '' }, { emitEvent: false });
-      
+
       if (cat2 === 'servicos_nao_liberais') {
         this.companyInfoForm.patchValue({ business_volume: '12' });
       } else if (cat2 === 'servicos_liberais') {
@@ -143,22 +143,22 @@ export class CompanySetupComponent {
   getCat2Options() {
     const cat1 = this.companyInfoForm.get('category1')?.value;
     if (!cat1 || !this.activityHierarchy[cat1]?.subcategories) return [];
-    
-    return Object.entries(this.activityHierarchy[cat1].subcategories!).map(([id, cat]) => ({ 
-      id, 
-      label: cat.label 
+
+    return Object.entries(this.activityHierarchy[cat1].subcategories!).map(([id, cat]) => ({
+      id,
+      label: cat.label
     }));
   }
 
   getCat3Options() {
     const cat1 = this.companyInfoForm.get('category1')?.value;
     const cat2 = this.companyInfoForm.get('category2')?.value;
-    
+
     if (!cat1 || !cat2) return [];
-    
+
     const cat2Obj = (this.activityHierarchy[cat1]?.subcategories as any)?.[cat2];
     if (!cat2Obj || !cat2Obj.subcategories) return [];
-    
+
     return cat2Obj.subcategories;
   }
 
@@ -172,7 +172,7 @@ export class CompanySetupComponent {
     try {
       const result = await this.documentService.uploadDocument(file, 'temp', 'nuit');
       this.nuitDocumentUrl.set(result.url);
-      
+
       if (result.extractedData) {
         if (result.extractedData.nuit) {
           this.companyInfoForm.patchValue({ nuit: result.extractedData.nuit });
@@ -193,7 +193,7 @@ export class CompanySetupComponent {
         if (result.extractedData.administrativePost) {
           this.companyInfoForm.patchValue({ administrativePost: result.extractedData.administrativePost });
         }
-        
+
         this.snackBar.open('Dados extraídos do documento!', 'Fechar', { duration: 3000 });
       } else {
         this.snackBar.open('Documento carregado com sucesso!', 'Fechar', { duration: 3000 });
@@ -231,7 +231,7 @@ export class CompanySetupComponent {
         if (result.extractedData.district && !this.companyInfoForm.get('district')?.value) {
           this.companyInfoForm.patchValue({ district: result.extractedData.district });
         }
-        
+
         this.snackBar.open('Dados extraídos do documento!', 'Fechar', { duration: 3000 });
       } else {
         this.snackBar.open('Documento carregado com sucesso!', 'Fechar', { duration: 3000 });
@@ -248,7 +248,7 @@ export class CompanySetupComponent {
   async onOtherDocumentSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     const type = this.newDocType.value;
-    
+
     if (!input.files || input.files.length === 0 || !type) return;
 
     if (this.isDocTypeSelected(type)) {
@@ -262,13 +262,13 @@ export class CompanySetupComponent {
 
     try {
       const result = await this.documentService.uploadDocument(file, 'temp', 'other' as any);
-      
+
       this.otherDocuments.update(docs => [...docs, {
         type,
         url: result.url,
         file_name: file.name
       }]);
-      
+
       this.newDocType.setValue('');
       this.snackBar.open('Documento adicionado à lista!', 'Fechar', { duration: 3000 });
     } catch (error: any) {
@@ -386,7 +386,7 @@ export class CompanySetupComponent {
 
       // 2. Salvar documentos adicionais se existirem
       if (this.otherDocuments().length > 0) {
-        const docPromises = this.otherDocuments().map(doc => 
+        const docPromises = this.otherDocuments().map(doc =>
           this.documentService.saveDocument(data.id, doc.type!, doc.url!, doc.file_name!)
         );
         await Promise.all(docPromises);

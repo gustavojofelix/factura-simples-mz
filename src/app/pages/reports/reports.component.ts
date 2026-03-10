@@ -27,6 +27,7 @@ interface SalesReport {
     pendente: number;
     paga: number;
     vencida: number;
+    anulada: number;
   };
   topClients: {
     clientName: string;
@@ -68,25 +69,23 @@ interface SalesReport {
       <mat-card class="mb-6">
         <mat-card-content class="!pt-6">
           <form [formGroup]="filterForm" class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <mat-form-field appearance="outline">
-                <mat-label>Período</mat-label>
-                <mat-select formControlName="period" (selectionChange)="onPeriodChange()">
-                  <mat-option value="custom">Personalizado</mat-option>
-                  <mat-option value="today">Hoje</mat-option>
-                  <mat-option value="yesterday">Ontem</mat-option>
-                  <mat-option value="this_week">Esta Semana</mat-option>
-                  <mat-option value="last_week">Semana Passada</mat-option>
-                  <mat-option value="this_month">Este Mês</mat-option>
-                  <mat-option value="last_month">Mês Passado</mat-option>
-                  <mat-option value="this_quarter">Este Trimestre</mat-option>
-                  <mat-option value="last_quarter">Trimestre Passado</mat-option>
-                  <mat-option value="this_year">Este Ano</mat-option>
-                  <mat-option value="last_year">Ano Passado</mat-option>
-                </mat-select>
-              </mat-form-field>
-
-              @if (filterForm.get('period')?.value === 'custom') {
+             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <!-- <mat-form-field appearance="outline">
+                  <mat-label>Periodo</mat-label>
+                  <mat-select formControlName="period" (selectionChange)="onPeriodChange()">
+                    <mat-option value="custom">Personalizado</mat-option>
+                    <mat-option value="today">Hoje</mat-option>
+                    <mat-option value="yesterday">Ontem</mat-option>
+                    <mat-option value="this_week">Esta Semana</mat-option>
+                    <mat-option value="last_week">Semana Passada</mat-option>
+                    <mat-option value="this_month">Este Mês</mat-option>
+                    <mat-option value="last_month">Mês Passado</mat-option>
+                    <mat-option value="this_quarter">Este Trimestre</mat-option>
+                    <mat-option value="last_quarter">Trimestre Passado</mat-option>
+                    <mat-option value="this_year">Este Ano</mat-option>
+                    <mat-option value="last_year">Ano Passado</mat-option>
+                  </mat-select>
+                </mat-form-field> -->
                 <mat-form-field appearance="outline">
                   <mat-label>Data Inicial</mat-label>
                   <input matInput [matDatepicker]="startPicker" formControlName="startDate">
@@ -100,7 +99,6 @@ interface SalesReport {
                   <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
                   <mat-datepicker #endPicker></mat-datepicker>
                 </mat-form-field>
-              }
 
               <mat-form-field appearance="outline">
                 <mat-label>Cliente</mat-label>
@@ -152,7 +150,7 @@ interface SalesReport {
             <mat-card-content class="!pt-6">
               <div class="flex items-start justify-between">
                 <div>
-                  <p class="text-sm text-gray-600 mb-1">Total de Faturas</p>
+                  <p class="text-sm text-gray-600 mb-1">Total de Facturas</p>
                   <h3 class="text-2xl font-bold text-gray-900">
                     {{ report()!.totalInvoices }}
                   </h3>
@@ -224,15 +222,25 @@ interface SalesReport {
               </div>
 
               <div class="border border-gray-200 rounded-lg p-4">
-                <div class="flex items-center justify-between mb-2">
-                  <span class="text-sm text-gray-600">Vencidas</span>
-                  <mat-icon class="!text-red-600">error</mat-icon>
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm text-gray-600">Vencidas</span>
+                    <mat-icon class="!text-red-600">error</mat-icon>
+                  </div>
+                  <p class="text-2xl font-bold text-gray-900">
+                    {{ report()!.invoicesByStatus.vencida }}
+                  </p>
                 </div>
-                <p class="text-2xl font-bold text-gray-900">
-                  {{ report()!.invoicesByStatus.vencida }}
-                </p>
+
+                <div class="border border-red-200 rounded-lg p-4 bg-red-50/40">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm text-gray-600">Anuladas</span>
+                    <mat-icon class="!text-red-700">block</mat-icon>
+                  </div>
+                  <p class="text-2xl font-bold text-red-700">
+                    {{ report()!.invoicesByStatus.anulada }}
+                  </p>
+                </div>
               </div>
-            </div>
           </mat-card-content>
         </mat-card>
 
@@ -458,7 +466,8 @@ export class ReportsComponent implements OnInit {
       const invoicesByStatus = {
         pendente: filteredInvoices.filter(inv => inv.status === 'pendente').length,
         paga: filteredInvoices.filter(inv => inv.status === 'paga').length,
-        vencida: filteredInvoices.filter(inv => inv.status === 'vencida').length
+        vencida: filteredInvoices.filter(inv => inv.status === 'vencida').length,
+        anulada: filteredInvoices.filter(inv => inv.status === 'anulada').length
       };
 
       const clientsMap = new Map<string, { name: string; total: number; count: number }>();
@@ -575,14 +584,14 @@ export class ReportsComponent implements OnInit {
     try {
       const startDate = this.formatDateForDB(this.filterForm.get('startDate')?.value);
       const endDate = this.formatDateForDB(this.filterForm.get('endDate')?.value);
-      
+
       let detailedInvoices = await this.invoiceService.getDetailedInvoices(startDate, endDate);
-      
+
       const clientId = this.filterForm.get('clientId')?.value;
       if (clientId !== 'all') {
         detailedInvoices = detailedInvoices.filter(inv => inv.client_id === clientId);
       }
-      
+
       if (!detailedInvoices || detailedInvoices.length === 0) {
         alert('Nenhum dado encontrado para o período seleccionado.');
         return;
