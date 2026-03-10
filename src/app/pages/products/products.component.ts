@@ -183,6 +183,8 @@ export class ProductDialogComponent implements OnInit {
     MatIconModule,
     MatTableModule,
     MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
     MatSelectModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
