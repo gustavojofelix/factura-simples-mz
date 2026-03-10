@@ -1,0 +1,164 @@
+<div class="px-4 py-6 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+  <div class="mb-6 flex justify-between items-center text-ispc-orange">
+    <div>
+      <h1 class="text-2xl font-bold">Meu Perfil</h1>
+      <p class="text-sm">Visualize e atualize as suas informações pessoais e credenciais.</p>
+    </div>
+  </div>
+
+  <mat-card class="!shadow-md">
+    <mat-card-content class="p-6">
+      <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" class="space-y-6">
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-6">
+            <h3 class="text-lg font-medium text-gray-900 border-b pb-2">Informações Pessoais</h3>
+            
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Nome Completo</mat-label>
+              <input
+                matInput
+                type="text"
+                formControlName="fullName"
+                placeholder="João Silva"
+                autocomplete="name"
+              />
+              <mat-icon matPrefix class="text-gray-400">person</mat-icon>
+              @if (getErrorMessage('fullName')) {
+                <mat-error>{{ getErrorMessage('fullName') }}</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Email</mat-label>
+              <input
+                matInput
+                type="email"
+                formControlName="email"
+                autocomplete="email"
+              />
+              <mat-icon matPrefix class="text-gray-400">email</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Telefone</mat-label>
+              <input
+                matInput
+                type="tel"
+                formControlName="phone"
+                placeholder="+258 XX XXX XXXX"
+                (input)="formatPhone()"
+                autocomplete="tel"
+              />
+              <mat-icon matPrefix class="text-gray-400">phone</mat-icon>
+              @if (getErrorMessage('phone')) {
+                <mat-error>{{ getErrorMessage('phone') }}</mat-error>
+              }
+              <mat-hint>Formato moçambicano: +258 XX XXX XXXX</mat-hint>
+            </mat-form-field>
+          </div>
+          
+          <div class="space-y-6">
+            <h3 class="text-lg font-medium text-gray-900 border-b pb-2">Alterar Palavra-passe</h3>
+            <p class="text-sm text-gray-500 mb-4">Deixe em branco se não quiser alterar a sua palavra-passe.</p>
+            
+            <mat-form-field appearance="outline" class="w-full mt-2">
+              <mat-label>Palavra-passe Atual</mat-label>
+              <input
+                matInput
+                [type]="hideCurrentPassword() ? 'password' : 'text'"
+                formControlName="currentPassword"
+                placeholder="Introduza a palavra-passe atual"
+                autocomplete="current-password"
+              />
+              <mat-icon matPrefix class="text-gray-400">lock</mat-icon>
+              <button
+                mat-icon-button
+                matSuffix
+                type="button"
+                (click)="hideCurrentPassword.set(!hideCurrentPassword())"
+              >
+                <mat-icon>{{ hideCurrentPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+              @if (getErrorMessage('currentPassword')) {
+                <mat-error>{{ getErrorMessage('currentPassword') }}</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Nova Palavra-passe</mat-label>
+              <input
+                matInput
+                [type]="hidePassword() ? 'password' : 'text'"
+                formControlName="password"
+                placeholder="Mínimo 6 caracteres"
+                autocomplete="new-password"
+              />
+              <mat-icon matPrefix class="text-gray-400">lock</mat-icon>
+              <button
+                mat-icon-button
+                matSuffix
+                type="button"
+                (click)="hidePassword.set(!hidePassword())"
+              >
+                <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+              @if (getErrorMessage('password')) {
+                <mat-error>{{ getErrorMessage('password') }}</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Confirmar Nova Palavra-passe</mat-label>
+              <input
+                matInput
+                [type]="hideConfirmPassword() ? 'password' : 'text'"
+                formControlName="confirmPassword"
+                placeholder="Digite novamente"
+                autocomplete="new-password"
+              />
+              <mat-icon matPrefix class="text-gray-400">lock</mat-icon>
+              <button
+                mat-icon-button
+                matSuffix
+                type="button"
+                (click)="hideConfirmPassword.set(!hideConfirmPassword())"
+              >
+                <mat-icon>{{ hideConfirmPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+              @if (getErrorMessage('confirmPassword')) {
+                <mat-error>{{ getErrorMessage('confirmPassword') }}</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="flex justify-end pt-4 border-t border-gray-200">
+          <button 
+            mat-button 
+            type="button" 
+            routerLink="/" 
+            class="mr-4"
+            [disabled]="isLoading()"
+          >
+            Cancelar
+          </button>
+          
+          <button
+            mat-raised-button
+            type="submit"
+            class="!bg-ispc-orange !text-white"
+            [disabled]="isLoading() || profileForm.invalid || !profileForm.dirty"
+          >
+            @if (isLoading()) {
+              <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
+              <span>A guardar...</span>
+            } @else {
+              <span>Guardar Alterações</span>
+            }
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

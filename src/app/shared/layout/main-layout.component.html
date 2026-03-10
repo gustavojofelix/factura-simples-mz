@@ -48,9 +48,9 @@
         </button>
 
         <mat-menu #userMenu="matMenu">
-          <button mat-menu-item routerLink="/configuracoes">
-            <mat-icon>settings</mat-icon>
-            <span>Configurações</span>
+          <button mat-menu-item routerLink="/perfil">
+            <mat-icon>account_circle</mat-icon>
+            <span>Perfil</span>
           </button>
           <button mat-menu-item (click)="logout()">
             <mat-icon>logout</mat-icon>
@@ -76,9 +76,9 @@
       </div>
 
       <mat-menu #mobileUserMenu="matMenu">
-        <button mat-menu-item routerLink="/configuracoes">
-          <mat-icon>settings</mat-icon>
-          <span>Configurações</span>
+        <button mat-menu-item routerLink="/perfil">
+          <mat-icon>account_circle</mat-icon>
+          <span>Perfil</span>
         </button>
         <button mat-menu-item (click)="logout()">
           <mat-icon>logout</mat-icon>
