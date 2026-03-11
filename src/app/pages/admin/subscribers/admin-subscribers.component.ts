@@ -179,6 +179,32 @@ import { SupabaseService } from '../../../core/services/supabase.service';
                     </svg>
                   </div>
                 </th>
+
+                <th (click)="toggleSort('id')" class="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors">
+                    <div class="flex items-center space-x-1">
+                      <span>ID</span>
+                      <svg *ngIf="sortColumn() === 'id'" class="w-3 h-3" [class.rotate-180]="sortDirection() === 'desc'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                      </svg>
+                    </div>
+                  </th>
+                  <th (click)="toggleSort('email')" class="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors">
+                    <div class="flex items-center space-x-1">
+                      <span>E-mail</span>
+                      <svg *ngIf="sortColumn() === 'email'" class="w-3 h-3" [class.rotate-180]="sortDirection() === 'desc'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                      </svg>
+                    </div>
+                  </th>
+                  <th (click)="toggleSort('company_created_at')" class="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors">
+                    <div class="flex items-center space-x-1">
+                      <span>Criação Empresa</span>
+                      <svg *ngIf="sortColumn() === 'company_created_at'" class="w-3 h-3" [class.rotate-180]="sortDirection() === 'desc'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                      </svg>
+                    </div>
+                  </th>
+
                 <th (click)="toggleSort('status')" class="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors">
                   <div class="flex items-center space-x-1">
                     <span>Estado</span>
@@ -223,7 +249,7 @@ import { SupabaseService } from '../../../core/services/supabase.service';
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let sub of filteredSubscribers()" class="border-t border-gray-100 hover:bg-gray-50 transition-colors">
+              <tr *ngFor="let sub of filteredSubscribers(); index as i" class="border-t border-gray-100 hover:bg-gray-50 transition-colors">
                 <td class="px-6 py-4">
                   <div class="flex items-center space-x-3">
                     <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-sm uppercase">
@@ -235,12 +261,25 @@ import { SupabaseService } from '../../../core/services/supabase.service';
                     </div>
                   </div>
                 </td>
-                <td class="px-6 py-4">
-                  <span class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border"
-                        [ngClass]="getStatusClass(sub.status || 'trial')">
-                    {{ sub.status || 'Trial' }}
-                  </span>
-                </td>
+
+                  <td class="px-6 py-4 text-sm text-gray-500 text-center">
+                    {{ i + 1 }}
+                   </td>
+                  <td class="px-6 py-4 text-sm text-gray-700">
+                    {{ sub.email || '-' }}
+                  </td>
+                  <td class="px-6 py-4 text-sm text-gray-700">
+                    <span *ngIf="sub.company_created_at">
+                      {{ sub.company_created_at | date:'dd/MM/yyyy' }}
+                    </span>
+                    <span *ngIf="!sub.company_created_at" class="text-gray-400">-</span>
+                  </td>
+                  <td class="px-6 py-4">
+                    <span class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border"
+                          [ngClass]="getStatusClass(sub.status || 'trial')">
+                      {{ sub.status || 'Trial' }}
+                    </span>
+                  </td>
                 <td class="px-6 py-4 text-sm text-gray-700">
                   <p class="font-medium">{{ sub.company_count }} Contribuintes</p>
                   <p class="text-xs text-gray-500">{{ sub.user_count }} Utilizadores</p>
@@ -323,15 +362,15 @@ export class AdminSubscribersComponent implements OnInit {
 
   filteredSubscribers = computed(() => {
     let list = this.subscribers();
-    
+
     if (this.activeStatus() !== 'all') {
       list = list.filter(s => (s.status || 'trial') === this.activeStatus());
     }
 
     if (this.searchTerm) {
       const term = this.searchTerm.toLowerCase();
-      list = list.filter(s => 
-        s.full_name?.toLowerCase().includes(term) || 
+      list = list.filter(s =>
+        s.full_name?.toLowerCase().includes(term) ||
         s.email?.toLowerCase().includes(term)
       );
     }
@@ -359,7 +398,7 @@ export class AdminSubscribersComponent implements OnInit {
     return list;
   });
 
-  constructor(private supabase: SupabaseService) {}
+  constructor(private supabase: SupabaseService) { }
 
   ngOnInit() {
     this.loadSubscribers();
@@ -379,6 +418,7 @@ export class AdminSubscribersComponent implements OnInit {
           companies (
             id,
             name,
+            created_at,
             company_users (
               user_id,
               profiles:profiles!company_users_user_id_fkey (full_name, email)
@@ -391,57 +431,63 @@ export class AdminSubscribersComponent implements OnInit {
 
       if (error) throw error;
 
-    const formatted = data?.map(s => {
-      const companies = s.companies || [];
-      const companyCount = companies.length;
-      
-      // Hierarchy counts
-      const uniqueUsers = new Set<string>();
-      companies.forEach((c: any) => {
-        c.company_users?.forEach((cu: any) => uniqueUsers.add(cu.user_id));
-      });
+      const formatted = data?.map(s => {
+        const companies = s.companies || [];
+        const companyCount = companies.length;
 
-      // Invoice aggregates (Last 30 days)
-      let invoiceTotal30d = 0;
-      let invoiceCount30d = 0;
-      companies.forEach((c: any) => {
-        c.invoices?.forEach((inv: any) => {
-          const invDate = new Date(inv.created_at);
-          if (invDate >= thirtyDaysAgo) {
-            invoiceTotal30d += Number(inv.total) || 0;
-            invoiceCount30d++;
-          }
+        // Hierarchy counts
+        const uniqueUsers = new Set<string>();
+        companies.forEach((c: any) => {
+          c.company_users?.forEach((cu: any) => uniqueUsers.add(cu.user_id));
         });
-      });
 
-      // Subscription aggregates
-      let planSummary = 'Nenhum';
-      let billingCycle = '-';
-      let nextBilling: string | null = null;
+        // Invoice aggregates (Last 30 days)
+        let invoiceTotal30d = 0;
+        let invoiceCount30d = 0;
+        companies.forEach((c: any) => {
+          c.invoices?.forEach((inv: any) => {
+            const invDate = new Date(inv.created_at);
+            if (invDate >= thirtyDaysAgo) {
+              invoiceTotal30d += Number(inv.total) || 0;
+              invoiceCount30d++;
+            }
+          });
+        });
 
-      if (companies.length > 0) {
-        // Simple logic: take the most "important" subscription
-        const allSubs = companies.flatMap((c: any) => c.subscriptions || []);
-        const activeSub = allSubs.find((sub: any) => sub.status === 'active') || allSubs[0];
-        
-        if (activeSub) {
-          planSummary = allSubs.length > 1 ? `Multi (${allSubs.length})` : activeSub.plan_name;
-          billingCycle = activeSub.billing_cycle;
-          nextBilling = activeSub.next_billing_date;
+        // Subscription aggregates
+        let planSummary = 'Nenhum';
+        let billingCycle = '-';
+        let nextBilling: string | null = null;
+
+        if (companies.length > 0) {
+          // Simple logic: take the most "important" subscription
+          const allSubs = companies.flatMap((c: any) => c.subscriptions || []);
+          const activeSub = allSubs.find((sub: any) => sub.status === 'active') || allSubs[0];
+
+          if (activeSub) {
+            planSummary = allSubs.length > 1 ? `Multi (${allSubs.length})` : activeSub.plan_name;
+            billingCycle = activeSub.billing_cycle;
+            nextBilling = activeSub.next_billing_date;
+          }
         }
-      }
 
-      return {
-        ...s,
-        company_count: companyCount,
-        user_count: uniqueUsers.size,
-        invoice_total_30d: invoiceTotal30d,
-        invoice_count_30d: invoiceCount30d,
-        plan_summary: planSummary,
-        billing_cycle: billingCycle,
-        next_billing: nextBilling
-      };
-    }) || [];
+        // Data de criação da empresa mais recente
+        const companyCreatedAt = companies.length > 0
+          ? companies.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]?.created_at
+          : null;
+
+        return {
+          ...s,
+          company_count: companyCount,
+          user_count: uniqueUsers.size,
+          invoice_total_30d: invoiceTotal30d,
+          invoice_count_30d: invoiceCount30d,
+          plan_summary: planSummary,
+          billing_cycle: billingCycle,
+          next_billing: nextBilling,
+          company_created_at: companyCreatedAt
+        };
+      }) || [];
 
       this.subscribers.set(formatted);
     } catch (error) {
@@ -467,7 +513,7 @@ export class AdminSubscribersComponent implements OnInit {
 
   async toggleSuspend(subscriber: any) {
     const newStatus = subscriber.status === 'suspended' ? 'active' : 'suspended';
-    
+
     const { error } = await this.supabase.db
       .from('profiles')
       .update({ status: newStatus })
