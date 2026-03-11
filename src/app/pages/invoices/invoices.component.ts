@@ -103,12 +103,15 @@ export class InvoicesComponent implements OnInit {
   });
 
   stats = computed(() => {
-    const invoices = this.invoiceService.invoices();
+      const allInvoices = this.invoiceService.invoices();
+    // Apenas ignora rascunhos. Anuladas continuam a contar para o número de facturas emitidas.
+    const validInvoices = allInvoices.filter(i => i.status !== 'rascunho');
+    
     return {
-      total: invoices.length,
-      paga: invoices.filter(i => i.status === 'paga').length,
-      pendente: invoices.filter(i => i.status === 'pendente').length,
-      vencida: invoices.filter(i => i.status === 'vencida').length
+      total: validInvoices.length, // Agora apenas conta as que não são rascunhos
+      paga: validInvoices.filter(i => i.status === 'paga').length,
+      pendente: validInvoices.filter(i => i.status === 'pendente').length,
+      vencida: validInvoices.filter(i => i.status === 'vencida').length
     };
   });
 
