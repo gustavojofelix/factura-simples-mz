@@ -451,10 +451,11 @@ export class ReportsComponent implements OnInit {
       const allInvoices = this.invoiceService.invoices();
 
       const filteredInvoices = allInvoices.filter(inv => {
+        const isNotDraft = inv.status !== 'rascunho';
         const matchesDate = inv.date >= startDate && inv.date <= endDate;
         const clientId = this.filterForm.get('clientId')?.value;
         const matchesClient = clientId === 'all' || inv.client_id === clientId;
-        return matchesDate && matchesClient;
+        return isNotDraft && matchesDate && matchesClient;
       });
 
       const totalSales = filteredInvoices.reduce((sum, inv) => sum + inv.total, 0);
@@ -588,9 +589,12 @@ export class ReportsComponent implements OnInit {
       let detailedInvoices = await this.invoiceService.getDetailedInvoices(startDate, endDate);
 
       const clientId = this.filterForm.get('clientId')?.value;
-      if (clientId !== 'all') {
-        detailedInvoices = detailedInvoices.filter(inv => inv.client_id === clientId);
-      }
+
+      detailedInvoices = detailedInvoices.filter(inv => {
+        const isNotDraft = inv.status !== 'rascunho';
+        const matchesClient = clientId === 'all' || inv.client_id === clientId;
+        return isNotDraft && matchesClient;
+      });
 
       if (!detailedInvoices || detailedInvoices.length === 0) {
         alert('Nenhum dado encontrado para o período seleccionado.');
