@@ -9,12 +9,12 @@ import { AuthService } from '../../../core/services/auth.service';
   template: `
     <div class="min-h-screen bg-gray-50 flex">
       <!-- Sidebar -->
-      <aside class="w-64 bg-slate-900 text-white flex-shrink-0">
+      <aside class="w-64 bg-slate-900 text-white flex-shrink-0 flex flex-col sticky top-0 h-screen">
         <div class="h-16 flex items-center px-6 border-b border-slate-800">
           <span class="text-xl font-bold tracking-tight">ISPC <span class="text-blue-500">Fácil</span> Admin</span>
         </div>
         
-        <nav class="p-4 space-y-2">
+        <nav class="p-4 space-y-2 flex-1">
           <a routerLink="/admin" routerLinkActive="bg-slate-800 text-white" [routerLinkActiveOptions]="{exact: true}"
              class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -56,7 +56,7 @@ import { AuthService } from '../../../core/services/auth.service';
           </a>
         </nav>
         
-        <div class="absolute bottom-0 w-64 p-4 border-t border-slate-800">
+         <div class="p-4 border-t border-slate-800">
           <button (click)="logout()" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-red-900/20 hover:text-red-400 transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -85,7 +85,7 @@ import { AuthService } from '../../../core/services/auth.service';
   `
 })
 export class AdminLayoutComponent {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   async logout() {
     await this.authService.signOut();

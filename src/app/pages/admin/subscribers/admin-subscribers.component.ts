@@ -88,10 +88,10 @@ import { SupabaseService } from '../../../core/services/supabase.service';
           <div class="flex-1 overflow-y-auto p-6 space-y-8">
             <!-- Stats Grid -->
             <div class="grid grid-cols-2 gap-4">
-              <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+             <!-- <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
                 <span class="text-[10px] font-bold text-gray-400 uppercase">Faturação (30d)</span>
                 <p class="text-lg font-bold text-blue-700">{{ selectedSub().invoice_total_30d | currency:'MZN':'symbol':'1.2-2':'pt-MZ' }}</p>
-              </div>
+              </div> -->
               <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
                 <span class="text-[10px] font-bold text-gray-400 uppercase">Total Empresas</span>
                 <p class="text-lg font-bold text-gray-800">{{ selectedSub().company_count }}</p>
@@ -196,14 +196,12 @@ import { SupabaseService } from '../../../core/services/supabase.service';
                       </svg>
                     </div>
                   </th>
-                  <th (click)="toggleSort('company_created_at')" class="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors">
-                    <div class="flex items-center space-x-1">
-                      <span>Criação Empresa</span>
-                      <svg *ngIf="sortColumn() === 'company_created_at'" class="w-3 h-3" [class.rotate-180]="sortDirection() === 'desc'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                      </svg>
-                    </div>
-                  </th>
+                  <th (click)="toggleSort('company_created_at')" class="px-6 py-4    cursor-pointer hover:bg-gray-100 transition-colors text-center">                                         <div class="flex items-center justify-center space-x-1">                               <span>Data de criação de empresa</span>
+                        <svg *ngIf="sortColumn() === 'company_created_at'" class="w-3 h-3" [class.rotate-180]="sortDirection() === 'desc'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                        </svg>
+                      </div>
+                    </th>
 
                 <th (click)="toggleSort('status')" class="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors">
                   <div class="flex items-center space-x-1">
@@ -221,30 +219,30 @@ import { SupabaseService } from '../../../core/services/supabase.service';
                     </svg>
                   </div>
                 </th>
-                <th (click)="toggleSort('plan_summary')" class="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors">
+               <!-- <th (click)="toggleSort('plan_summary')" class="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors">
                   <div class="flex items-center space-x-1">
                     <span>Plano Atual</span>
                     <svg *ngIf="sortColumn() === 'plan_summary'" class="w-3 h-3" [class.rotate-180]="sortDirection() === 'desc'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
                     </svg>
                   </div>
-                </th>
-                <th (click)="toggleSort('invoice_total_30d')" class="px-6 py-4 text-right cursor-pointer hover:bg-gray-100 transition-colors">
+                </th> -->
+               <!-- <th (click)="toggleSort('invoice_total_30d')" class="px-6 py-4 text-right cursor-pointer hover:bg-gray-100 transition-colors">
                   <div class="flex items-center justify-end space-x-1">
                     <span>Uso (30d)</span>
                     <svg *ngIf="sortColumn() === 'invoice_total_30d'" class="w-3 h-3" [class.rotate-180]="sortDirection() === 'desc'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
                     </svg>
                   </div>
-                </th>
-                <th (click)="toggleSort('next_billing')" class="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors">
+                </th> -->
+                <!-- <th (click)="toggleSort('next_billing')" class="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors">
                   <div class="flex items-center space-x-1">
                     <span>Próx. Renovação</span>
                     <svg *ngIf="sortColumn() === 'next_billing'" class="w-3 h-3" [class.rotate-180]="sortDirection() === 'desc'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
                     </svg>
                   </div>
-                </th>
+                </th> -->
                 <th class="px-6 py-4 text-center">Ações</th>
               </tr>
             </thead>
@@ -268,12 +266,13 @@ import { SupabaseService } from '../../../core/services/supabase.service';
                   <td class="px-6 py-4 text-sm text-gray-700">
                     {{ sub.email || '-' }}
                   </td>
-                  <td class="px-6 py-4 text-sm text-gray-700">
-                    <span *ngIf="sub.company_created_at">
-                      {{ sub.company_created_at | date:'dd/MM/yyyy' }}
-                    </span>
-                    <span *ngIf="!sub.company_created_at" class="text-gray-400">-</span>
-                  </td>
+                  <td class="px-6 py-4 text-sm text-gray-700 text-center">
+                      <span *ngIf="sub.company_created_at">
+                        {{ sub.company_created_at | date:'dd/MM/yyyy' }}
+                      </span>
+                      <span *ngIf="!sub.company_created_at" class="text-gray-400">-</span>
+                    </td>
+
                   <td class="px-6 py-4">
                     <span class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border"
                           [ngClass]="getStatusClass(sub.status || 'trial')">
@@ -284,20 +283,20 @@ import { SupabaseService } from '../../../core/services/supabase.service';
                   <p class="font-medium">{{ sub.company_count }} Contribuintes</p>
                   <p class="text-xs text-gray-500">{{ sub.user_count }} Utilizadores</p>
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-700">
+               <!-- <td class="px-6 py-4 text-sm text-gray-700">
                   <p class="font-medium">{{ sub.plan_summary }}</p>
                   <p class="text-xs text-gray-500">{{ sub.billing_cycle }}</p>
-                </td>
-                <td class="px-6 py-4 text-right text-sm text-gray-700">
+                </td> -->
+                <!-- <td class="px-6 py-4 text-right text-sm text-gray-700">
                   <p class="font-medium">{{ sub.invoice_total_30d | currency:'MZN':'symbol':'1.2-2':'pt-MZ' }}</p>
                   <p class="text-xs text-gray-500">{{ sub.invoice_count_30d }} Faturas</p>
-                </td>
-                <td class="px-6 py-4 text-sm text-gray-700">
+                </td> -->
+                <!-- <td class="px-6 py-4 text-sm text-gray-700">
                   <span *ngIf="sub.next_billing" [class.text-red-600]="isOverdue(sub.next_billing)">
                     {{ sub.next_billing | date:'shortDate':'':'pt-MZ' }}
                   </span>
                   <span *ngIf="!sub.next_billing" class="text-gray-500">-</span>
-                </td>
+                </td> -->
                 <td class="px-6 py-4 text-center">
                   <div class="flex justify-center space-x-3">
                     <!-- Toggle Suspend/Activate -->
@@ -356,8 +355,7 @@ export class AdminSubscribersComponent implements OnInit {
   statuses = [
     { id: 'all', label: 'Todos' },
     { id: 'active', label: 'Ativos' },
-    { id: 'suspended', label: 'Suspensos' },
-    { id: 'trial', label: 'Trial' }
+    { id: 'suspended', label: 'Suspensos' }
   ];
 
   filteredSubscribers = computed(() => {
