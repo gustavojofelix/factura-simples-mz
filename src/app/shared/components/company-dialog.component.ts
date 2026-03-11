@@ -343,6 +343,37 @@ import { ACTIVITY_HIERARCHY } from '../../core/constants/activity-categories';
                 }
               </div>
             </div>
+            <!-- Seccao Inicio de Actividades -->
+             <div class="border-t border-gray-100 pt-6 mt-6">
+               <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                 <mat-icon class="mr-2 text-ispc-orange">play_circle</mat-icon>
+                 Início de Actividades
+               </h3>
+               <div class="bg-gray-50 p-4 rounded-lg">
+                 @if (inicioAtividadesDoc) {
+                   <div class="flex items-center justify-between bg-white p-3 rounded border">
+                     <span class="text-sm truncate">{{ inicioAtividadesDoc.file_name}}</span>
+                     <div class="flex items-center">
+                       <button type="button" mat-icon-button color="primary" (click)="viewOtherDocument(inicioAtividadesDoc)" matTooltip="Visualizar">
+                         <mat-icon>visibility</mat-icon>
+                       </button>
+                       <button type="button" mat-icon-button color="warn" (click)="removeOtherDocument(inicioAtividadesDoc)" matTooltip="Remover">
+                         <mat-icon>delete</mat-icon>
+                       </button>
+                     </div>
+                   </div>
+                 } @else {
+                   <div class="flex items-center gap-3">
+                     <button type="button" mat-raised-button (click)="inicioAtividadesInput.click()" [disabled]="isUploadingInicioAtividades()">
+                       <mat-icon>file_upload</mat-icon>
+                       {{ isUploadingInicioAtividades() ? 'Carregando...' : 'Fazer Upload do Início de Actividades' }}
+                     </button>
+                     <span class="text-xs text-gray-500">PDF, JPG ou PNG(máx.10MB)</span>
+                     <input type="file" #inicioAtividadesInput class="hidden"accept=".pdf,.jpg,.jpeg,.png"(change)="onInicioAtividadesDocumentSelected($event)">
+                   </div>
+                 }
+               </div>
+             </div>
 
           <!-- Seccao de Documentos Adicionais -->
           <div class="border-t border-gray-100 pt-6 mt-6">
@@ -457,6 +488,7 @@ export class CompanyDialogComponent {
   otherDocuments = signal<CompanyDocument[]>([]);
   isUploadingOther = signal(false);
   isUploadingAlvara = signal(false);
+  isUploadingInicioAtividades = signal(false);
   newDocType = this.fb.control('');
 
   documentTypes = [
@@ -476,6 +508,10 @@ export class CompanyDialogComponent {
 
   get alvaraDoc(): CompanyDocument | undefined {
     return this.otherDocuments().find(d => d.type === 'Alvará');
+  }
+
+  get inicioAtividadesDoc(): CompanyDocument | undefined {
+    return this.otherDocuments().find(d => d.type === 'Início de Actividades');
   }
 
   constructor(
@@ -731,6 +767,39 @@ export class CompanyDialogComponent {
       this.snackBar.open('Erro ao carregar o Alvará', 'Fechar', { duration: 3000 });
     } finally {
       this.isUploadingAlvara.set(false);
+      input.value = '';
+    }
+  }
+
+  async onInicioAtividadesDocumentSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    this.isUploadingInicioAtividades.set(true);
+
+    try {
+      const companyId = this.data.company?.id;
+      if (!companyId) {
+        this.snackBar.open('Salve a empresa primeiro antes de adicionar o Início de Actividades.', 'Fechar', { duration: 3000 });
+        return;
+      }
+
+      const result = await this.documentService.uploadDocument(file, companyId, 'other' as any);
+      const savedDoc = await this.documentService.saveDocument(companyId, 'Início de Actividades', result.url, file.name);
+
+      if (savedDoc) {
+        this.otherDocuments.update(docs => [...docs, savedDoc]);
+        this.snackBar.open('Início de Actividades carregado com sucesso!',
+          'Fechar', { duration: 3000 });
+      }
+    } catch (error: any) {
+      console.error('Erro ao subir Início de Actividades:', error);
+      this.snackBar.open('Erro ao carregar o Início de Actividades', 'Fechar', {
+        duration: 3000
+      });
+    } finally {
+      this.isUploadingInicioAtividades.set(false);
       input.value = '';
     }
   }
