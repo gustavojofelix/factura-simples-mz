@@ -155,15 +155,21 @@ import { ACTIVITY_HIERARCHY } from '../../core/constants/activity-categories';
 
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Endereço</mat-label>
-            <textarea matInput formControlName="address" rows="2" placeholder="Ex: Av. Julius Nyerere, nº 123"></textarea>
+            <textarea matInput formControlName="address" rows="2" placeholder="Ex: Av. Julius Nyerere, nº 123" required></textarea>
             <mat-icon matPrefix class="text-gray-400">location_on</mat-icon>
+            @if (form.get('address')?.hasError('required')) {
+              <mat-error>O endereço é obrigatório</mat-error>
+            }
           </mat-form-field>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Email</mat-label>
-              <input matInput formControlName="email" type="email" placeholder="Ex: contacto@empresa.com">
+              <input matInput formControlName="email" type="email" placeholder="Ex: contacto@empresa.com" required>
               <mat-icon matPrefix class="text-gray-400">email</mat-icon>
+              @if (form.get('email')?.hasError('required')) {
+                <mat-error>O email é obrigatório</mat-error>
+              }
               @if (form.get('email')?.hasError('email')) {
                 <mat-error>Email inválido</mat-error>
               }
@@ -525,9 +531,9 @@ export class CompanyDialogComponent {
       name: [data.company?.name || '', Validators.required],
       entity_type: [data.company?.entity_type || '', Validators.required],
       nuit: [data.company?.nuit || '', [Validators.required]],
-      address: [data.company?.address || ''],
+      address: [data.company?.address || '', Validators.required],
       phone: [data.company?.phone || ''],
-      email: [data.company?.email || '', Validators.email],
+      email: [data.company?.email || '', [Validators.required, Validators.email]],
       business_volume: [(data.company as any)?.business_volume || '3', Validators.required],
       currency: [data.company?.currency || 'MZN'],
       invoice_prefix: [data.company?.invoice_prefix || 'FAC'],
