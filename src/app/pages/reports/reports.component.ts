@@ -451,11 +451,11 @@ export class ReportsComponent implements OnInit {
       const allInvoices = this.invoiceService.invoices();
 
       const filteredInvoices = allInvoices.filter(inv => {
-        const isNotDraft = inv.status !== 'rascunho';
+        const isValid = inv.status !== 'rascunho' && inv.status !== 'anulada';
         const matchesDate = inv.date >= startDate && inv.date <= endDate;
         const clientId = this.filterForm.get('clientId')?.value;
         const matchesClient = clientId === 'all' || inv.client_id === clientId;
-        return isNotDraft && matchesDate && matchesClient;
+        return isValid && matchesDate && matchesClient;
       });
 
       const totalSales = filteredInvoices.reduce((sum, inv) => sum + inv.total, 0);
@@ -464,11 +464,19 @@ export class ReportsComponent implements OnInit {
       const pendingAmount = filteredInvoices.reduce((sum, inv) => sum + inv.amount_pending, 0);
       const averageInvoiceValue = totalInvoices > 0 ? totalSales / totalInvoices : 0;
 
+      // Contagem separada para anuladas (excluindo apenas rascunhos, não anuladas)
+      const allNonDraftInvoices = allInvoices.filter(inv => {
+        const matchesDate = inv.date >= startDate && inv.date <= endDate;
+        const clientId2 = this.filterForm.get('clientId')?.value;
+        const matchesClient = clientId2 === 'all' || inv.client_id === clientId2;
+        return inv.status !== 'rascunho' && matchesDate && matchesClient;
+      });
+
       const invoicesByStatus = {
         pendente: filteredInvoices.filter(inv => inv.status === 'pendente').length,
         paga: filteredInvoices.filter(inv => inv.status === 'paga').length,
         vencida: filteredInvoices.filter(inv => inv.status === 'vencida').length,
-        anulada: filteredInvoices.filter(inv => inv.status === 'anulada').length
+        anulada: allNonDraftInvoices.filter(inv => inv.status === 'anulada').length
       };
 
       const clientsMap = new Map<string, { name: string; total: number; count: number }>();
@@ -591,9 +599,9 @@ export class ReportsComponent implements OnInit {
       const clientId = this.filterForm.get('clientId')?.value;
 
       detailedInvoices = detailedInvoices.filter(inv => {
-        const isNotDraft = inv.status !== 'rascunho';
+        const isValid = inv.status !== 'rascunho' && inv.status !== 'anulada';
         const matchesClient = clientId === 'all' || inv.client_id === clientId;
-        return isNotDraft && matchesClient;
+        return isValid && matchesClient;
       });
 
       if (!detailedInvoices || detailedInvoices.length === 0) {

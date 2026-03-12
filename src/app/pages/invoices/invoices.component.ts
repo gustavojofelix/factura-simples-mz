@@ -104,7 +104,7 @@ export class InvoicesComponent implements OnInit {
 
   stats = computed(() => {
       const allInvoices = this.invoiceService.invoices();
-    // Apenas ignora rascunhos. Anuladas continuam a contar para o número de facturas emitidas.
+    // Ignora apenas rascunhos do cálculo de totais
     const validInvoices = allInvoices.filter(i => i.status !== 'rascunho');
     
     return {
