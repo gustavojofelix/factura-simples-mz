@@ -176,6 +176,8 @@ export class DashboardComponent implements OnInit {
         date,
         total,
         status,
+        amount_paid,
+        due_date,
         clients (name),
         issuer:profiles (full_name)
       `)
@@ -191,11 +193,36 @@ export class DashboardComponent implements OnInit {
           client_name: (inv.clients as any)?.name || 'Cliente',
           date: inv.date,
           total: inv.total,
-          status: inv.status,
+          status: this.calculateRecentInvoiceStatus(inv),
           issuer_name: (inv.issuer as any)?.full_name
         }))
       );
     }
+  }
+
+  private calculateRecentInvoiceStatus(invoice: any): string {
+    const currentStatus = (invoice.status || '').toLowerCase();
+
+    if (currentStatus === 'rascunho' || currentStatus === 'anulada') {
+      return currentStatus;
+    }
+
+    if (invoice.amount_paid >= invoice.total) {
+      return 'paga';
+    }
+
+    if (invoice.due_date) {
+      const dueDate = new Date(invoice.due_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      dueDate.setHours(0, 0, 0, 0);
+
+      if (dueDate < today && (invoice.amount_paid || 0) < invoice.total) {
+        return 'vencida';
+      }
+    }
+
+    return 'pendente';
   }
 
   formatCurrency(value: number): string {
