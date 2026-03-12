@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { createClient } from '@supabase/supabase-js';
 import { environment } from '../../../../environments/environment';
+import { PaginationComponent, PageChangeEvent } from '../../../shared/components/pagination.component';
 
 @Component({
   selector: 'app-admin-subscribers',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   template: `
     <div class="space-y-6">
        <!-- Create Subscriber Modal -->
@@ -288,7 +289,7 @@ import { environment } from '../../../../environments/environment';
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let sub of filteredSubscribers()" class="border-t border-gray-100 hover:bg-gray-50 transition-colors">
+              <tr *ngFor="let sub of paginatedSubscribers()" class="border-t border-gray-100 hover:bg-gray-50 transition-colors">
                 <td class="px-6 py-4">
                   <div class="flex items-center space-x-3">
                     <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-sm uppercase">
@@ -355,9 +356,19 @@ import { environment } from '../../../../environments/environment';
               </tr>
             </tbody>
           </table>
-          <div *ngIf="filteredSubscribers().length === 0" class="p-12 text-center text-gray-500">
+          <div *ngIf="paginatedSubscribers().length === 0" class="p-12 text-center text-gray-500">
             Nenhum subscritor encontrado.
           </div>
+      </div>
+
+      <!-- Pagination -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 mt-1">
+        <app-pagination
+          [totalItems]="filteredSubscribers().length"
+          [pageSizeOptions]="[10, 20, 50]"
+          [defaultPageSize]="10"
+          (pageChange)="onPageChange($event)">
+        </app-pagination>
       </div>
     </div>
   </div>
@@ -368,6 +379,10 @@ export class AdminSubscribersComponent implements OnInit {
   searchTerm = '';
   activeStatus = signal('all');
   isLoading = signal(false);
+
+  // Pagination state
+  currentPage = signal(1);
+  pageSize = signal(10);
 
   // Create Modal
   isCreateModalOpen = false;
@@ -428,6 +443,12 @@ export class AdminSubscribersComponent implements OnInit {
     });
 
     return list;
+  });
+
+  paginatedSubscribers = computed(() => {
+    const list = this.filteredSubscribers();
+    const start = (this.currentPage() - 1) * this.pageSize();
+    return list.slice(start, start + this.pageSize());
   });
 
   constructor(private supabase: SupabaseService) { }
@@ -620,6 +641,11 @@ export class AdminSubscribersComponent implements OnInit {
 
   exportSubscribers() {
     console.log('Exporting subscribers...');
+  }
+
+  onPageChange(event: PageChangeEvent) {
+    this.currentPage.set(event.page);
+    this.pageSize.set(event.pageSize);
   }
 
   openCreateModal() {
