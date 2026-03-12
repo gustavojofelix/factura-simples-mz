@@ -10,7 +10,7 @@ export interface Company {
   entity_type?: 'singular' | 'collective';
   address: string;
   phone?: string;
-  email?: string;
+  email: string;
   currency: string;
   invoice_prefix: string;
   invoice_number: number;
