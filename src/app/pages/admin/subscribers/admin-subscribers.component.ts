@@ -2,6 +2,8 @@ import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../../core/services/supabase.service';
+import { createClient } from '@supabase/supabase-js';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-admin-subscribers',
@@ -9,6 +11,63 @@ import { SupabaseService } from '../../../core/services/supabase.service';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="space-y-6">
+       <!-- Create Subscriber Modal -->
+        <div *ngIf="isCreateModalOpen" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-in fade-in zoom-in duration-200">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+              <h3 class="text-xl font-bold text-gray-800 font-serif uppercase tracking-tight">Novo Subscritor</h3>
+              <button (click)="closeCreateModal()" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div class="p-6 space-y-4">
+              <div class="space-y-1">
+                <label class="text-[10px] font-bold text-gray-500 uppercase">Nome Completo *</label>
+                <input [(ngModel)]="newSub.full_name" type="text" placeholder="Ex: João Silva"
+                  class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+              </div>
+              <div class="space-y-1">
+                <label class="text-[10px] font-bold text-gray-500 uppercase">E-mail*</label>
+                <input [(ngModel)]="newSub.email" type="email" placeholder="email@exemplo.com"
+                  class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+              </div>
+              <div class="space-y-1">
+                <label class="text-[10px] font-bold text-gray-500 uppercase">Palavra-passe *</label>
+                <input [(ngModel)]="newSub.password" type="password" placeholder="Mínimo 6 caracteres"
+                  class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                  <label class="text-[10px] font-bold text-gray-500 uppercase">Telefone</label>
+                  <input [(ngModel)]="newSub.phone" type="text" placeholder="Ex: 84 000 0000"
+                    class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div class="space-y-1">
+                  <label class="text-[10px] font-bold text-gray-500 uppercase">Estado</label>
+                  <select [(ngModel)]="newSub.status" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="active">Activo</option>
+                    <option value="suspended">Suspenso</option>
+                  </select>
+                </div>
+              </div>
+              <p *ngIf="createError" class="text-xs text-red-600 font-medium">{{createError }}</p>
+            </div>
+
+            <div class="p-6 bg-gray-50 border-t border-gray-100 flex space-x-3">
+              <button (click)="closeCreateModal()" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-white transition-colors text-sm font-semibold uppercase tracking-tight">
+                Cancelar
+              </button>
+              <button (click)="createSubscriber()" [disabled]="isCreating"
+                class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all text-sm font-bold uppercase tracking-tight disabled:opacity-50">
+                {{ isCreating ? 'A criar...' : 'Criar' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
       <!-- Edit Modal -->
       <div *ngIf="isEditModalOpen" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-in fade-in zoom-in duration-200">
@@ -134,7 +193,13 @@ import { SupabaseService } from '../../../core/services/supabase.service';
       <div class="flex justify-between items-center">
         <h2 class="text-2xl font-bold text-gray-800">Gestão de Subscritores</h2>
         <div class="flex space-x-2">
-          <button (click)="exportSubscribers()" class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors flex items-center space-x-2">
+         <button (click)="openCreateModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              <span>Novo Subscritor</span>
+          </button>        
+         <button (click)="exportSubscribers()" class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors flex items-center space-x-2">
             <svg class="w-4 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
@@ -304,6 +369,12 @@ export class AdminSubscribersComponent implements OnInit {
   activeStatus = signal('all');
   isLoading = signal(false);
 
+  // Create Modal
+  isCreateModalOpen = false;
+  isCreating = false;
+  createError = '';
+  newSub: any = { status: 'active' };
+
   // Phase 2 & 3: UI Logic
   isEditModalOpen = false;
   isDetailsOpen = false;
@@ -323,15 +394,15 @@ export class AdminSubscribersComponent implements OnInit {
 
   filteredSubscribers = computed(() => {
     let list = this.subscribers();
-    
+
     if (this.activeStatus() !== 'all') {
       list = list.filter(s => (s.status || 'trial') === this.activeStatus());
     }
 
     if (this.searchTerm) {
       const term = this.searchTerm.toLowerCase();
-      list = list.filter(s => 
-        s.full_name?.toLowerCase().includes(term) || 
+      list = list.filter(s =>
+        s.full_name?.toLowerCase().includes(term) ||
         s.email?.toLowerCase().includes(term)
       );
     }
@@ -359,7 +430,7 @@ export class AdminSubscribersComponent implements OnInit {
     return list;
   });
 
-  constructor(private supabase: SupabaseService) {}
+  constructor(private supabase: SupabaseService) { }
 
   ngOnInit() {
     this.loadSubscribers();
@@ -391,57 +462,57 @@ export class AdminSubscribersComponent implements OnInit {
 
       if (error) throw error;
 
-    const formatted = data?.map(s => {
-      const companies = s.companies || [];
-      const companyCount = companies.length;
-      
-      // Hierarchy counts
-      const uniqueUsers = new Set<string>();
-      companies.forEach((c: any) => {
-        c.company_users?.forEach((cu: any) => uniqueUsers.add(cu.user_id));
-      });
+      const formatted = data?.map(s => {
+        const companies = s.companies || [];
+        const companyCount = companies.length;
 
-      // Invoice aggregates (Last 30 days)
-      let invoiceTotal30d = 0;
-      let invoiceCount30d = 0;
-      companies.forEach((c: any) => {
-        c.invoices?.forEach((inv: any) => {
-          const invDate = new Date(inv.created_at);
-          if (invDate >= thirtyDaysAgo) {
-            invoiceTotal30d += Number(inv.total) || 0;
-            invoiceCount30d++;
-          }
+        // Hierarchy counts
+        const uniqueUsers = new Set<string>();
+        companies.forEach((c: any) => {
+          c.company_users?.forEach((cu: any) => uniqueUsers.add(cu.user_id));
         });
-      });
 
-      // Subscription aggregates
-      let planSummary = 'Nenhum';
-      let billingCycle = '-';
-      let nextBilling: string | null = null;
+        // Invoice aggregates (Last 30 days)
+        let invoiceTotal30d = 0;
+        let invoiceCount30d = 0;
+        companies.forEach((c: any) => {
+          c.invoices?.forEach((inv: any) => {
+            const invDate = new Date(inv.created_at);
+            if (invDate >= thirtyDaysAgo) {
+              invoiceTotal30d += Number(inv.total) || 0;
+              invoiceCount30d++;
+            }
+          });
+        });
 
-      if (companies.length > 0) {
-        // Simple logic: take the most "important" subscription
-        const allSubs = companies.flatMap((c: any) => c.subscriptions || []);
-        const activeSub = allSubs.find((sub: any) => sub.status === 'active') || allSubs[0];
-        
-        if (activeSub) {
-          planSummary = allSubs.length > 1 ? `Multi (${allSubs.length})` : activeSub.plan_name;
-          billingCycle = activeSub.billing_cycle;
-          nextBilling = activeSub.next_billing_date;
+        // Subscription aggregates
+        let planSummary = 'Nenhum';
+        let billingCycle = '-';
+        let nextBilling: string | null = null;
+
+        if (companies.length > 0) {
+          // Simple logic: take the most "important" subscription
+          const allSubs = companies.flatMap((c: any) => c.subscriptions || []);
+          const activeSub = allSubs.find((sub: any) => sub.status === 'active') || allSubs[0];
+
+          if (activeSub) {
+            planSummary = allSubs.length > 1 ? `Multi (${allSubs.length})` : activeSub.plan_name;
+            billingCycle = activeSub.billing_cycle;
+            nextBilling = activeSub.next_billing_date;
+          }
         }
-      }
 
-      return {
-        ...s,
-        company_count: companyCount,
-        user_count: uniqueUsers.size,
-        invoice_total_30d: invoiceTotal30d,
-        invoice_count_30d: invoiceCount30d,
-        plan_summary: planSummary,
-        billing_cycle: billingCycle,
-        next_billing: nextBilling
-      };
-    }) || [];
+        return {
+          ...s,
+          company_count: companyCount,
+          user_count: uniqueUsers.size,
+          invoice_total_30d: invoiceTotal30d,
+          invoice_count_30d: invoiceCount30d,
+          plan_summary: planSummary,
+          billing_cycle: billingCycle,
+          next_billing: nextBilling
+        };
+      }) || [];
 
       this.subscribers.set(formatted);
     } catch (error) {
@@ -467,7 +538,7 @@ export class AdminSubscribersComponent implements OnInit {
 
   async toggleSuspend(subscriber: any) {
     const newStatus = subscriber.status === 'suspended' ? 'active' : 'suspended';
-    
+
     const { error } = await this.supabase.db
       .from('profiles')
       .update({ status: newStatus })
@@ -549,5 +620,69 @@ export class AdminSubscribersComponent implements OnInit {
 
   exportSubscribers() {
     console.log('Exporting subscribers...');
+  }
+
+  openCreateModal() {
+    this.newSub = { status: 'active' };
+    this.createError = '';
+    this.isCreateModalOpen = true;
+  }
+
+  closeCreateModal() {
+    this.isCreateModalOpen = false;
+    this.newSub = { status: 'active' };
+    this.createError = '';
+  }
+
+  async createSubscriber() {
+    if (!this.newSub.full_name || !this.newSub.email || !this.newSub.password) {
+      this.createError = 'Nome, e-mail e palavra-passe são obrigatórios.';
+      return;
+    }
+    if (this.newSub.password.length < 6) {
+      this.createError = 'A palavra-passe deve ter pelo menos 6 caracteres.';
+      return;
+    }
+
+    this.isCreating = true;
+    this.createError = '';
+
+    try {
+      // Cliente temporário sem sessão persistente para não afectar o admin
+      const tempClient = createClient(environment.supabaseUrl, environment.supabaseKey, {
+        auth: { persistSession: false }
+      });
+
+      const { data, error } = await tempClient.auth.signUp({
+        email: this.newSub.email,
+        password: this.newSub.password,
+        options: {
+          data: {
+            full_name: this.newSub.full_name,
+            phone: this.newSub.phone || null
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        await this.supabase.db
+          .from('profiles')
+          .update({
+            full_name: this.newSub.full_name,
+            phone: this.newSub.phone || null,
+            status: this.newSub.status
+          })
+          .eq('id', data.user.id);
+      }
+
+      this.closeCreateModal();
+      this.loadSubscribers();
+    } catch (error: any) {
+      this.createError = error.message || 'Erro ao criar subscritor.';
+    } finally {
+      this.isCreating = false;
+    }
   }
 }
