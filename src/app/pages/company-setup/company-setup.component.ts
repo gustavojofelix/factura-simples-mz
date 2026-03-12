@@ -49,13 +49,14 @@ export class CompanySetupComponent {
   isUploadingNuit = signal(false);
   commercialActivityUrl = signal<string | null>(null);
   isUploadingCommercial = signal(false);
+  isUploadingAlvara = signal(false);
+
 
   otherDocuments = signal<Partial<CompanyDocument>[]>([]);
   isUploadingOther = signal(false);
   newDocType = new FormControl('');
 
   documentTypes = [
-    'Alvará',
     'Certidão de Registo Comercial',
     'Boletim da República',
     'Documento de Identificação (Sócios)',
@@ -160,6 +161,36 @@ export class CompanySetupComponent {
     if (!cat2Obj || !cat2Obj.subcategories) return [];
 
     return cat2Obj.subcategories;
+  }
+
+  get alvaraDoc(): Partial<CompanyDocument> | undefined {
+    return this.otherDocuments().find(d => d.type === 'Alvará');
+  }
+
+  async onAlvaraDocumentSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    this.isUploadingAlvara.set(true);
+
+    try {
+      const result = await this.documentService.uploadDocument(file, 'temp', 'other' as any);
+
+      this.otherDocuments.update(docs => [...docs, {
+        type: 'Alvará',
+        url: result.url,
+        file_name: file.name
+      }]);
+
+      this.snackBar.open('Alvará carregado com sucesso!', 'Fechar', { duration: 3000 });
+    } catch (error: any) {
+      console.error('Erro ao subir Alvará:', error);
+      this.snackBar.open('Erro ao carregar o Alvará', 'Fechar', { duration: 3000 });
+    } finally {
+      this.isUploadingAlvara.set(false);
+      input.value = '';
+    }
   }
 
   async onNuitDocumentSelected(event: Event) {

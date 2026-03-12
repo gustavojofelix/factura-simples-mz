@@ -86,37 +86,16 @@ import { ACTIVITY_HIERARCHY } from '../../core/constants/activity-categories';
             }
           </mat-form-field>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Nome da Empresa</mat-label>
-              <input matInput formControlName="name" placeholder="Ex: Comercial Silva Lda">
-              <mat-icon matPrefix class="text-gray-400">business</mat-icon>
-              
-              <div matSuffix class="flex items-center">
-                @if (isUploadingCommercial()) {
-                  <mat-spinner diameter="20" class="mr-2"></mat-spinner>
-                } @else {
-                  @if (commercialActivityUrl()) {
-                    <mat-icon class="text-green-500 mr-2" matTooltip="Documento carregado">check_circle</mat-icon>
-                    <button type="button" mat-icon-button (click)="viewCommercialDocument()" matTooltip="Visualizar Exercício de Actividade Comercial">
-                      <mat-icon class="text-blue-500">visibility</mat-icon>
-                    </button>
-                    <button type="button" mat-icon-button (click)="commercialInput.click()" matTooltip="Alterar Documento">
-                      <mat-icon class="text-gray-400">file_upload</mat-icon>
-                    </button>
-                  } @else {
-                    <button type="button" mat-icon-button (click)="commercialInput.click()" matTooltip="Fazer upload do Exercício de Actividade Comercial (Opcional)">
-                      <mat-icon class="text-gray-400">file_upload</mat-icon>
-                    </button>
-                  }
+         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Nome da Empresa</mat-label>
+                <input matInput formControlName="name" placeholder="Ex: Comercial Silva Lda">
+                <mat-icon matPrefix class="text-gray-400">business</mat-icon>
+                @if (form.get('name')?.hasError('required')) {
+                  <mat-error>O nome é obrigatório</mat-error>
                 }
-                <input type="file" #commercialInput class="hidden" accept=".pdf,.jpg,.jpeg,.png" (change)="onCommercialDocumentSelected($event)">
-              </div>
+              </mat-form-field>
 
-              @if (form.get('name')?.hasError('required')) {
-                <mat-error>O nome é obrigatório</mat-error>
-              }
-            </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>NUIT</mat-label>
@@ -343,7 +322,41 @@ import { ACTIVITY_HIERARCHY } from '../../core/constants/activity-categories';
                 }
               </div>
             </div>
-
+             <!-- Seccao Início de Actividade -->
+                <div class="border-t border-gray-100 pt-6 mt-6">
+                  <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <mat-icon class="mr-2 text-ispc-orange">event_available</mat-icon>
+                    Início de Actividade
+                  </h3>
+                  <div class="bg-gray-100 p-4 rounded-lg">
+                    @if (commercialActivityUrl()) {
+                      <div class="flex items-center justify-between bg-white p-3 rounded border">
+                        <span class="text-sm text-green-600 flex items-center gap-1">
+                          <mat-icon class="!text-base">check_circle</mat-icon>
+                          Documento carregado
+                        </span>
+                        <div class="flex items-center">
+                          <button type="button" mat-icon-button color="primary" (click)="viewCommercialDocument()" matTooltip="Visualizar">
+                            <mat-icon class="!text-lg">visibility</mat-icon>
+                          </button>
+                          <button type="button" mat-icon-button (click)="commercialInput.click()" [disabled]="isUploadingCommercial()" matTooltip="Alterar Documento">
+                            <mat-icon class="!text-lg">file_upload</mat-icon>
+                          </button>
+                        </div>
+                      </div>
+                    } @else {
+                      <div class="flex items-center gap-3">
+                        <button type="button" mat-raised-button (click)="commercialInput.click()" [disabled]="isUploadingCommercial()">
+                          <mat-icon>file_upload</mat-icon>
+                          {{ isUploadingCommercial() ? 'Carregando...' : 'Fazer Upload do Início de Actividade' }}
+                        </button>
+                        <span class="text-xs text-gray-500">PDF, JPG ou PNG (máx.10MB)</span>
+                      </div>
+                    }
+                    <input type="file" #commercialInput class="hidden" accept=".pdf,.jpg,.jpeg,.png"
+                      (change)="onCommercialDocumentSelected($event)">
+                  </div>
+                </div>
           <!-- Seccao de Documentos Adicionais -->
           <div class="border-t border-gray-100 pt-6 mt-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
