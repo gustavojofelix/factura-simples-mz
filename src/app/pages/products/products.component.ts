@@ -196,7 +196,7 @@ export class ProductDialogComponent implements OnInit {
 export class ProductsComponent implements OnInit {
   displayedColumns = ['code', 'name', 'price', 'unit', 'stock', 'status', 'actions'];
   searchTerm = signal('');
-  sortField = signal<string>('name');
+  sortField = signal<string>('code');
   sortDirection = signal<'asc' | 'desc'>('asc');
   minPriceFilter = signal<number | null>(null);
   maxPriceFilter = signal<number | null>(null);
@@ -302,7 +302,7 @@ export class ProductsComponent implements OnInit {
 
   clearFilters() {
     this.searchTerm.set('');
-    this.sortField.set('name');
+    this.sortField.set('code');
     this.sortDirection.set('asc');
     this.minPriceFilter.set(null);
     this.maxPriceFilter.set(null);

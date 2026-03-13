@@ -130,23 +130,20 @@ export class InvoiceDialogComponent implements OnInit {
     const term = this.productSearchTerm().toLowerCase();
     const products = [...this.productService.products()];
 
-    // 1. Filtering
-    let filtered = products;
-    
-    // Always filter by activity unless editing an old invoice that might have inactive products
-    // But for NEW items to add, we should only see active ones.
-    filtered = filtered.filter(p => p.is_active);
+    // 1. Filtering - always start with active products
+    let filtered = products.filter(p => p.is_active);
 
+    // 2. Search filtering
     if (term) {
-      filtered = products.filter(product =>
+      filtered = filtered.filter(product =>
         product.name.toLowerCase().includes(term) ||
         product.description?.toLowerCase().includes(term) ||
         String(product.code).includes(term)
       );
     }
 
-    // 2. Default Sorting by Name
-    filtered.sort((a, b) => a.name.localeCompare(b.name));
+    // 3. Sorting by code (ascending) for consistency with product list
+    filtered.sort((a, b) => a.code - b.code);
 
     return filtered;
   });

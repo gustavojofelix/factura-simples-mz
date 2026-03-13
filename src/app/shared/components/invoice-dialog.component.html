@@ -109,15 +109,15 @@
                       @for (product of filteredProducts(); track product.id) {
                         <mat-option [value]="product">
                           <div class="flex justify-between items-center w-full py-1">
-                            <div class="flex flex-col">
+                              <div class="flex flex-col">
                               <span class="font-medium">
                                 <span class="text-gray-400 font-mono text-xs mr-2">#{{ product.code }}</span>
                                 {{ product.name }}
                               </span>
-                              @if (product.description) {
+                                @if (product.description) {
                                 <span class="text-xs text-gray-500 truncate max-w-[400px]">{{ product.description }}</span>
-                              }
-                            </div>
+                                }
+                              </div>
                             <div class="text-right ml-4">
                               <div class="font-bold text-ispc-orange">{{ formatCurrency(product.price) }}</div>
                               @if (product.stock !== null) {
