@@ -170,7 +170,7 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
           <!-- Row 1: Search + Província -->
           <div class="flex flex-wrap gap-3">
             <div class="flex-1 min-w-[200px]">
-              <input [(ngModel)]="searchTerm" type="text" placeholder="Procurar por nome, NUIT ou subscritor..."
+              <input [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" type="text" placeholder="Procurar por nome, NUIT ou subscritor..."
                      class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
             </div>
             <div>
@@ -395,7 +395,7 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
 })
 export class AdminCompaniesComponent implements OnInit {
   companies = signal<any[]>([]);
-  searchTerm = '';
+  searchTerm = signal('');
   providerFilter = 'all';
   planFilter = 'all';
   subscriberFilter = 'all';
@@ -462,7 +462,7 @@ export class AdminCompaniesComponent implements OnInit {
     }
 
     if (this.searchTerm) {
-      const term = this.searchTerm.toLowerCase();
+      const term = this.searchTerm().toLowerCase();
       list = list.filter(c =>
         c.name?.toLowerCase().includes(term) ||
         c.nuit?.toLowerCase().includes(term) ||

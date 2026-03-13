@@ -189,7 +189,7 @@ import { PaginationComponent, PageChangeEvent } from '../../../shared/components
         <!-- Filters -->
         <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-wrap gap-4 items-center">
           <div class="flex-1 min-w-[200px]">
-            <input [(ngModel)]="searchTerm" type="text" placeholder="Procurar por nome ou email..."
+            <input [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" type="text" placeholder="Procurar por nome ou email..."
                    class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
           </div>
           <div class="flex space-x-2">
@@ -343,7 +343,7 @@ import { PaginationComponent, PageChangeEvent } from '../../../shared/components
 })
 export class AdminSubscribersComponent implements OnInit {
   subscribers = signal<any[]>([]);
-  searchTerm = '';
+  searchTerm = signal('');
   activeStatus = signal('all');
   isLoading = signal(false);
 
@@ -381,7 +381,7 @@ export class AdminSubscribersComponent implements OnInit {
     }
 
     if (this.searchTerm) {
-      const term = this.searchTerm.toLowerCase();
+      const term = this.searchTerm().toLowerCase();
       list = list.filter(s =>
         s.full_name?.toLowerCase().includes(term) ||
         s.email?.toLowerCase().includes(term)
