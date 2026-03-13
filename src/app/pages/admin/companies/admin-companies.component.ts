@@ -508,7 +508,7 @@ export class AdminCompaniesComponent implements OnInit {
         .from('companies')
         .select(`
           *,
-          profiles (full_name),
+          profiles (full_name, last_sign_in_at),
           subscriptions (plan_name, next_billing_date, status),
           company_users (count),
           invoices (total, created_at)
@@ -535,7 +535,7 @@ export class AdminCompaniesComponent implements OnInit {
         return {
           ...c,
           owner_name: c.profiles?.full_name || 'N/A',
-          last_access: null, // necessita de campo last_sign_in_at na tabela profiles
+          last_access: c.profiles?.last_sign_in_at || null,
           plan: activeSub?.plan_name || 'Trial',
           plan_expiry: activeSub?.next_billing_date || null,
           user_count: c.company_users?.[0]?.count || 0,
