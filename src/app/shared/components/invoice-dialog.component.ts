@@ -213,7 +213,7 @@ export class InvoiceDialogComponent implements OnInit {
       const items = this.data.invoice.items || [];
       // Map invoice items to match our type if needed, but they should be compatible
       this.invoiceItems.set(items);
-      
+
       // Patch notes
       this.step2Form.patchValue({ notes: this.data.invoice.notes || '' });
 
@@ -223,9 +223,9 @@ export class InvoiceDialogComponent implements OnInit {
         const dueDate = new Date(this.data.invoice.due_date);
         const diffTime = Math.abs(dueDate.getTime() - date.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
+
         // Find closest term
-        const closestTerm = this.paymentTerms.reduce((prev, curr) => 
+        const closestTerm = this.paymentTerms.reduce((prev, curr) =>
           Math.abs(curr.days - diffDays) < Math.abs(prev.days - diffDays) ? curr : prev
         );
         this.step2Form.patchValue({ due_date_term: closestTerm.days });
@@ -291,6 +291,7 @@ export class InvoiceDialogComponent implements OnInit {
       quantity: 1
     });
     this.selectedProduct.set(null);
+    this.productSearchTerm.set('');
 
     this.snackBar.open('Produto adicionado!', '', { duration: 1000 });
   }
@@ -328,7 +329,7 @@ export class InvoiceDialogComponent implements OnInit {
       const clientId = this.step1Form.get('client_id')?.value;
       const notes = this.step2Form.get('notes')?.value;
       const days = this.step2Form.get('due_date_term')?.value || 0;
-      
+
       const dueDate = new Date();
       dueDate.setDate(dueDate.getDate() + days);
       const dueDateString = dueDate.toISOString().split('T')[0];
@@ -337,7 +338,7 @@ export class InvoiceDialogComponent implements OnInit {
       let message = '';
 
       if (this.isEditing() && this.data.invoice) {
-         result = await this.invoiceService.updateInvoice(
+        result = await this.invoiceService.updateInvoice(
           this.data.invoice.id,
           clientId,
           this.invoiceItems(),
