@@ -167,6 +167,10 @@ export class CompanySetupComponent {
     return this.otherDocuments().find(d => d.type === 'Alvará');
   }
 
+  get otherDocsWithoutAlvara() {
+    return this.otherDocuments().filter(doc => doc.type !== 'Alvará');
+  }
+
   async onAlvaraDocumentSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
@@ -347,6 +351,19 @@ export class CompanySetupComponent {
     if (url) {
       const signedUrl = await this.documentService.getSignedUrl(url);
       window.open(signedUrl, '_blank');
+    }
+  }
+
+  async clearCommercialDocument() {
+    const url = this.commercialActivityUrl();
+    if (!url) return;
+    try {
+      await this.documentService.deleteDocument(url);
+      this.commercialActivityUrl.set(null);
+      this.snackBar.open('Documento removido!', 'Fechar', { duration: 3000 });
+    } catch (error) {
+      console.error('Erro ao remover documento:', error);
+      this.snackBar.open('Erro ao remover documento', 'Fechar', { duration: 3000 });
     }
   }
 
