@@ -39,7 +39,7 @@ export class ProductService {
         .from('products')
         .select('*')
         .eq('company_id', company.id)
-        .order('name', { ascending: true });
+        .order('code', { ascending: true });
 
       if (error) throw error;
 
@@ -68,7 +68,8 @@ export class ProductService {
 
       if (error) throw error;
 
-      this.products.update(products => [data, ...products]);
+      // Reload from server to get the trigger-assigned code and correct ordering
+      await this.loadProducts();
       return data;
     } catch (error) {
       console.error('Erro ao criar produto:', error);
