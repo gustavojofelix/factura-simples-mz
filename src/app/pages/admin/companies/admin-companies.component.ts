@@ -174,7 +174,7 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
                      class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
             </div>
             <div>
-              <select [(ngModel)]="providerFilter" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
+              <select [ngModel]="providerFilter()" (ngModelChange)="providerFilter.set($event)" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
                 <option value="all">Todas as Províncias</option>
                 <option *ngFor="let p of provinces" [value]="p">{{ p }}</option>
               </select>
@@ -183,25 +183,25 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
           <!-- Row 2: New Filters -->
           <div class="flex flex-wrap gap-3">
             <div>
-              <select [(ngModel)]="planFilter" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
+              <select [ngModel]="planFilter()" (ngModelChange)="planFilter.set($event)" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
                 <option value="all">Todos os Planos</option>
                 <option *ngFor="let p of availablePlans()" [value]="p">{{ p }}</option>
               </select>
-            </div>
+            </div>  
             <div>
-              <select [(ngModel)]="subscriberFilter" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
+              <select [ngModel]="subscriberFilter()" (ngModelChange)="subscriberFilter.set($event)" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
                 <option value="all">Todos os Subscritores</option>
                 <option *ngFor="let s of availableSubscribers()" [value]="s">{{ s }}</option>
               </select>
             </div>
             <div>
-              <select [(ngModel)]="activityTypeFilter" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
+              <select [ngModel]="activityTypeFilter()" (ngModelChange)="activityTypeFilter.set($event)" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
                 <option value="all">Tipo de Actividade</option>
                 <option *ngFor="let a of activityTypes" [value]="a.key">{{ a.label }}</option>
               </select>
             </div>
             <div>
-              <select [(ngModel)]="businessVolumeFilter" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
+              <select [ngModel]="businessVolumeFilter()" (ngModelChange)="businessVolumeFilter.set($event)" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
                 <option value="all">Volume de Negócio</option>
                 <option value="low">Baixo (&lt; 50,000 MZN)</option>
                 <option value="medium">Médio (50,000 - 500,000 MZN)</option>
@@ -396,11 +396,11 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
 export class AdminCompaniesComponent implements OnInit {
   companies = signal<any[]>([]);
   searchTerm = signal('');
-  providerFilter = 'all';
-  planFilter = 'all';
-  subscriberFilter = 'all';
-  activityTypeFilter = 'all';
-  businessVolumeFilter = 'all';
+  providerFilter = signal('all');
+  planFilter = signal('all');
+  subscriberFilter = signal('all');
+  activityTypeFilter = signal('all');
+  businessVolumeFilter = signal('all');
 
   provinces = ['Maputo', 'Gaza', 'Inhambane', 'Sofala', 'Manica', 'Tete', 'Zambézia', 'Nampula', 'Cabo Delgado', 'Niassa'];
 
@@ -435,33 +435,33 @@ export class AdminCompaniesComponent implements OnInit {
   filteredCompanies = computed(() => {
     let list = this.companies();
 
-    if (this.providerFilter !== 'all') {
-      list = list.filter(c => c.province === this.providerFilter);
+    if (this.providerFilter() !== 'all') {
+      list = list.filter(c => c.province === this.providerFilter());
     }
 
-    if (this.planFilter !== 'all') {
-      list = list.filter(c => c.plan === this.planFilter);
+    if (this.planFilter() !== 'all') {
+      list = list.filter(c => c.plan === this.planFilter());
     }
 
-    if (this.subscriberFilter !== 'all') {
-      list = list.filter(c => c.owner_name === this.subscriberFilter);
+    if (this.subscriberFilter() !== 'all') {
+      list = list.filter(c => c.owner_name === this.subscriberFilter());
     }
 
-    if (this.activityTypeFilter !== 'all') {
-      list = list.filter(c => c.activity_type === this.activityTypeFilter);
+    if (this.activityTypeFilter() !== 'all') {
+      list = list.filter(c => c.activity_type === this.activityTypeFilter());
     }
 
-    if (this.businessVolumeFilter !== 'all') {
+    if (this.businessVolumeFilter() !== 'all') {
       list = list.filter(c => {
         const vol = c.usage_30d || 0;
-        if (this.businessVolumeFilter === 'low') return vol < 50000;
-        if (this.businessVolumeFilter === 'medium') return vol >= 50000 && vol <= 500000;
-        if (this.businessVolumeFilter === 'high') return vol > 500000;
+        if (this.businessVolumeFilter() === 'low') return vol < 50000;
+        if (this.businessVolumeFilter() === 'medium') return vol >= 50000 && vol <= 500000;
+        if (this.businessVolumeFilter() === 'high') return vol > 500000;
         return true;
       });
     }
 
-    if (this.searchTerm) {
+    if (this.searchTerm()) {
       const term = this.searchTerm().toLowerCase();
       list = list.filter(c =>
         c.name?.toLowerCase().includes(term) ||
