@@ -72,6 +72,95 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
             </div>
           </div>
         </div>
+        
+        <!-- Create Company Modal -->                                                                                                                                               <div *ngIf="isCreateModalOpen" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-in fade-in zoom-in duration-200">
+              <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <h3 class="text-xl font-bold text-gray-800 font-serif uppercase tracking-tight">Novo Contribuinte</h3>
+                <button (click)="closeCreateModal()" class="text-gray-400 hover:text-gray-600">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                <div class="space-y-1">
+                  <label class="text-[10px] font-bold text-gray-500 uppercase">Nome da Empresa *</label>
+                  <input [(ngModel)]="newCompany.name" type="text" placeholder="Ex: Empresa XYZ, Lda"
+                    class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+
+                <div class="space-y-1">
+                  <label class="text-[10px] font-bold text-gray-500 uppercase">NUIT *</label>
+                  <input [(ngModel)]="newCompany.nuit" type="text" placeholder="Ex: 400123456"
+                    class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+
+                 <div class="space-y-1">
+                  <label class="text-[10px] font-bold text-gray-500 uppercase">Tipo de Entidade *</label>
+                  <select [(ngModel)]="newCompany.entity_type"
+                    class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                    <option value="">Selecionar...</option>
+                    <option value="singular">Singular</option>
+                    <option value="collective">Colectiva</option>
+                  </select>
+                </div>
+
+                 <div class="space-y-1">
+                  <label class="text-[10px] font-bold text-gray-500 uppercase">E-mail da Empresa *</label>
+                  <input [(ngModel)]="newCompany.email" type="email" placeholder="Ex: geral@empresa.co.mz"
+                    class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+
+                <div class="space-y-1">
+                  <label class="text-[10px] font-bold text-gray-500 uppercase">Associar a Empresa *</label>
+                  <select [(ngModel)]="newCompany.ref_company_id" (ngModelChange)="onCompanySelected($event)"
+                    class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                    <option value="">Selecionar empresa...</option>
+                    <option *ngFor="let c of companies()" [value]="c.id">{{ c.name }}</option>
+                  </select>
+                </div>
+
+
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Província</label>
+                    <select [(ngModel)]="newCompany.province"
+                      class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                      <option value="">Selecionar...</option>
+                      <option *ngFor="let p of provinces" [value]="p">{{ p }}</option>
+                    </select>
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Distrito</label>
+                    <input [(ngModel)]="newCompany.district" type="text" placeholder="Ex: Maputo"
+                      class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                  </div>
+                </div>
+
+                <div class="space-y-1">
+                  <label class="text-[10px] font-bold text-gray-500 uppercase">Endereço</label>
+                  <textarea [(ngModel)]="newCompany.address" rows="2" placeholder="Ex: Av. 25 de Setembro, nº 123"
+                    class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"></textarea>
+                </div>
+
+                <p *ngIf="createError" class="text-xs text-red-600 font-medium">{{ createError }}</p>
+              </div>
+
+              <div class="p-6 bg-gray-50 border-t border-gray-100 flex space-x-3">
+                <button (click)="closeCreateModal()" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-white transition-colors text-sm font-semibold uppercase tracking-tight">
+                  Cancelar
+                </button>
+                <button (click)="createCompany()" [disabled]="isCreating"
+                  class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all text-sm font-bold uppercase tracking-tight disabled:opacity-50">
+                  {{ isCreating ? 'A criar...' : 'Criar' }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+
 
         <!-- Details Slide-over -->
         <div *ngIf="isDetailsOpen" class="fixed inset-0 z-50 overflow-hidden">
@@ -155,26 +244,34 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
           </div>
         </div>
 
-        <div class="flex justify-between items-center">
-          <h2 class="text-2xl font-bold text-gray-800">Inventário de Contribuintes (Empresas)</h2>
-          <button (click)="exportCompanies()" class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors flex items-center space-x-2 text-sm">
-            <svg class="w-4 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <span>Exportar</span>
-          </button>
-        </div>
+       <div class="flex justify-between items-center">
+            <h2 class="text-2xl font-bold text-gray-800">Inventário de Contribuintes (Empresas)</h2>
+            <div class="flex space-x-2">
+              <button (click)="openCreateModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>Novo Contribuinte</span>
+              </button>
+              <button (click)="exportCompanies()" class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors flex items-center space-x-2 text-sm">
+                <svg class="w-4 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Exportar</span>
+              </button>
+            </div>
+          </div>
 
         <!-- Filters -->
         <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 space-y-3">
           <!-- Row 1: Search + Província -->
           <div class="flex flex-wrap gap-3">
             <div class="flex-1 min-w-[200px]">
-              <input [(ngModel)]="searchTerm" type="text" placeholder="Procurar por nome, NUIT ou subscritor..."
+              <input [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" type="text" placeholder="Procurar por nome, NUIT ou subscritor..."
                      class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
             </div>
             <div>
-              <select [(ngModel)]="providerFilter" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
+              <select [ngModel]="providerFilter()" (ngModelChange)="providerFilter.set($event)" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
                 <option value="all">Todas as Províncias</option>
                 <option *ngFor="let p of provinces" [value]="p">{{ p }}</option>
               </select>
@@ -183,25 +280,25 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
           <!-- Row 2: New Filters -->
           <div class="flex flex-wrap gap-3">
             <div>
-              <select [(ngModel)]="planFilter" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
+              <select [ngModel]="planFilter()" (ngModelChange)="planFilter.set($event)" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
                 <option value="all">Todos os Planos</option>
                 <option *ngFor="let p of availablePlans()" [value]="p">{{ p }}</option>
               </select>
-            </div>
+            </div>  
             <div>
-              <select [(ngModel)]="subscriberFilter" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
+              <select [ngModel]="subscriberFilter()" (ngModelChange)="subscriberFilter.set($event)" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
                 <option value="all">Todos os Subscritores</option>
                 <option *ngFor="let s of availableSubscribers()" [value]="s">{{ s }}</option>
               </select>
             </div>
             <div>
-              <select [(ngModel)]="activityTypeFilter" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
+              <select [ngModel]="activityTypeFilter()" (ngModelChange)="activityTypeFilter.set($event)" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
                 <option value="all">Tipo de Actividade</option>
                 <option *ngFor="let a of activityTypes" [value]="a.key">{{ a.label }}</option>
               </select>
             </div>
             <div>
-              <select [(ngModel)]="businessVolumeFilter" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
+              <select [ngModel]="businessVolumeFilter()" (ngModelChange)="businessVolumeFilter.set($event)" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
                 <option value="all">Volume de Negócio</option>
                 <option value="low">Baixo (&lt; 50,000 MZN)</option>
                 <option value="medium">Médio (50,000 - 500,000 MZN)</option>
@@ -395,12 +492,19 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
 })
 export class AdminCompaniesComponent implements OnInit {
   companies = signal<any[]>([]);
-  searchTerm = '';
-  providerFilter = 'all';
-  planFilter = 'all';
-  subscriberFilter = 'all';
-  activityTypeFilter = 'all';
-  businessVolumeFilter = 'all';
+  searchTerm = signal('');
+  providerFilter = signal('all');
+  planFilter = signal('all');
+  subscriberFilter = signal('all');
+  activityTypeFilter = signal('all');
+  businessVolumeFilter = signal('all');
+  // Create Company
+  isCreateModalOpen = false;
+  isCreating = false;
+  createError = '';
+  newCompany: any = {};
+  allCompanies = signal<any[]>([]);
+
 
   provinces = ['Maputo', 'Gaza', 'Inhambane', 'Sofala', 'Manica', 'Tete', 'Zambézia', 'Nampula', 'Cabo Delgado', 'Niassa'];
 
@@ -435,34 +539,34 @@ export class AdminCompaniesComponent implements OnInit {
   filteredCompanies = computed(() => {
     let list = this.companies();
 
-    if (this.providerFilter !== 'all') {
-      list = list.filter(c => c.province === this.providerFilter);
+    if (this.providerFilter() !== 'all') {
+      list = list.filter(c => c.province === this.providerFilter());
     }
 
-    if (this.planFilter !== 'all') {
-      list = list.filter(c => c.plan === this.planFilter);
+    if (this.planFilter() !== 'all') {
+      list = list.filter(c => c.plan === this.planFilter());
     }
 
-    if (this.subscriberFilter !== 'all') {
-      list = list.filter(c => c.owner_name === this.subscriberFilter);
+    if (this.subscriberFilter() !== 'all') {
+      list = list.filter(c => c.owner_name === this.subscriberFilter());
     }
 
-    if (this.activityTypeFilter !== 'all') {
-      list = list.filter(c => c.activity_type === this.activityTypeFilter);
+    if (this.activityTypeFilter() !== 'all') {
+      list = list.filter(c => c.activity_type === this.activityTypeFilter());
     }
 
-    if (this.businessVolumeFilter !== 'all') {
+    if (this.businessVolumeFilter() !== 'all') {
       list = list.filter(c => {
         const vol = c.usage_30d || 0;
-        if (this.businessVolumeFilter === 'low') return vol < 50000;
-        if (this.businessVolumeFilter === 'medium') return vol >= 50000 && vol <= 500000;
-        if (this.businessVolumeFilter === 'high') return vol > 500000;
+        if (this.businessVolumeFilter() === 'low') return vol < 50000;
+        if (this.businessVolumeFilter() === 'medium') return vol >= 50000 && vol <= 500000;
+        if (this.businessVolumeFilter() === 'high') return vol > 500000;
         return true;
       });
     }
 
-    if (this.searchTerm) {
-      const term = this.searchTerm.toLowerCase();
+    if (this.searchTerm()) {
+      const term = this.searchTerm().toLowerCase();
       list = list.filter(c =>
         c.name?.toLowerCase().includes(term) ||
         c.nuit?.toLowerCase().includes(term) ||
@@ -496,6 +600,7 @@ export class AdminCompaniesComponent implements OnInit {
 
   ngOnInit() {
     this.loadCompanies();
+    this.loadAllCompanies();
   }
 
   async loadCompanies() {
@@ -663,6 +768,66 @@ export class AdminCompaniesComponent implements OnInit {
   closeDetails() {
     this.isDetailsOpen = false;
     this.selectedCompany.set({});
+  }
+
+  async loadAllCompanies() {
+    const { data } = await this.supabase.db
+      .from('companies')
+      .select('id, name, user_id')
+      .order('name', { ascending: true });
+    this.allCompanies.set(data || []);
+  }
+
+  onCompanySelected(companyId: string) {
+    const company = this.allCompanies().find(c => c.id === companyId);
+    if (company) this.newCompany.user_id = company.user_id;
+  }
+
+  openCreateModal() {
+    this.newCompany = {};
+    this.createError = '';
+    this.isCreateModalOpen = true;
+  }
+
+  closeCreateModal() {
+    this.isCreateModalOpen = false;
+    this.newCompany = {};
+    this.createError = '';
+  }
+
+  async createCompany() {
+    if (!this.newCompany.name || !this.newCompany.nuit || !this.newCompany.user_id || !this.newCompany.email || !this.newCompany.entity_type) {
+      this.createError = 'Nome, NUIT, E-mail, Tipo de Entidade e Subscritor são obrigatórios.';
+      return;
+    }
+
+    this.isCreating = true;
+    this.createError = '';
+
+    try {
+      const { error } = await this.supabase.db
+        .from('companies')
+        .insert({
+          name: this.newCompany.name,
+          nuit: this.newCompany.nuit,
+          user_id: this.newCompany.user_id,
+          province: this.newCompany.province || null,
+          district: this.newCompany.district || null,
+          address: this.newCompany.address || 'Endereço não especificado',
+          email: this.newCompany.email,
+          entity_type: this.newCompany.entity_type,
+          status: 'active'
+
+        });
+
+      if (error) throw error;
+      this.closeCreateModal();
+      this.loadCompanies();
+    } catch (error: any) {
+      this.createError = error.message || 'Erro ao criar contribuinte.';
+    } finally {
+      this.isCreating = false;
+    }
   }
 
   exportCompanies() {
