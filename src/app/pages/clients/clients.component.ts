@@ -258,7 +258,7 @@ export class ClientDialogComponent {
       // Verificar NUIT duplicado
       const isDuplicate = await this.clientService.isNuitDuplicate(nuit, this.data?.id);
       if (isDuplicate) {
-        this.snackBar.open('Já existe um cliente registado com este NUIT nesta empresa.', 'Fechar', { 
+        this.snackBar.open('Já existe um cliente registado com este NUIT nesta empresa.', 'Fechar', {
           duration: 5000
         });
         this.saving.set(false);
@@ -314,6 +314,8 @@ export class ClientsComponent implements OnInit {
   searchTerm = signal('');
   industryFilter = signal('');
   statusFilter = signal<'all' | 'active' | 'inactive'>('all');
+  sortField = signal<'id' | 'name'>('id');
+  sortOrder = signal<'asc' | 'desc'>('asc');
 
   industries = [
     'Comércio',
@@ -332,24 +334,31 @@ export class ClientsComponent implements OnInit {
     const industry = this.industryFilter();
     const status = this.statusFilter();
     const clients = this.clientService.clients();
+    const field = this.sortField();
+    const order = this.sortOrder();
 
-    return clients.filter(client => {
-      // Name/Search Term Filter
-      const matchesSearch = !term || 
+    const filtered = clients.filter(client => {
+      const matchesSearch = !term ||
         client.name.toLowerCase().includes(term) ||
         client.nuit?.toLowerCase().includes(term) ||
         client.email?.toLowerCase().includes(term) ||
         client.phone?.toLowerCase().includes(term);
 
-      // Industry Filter
       const matchesIndustry = !industry || client.industry === industry;
 
-      // Status Filter
-      const matchesStatus = status === 'all' || 
+      const matchesStatus = status === 'all' ||
         (status === 'active' && client.is_active) ||
         (status === 'inactive' && !client.is_active);
 
       return matchesSearch && matchesIndustry && matchesStatus;
+    });
+
+    return filtered.sort((a, b) => {
+      const valA = field === 'name' ? a.name.toLowerCase() : (a.id ?? '');
+      const valB = field === 'name' ? b.name.toLowerCase() : (b.id ?? '');
+      if (valA < valB) return order === 'asc' ? -1 : 1;
+      if (valA > valB) return order === 'asc' ? 1 : -1;
+      return 0;
     });
   });
 
@@ -359,7 +368,7 @@ export class ClientsComponent implements OnInit {
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private exportService: ExportService
-  ) {}
+  ) { }
 
   ngOnInit() {
     this.clientService.loadClients();
@@ -383,6 +392,13 @@ export class ClientsComponent implements OnInit {
     this.searchTerm.set('');
     this.industryFilter.set('');
     this.statusFilter.set('all');
+  }
+  onSortFieldChange(value: 'id' | 'name') {
+    this.sortField.set(value);
+  }
+
+  onSortOrderChange(value: 'asc' | 'desc') {
+    this.sortOrder.set(value);
   }
 
   openDialog(client?: Client) {
