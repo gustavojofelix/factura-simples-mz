@@ -210,6 +210,10 @@
                         [disabled]="isUploadingCommercial()" matTooltip="Alterar Documento">
                         <mat-icon class="!text-lg">file_upload</mat-icon>
                       </button>
+                      <button type="button" mat-icon-button color="warn" (click)="clearCommercialDocument()"
+                        matTooltip="Apagar Documento">
+                        <mat-icon class="!text-lg">delete</mat-icon>
+                      </button>
                     </div>
                   </div>
                   } @else {
@@ -297,7 +301,7 @@
                   </p>
                 </div>
 
-                @if (otherDocuments().length > 0) {
+                @if (otherDocsWithoutAlvara.length > 0) {
                 <div class="border rounded-lg overflow-hidden bg-white">
                   <table class="w-full text-sm text-left">
                     <thead class="bg-gray-50 text-gray-700 uppercase text-[10px]">
@@ -308,7 +312,7 @@
                       </tr>
                     </thead>
                     <tbody class="divide-y">
-                      @for (doc of otherDocuments(); track doc) {
+                      @for (doc of otherDocsWithoutAlvara; track doc) {
                       <tr>
                         <td class="px-3 py-2 font-medium">{{ doc.type }}</td>
                         <td class="px-3 py-2 text-gray-500 truncate max-w-[150px]">{{ doc.file_name }}</td>

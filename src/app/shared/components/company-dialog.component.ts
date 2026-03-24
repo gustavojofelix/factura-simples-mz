@@ -13,6 +13,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { DocumentProcessingService, CompanyDocument } from '../../core/services/document-processing.service';
 import { Company } from '../../core/services/company.service';
 import { ACTIVITY_HIERARCHY } from '../../core/constants/activity-categories';
+import { SupabaseService } from '../../core/services/supabase.service';
 
 @Component({
   selector: 'app-company-dialog',
@@ -342,13 +343,16 @@ import { ACTIVITY_HIERARCHY } from '../../core/constants/activity-categories';
                           Documento carregado
                         </span>
                         <div class="flex items-center">
-                          <button type="button" mat-icon-button color="primary" (click)="viewCommercialDocument()" matTooltip="Visualizar">
-                            <mat-icon class="!text-lg">visibility</mat-icon>
-                          </button>
-                          <button type="button" mat-icon-button (click)="commercialInput.click()" [disabled]="isUploadingCommercial()" matTooltip="Alterar Documento">
-                            <mat-icon class="!text-lg">file_upload</mat-icon>
-                          </button>
-                        </div>
+                            <button type="button" mat-icon-button color="primary" (click)="viewCommercialDocument()" matTooltip="Visualizar">
+                              <mat-icon class="!text-lg">visibility</mat-icon>
+                            </button>
+                            <button type="button" mat-icon-button (click)="commercialInput.click()" [disabled]="isUploadingCommercial()" matTooltip="Alterar Documento">
+                              <mat-icon class="!text-lg">file_upload</mat-icon>
+                            </button>
+                            <button type="button" mat-icon-button color="warn" (click)="clearCommercialDocument()" matTooltip="Apagar Documento">
+                              <mat-icon class="!text-lg">delete</mat-icon>
+                            </button>
+                          </div>
                       </div>
                     } @else {
                       <div class="flex items-center gap-3">
@@ -397,7 +401,7 @@ import { ACTIVITY_HIERARCHY } from '../../core/constants/activity-categories';
               </div>
             </div>
 
-            @if (otherDocuments().length > 0) {
+            @if (otherDocsWithoutAlvara.length > 0) {
               <div class="border rounded-lg overflow-hidden">
                 <table class="w-full text-sm text-left">
                   <thead class="bg-gray-50 text-gray-700 uppercase text-xs">
@@ -408,7 +412,7 @@ import { ACTIVITY_HIERARCHY } from '../../core/constants/activity-categories';
                     </tr>
                   </thead>
                   <tbody class="divide-y">
-                    @for (doc of otherDocuments(); track doc.id) {
+                    @for (doc of otherDocsWithoutAlvara; track doc.id) {
                       <tr>
                         <td class="px-4 py-3 font-medium">{{ doc.type }}</td>
                         <td class="px-4 py-3 text-gray-500">{{ doc.file_name }}</td>
@@ -496,13 +500,19 @@ export class CompanyDialogComponent {
   get alvaraDoc(): CompanyDocument | undefined {
     return this.otherDocuments().find(d => d.type === 'Alvará');
   }
+  get otherDocsWithoutAlvara() {
+    return this.otherDocuments().filter(doc => doc.type !== 'Alvará');
+  }
+
 
   constructor(
     private fb: FormBuilder,
     private dialogRef: MatDialogRef<CompanyDialogComponent>,
     private documentService: DocumentProcessingService,
     private snackBar: MatSnackBar,
+    private supabase: SupabaseService,
     @Inject(MAT_DIALOG_DATA) public data: { company?: Company }
+
   ) {
     this.form = this.fb.group({
       name: [data.company?.name || '', Validators.required],
@@ -802,6 +812,27 @@ export class CompanyDialogComponent {
       value = value.substring(0, 9);
     }
     nuitControl.setValue(value, { emitEvent: false });
+  }
+
+  async clearCommercialDocument() {
+    const url = this.commercialActivityUrl();
+    if (!url) return;
+    try {
+      await this.documentService.deleteDocument(url);
+
+      if (this.data.company?.id) {
+        await this.supabase.db
+          .from('companies')
+          .update({ commercial_activity_document_url: null })
+          .eq('id', this.data.company.id);
+      }
+
+      this.commercialActivityUrl.set(null);
+      this.snackBar.open('Documento removido!', 'Fechar', { duration: 3000 });
+    } catch (error) {
+      console.error('Erro ao remover documento:', error);
+      this.snackBar.open('Erro ao remover documento', 'Fechar', { duration: 3000 });
+    }
   }
 
   onCancel(): void {
