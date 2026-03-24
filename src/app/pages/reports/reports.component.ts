@@ -549,10 +549,10 @@ export class ReportsComponent implements OnInit {
 
   formatCurrency(value: number): string {
     return new Intl.NumberFormat('pt-MZ', {
-      style: 'currency',
+      style: 'decimal',
       currency: 'MZN',
-      minimumFractionDigits: 2
-    }).format(value);
+      minimumFractionDigits: 2,
+    }).format(value) + ' MZN';
   }
 
   exportToCSV() {
@@ -610,32 +610,22 @@ export class ReportsComponent implements OnInit {
       }
 
       // Flatten data for Excel: one row per invoice item to show product details
-      const exportData = detailedInvoices.flatMap(inv => {
-        if (!inv.items || inv.items.length === 0) {
-          return [{
-            'Nº Factura': inv.invoice_number,
-            'Data': this.formatDate(inv.date),
-            'Cliente': inv.client?.name || '-',
-            'Emitente': inv.issuer_name || '-',
-            'Status': inv.status.toUpperCase(),
-            'Produto': '-',
-            'Qtd': 0,
-            'Preço Unit.': 0,
-            'Total Factura': inv.total
-          }];
-        }
-
-        return inv.items.map(item => ({
+  const exportData = detailedInvoices.map(inv => {
+        const produtos = inv.items?.map(i => i.product_name).join(' | ') || '-';
+        const quantidades = inv.items?.map(i => i.quantity).join(' | ') || '-';
+        const precosUnitarios = inv.items?.map(i => this.formatCurrency(i.unit_price)).join(' | ') || '-';
+        
+        return {
           'Nº Factura': inv.invoice_number,
           'Data': this.formatDate(inv.date),
           'Cliente': inv.client?.name || '-',
           'Emitente': inv.issuer_name || '-',
           'Status': inv.status.toUpperCase(),
-          'Produto': item.product_name,
-          'Qtd': item.quantity,
-          'Preço Unit.': item.unit_price,
-          'Total Factura': inv.total
-        }));
+          'Produtos': produtos,
+          'Qtd': quantidades,
+          'Preço Unit.': precosUnitarios,
+          'Total Factura': this.formatCurrency(inv.total)
+        };
       });
 
       // Calculate total only for paid invoices
@@ -644,7 +634,7 @@ export class ReportsComponent implements OnInit {
         .reduce((sum, inv) => sum + inv.total, 0);
 
       const fileName = `relatorio_vendas_detalhado_${new Date().toISOString().split('T')[0]}`;
-      
+
       // Add spacers and total row
       const finalExportData = [
         ...exportData,
@@ -652,7 +642,7 @@ export class ReportsComponent implements OnInit {
         {}, // Spacer row 2
         {
           'Nº Factura': 'TOTAL DE VENDAS (Soma de Facturas Pagas)',
-          'Total Factura': totalPaid
+          'Total Factura': this.formatCurrency (totalPaid)
         }
       ];
 
