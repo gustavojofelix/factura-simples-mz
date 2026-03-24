@@ -458,13 +458,7 @@ export class ReportsComponent implements OnInit {
         return isValid && matchesDate && matchesClient;
       });
 
-      const totalSales = filteredInvoices.reduce((sum, inv) => sum + inv.total, 0);
-      const totalInvoices = filteredInvoices.length;
-      const paidAmount = filteredInvoices.reduce((sum, inv) => sum + inv.amount_paid, 0);
-      const pendingAmount = filteredInvoices.reduce((sum, inv) => sum + inv.amount_pending, 0);
-      const averageInvoiceValue = totalInvoices > 0 ? totalSales / totalInvoices : 0;
-
-      // Contagem separada para anuladas (excluindo apenas rascunhos, não anuladas)
+      // Invoices for count (everything except drafts)
       const allNonDraftInvoices = allInvoices.filter(inv => {
         const matchesDate = inv.date >= startDate && inv.date <= endDate;
         const clientId2 = this.filterForm.get('clientId')?.value;
@@ -472,10 +466,16 @@ export class ReportsComponent implements OnInit {
         return inv.status !== 'rascunho' && matchesDate && matchesClient;
       });
 
+      const totalSales = filteredInvoices.reduce((sum, inv) => sum + inv.total, 0);
+      const totalInvoices = allNonDraftInvoices.length; // Modified to include annulled
+      const paidAmount = filteredInvoices.reduce((sum, inv) => sum + inv.amount_paid, 0);
+      const pendingAmount = filteredInvoices.reduce((sum, inv) => sum + inv.amount_pending, 0);
+      const averageInvoiceValue = filteredInvoices.length > 0 ? totalSales / filteredInvoices.length : 0;
+
       const invoicesByStatus = {
-        pendente: filteredInvoices.filter(inv => inv.status === 'pendente').length,
-        paga: filteredInvoices.filter(inv => inv.status === 'paga').length,
-        vencida: filteredInvoices.filter(inv => inv.status === 'vencida').length,
+        pendente: allNonDraftInvoices.filter(inv => inv.status === 'pendente').length,
+        paga: allNonDraftInvoices.filter(inv => inv.status === 'paga').length,
+        vencida: allNonDraftInvoices.filter(inv => inv.status === 'vencida').length,
         anulada: allNonDraftInvoices.filter(inv => inv.status === 'anulada').length
       };
 
@@ -599,7 +599,7 @@ export class ReportsComponent implements OnInit {
       const clientId = this.filterForm.get('clientId')?.value;
 
       detailedInvoices = detailedInvoices.filter(inv => {
-        const isValid = inv.status !== 'rascunho' && inv.status !== 'anulada';
+        const isValid = inv.status !== 'rascunho';
         const matchesClient = clientId === 'all' || inv.client_id === clientId;
         return isValid && matchesClient;
       });
@@ -609,7 +609,7 @@ export class ReportsComponent implements OnInit {
         return;
       }
 
-      // Flatten data for Excel: one row per invoice item
+      // Flatten data for Excel: one row per invoice item to show product details
       const exportData = detailedInvoices.flatMap(inv => {
         if (!inv.items || inv.items.length === 0) {
           return [{
@@ -621,7 +621,6 @@ export class ReportsComponent implements OnInit {
             'Produto': '-',
             'Qtd': 0,
             'Preço Unit.': 0,
-            'Total Item': 0,
             'Total Factura': inv.total
           }];
         }
@@ -635,13 +634,29 @@ export class ReportsComponent implements OnInit {
           'Produto': item.product_name,
           'Qtd': item.quantity,
           'Preço Unit.': item.unit_price,
-          'Total Item': item.subtotal,
           'Total Factura': inv.total
         }));
       });
 
+      // Calculate total only for paid invoices
+      const totalPaid = detailedInvoices
+        .filter(inv => inv.status === 'paga')
+        .reduce((sum, inv) => sum + inv.total, 0);
+
       const fileName = `relatorio_vendas_detalhado_${new Date().toISOString().split('T')[0]}`;
-      this.exportService.exportToExcel(exportData, fileName, 'Vendas');
+      
+      // Add spacers and total row
+      const finalExportData = [
+        ...exportData,
+        {}, // Spacer row 1
+        {}, // Spacer row 2
+        {
+          'Nº Factura': 'TOTAL DE VENDAS (Soma de Facturas Pagas)',
+          'Total Factura': totalPaid
+        }
+      ];
+
+      this.exportService.exportToExcel(finalExportData, fileName, 'Vendas');
     } catch (error) {
       console.error('Erro ao exportar para Excel:', error);
     } finally {

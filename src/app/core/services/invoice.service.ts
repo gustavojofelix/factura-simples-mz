@@ -537,12 +537,7 @@ export class InvoiceService {
   }
 
   private calculateStatus(invoice: any): string {
-    if (invoice.status === 'anulada') return 'anulada';
-    if (invoice.status === 'rascunho') return 'rascunho';
-    
-    // Logic from getStatusLabel/Color could be moved or reused here
-    // For now, respect the stored status if not draft/annulled
-    return invoice.status;
+    return this.calculateInvoiceStatus(invoice);
   }
 
   private async handleStockUpdate(items: any[], type: 'decrement' | 'increment') {
