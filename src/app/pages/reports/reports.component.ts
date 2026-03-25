@@ -619,7 +619,6 @@ export class ReportsComponent implements OnInit {
           'Nº Factura': inv.invoice_number,
           'Data': this.formatDate(inv.date),
           'Cliente': inv.client?.name || '-',
-          'Emitente': inv.issuer_name || '-',
           'Status': inv.status.toUpperCase(),
           'Produtos': produtos,
           'Qtd': quantidades,
@@ -628,9 +627,10 @@ export class ReportsComponent implements OnInit {
         };
       });
 
-      // Calculate total only for paid invoices
-      const totalPaid = detailedInvoices
-        .filter(inv => inv.status === 'paga')
+      // Calculate total for valid invoices (paid, pending, overdue)
+      const validStatuses = ['paga', 'pendente', 'vencida'];
+      const totalVendas = detailedInvoices
+        .filter(inv => validStatuses.includes(inv.status))
         .reduce((sum, inv) => sum + inv.total, 0);
 
       const fileName = `relatorio_vendas_detalhado_${new Date().toISOString().split('T')[0]}`;
@@ -641,8 +641,8 @@ export class ReportsComponent implements OnInit {
         {}, // Spacer row 1
         {}, // Spacer row 2
         {
-          'Nº Factura': 'TOTAL DE VENDAS (Soma de Facturas Pagas)',
-          'Total Factura': this.formatCurrency (totalPaid)
+          'Nº Factura': 'TOTAL DE VENDAS',
+          'Total Factura': this.formatCurrency(totalVendas)
         }
       ];
 
