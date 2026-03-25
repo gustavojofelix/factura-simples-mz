@@ -619,7 +619,6 @@ export class ReportsComponent implements OnInit {
           'Nº Factura': inv.invoice_number,
           'Data': this.formatDate(inv.date),
           'Cliente': inv.client?.name || '-',
-          'Emitente': inv.issuer_name || '-',
           'Status': inv.status.toUpperCase(),
           'Produtos': produtos,
           'Qtd': quantidades,
