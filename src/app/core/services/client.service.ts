@@ -4,6 +4,7 @@ import { CompanyService } from './company.service';
 
 export interface Client {
   id: string;
+  client_code: string;
   company_id: string;
   name: string;
   nuit?: string;
@@ -40,7 +41,7 @@ export class ClientService {
         .from('clients')
         .select('*')
         .eq('company_id', company.id)
-        .order('name', { ascending: true });
+        .order('client_code', { ascending: true });
 
       if (error) throw error;
 
@@ -69,7 +70,8 @@ export class ClientService {
 
       if (error) throw error;
 
-      this.clients.update(clients => [...clients, data].sort((a, b) => a.name.localeCompare(b.name, 'pt')));
+      // Reload from server to get the trigger-assigned client_code and correct ordering
+      await this.loadClients();
       return data;
     } catch (error) {
       console.error('Erro ao criar cliente:', error);
