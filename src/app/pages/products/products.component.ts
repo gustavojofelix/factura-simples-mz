@@ -215,7 +215,7 @@ export class ProductsComponent implements OnInit {
       filtered = products.filter(product =>
         product.name.toLowerCase().includes(term) ||
         product.description?.toLowerCase().includes(term) ||
-        String(product.code).includes(term)
+        product.code?.toLowerCase().includes(term)
       );
     }
 
@@ -234,8 +234,8 @@ export class ProductsComponent implements OnInit {
 
       switch (field) {
         case 'code':
-          valA = a.code;
-          valB = b.code;
+          valA = a.code || '';
+          valB = b.code || '';
           break;
         case 'name':
           valA = a.name.toLowerCase();
