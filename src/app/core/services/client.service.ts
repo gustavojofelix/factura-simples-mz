@@ -27,7 +27,7 @@ export class ClientService {
   constructor(
     private supabase: SupabaseService,
     private companyService: CompanyService
-  ) {}
+  ) { }
 
   async loadClients() {
     const company = this.companyService.activeCompany();
@@ -69,7 +69,7 @@ export class ClientService {
 
       if (error) throw error;
 
-      this.clients.update(clients => [data, ...clients]);
+      this.clients.update(clients => [...clients, data].sort((a, b) => a.name.localeCompare(b.name, 'pt')));
       return data;
     } catch (error) {
       console.error('Erro ao criar cliente:', error);
@@ -102,9 +102,9 @@ export class ClientService {
       // Verificar se o cliente já possui facturas
       const used = await this.isClientUsed(id);
       if (used) {
-        return { 
-          success: false, 
-          error: 'Este cliente possui facturas associadas e não pode ser eliminado. Desative-o em vez disso.' 
+        return {
+          success: false,
+          error: 'Este cliente possui facturas associadas e não pode ser eliminado. Desative-o em vez disso.'
         };
       }
 
