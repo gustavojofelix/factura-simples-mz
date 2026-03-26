@@ -342,7 +342,8 @@ export class ClientsComponent implements OnInit {
         client.name.toLowerCase().includes(term) ||
         client.nuit?.toLowerCase().includes(term) ||
         client.email?.toLowerCase().includes(term) ||
-        client.phone?.toLowerCase().includes(term);
+        client.phone?.toLowerCase().includes(term) ||
+        client.client_code?.toLowerCase().includes(term);
 
       const matchesIndustry = !industry || client.industry === industry;
 
@@ -354,8 +355,8 @@ export class ClientsComponent implements OnInit {
     });
 
     return filtered.sort((a, b) => {
-      const valA = field === 'name' ? a.name.toLowerCase() : (a.id ?? '');
-      const valB = field === 'name' ? b.name.toLowerCase() : (b.id ?? '');
+      const valA = field === 'name' ? a.name.toLowerCase() : (a.client_code ?? '');
+      const valB = field === 'name' ? b.name.toLowerCase() : (b.client_code ?? '');
       if (valA < valB) return order === 'asc' ? -1 : 1;
       if (valA > valB) return order === 'asc' ? 1 : -1;
       return 0;
@@ -444,6 +445,7 @@ export class ClientsComponent implements OnInit {
 
   exportAsCSV() {
     const data = this.clientService.clients().map(c => ({
+      'ID': c.client_code || '',
       'Nome': c.name,
       'NUIT': c.nuit || '',
       'Email': c.email || '',
@@ -456,6 +458,7 @@ export class ClientsComponent implements OnInit {
 
   exportAsExcel() {
     const data = this.clientService.clients().map(c => ({
+      'ID': c.client_code || '',
       'Nome': c.name,
       'NUIT': c.nuit || '',
       'Email': c.email || '',

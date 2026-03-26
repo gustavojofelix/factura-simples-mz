@@ -106,9 +106,9 @@
       <div class="overflow-x-auto">
         <table mat-table [dataSource]="filteredClients()" class="w-full">
           <ng-container matColumnDef="id">
-            <th mat-header-cell *matHeaderCellDef class="!font-semibold !w-12">#</th>
-            <td mat-cell *matCellDef="let i = index" class="text-gray-500">
-              {{ i + 1 }}
+            <th mat-header-cell *matHeaderCellDef class="!font-semibold !w-12">ID</th>
+            <td mat-cell *matCellDef="let client" class="text-gray-500">
+              {{ client.client_code || '—' }}
             </td>
           </ng-container>
 
