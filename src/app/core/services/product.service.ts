@@ -4,7 +4,7 @@ import { CompanyService } from './company.service';
 
 export interface Product {
   id: string;
-  code: number;
+  code: string;
   company_id: string;
   name: string;
   description?: string;

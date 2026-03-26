@@ -138,12 +138,12 @@ export class InvoiceDialogComponent implements OnInit {
       filtered = filtered.filter(product =>
         product.name.toLowerCase().includes(term) ||
         product.description?.toLowerCase().includes(term) ||
-        String(product.code).includes(term)
+        product.code?.toLowerCase().includes(term)
       );
     }
 
     // 3. Sorting by code (ascending) for consistency with product list
-    filtered.sort((a, b) => a.code - b.code);
+    filtered.sort((a, b) => (a.code || '').localeCompare(b.code || ''));
 
     return filtered;
   });
