@@ -15,6 +15,7 @@ import { ReceiptDetailComponent } from './receipt-detail.component';
 import { InvoiceDialogComponent } from './invoice-dialog.component';
 import { PdfService } from '../../core/services/pdf.service';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { SupabaseService } from '../../core/services/supabase.service';
 
 @Component({
   selector: 'app-invoice-detail',
@@ -420,6 +421,7 @@ export class InvoiceDetailComponent {
   paymentService = inject(PaymentService);
   private companyService = inject(CompanyService);
   private pdfService = inject(PdfService);
+  private supabase = inject(SupabaseService);
 
   invoice = signal<Invoice | null>(null);
   payments = signal<Payment[]>([]);
@@ -599,16 +601,37 @@ export class InvoiceDetailComponent {
     const invoice = this.invoice();
     if (!invoice) return;
 
+    if (!invoice.client?.email) {
+      alert('O cliente associado a esta factura não possui endereço de e-mail.');
+      return;
+    }
+
     try {
       this.isGeneratingPdf.set(true);
       const blob = await this.pdfService.generatePdf('invoice-card', invoice.invoice_number);
-      // Here you would typically upload the blob to a storage bucket 
-      // and send the URL to a backend function that sends the email.
-      // For now, we'll inform the user.
-      alert(`O PDF da factura ${invoice.invoice_number} foi gerado. O envio automático por email está a ser configurado.`);
-      this.pdfService.downloadPdf(blob, `Factura_${invoice.invoice_number}`);
+      
+      const base64pdf = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+      });
+
+      const { data, error } = await this.supabase.client.functions.invoke('send-invoice-email', {
+        body: { 
+          to_email: invoice.client.email,
+          client_name: invoice.client.name,
+          invoice_number: invoice.invoice_number,
+          pdf_base64: base64pdf 
+        }
+      });
+
+      if (error) throw error;
+      
+      alert(`E-mail com a factura ${invoice.invoice_number} enviado com sucesso para ${invoice.client.email}!`);
     } catch (error) {
-      console.error('Erro ao preparar email:', error);
+      console.error('Erro ao processar e-mail:', error);
+      alert('Ocorreu um erro ao comunicar com os nossos serviços de e-mail.');
     } finally {
       this.isGeneratingPdf.set(false);
     }
