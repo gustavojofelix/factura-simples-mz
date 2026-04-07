@@ -230,6 +230,7 @@ export class InvoicesComponent implements OnInit {
   openPaymentDialog(invoice: Invoice) {
     const dialogRef = this.dialog.open(PaymentDialogComponent, {
       width: '500px',
+      maxWidth: '95vw',
       data: {
         invoiceId: invoice.id,
         invoiceNumber: invoice.invoice_number,

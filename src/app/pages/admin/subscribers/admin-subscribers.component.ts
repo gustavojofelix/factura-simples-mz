@@ -188,7 +188,7 @@ import { PaginationComponent, PageChangeEvent } from '../../../shared/components
 
         <!-- Filters -->
         <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-wrap gap-4 items-center">
-          <div class="flex-1 min-w-[200px]">
+          <div class="w-full md:flex-1 min-w-0 md:min-w-[200px]">
             <input [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" type="text" placeholder="Procurar por nome ou email..."
                    class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
           </div>

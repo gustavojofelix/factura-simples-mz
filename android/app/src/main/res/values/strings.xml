@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ISPC Fácil</string>
+    <string name="title_activity_main">ISPC Fácil</string>
+    <string name="package_name">com.facturasimples.app</string>
+    <string name="custom_url_scheme">com.facturasimples.app</string>
+</resources>
