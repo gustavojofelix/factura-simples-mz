@@ -2,7 +2,15 @@ import { Routes } from '@angular/router';
 import { authGuard, guestGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/admin.guard';
 
-export const routes: Routes = [
+const isHostAdmin = () => {
+  if (typeof window !== 'undefined') {
+    return window.location.hostname.startsWith('backadmin.') || window.location.href.includes('backadmin=true');
+  }
+  return false;
+};
+
+// Rotas normais para clientes (ispcfacil.co.mz)
+const baseAppRoutes: Routes = [
   {
     path: '',
     loadComponent: () => import('./pages/landing/landing.component').then(m => m.LandingComponent)
@@ -66,7 +74,20 @@ export const routes: Routes = [
     ]
   },
   {
-    path: 'admin',
+    path: '**',
+    redirectTo: ''
+  }
+];
+
+// Rotas exclusivas para o Back-Office (admin.ispcfacil.co.mz)
+const adminRoutes: Routes = [
+  {
+    path: 'entrar',
+    canActivate: [guestGuard],
+    loadComponent: () => import('./pages/login/login.component').then(m => m.LoginComponent)
+  },
+  {
+    path: '',
     canActivate: [adminGuard],
     loadComponent: () => import('./pages/admin/layout/admin-layout.component').then(m => m.AdminLayoutComponent),
     children: [
@@ -93,3 +114,5 @@ export const routes: Routes = [
     redirectTo: ''
   }
 ];
+
+export const routes: Routes = isHostAdmin() ? adminRoutes : baseAppRoutes;

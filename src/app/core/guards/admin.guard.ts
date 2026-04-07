@@ -18,6 +18,12 @@ export const adminGuard: CanActivateFn = async (route, state) => {
     return true;
   }
 
+  // Se não for admin mas estiver no subdomínio de admin, expelir para o domínio principal
+  if (typeof window !== 'undefined' && window.location.hostname.startsWith('backadmin.')) {
+    window.location.href = 'https://ispcfacil.co.mz/#/painel';
+    return false;
+  }
+
   router.navigate(['/painel']);
   return false;
 };
