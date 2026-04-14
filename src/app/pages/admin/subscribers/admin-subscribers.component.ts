@@ -214,18 +214,18 @@ import { PaginationComponent, PageChangeEvent } from '../../../shared/components
             <table class="w-full text-left">
               <thead>
                 < <tr class="bg-gray-50 text-gray-500 text-[10px] uppercase tracking-wider font-semibold select-none">
-                  <th (click)="toggleSort('full_name')" class="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors">
+                  <th (click)="toggleSort('display_id')" class="px-6 py-4 w-20 cursor-pointer hover:bg-gray-100 transition-colors">
                     <div class="flex items-center space-x-1">
-                      <span>Subscritor (SaaS)</span>
-                      <svg *ngIf="sortColumn() === 'full_name'" class="w-3 h-3" [class.rotate-180]="sortDirection() === 'desc'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <span>ID</span>
+                      <svg *ngIf="sortColumn() === 'display_id'" class="w-3 h-3" [class.rotate-180]="sortDirection() === 'desc'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
                       </svg>
                     </div>
                   </th>
-                  <th (click)="toggleSort('id')" class="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors">
+                  <th (click)="toggleSort('full_name')" class="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors">
                     <div class="flex items-center space-x-1">
-                      <span>ID</span>
-                      <svg *ngIf="sortColumn() === 'id'" class="w-3 h-3" [class.rotate-180]="sortDirection() === 'desc'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <span>Subscritor (SaaS)</span>
+                      <svg *ngIf="sortColumn() === 'full_name'" class="w-3 h-3" [class.rotate-180]="sortDirection() === 'desc'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
                       </svg>
                     </div>
@@ -267,6 +267,9 @@ import { PaginationComponent, PageChangeEvent } from '../../../shared/components
               </thead>
               <tbody>
                  <tr *ngFor="let sub of paginatedSubscribers(); let i = index" class="border-t border-gray-100 hover:bg-gray-50 transition-colors">
+                  <td class="px-6 py-4 text-xs font-bold text-gray-500">
+                    {{ sub.display_id || i + 1 }}
+                  </td>
                   <td class="px-6 py-4">
                     <div class="flex items-center space-x-3">
                       <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-sm uppercase">
@@ -274,9 +277,6 @@ import { PaginationComponent, PageChangeEvent } from '../../../shared/components
                       </div>
                       <span class="font-medium text-gray-900 leading-tight">{{ sub.full_name }}</span>
                     </div>
-                  </td>
-                  <td class="px-6 py-4 text-sm text-gray-700 font-medium">
-                    {{ (currentPage() - 1) * pageSize() + i + 1 }}
                   </td>
                   <td class="px-6 py-4 text-sm text-gray-700">
                     {{ sub.email }}
@@ -364,7 +364,7 @@ export class AdminSubscribersComponent implements OnInit {
   selectedSub = signal<any>({});
 
   // Sorting
-  sortColumn = signal<string>('full_name');
+  sortColumn = signal<string>('display_id');
   sortDirection = signal<'asc' | 'desc'>('asc');
 
   statuses = [
@@ -444,7 +444,8 @@ export class AdminSubscribersComponent implements OnInit {
 
       if (error) throw error;
 
-      const formatted = data?.map(s => {
+      const totalSubs = data?.length || 0;
+      const formatted = data?.map((s, index) => {
         const companies = s.companies || [];
         const companyCount = companies.length;
         const uniqueUsers = new Set<string>();
@@ -453,6 +454,7 @@ export class AdminSubscribersComponent implements OnInit {
         });
         return {
           ...s,
+          display_id: totalSubs - index,
           company_count: companyCount,
           user_count: uniqueUsers.size
         };
