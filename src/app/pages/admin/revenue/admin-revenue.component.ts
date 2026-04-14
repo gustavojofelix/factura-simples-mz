@@ -335,25 +335,22 @@ export class AdminRevenueComponent implements OnInit {
     const data = this.filteredSubscriptions();
     if (data.length === 0) return;
 
-    // Headers
     const headers = ['Empresa', 'Plano', 'Ciclo', 'Estado', 'Data Início', 'Próxima Cobrança', 'Valor', 'Método Pagamento'];
 
-    // Rows
     const rows = data.map(s => [
-      `"${s.company_name.replace(/"/g, '""')}"`,
-      s.plan_name,
-      s.billing_cycle,
-      s.status,
-      s.start_date,
-      s.next_billing_date,
-      s.amount,
-      s.payment_method || 'N/A'
+      `"${(s.company_name || '').replace(/"/g, '""')}"`,
+      `"${(s.plan_name || '').replace(/"/g, '""')}"`,
+      `"${(s.billing_cycle || '').replace(/"/g, '""')}"`,
+      `"${(s.status || '').replace(/"/g, '""')}"`,
+      `"${s.start_date ? new Date(s.start_date).toLocaleDateString('pt-MZ') : 'N/A'}"`,
+      `"${s.next_billing_date ? new Date(s.next_billing_date).toLocaleDateString('pt-MZ') : 'N/A'}"`,
+      s.amount ?? 0,
+      `"${(s.payment_method || 'N/A').replace(/"/g, '""')}"`
     ]);
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(r => r.join(','))
-    ].join('\n');
+    const csvContent = '\uFEFF'
+      + headers.join(';') + '\n'
+      + rows.map(r => r.join(';')).join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -366,6 +363,7 @@ export class AdminRevenueComponent implements OnInit {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 
   getStatusClass(status: string) {

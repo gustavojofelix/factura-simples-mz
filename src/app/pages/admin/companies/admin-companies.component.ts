@@ -74,7 +74,7 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
         </div>
         
         <!-- Create Company Modal -->                                                                                                                                               <div *ngIf="isCreateModalOpen" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-in fade-in zoom-in duration-200">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all animate-in fade-in zoom-in duration-200">
               <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                 <h3 class="text-xl font-bold text-gray-800 font-serif uppercase tracking-tight">Novo Contribuinte</h3>
                 <button (click)="closeCreateModal()" class="text-gray-400 hover:text-gray-600">
@@ -91,26 +91,85 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
                     class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                 </div>
 
-                <div class="space-y-1">
-                  <label class="text-[10px] font-bold text-gray-500 uppercase">NUIT *</label>
-                  <input [(ngModel)]="newCompany.nuit" type="text" placeholder="Ex: 400123456"
-                    class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">NUIT *</label>
+                    <input [(ngModel)]="newCompany.nuit" type="text" placeholder="9 dígitos" maxlength="9" (input)="formatNuit()"
+                      class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                  </div>
+                   <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Tipo de Entidade *</label>
+                    <select [(ngModel)]="newCompany.entity_type"
+                      class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                      <option value="">Selecionar...</option>
+                      <option value="singular">Singular</option>
+                      <option value="collective">Colectiva</option>
+                    </select>
+                  </div>
                 </div>
 
-                 <div class="space-y-1">
-                  <label class="text-[10px] font-bold text-gray-500 uppercase">Tipo de Entidade *</label>
-                  <select [(ngModel)]="newCompany.entity_type"
-                    class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-                    <option value="">Selecionar...</option>
-                    <option value="singular">Singular</option>
-                    <option value="collective">Colectiva</option>
-                  </select>
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">E-mail da Empresa *</label>
+                    <input [(ngModel)]="newCompany.email" type="email" placeholder="Ex: geral@empresa.co.mz"
+                      class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Telefone</label>
+                    <input [(ngModel)]="newCompany.phone" type="tel" placeholder="Ex: +258 84 123 4567"
+                      class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                  </div>
                 </div>
 
-                 <div class="space-y-1">
-                  <label class="text-[10px] font-bold text-gray-500 uppercase">E-mail da Empresa *</label>
-                  <input [(ngModel)]="newCompany.email" type="email" placeholder="Ex: geral@empresa.co.mz"
-                    class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                <!-- Actividades Section -->
+                <div class="border-t border-gray-100 pt-4 mt-2">
+                  <h4 class="text-xs font-bold text-gray-700 uppercase tracking-widest mb-3">Tipo de Actividades</h4>
+                  <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="space-y-1">
+                      <label class="text-[10px] font-bold text-gray-500 uppercase">Actividade Principal</label>
+                      <select [(ngModel)]="newCompany.category1" (ngModelChange)="onCategory1Change()" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                        <option value="">Selecionar...</option>
+                        <option *ngFor="let cat of getCat1Options()" [value]="cat.id">{{ cat.label }}</option>
+                      </select>
+                    </div>
+
+                    <div class="space-y-1" *ngIf="getCat2Options().length > 0">
+                      <label class="text-[10px] font-bold text-gray-500 uppercase">Actividade(s) Comerciais</label>
+                      <select [(ngModel)]="newCompany.category2" (ngModelChange)="onCategory2Change()" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                        <option value="">Selecionar...</option>
+                        <option *ngFor="let cat of getCat2Options()" [value]="cat.id">{{ cat.label }}</option>
+                      </select>
+                    </div>
+
+                    <div class="space-y-1" *ngIf="getCat3Options().length > 0">
+                      <label class="text-[10px] font-bold text-gray-500 uppercase">Actividade de Serviço</label>
+                      <select [(ngModel)]="newCompany.category3" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                        <option value="">Selecionar...</option>
+                        <option *ngFor="let cat of getCat3Options()" [value]="cat">{{ cat }}</option>
+                      </select>
+                    </div>
+
+                    <div class="space-y-1">
+                      <label class="text-[10px] font-bold text-gray-500 uppercase">Volume Negócio/Taxa ISPC</label>
+                      <select [(ngModel)]="newCompany.business_volume" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                        <ng-container *ngIf="isISPCScaleActivity()">
+                          <option value="3">3% (até 1.000.000,00MT)</option>
+                          <option value="4">4% (> 1.001.000,00MT e ≤ 2.500.000,00MT)</option>
+                          <option value="5">5% (> 2.501.000,00MT e ≤ 4.000.000,00MT)</option>
+                        </ng-container>
+                        <ng-container *ngIf="!isISPCScaleActivity()">
+                          <ng-container *ngIf="getServiceType() === 'nao_liberais'">
+                            <option value="12">12% s/ volume ≤ 4.000.000,00MT</option>
+                            <option value="20">20% s/ volume > 4.000.000,00MT</option>
+                          </ng-container>
+                          <ng-container *ngIf="getServiceType() === 'liberal'">
+                            <option value="15">15% s/ volume ≤ 4.000.000,00MT</option>
+                            <option value="20">20% s/ volume > 4.000.000,00MT</option>
+                          </ng-container>
+                        </ng-container>
+                      </select>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="space-y-1">
@@ -123,7 +182,7 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
                 </div>
 
 
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-3 gap-4 border-t border-gray-100 pt-4 mt-2">
                   <div class="space-y-1">
                     <label class="text-[10px] font-bold text-gray-500 uppercase">Província</label>
                     <select [(ngModel)]="newCompany.province"
@@ -135,6 +194,11 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
                   <div class="space-y-1">
                     <label class="text-[10px] font-bold text-gray-500 uppercase">Distrito</label>
                     <input [(ngModel)]="newCompany.district" type="text" placeholder="Ex: Maputo"
+                      class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">P. Administrativo</label>
+                    <input [(ngModel)]="newCompany.administrativePost" type="text" placeholder="Ex: KaMpfumo"
                       class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                   </div>
                 </div>
@@ -512,6 +576,72 @@ export class AdminCompaniesComponent implements OnInit {
     key,
     label: value.label
   }));
+  activityHierarchy = ACTIVITY_HIERARCHY;
+
+  // Modals Extra Logic
+  onCategory1Change() {
+    this.newCompany.category2 = '';
+    this.newCompany.category3 = '';
+    this.newCompany.business_volume = '3';
+  }
+
+  onCategory2Change() {
+    this.newCompany.category3 = '';
+    const cat2 = this.newCompany.category2;
+    if (cat2 === 'servicos_nao_liberais') {
+      this.newCompany.business_volume = '12';
+    } else if (cat2 === 'servicos_liberais') {
+      this.newCompany.business_volume = '15';
+    } else {
+      const currentVol = this.newCompany.business_volume;
+      if (currentVol === '12' || currentVol === '15' || currentVol === '20') {
+         this.newCompany.business_volume = '3';
+      }
+    }
+  }
+
+  getServiceType(): 'liberal' | 'nao_liberais' | null {
+    const cat2 = this.newCompany.category2;
+    if (cat2 === 'servicos_nao_liberais') return 'nao_liberais';
+    if (cat2 === 'servicos_liberais') return 'liberal';
+    return null;
+  }
+
+  isISPCScaleActivity() {
+    const cat2 = this.newCompany.category2;
+    return cat2 !== 'servicos_nao_liberais' && cat2 !== 'servicos_liberais';
+  }
+
+  getCat1Options() {
+    return Object.entries(this.activityHierarchy).map(([id, cat]) => ({ id, label: cat.label }));
+  }
+
+  getCat2Options() {
+    const cat1 = this.newCompany.category1;
+    if (!cat1 || !this.activityHierarchy[cat1]?.subcategories) return [];
+    return Object.entries(this.activityHierarchy[cat1].subcategories!).map(([id, cat]) => ({
+      id,
+      label: cat.label
+    }));
+  }
+
+  getCat3Options() {
+    const cat1 = this.newCompany.category1;
+    const cat2 = this.newCompany.category2;
+    if (!cat1 || !cat2) return [];
+    const cat2Obj = (this.activityHierarchy[cat1]?.subcategories as any)?.[cat2];
+    if (!cat2Obj || !cat2Obj.subcategories) return [];
+    return cat2Obj.subcategories;
+  }
+
+  formatNuit() {
+    if (!this.newCompany.nuit) return;
+    let value = this.newCompany.nuit.replace(/\D/g, '');
+    if (value.length > 9) {
+      value = value.substring(0, 9);
+    }
+    this.newCompany.nuit = value;
+  }
 
   // Phase 2 & 3: UI Logic
   isEditModalOpen = false;
@@ -784,7 +914,9 @@ export class AdminCompaniesComponent implements OnInit {
   }
 
   openCreateModal() {
-    this.newCompany = {};
+    this.newCompany = {
+      business_volume: '3'
+    };
     this.createError = '';
     this.isCreateModalOpen = true;
   }
@@ -811,12 +943,22 @@ export class AdminCompaniesComponent implements OnInit {
           name: this.newCompany.name,
           nuit: this.newCompany.nuit,
           user_id: this.newCompany.user_id,
+          phone: this.newCompany.phone || null,
           province: this.newCompany.province || null,
           district: this.newCompany.district || null,
           address: this.newCompany.address || 'Endereço não especificado',
           email: this.newCompany.email,
           entity_type: this.newCompany.entity_type,
-          status: 'active'
+          status: 'active',
+          category1: this.newCompany.category1 || null,
+          category2: this.newCompany.category2 || null,
+          category3: this.newCompany.category3 || null,
+          business_volume: this.newCompany.business_volume || '3',
+          documents_metadata: {
+            province: this.newCompany.province || null,
+            district: this.newCompany.district || null,
+            administrativePost: this.newCompany.administrativePost || null
+          }
 
         });
 
@@ -831,32 +973,41 @@ export class AdminCompaniesComponent implements OnInit {
   }
 
   exportCompanies() {
+    const data = this.filteredCompanies();
+    if (data.length === 0) return;
+
     const headers = ['ID', 'Nome', 'NUIT', 'Provincia', 'Distrito', 'Proprietario', 'Plano', 'Data Limite Plano', 'Ultimo Acesso', 'Utilizadores', 'Uso (30d)', 'Faturas (30d)'];
-    const rows = this.filteredCompanies().map(c => [
-      c.id,
-      c.name,
-      c.nuit,
-      c.province || 'N/A',
-      c.district || 'N/A',
-      c.owner_name,
-      c.plan,
-      c.plan_expiry || 'N/A',
-      c.last_access || 'N/A',
-      c.user_count,
-      c.usage_30d,
-      c.usage_count_30d
+
+    const rows = data.map(c => [
+      `"${(c.id || '').toString().replace(/"/g, '""')}"`,
+      `"${(c.name || '').replace(/"/g, '""')}"`,
+      `"${(c.nuit || '').replace(/"/g, '""')}"`,
+      `"${(c.province || 'N/A').replace(/"/g, '""')}"`,
+      `"${(c.district || 'N/A').replace(/"/g, '""')}"`,
+      `"${(c.owner_name || 'N/A').replace(/"/g, '""')}"`,
+      `"${(c.plan || 'Trial').replace(/"/g, '""')}"`,
+      `"${c.plan_expiry ? new Date(c.plan_expiry).toLocaleDateString('pt-MZ') : 'N/A'}"`,
+      `"${c.last_access ? new Date(c.last_access).toLocaleDateString('pt-MZ') : 'N/A'}"`,
+      c.user_count ?? 0,
+      c.usage_30d ?? 0,
+      c.usage_count_30d ?? 0
     ]);
 
-    const csvContent = "data:text/csv;charset=utf-8,"
-      + headers.join(",") + "\n"
-      + rows.map(e => e.join(",")).join("\n");
+    const csvContent = '\uFEFF'
+      + headers.join(';') + '\n'
+      + rows.map(r => r.join(';')).join('\n');
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `empresas_ispcfacil_${new Date().toISOString().split('T')[0]}.csv`);
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    const timestamp = new Date().toISOString().split('T')[0];
+    link.setAttribute('href', url);
+    link.setAttribute('download', `empresas_ispcfacil_${timestamp}.csv`);
+    link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 }
