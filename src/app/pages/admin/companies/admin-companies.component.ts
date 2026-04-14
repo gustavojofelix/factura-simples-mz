@@ -831,32 +831,41 @@ export class AdminCompaniesComponent implements OnInit {
   }
 
   exportCompanies() {
+    const data = this.filteredCompanies();
+    if (data.length === 0) return;
+
     const headers = ['ID', 'Nome', 'NUIT', 'Provincia', 'Distrito', 'Proprietario', 'Plano', 'Data Limite Plano', 'Ultimo Acesso', 'Utilizadores', 'Uso (30d)', 'Faturas (30d)'];
-    const rows = this.filteredCompanies().map(c => [
-      c.id,
-      c.name,
-      c.nuit,
-      c.province || 'N/A',
-      c.district || 'N/A',
-      c.owner_name,
-      c.plan,
-      c.plan_expiry || 'N/A',
-      c.last_access || 'N/A',
-      c.user_count,
-      c.usage_30d,
-      c.usage_count_30d
+
+    const rows = data.map(c => [
+      `"${(c.id || '').toString().replace(/"/g, '""')}"`,
+      `"${(c.name || '').replace(/"/g, '""')}"`,
+      `"${(c.nuit || '').replace(/"/g, '""')}"`,
+      `"${(c.province || 'N/A').replace(/"/g, '""')}"`,
+      `"${(c.district || 'N/A').replace(/"/g, '""')}"`,
+      `"${(c.owner_name || 'N/A').replace(/"/g, '""')}"`,
+      `"${(c.plan || 'Trial').replace(/"/g, '""')}"`,
+      `"${c.plan_expiry ? new Date(c.plan_expiry).toLocaleDateString('pt-MZ') : 'N/A'}"`,
+      `"${c.last_access ? new Date(c.last_access).toLocaleDateString('pt-MZ') : 'N/A'}"`,
+      c.user_count ?? 0,
+      c.usage_30d ?? 0,
+      c.usage_count_30d ?? 0
     ]);
 
-    const csvContent = "data:text/csv;charset=utf-8,"
-      + headers.join(",") + "\n"
-      + rows.map(e => e.join(",")).join("\n");
+    const csvContent = '\uFEFF'
+      + headers.join(';') + '\n'
+      + rows.map(r => r.join(';')).join('\n');
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `empresas_ispcfacil_${new Date().toISOString().split('T')[0]}.csv`);
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    const timestamp = new Date().toISOString().split('T')[0];
+    link.setAttribute('href', url);
+    link.setAttribute('download', `empresas_ispcfacil_${timestamp}.csv`);
+    link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 }

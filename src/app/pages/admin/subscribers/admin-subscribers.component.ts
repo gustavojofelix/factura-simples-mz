@@ -539,7 +539,37 @@ export class AdminSubscribersComponent implements OnInit {
   }
 
   exportSubscribers() {
-    console.log('Exporting subscribers...');
+    const data = this.filteredSubscribers();
+    if (data.length === 0) return;
+
+    const headers = ['Nome', 'E-mail', 'Telefone', 'Estado', 'Contribuintes', 'Utilizadores', 'Data de Criação'];
+
+    const rows = data.map(s => [
+      `"${(s.full_name || '').replace(/"/g, '""')}"`,
+      `"${(s.email || '').replace(/"/g, '""')}"`,
+      `"${(s.phone || 'N/A').replace(/"/g, '""')}"`,
+      `"${s.status === 'suspended' ? 'Suspenso' : 'Activo'}"`,
+      s.company_count ?? 0,
+      s.user_count ?? 0,
+      `"${s.created_at ? new Date(s.created_at).toLocaleDateString('pt-MZ') : 'N/A'}"`
+    ]);
+
+    const csvContent = '\uFEFF'
+      + headers.join(';') + '\n'
+      + rows.map(r => r.join(';')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    const timestamp = new Date().toISOString().split('T')[0];
+    link.setAttribute('href', url);
+    link.setAttribute('download', `subscritores_${timestamp}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 
   onPageChange(event: PageChangeEvent) {
