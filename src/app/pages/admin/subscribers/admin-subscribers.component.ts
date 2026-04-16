@@ -10,7 +10,7 @@ import { PaginationComponent, PageChangeEvent } from '../../../shared/components
   selector: 'app-admin-subscribers',
   standalone: true,
   imports: [CommonModule, FormsModule, PaginationComponent],
-  template: `
+  template: `id
       <div class="space-y-6">
          <!-- Create Subscriber Modal -->
           <div *ngIf="isCreateModalOpen" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -213,7 +213,7 @@ import { PaginationComponent, PageChangeEvent } from '../../../shared/components
           <div class="overflow-x-auto">
             <table class="w-full text-left">
               <thead>
-                < <tr class="bg-gray-50 text-gray-500 text-[10px] uppercase tracking-wider font-semibold select-none">
+                 <tr class="bg-gray-50 text-gray-500 text-[10px] uppercase tracking-wider font-semibold select-none">
                   <th (click)="toggleSort('subscriber_code')" class="px-6 py-4 w-28 cursor-pointer hover:bg-gray-100 transition-colors">
                     <div class="flex items-center space-x-1">
                       <span>ID</span>
