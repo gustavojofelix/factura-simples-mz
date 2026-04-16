@@ -462,8 +462,13 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
             <table class="w-full text-left">
               <thead>
                 <tr class="bg-gray-50 text-gray-500 text-[10px] uppercase tracking-wider font-semibold select-none">
-                  <th class="px-4 py-4 w-20">
-                    <span>ID</span>
+                  <th (click)="toggleSort('company_code')" class="px-4 py-4 w-28 cursor-pointer hover:bg-gray-100 transition-colors">
+                    <div class="flex items-center space-x-1">
+                      <span>ID</span>
+                      <svg *ngIf="sortColumn() === 'company_code'" class="w-3 h-3" [class.rotate-180]="sortDirection() === 'desc'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                      </svg>
+                    </div>
                   </th>
                   <th (click)="toggleSort('name')" class="px-4 py-4 cursor-pointer hover:bg-gray-100 transition-colors">
                     <div class="flex items-center space-x-1">
@@ -528,8 +533,8 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
                 <tr *ngFor="let company of filteredCompanies(); let i = index" class="hover:bg-gray-50 transition-colors text-sm">
                   <!-- ID -->
                   <td class="px-4 py-4">
-                    <span class="text-xs font-bold text-gray-500">
-                      {{ i + 1 }}
+                    <span class="text-xs font-bold text-gray-500 font-mono">
+                      {{ company.company_code || '—' }}
                     </span>
                   </td>
                   <!-- Empresa -->
@@ -729,7 +734,7 @@ export class AdminCompaniesComponent implements OnInit {
   isLoading = signal(false);
 
   // Ordering
-  sortColumn = signal<string>('name');
+  sortColumn = signal<string>('company_code');
   sortDirection = signal<'asc' | 'desc'>('asc');
 
   availablePlans = computed(() => {
@@ -778,7 +783,8 @@ export class AdminCompaniesComponent implements OnInit {
       list = list.filter(c =>
         c.name?.toLowerCase().includes(term) ||
         c.nuit?.toLowerCase().includes(term) ||
-        c.owner_name?.toLowerCase().includes(term)
+        c.owner_name?.toLowerCase().includes(term) ||
+        c.company_code?.toLowerCase().includes(term)
       );
     }
 
@@ -1132,7 +1138,7 @@ export class AdminCompaniesComponent implements OnInit {
     const headers = ['ID', 'Nome', 'NUIT', 'Provincia', 'Distrito', 'Proprietario', 'Plano', 'Data Limite Plano', 'Ultimo Acesso', 'Utilizadores', 'Uso (30d)', 'Faturas (30d)'];
 
     const rows = data.map(c => [
-      `"${(c.id || '').toString().replace(/"/g, '""')}"`,
+      `"${(c.company_code || '').replace(/"/g, '""')}"`,
       `"${(c.name || '').replace(/"/g, '""')}"`,
       `"${(c.nuit || '').replace(/"/g, '""')}"`,
       `"${(c.province || 'N/A').replace(/"/g, '""')}"`,
