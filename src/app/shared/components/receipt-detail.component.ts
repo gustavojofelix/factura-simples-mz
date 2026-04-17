@@ -173,8 +173,15 @@ export interface ReceiptDialogData {
   `,
   styles: [`
     .receipt-dialog {
-      min-width: 600px;
+      min-width: 300px;
+      width: 100vw;
       max-width: 800px;
+    }
+    @media (min-width: 768px) {
+      .receipt-dialog {
+        min-width: 600px;
+        width: auto;
+      }
     }
 
     mat-dialog-content {

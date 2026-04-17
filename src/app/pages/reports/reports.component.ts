@@ -250,31 +250,33 @@ interface SalesReport {
               <mat-card-title>Top Clientes</mat-card-title>
             </mat-card-header>
             <mat-card-content class="!pt-4">
-              <table mat-table [dataSource]="report()!.topClients" class="w-full">
-                <ng-container matColumnDef="client">
-                  <th mat-header-cell *matHeaderCellDef>Cliente</th>
-                  <td mat-cell *matCellDef="let item" class="font-medium">
-                    {{ item.clientName }}
-                  </td>
-                </ng-container>
+              <div class="overflow-x-auto">
+                <table mat-table [dataSource]="report()!.topClients" class="w-full">
+                  <ng-container matColumnDef="client">
+                    <th mat-header-cell *matHeaderCellDef>Cliente</th>
+                    <td mat-cell *matCellDef="let item" class="font-medium">
+                      {{ item.clientName }}
+                    </td>
+                  </ng-container>
 
-                <ng-container matColumnDef="invoices">
-                  <th mat-header-cell *matHeaderCellDef class="!text-center">Faturas</th>
-                  <td mat-cell *matCellDef="let item" class="!text-center">
-                    {{ item.invoiceCount }}
-                  </td>
-                </ng-container>
+                  <ng-container matColumnDef="invoices">
+                    <th mat-header-cell *matHeaderCellDef class="!text-center">Faturas</th>
+                    <td mat-cell *matCellDef="let item" class="!text-center">
+                      {{ item.invoiceCount }}
+                    </td>
+                  </ng-container>
 
-                <ng-container matColumnDef="total">
-                  <th mat-header-cell *matHeaderCellDef class="!text-right">Total</th>
-                  <td mat-cell *matCellDef="let item" class="!text-right font-semibold">
-                    {{ formatCurrency(item.totalAmount) }}
-                  </td>
-                </ng-container>
+                  <ng-container matColumnDef="total">
+                    <th mat-header-cell *matHeaderCellDef class="!text-right">Total</th>
+                    <td mat-cell *matCellDef="let item" class="!text-right font-semibold">
+                      {{ formatCurrency(item.totalAmount) }}
+                    </td>
+                  </ng-container>
 
-                <tr mat-header-row *matHeaderRowDef="topClientsColumns"></tr>
-                <tr mat-row *matRowDef="let row; columns: topClientsColumns;"></tr>
-              </table>
+                  <tr mat-header-row *matHeaderRowDef="topClientsColumns"></tr>
+                  <tr mat-row *matRowDef="let row; columns: topClientsColumns;"></tr>
+                </table>
+              </div>
             </mat-card-content>
           </mat-card>
         }
@@ -285,36 +287,38 @@ interface SalesReport {
               <mat-card-title>Vendas Diárias</mat-card-title>
             </mat-card-header>
             <mat-card-content class="!pt-4">
-              <table mat-table [dataSource]="report()!.dailySales" class="w-full">
-                <ng-container matColumnDef="date">
-                  <th mat-header-cell *matHeaderCellDef>Data</th>
-                  <td mat-cell *matCellDef="let item">
-                    {{ formatDate(item.date) }}
-                  </td>
-                </ng-container>
+              <div class="overflow-x-auto">
+                <table mat-table [dataSource]="report()!.dailySales" class="w-full">
+                  <ng-container matColumnDef="date">
+                    <th mat-header-cell *matHeaderCellDef>Data</th>
+                    <td mat-cell *matCellDef="let item">
+                      {{ formatDate(item.date) }}
+                    </td>
+                  </ng-container>
 
-                <ng-container matColumnDef="invoices">
-                  <th mat-header-cell *matHeaderCellDef class="!text-center">Faturas</th>
-                  <td mat-cell *matCellDef="let item" class="!text-center">
-                    {{ item.invoiceCount }}
-                  </td>
-                </ng-container>
+                  <ng-container matColumnDef="invoices">
+                    <th mat-header-cell *matHeaderCellDef class="!text-center">Faturas</th>
+                    <td mat-cell *matCellDef="let item" class="!text-center">
+                      {{ item.invoiceCount }}
+                    </td>
+                  </ng-container>
 
-                <ng-container matColumnDef="amount">
-                  <th mat-header-cell *matHeaderCellDef class="!text-right">Total</th>
-                  <td mat-cell *matCellDef="let item" class="!text-right font-semibold">
-                    {{ formatCurrency(item.amount) }}
-                  </td>
-                </ng-container>
+                  <ng-container matColumnDef="amount">
+                    <th mat-header-cell *matHeaderCellDef class="!text-right">Total</th>
+                    <td mat-cell *matCellDef="let item" class="!text-right font-semibold">
+                      {{ formatCurrency(item.amount) }}
+                    </td>
+                  </ng-container>
 
-                <tr mat-header-row *matHeaderRowDef="dailySalesColumns"></tr>
-                <tr mat-row *matRowDef="let row; columns: dailySalesColumns;"></tr>
-              </table>
+                  <tr mat-header-row *matHeaderRowDef="dailySalesColumns"></tr>
+                  <tr mat-row *matRowDef="let row; columns: dailySalesColumns;"></tr>
+                </table>
+              </div>
             </mat-card-content>
           </mat-card>
         }
 
-        <div class="flex justify-end gap-4">
+        <div class="flex flex-wrap justify-end gap-4 w-full">
           <button mat-stroked-button (click)="exportToExcel()" [disabled]="isLoading()">
             <mat-icon>table_view</mat-icon>
             Exportar Excel

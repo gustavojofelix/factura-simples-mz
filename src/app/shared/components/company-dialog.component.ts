@@ -451,12 +451,18 @@ import { SupabaseService } from '../../core/services/supabase.service';
     }
 
     mat-dialog-content {
-      min-width: 1000px;
-      width: 85vw;
+      min-width: 300px;
+      width: 100vw;
       max-width: 1400px;
       max-height: 80vh;
       overflow-y: auto;
       overflow-x: hidden;
+    }
+    @media (min-width: 768px) {
+      mat-dialog-content {
+        min-width: 1000px;
+        width: 85vw;
+      }
     }
 
     form {

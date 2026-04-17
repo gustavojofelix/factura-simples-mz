@@ -42,3 +42,26 @@ body {
 .mat-mdc-card {
   --mdc-elevated-card-container-color: white;
 }
+
+/* Responsividade Global de Tabelas */
+.mat-mdc-table .mat-mdc-cell,
+.mat-mdc-table .mat-mdc-header-cell {
+  /* Impede que o texto quebre linhas, forçando o scroll horizontal via overflow-x-auto que adicionámos */
+  white-space: nowrap;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+/* Responsividade de Dropdowns (mat-select) em telas pequenas */
+.mat-mdc-option .mdc-list-item__primary-text {
+  /* Permite que opções longas quebrem a linha em telemóveis em vez de cortarem */
+  white-space: normal;
+  word-break: break-word;
+  line-height: normal;
+}
+.mat-mdc-option {
+  height: auto !important;
+  min-height: 48px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}

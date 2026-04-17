@@ -62,7 +62,7 @@ import { UserManagementService } from '../../core/services/user-management.servi
             <p class="text-sm font-semibold mb-2">Selecione as empresas e papéis:</p>
             <div class="space-y-2 max-h-64 overflow-y-auto">
               @for (company of companies(); track company.id) {
-                <div class="flex items-center gap-4 p-2 border rounded">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-2 p-2 border rounded">
                   <mat-checkbox
                     [checked]="isCompanySelected(company.id)"
                     (change)="toggleCompany(company.id, $event.checked)">
@@ -88,7 +88,7 @@ import { UserManagementService } from '../../core/services/user-management.servi
           <p class="text-sm text-gray-600 mb-4">Gerir o acesso de <strong>{{ data.userEmail }}</strong> às empresas:</p>
           <div class="space-y-2 max-h-96 overflow-y-auto">
             @for (company of companies(); track company.id) {
-              <div class="flex items-center gap-4 p-3 border rounded hover:bg-gray-50">
+              <div class="flex flex-col sm:flex-row sm:items-center gap-2 p-3 border rounded hover:bg-gray-50">
                 <mat-checkbox
                   [checked]="isCompanySelected(company.id)"
                   (change)="toggleCompany(company.id, $event.checked)">
@@ -127,8 +127,14 @@ import { UserManagementService } from '../../core/services/user-management.servi
   `,
   styles: [`
     mat-dialog-content {
-      min-width: 600px;
+      min-width: 300px;
+      width: 100%;
       max-width: 700px;
+    }
+    @media (min-width: 768px) {
+      mat-dialog-content {
+        min-width: 600px;
+      }
     }
   `]
 })

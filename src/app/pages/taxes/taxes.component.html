@@ -7,48 +7,48 @@
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
     <mat-card class="bg-blue-50">
       <mat-card-content>
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-gray-600">ISPC Acumulado (Ano)</p>
-            <p class="text-2xl font-bold text-blue-600">{{ formatCurrency(summary().yearToDate) }}</p>
+        <div class="flex items-center justify-between gap-2 overflow-hidden">
+          <div class="min-w-0 pr-2">
+            <p class="text-xs sm:text-sm text-gray-600 truncate">ISPC Acumulado (Ano)</p>
+            <p class="text-lg md:text-2xl font-bold text-blue-600 truncate">{{ formatCurrency(summary().yearToDate) }}</p>
           </div>
-          <mat-icon class="text-blue-600 text-4xl">account_balance</mat-icon>
+          <mat-icon class="text-blue-600 shrink-0 !text-[40px] !w-[40px] !h-[40px]">account_balance</mat-icon>
         </div>
       </mat-card-content>
     </mat-card>
 
     <mat-card class="bg-green-50">
       <mat-card-content>
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-gray-600">Total Pago</p>
-            <p class="text-2xl font-bold text-green-600">{{ formatCurrency(summary().totalPaid) }}</p>
+        <div class="flex items-center justify-between gap-2 overflow-hidden">
+          <div class="min-w-0 pr-2">
+            <p class="text-xs sm:text-sm text-gray-600 truncate">Total Pago</p>
+            <p class="text-lg md:text-2xl font-bold text-green-600 truncate">{{ formatCurrency(summary().totalPaid) }}</p>
           </div>
-          <mat-icon class="text-green-600 text-4xl">check_circle</mat-icon>
+          <mat-icon class="text-green-600 shrink-0 !text-[40px] !w-[40px] !h-[40px]">check_circle</mat-icon>
         </div>
       </mat-card-content>
     </mat-card>
 
     <mat-card class="bg-red-50">
       <mat-card-content>
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-gray-600">Em Atraso</p>
-            <p class="text-2xl font-bold text-red-600">{{ formatCurrency(summary().overdue) }}</p>
+        <div class="flex items-center justify-between gap-2 overflow-hidden">
+          <div class="min-w-0 pr-2">
+            <p class="text-xs sm:text-sm text-gray-600 truncate">Em Atraso</p>
+            <p class="text-lg md:text-2xl font-bold text-red-600 truncate">{{ formatCurrency(summary().overdue) }}</p>
           </div>
-          <mat-icon class="text-red-600 text-4xl">error</mat-icon>
+          <mat-icon class="text-red-600 shrink-0 !text-[40px] !w-[40px] !h-[40px]">error</mat-icon>
         </div>
       </mat-card-content>
     </mat-card>
 
     <mat-card class="bg-orange-50">
       <mat-card-content>
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-gray-600">Declarações Pendentes</p>
-            <p class="text-2xl font-bold text-orange-600">{{ summary().pendingDeclarations }}</p>
+        <div class="flex items-center justify-between gap-2 overflow-hidden">
+          <div class="min-w-0 pr-2">
+            <p class="text-xs sm:text-sm text-gray-600 truncate">Declarações Pendentes</p>
+            <p class="text-lg md:text-2xl font-bold text-orange-600 truncate">{{ summary().pendingDeclarations }}</p>
           </div>
-          <mat-icon class="text-orange-600 text-4xl">pending_actions</mat-icon>
+          <mat-icon class="text-orange-600 shrink-0 !text-[40px] !w-[40px] !h-[40px]">pending_actions</mat-icon>
         </div>
       </mat-card-content>
     </mat-card>

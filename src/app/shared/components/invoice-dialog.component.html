@@ -17,8 +17,8 @@
           <ng-template matStepLabel>Selecionar Cliente</ng-template>
 
           <div class="py-6 space-y-4">
-            <div class="flex items-center gap-4">
-              <mat-form-field appearance="outline" class="flex-1">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+              <mat-form-field appearance="outline" class="w-full sm:flex-1">
                 <mat-label>Cliente</mat-label>
                 <mat-select
                   formControlName="client_id"
@@ -40,7 +40,7 @@
                   mat-stroked-button
                   type="button"
                   (click)="openQuickClientDialog()"
-                  class="!border-ispc-orange !text-ispc-orange h-[56px]"
+                  class="!border-ispc-orange !text-ispc-orange h-[56px] w-full sm:w-auto"
                 >
                   <mat-icon>add</mat-icon>
                   Novo Cliente
@@ -128,7 +128,7 @@
                         </mat-option>
                       }
                     </mat-autocomplete>
-                    <mat-hint>O catálogo é atualizado automaticamente conforme você digita</mat-hint>
+                    <mat-hint class="text-xs">Sugestões automáticas ao digitar</mat-hint>
                   </mat-form-field>
                 </div>
 
@@ -279,18 +279,18 @@
             }
 
             <!-- Bottom Actions -->
-            <div class="flex justify-between items-center pt-4 border-t border-gray-100 mt-6">
-              <button mat-button matStepperPrevious type="button" class="text-gray-600">
+            <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 pt-4 border-t border-gray-100 mt-6">
+              <button mat-button matStepperPrevious type="button" class="text-gray-600 w-full sm:w-auto">
                 <mat-icon>arrow_back</mat-icon>
-                Selecionar Cliente
+                Voltar
               </button>
 
-              <div class="flex gap-3">
+              <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                 @if (!isEditing()) {
                   <button
                     mat-stroked-button
                     type="button"
-                    class="!border-ispc-orange !text-ispc-orange"
+                    class="!border-ispc-orange !text-ispc-orange w-full sm:w-auto"
                     [disabled]="invoiceItems().length === 0 || saving()"
                     (click)="save('rascunho')"
                   >
@@ -301,7 +301,7 @@
 
                 <button
                   mat-raised-button
-                  class="!bg-ispc-orange !text-white px-8 h-[40px] !rounded-lg flex items-center"
+                  class="!bg-ispc-orange !text-white px-8 h-[40px] !rounded-lg flex items-center justify-center w-full sm:w-auto"
                   [disabled]="invoiceItems().length === 0 || saving()"
                   (click)="save('pendente')"
                 >

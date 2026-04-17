@@ -30,9 +30,9 @@ import { Company } from '../../core/services/company.service';
       </div>
     </div>
 
-    <div class="p-8 max-h-[85vh] overflow-y-auto bg-gray-100">
+    <div class="p-4 md:p-8 max-h-[85vh] overflow-y-auto overflow-x-auto bg-gray-100">
       @if (company()) {
-        <div class="max-w-[210mm] mx-auto bg-white shadow-lg" style="width: 210mm;">
+        <div class="min-w-[210mm] max-w-[210mm] mx-auto bg-white shadow-lg" style="width: 210mm;">
 
           <div class="border-2 border-black" style="font-family: 'Times New Roman', serif;">
 
