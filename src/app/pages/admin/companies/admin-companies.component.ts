@@ -12,7 +12,7 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
       <div class="space-y-6">
         <!-- Edit Modal -->
         <div *ngIf="isEditModalOpen" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-in fade-in zoom-in duration-200">
+          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all animate-in fade-in zoom-in duration-200">
             <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
               <h3 class="text-xl font-bold text-gray-800 font-serif uppercase tracking-tight">Gerir Contribuinte</h3>
               <button (click)="closeEditModal()" class="text-gray-400 hover:text-gray-600">
@@ -31,8 +31,81 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
               <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-1">
                   <label class="text-[10px] font-bold text-gray-500 uppercase">NUIT</label>
-                  <input [(ngModel)]="editingCompany.nuit" type="text" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                  <input [(ngModel)]="editingCompany.nuit" type="text" maxlength="9" (input)="formatEditNuit()" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                 </div>
+                <div class="space-y-1">
+                  <label class="text-[10px] font-bold text-gray-500 uppercase">Tipo de Entidade</label>
+                  <select [(ngModel)]="editingCompany.entity_type" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                    <option value="">Selecionar...</option>
+                    <option value="singular">Singular</option>
+                    <option value="collective">Colectiva</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                  <label class="text-[10px] font-bold text-gray-500 uppercase">E-mail da Empresa</label>
+                  <input [(ngModel)]="editingCompany.email" type="email" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+                <div class="space-y-1">
+                  <label class="text-[10px] font-bold text-gray-500 uppercase">Telefone</label>
+                  <input [(ngModel)]="editingCompany.phone" type="tel" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+              </div>
+
+              <!-- Actividades Section -->
+              <div class="border-t border-gray-100 pt-4 mt-2">
+                <h4 class="text-xs font-bold text-gray-700 uppercase tracking-widest mb-3">Tipo de Actividades</h4>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                  <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Actividade Principal</label>
+                    <select [(ngModel)]="editingCompany.category1" (ngModelChange)="onEditCategory1Change()" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                      <option value="">Selecionar...</option>
+                      <option *ngFor="let cat of getCat1Options()" [value]="cat.id">{{ cat.label }}</option>
+                    </select>
+                  </div>
+
+                  <div class="space-y-1" *ngIf="getEditCat2Options().length > 0">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Actividade(s) Comerciais</label>
+                    <select [(ngModel)]="editingCompany.category2" (ngModelChange)="onEditCategory2Change()" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                      <option value="">Selecionar...</option>
+                      <option *ngFor="let cat of getEditCat2Options()" [value]="cat.id">{{ cat.label }}</option>
+                    </select>
+                  </div>
+
+                  <div class="space-y-1" *ngIf="getEditCat3Options().length > 0">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Actividade de Serviço</label>
+                    <select [(ngModel)]="editingCompany.category3" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                      <option value="">Selecionar...</option>
+                      <option *ngFor="let cat of getEditCat3Options()" [value]="cat">{{ cat }}</option>
+                    </select>
+                  </div>
+
+                  <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Volume Negócio/Taxa ISPC</label>
+                    <select [(ngModel)]="editingCompany.business_volume" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                      <ng-container *ngIf="isEditISPCScaleActivity()">
+                        <option value="3">3% (até 1.000.000,00MT)</option>
+                        <option value="4">4% (> 1.001.000,00MT e ≤ 2.500.000,00MT)</option>
+                        <option value="5">5% (> 2.501.000,00MT e ≤ 4.000.000,00MT)</option>
+                      </ng-container>
+                      <ng-container *ngIf="!isEditISPCScaleActivity()">
+                        <ng-container *ngIf="getEditServiceType() === 'nao_liberais'">
+                          <option value="12">12% s/ volume ≤ 4.000.000,00MT</option>
+                          <option value="20">20% s/ volume > 4.000.000,00MT</option>
+                        </ng-container>
+                        <ng-container *ngIf="getEditServiceType() === 'liberal'">
+                          <option value="15">15% s/ volume ≤ 4.000.000,00MT</option>
+                          <option value="20">20% s/ volume > 4.000.000,00MT</option>
+                        </ng-container>
+                      </ng-container>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-1">
                   <label class="text-[10px] font-bold text-gray-500 uppercase">Estado</label>
                   <select [(ngModel)]="editingCompany.status" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
@@ -43,16 +116,21 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
                 </div>
               </div>
 
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-3 gap-4 border-t border-gray-100 pt-4 mt-2">
                 <div class="space-y-1">
                   <label class="text-[10px] font-bold text-gray-500 uppercase">Província</label>
                   <select [(ngModel)]="editingCompany.province" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                    <option value="">Selecionar...</option>
                     <option *ngFor="let p of provinces" [value]="p">{{ p }}</option>
                   </select>
                 </div>
                 <div class="space-y-1">
                   <label class="text-[10px] font-bold text-gray-500 uppercase">Distrito</label>
                   <input [(ngModel)]="editingCompany.district" type="text" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+                <div class="space-y-1">
+                  <label class="text-[10px] font-bold text-gray-500 uppercase">P. Administrativo</label>
+                  <input [(ngModel)]="editingCompany.administrativePost" type="text" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                 </div>
               </div>
 
@@ -384,8 +462,13 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
             <table class="w-full text-left">
               <thead>
                 <tr class="bg-gray-50 text-gray-500 text-[10px] uppercase tracking-wider font-semibold select-none">
-                  <th class="px-4 py-4 w-20">
-                    <span>ID</span>
+                  <th (click)="toggleSort('company_code')" class="px-4 py-4 w-28 cursor-pointer hover:bg-gray-100 transition-colors">
+                    <div class="flex items-center space-x-1">
+                      <span>ID</span>
+                      <svg *ngIf="sortColumn() === 'company_code'" class="w-3 h-3" [class.rotate-180]="sortDirection() === 'desc'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                      </svg>
+                    </div>
                   </th>
                   <th (click)="toggleSort('name')" class="px-4 py-4 cursor-pointer hover:bg-gray-100 transition-colors">
                     <div class="flex items-center space-x-1">
@@ -450,8 +533,8 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
                 <tr *ngFor="let company of filteredCompanies(); let i = index" class="hover:bg-gray-50 transition-colors text-sm">
                   <!-- ID -->
                   <td class="px-4 py-4">
-                    <span class="text-xs font-bold text-gray-500">
-                      {{ i + 1 }}
+                    <span class="text-xs font-bold text-gray-500 font-mono">
+                      {{ company.company_code || '—' }}
                     </span>
                   </td>
                   <!-- Empresa -->
@@ -651,7 +734,7 @@ export class AdminCompaniesComponent implements OnInit {
   isLoading = signal(false);
 
   // Ordering
-  sortColumn = signal<string>('name');
+  sortColumn = signal<string>('company_code');
   sortDirection = signal<'asc' | 'desc'>('asc');
 
   availablePlans = computed(() => {
@@ -700,7 +783,8 @@ export class AdminCompaniesComponent implements OnInit {
       list = list.filter(c =>
         c.name?.toLowerCase().includes(term) ||
         c.nuit?.toLowerCase().includes(term) ||
-        c.owner_name?.toLowerCase().includes(term)
+        c.owner_name?.toLowerCase().includes(term) ||
+        c.company_code?.toLowerCase().includes(term)
       );
     }
 
@@ -828,13 +912,76 @@ export class AdminCompaniesComponent implements OnInit {
 
   // Phase 2: Edit Methods
   openEditModal(company: any) {
-    this.editingCompany = { ...company };
+    this.editingCompany = {
+      ...company,
+      administrativePost: company.documents_metadata?.administrativePost || ''
+    };
     this.isEditModalOpen = true;
   }
 
   closeEditModal() {
     this.isEditModalOpen = false;
     this.editingCompany = {};
+  }
+
+  formatEditNuit() {
+    if (!this.editingCompany.nuit) return;
+    let value = this.editingCompany.nuit.replace(/\D/g, '');
+    if (value.length > 9) {
+      value = value.substring(0, 9);
+    }
+    this.editingCompany.nuit = value;
+  }
+
+  onEditCategory1Change() {
+    this.editingCompany.category2 = '';
+    this.editingCompany.category3 = '';
+    this.editingCompany.business_volume = '3';
+  }
+
+  onEditCategory2Change() {
+    this.editingCompany.category3 = '';
+    const cat2 = this.editingCompany.category2;
+    if (cat2 === 'servicos_nao_liberais') {
+      this.editingCompany.business_volume = '12';
+    } else if (cat2 === 'servicos_liberais') {
+      this.editingCompany.business_volume = '15';
+    } else {
+      const currentVol = this.editingCompany.business_volume;
+      if (currentVol === '12' || currentVol === '15' || currentVol === '20') {
+        this.editingCompany.business_volume = '3';
+      }
+    }
+  }
+
+  getEditServiceType(): 'liberal' | 'nao_liberais' | null {
+    const cat2 = this.editingCompany.category2;
+    if (cat2 === 'servicos_nao_liberais') return 'nao_liberais';
+    if (cat2 === 'servicos_liberais') return 'liberal';
+    return null;
+  }
+
+  isEditISPCScaleActivity() {
+    const cat2 = this.editingCompany.category2;
+    return cat2 !== 'servicos_nao_liberais' && cat2 !== 'servicos_liberais';
+  }
+
+  getEditCat2Options() {
+    const cat1 = this.editingCompany.category1;
+    if (!cat1 || !this.activityHierarchy[cat1]?.subcategories) return [];
+    return Object.entries(this.activityHierarchy[cat1].subcategories!).map(([id, cat]) => ({
+      id,
+      label: cat.label
+    }));
+  }
+
+  getEditCat3Options() {
+    const cat1 = this.editingCompany.category1;
+    const cat2 = this.editingCompany.category2;
+    if (!cat1 || !cat2) return [];
+    const cat2Obj = (this.activityHierarchy[cat1]?.subcategories as any)?.[cat2];
+    if (!cat2Obj || !cat2Obj.subcategories) return [];
+    return cat2Obj.subcategories;
   }
 
   async saveCompany() {
@@ -846,7 +993,19 @@ export class AdminCompaniesComponent implements OnInit {
         status: this.editingCompany.status,
         province: this.editingCompany.province,
         district: this.editingCompany.district,
-        address: this.editingCompany.address
+        address: this.editingCompany.address,
+        email: this.editingCompany.email,
+        phone: this.editingCompany.phone || null,
+        entity_type: this.editingCompany.entity_type,
+        category1: this.editingCompany.category1 || null,
+        category2: this.editingCompany.category2 || null,
+        category3: this.editingCompany.category3 || null,
+        business_volume: this.editingCompany.business_volume || '3',
+        documents_metadata: {
+          province: this.editingCompany.province || null,
+          district: this.editingCompany.district || null,
+          administrativePost: this.editingCompany.administrativePost || null
+        }
       })
       .eq('id', this.editingCompany.id);
 
@@ -979,7 +1138,7 @@ export class AdminCompaniesComponent implements OnInit {
     const headers = ['ID', 'Nome', 'NUIT', 'Provincia', 'Distrito', 'Proprietario', 'Plano', 'Data Limite Plano', 'Ultimo Acesso', 'Utilizadores', 'Uso (30d)', 'Faturas (30d)'];
 
     const rows = data.map(c => [
-      `"${(c.id || '').toString().replace(/"/g, '""')}"`,
+      `"${(c.company_code || '').replace(/"/g, '""')}"`,
       `"${(c.name || '').replace(/"/g, '""')}"`,
       `"${(c.nuit || '').replace(/"/g, '""')}"`,
       `"${(c.province || 'N/A').replace(/"/g, '""')}"`,

@@ -213,11 +213,11 @@ import { PaginationComponent, PageChangeEvent } from '../../../shared/components
           <div class="overflow-x-auto">
             <table class="w-full text-left">
               <thead>
-                < <tr class="bg-gray-50 text-gray-500 text-[10px] uppercase tracking-wider font-semibold select-none">
-                  <th (click)="toggleSort('display_id')" class="px-6 py-4 w-20 cursor-pointer hover:bg-gray-100 transition-colors">
+                 <tr class="bg-gray-50 text-gray-500 text-[10px] uppercase tracking-wider font-semibold select-none">
+                  <th (click)="toggleSort('subscriber_code')" class="px-6 py-4 w-28 cursor-pointer hover:bg-gray-100 transition-colors">
                     <div class="flex items-center space-x-1">
                       <span>ID</span>
-                      <svg *ngIf="sortColumn() === 'display_id'" class="w-3 h-3" [class.rotate-180]="sortDirection() === 'desc'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg *ngIf="sortColumn() === 'subscriber_code'" class="w-3 h-3" [class.rotate-180]="sortDirection() === 'desc'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
                       </svg>
                     </div>
@@ -267,8 +267,8 @@ import { PaginationComponent, PageChangeEvent } from '../../../shared/components
               </thead>
               <tbody>
                  <tr *ngFor="let sub of paginatedSubscribers(); let i = index" class="border-t border-gray-100 hover:bg-gray-50 transition-colors">
-                  <td class="px-6 py-4 text-xs font-bold text-gray-500">
-                    {{ sub.display_id || i + 1 }}
+                  <td class="px-6 py-4 text-xs font-bold text-gray-500 font-mono">
+                    {{ sub.subscriber_code || '—' }}
                   </td>
                   <td class="px-6 py-4">
                     <div class="flex items-center space-x-3">
@@ -364,7 +364,7 @@ export class AdminSubscribersComponent implements OnInit {
   selectedSub = signal<any>({});
 
   // Sorting
-  sortColumn = signal<string>('display_id');
+  sortColumn = signal<string>('subscriber_code');
   sortDirection = signal<'asc' | 'desc'>('asc');
 
   statuses = [
@@ -384,7 +384,8 @@ export class AdminSubscribersComponent implements OnInit {
       const term = this.searchTerm().toLowerCase();
       list = list.filter(s =>
         s.full_name?.toLowerCase().includes(term) ||
-        s.email?.toLowerCase().includes(term)
+        s.email?.toLowerCase().includes(term) ||
+        s.subscriber_code?.toLowerCase().includes(term)
       );
     }
 
@@ -444,8 +445,7 @@ export class AdminSubscribersComponent implements OnInit {
 
       if (error) throw error;
 
-      const totalSubs = data?.length || 0;
-      const formatted = data?.map((s, index) => {
+      const formatted = data?.map((s) => {
         const companies = s.companies || [];
         const companyCount = companies.length;
         const uniqueUsers = new Set<string>();
@@ -454,7 +454,6 @@ export class AdminSubscribersComponent implements OnInit {
         });
         return {
           ...s,
-          display_id: totalSubs - index,
           company_count: companyCount,
           user_count: uniqueUsers.size
         };
@@ -544,9 +543,10 @@ export class AdminSubscribersComponent implements OnInit {
     const data = this.filteredSubscribers();
     if (data.length === 0) return;
 
-    const headers = ['Nome', 'E-mail', 'Telefone', 'Estado', 'Contribuintes', 'Utilizadores', 'Data de Criação'];
+    const headers = ['ID', 'Nome', 'E-mail', 'Telefone', 'Estado', 'Contribuintes', 'Utilizadores', 'Data de Criação'];
 
     const rows = data.map(s => [
+      `"${s.subscriber_code || ''}"`,
       `"${(s.full_name || '').replace(/"/g, '""')}"`,
       `"${(s.email || '').replace(/"/g, '""')}"`,
       `"${(s.phone || 'N/A').replace(/"/g, '""')}"`,
