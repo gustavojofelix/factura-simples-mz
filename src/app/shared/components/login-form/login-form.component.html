@@ -22,6 +22,11 @@
       @if (getErrorMessage('password')) {
       <mat-error>{{ getErrorMessage('password') }}</mat-error>
       }
+      <div class="flex justify-end mt-1">
+        <a (click)="onForgotPassword()" class="text-xs text-ispc-orange font-medium hover:underline cursor-pointer">
+          Esqueceu-se da palavra-passe?
+        </a>
+      </div>
     </mat-form-field>
 
     <!-- Submit Button -->

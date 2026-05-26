@@ -43,11 +43,15 @@ export class AuthService {
     });
 
     this.supabase.auth.onAuthStateChange((event, session) => {
-      (() => {
-        this.currentUser.set(session?.user ?? null);
-        this.isLoading.set(false);
-        this.resolveAuth();
-      })();
+      console.log('Auth event:', event, session ? 'Session exists' : 'No session');
+      this.currentUser.set(session?.user ?? null);
+      this.isLoading.set(false);
+      this.resolveAuth();
+
+      if (event === 'PASSWORD_RECOVERY') {
+        console.log('Detected PASSWORD_RECOVERY, redirecting to /resetar-senha');
+        this.router.navigate(['/resetar-senha']);
+      }
     });
   }
 
@@ -238,4 +242,14 @@ async updateUserPassword(currentPassword: string, newPassword: string): Promise<
   const { error } = await this.supabase.auth.updateUser({ password: newPassword });
   if (error) throw error;
 }
+
+  async updatePassword(newPassword: string): Promise<AuthResponse> {
+    try {
+      const { data, error } = await this.supabase.auth.updateUser({ password: newPassword });
+      if (error) return { success: false, error: this.translateError(error) };
+      return { success: true, user: data.user };
+    } catch (error: any) {
+      return { success: false, error: error.message || 'Erro desconhecido' };
+    }
+  }
 }

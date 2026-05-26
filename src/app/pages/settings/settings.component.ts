@@ -232,30 +232,43 @@ export class SettingsComponent implements OnInit {
     dialogRef.afterClosed().subscribe(async (result) => {
       if (result) {
         this.loading.set(true);
+        let hasError = false;
+        let lastError = '';
 
         // Adicionar utilizador (convidar se não existir)
         for (let i = 0; i < result.companies.length; i++) {
           const { company_id, role } = result.companies[i];
-          // Só passamos fullName/phone na primeira iteração para evitar convites duplicados
-          // ou o serviço tratará de convidar apenas se não existir.
-          // Mas como o serviço atual já faz listUsers e find, ele lidará com isso.
-          await this.userManagementService.addUserToCompany(
+          const response = await this.userManagementService.addUserToCompany(
             result.email,
             company_id,
             role as any,
             i === 0 ? result.fullName : undefined,
             i === 0 ? result.phone : undefined
           );
+
+          if (!response.success) {
+            hasError = true;
+            lastError = response.error || 'Erro desconhecido';
+            break;
+          }
         }
 
         this.loading.set(false);
         await this.userManagementService.loadAllUsers();
 
-        this.snackBar.open(
-          user ? 'Acesso atualizado com sucesso' : 'Utilizador adicionado com sucesso',
-          'Fechar',
-          { duration: 3000 }
-        );
+        if (hasError) {
+          this.snackBar.open(
+            `Erro: ${lastError}`,
+            'Fechar',
+            { duration: 10000, panelClass: ['error-snackbar'] }
+          );
+        } else {
+          this.snackBar.open(
+            user ? 'Acesso atualizado com sucesso' : 'Utilizador convidado com sucesso',
+            'Fechar',
+            { duration: 3000, panelClass: ['success-snackbar'] }
+          );
+        }
       }
     });
   }

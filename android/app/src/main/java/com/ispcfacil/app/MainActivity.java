@@ -1,4 +1,4 @@
-package com.facturasimples.app;
+package com.ispcfacil.app;
 
 import com.getcapacitor.BridgeActivity;
 

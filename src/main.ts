@@ -11,7 +11,7 @@ registerLocaleData(localePt, 'pt-MZ');
 
 bootstrapApplication(AppComponent, {
   providers: [
-    provideRouter(routes, withHashLocation()),
+    provideRouter(routes),
     provideAnimations(),
     { provide: LOCALE_ID, useValue: 'pt-MZ' }
   ]

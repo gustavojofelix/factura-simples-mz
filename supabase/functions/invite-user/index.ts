@@ -18,7 +18,7 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     )
 
-    const { email, fullName, phone } = await req.json()
+    const { email, fullName, phone, redirectTo } = await req.json()
 
     if (!email) {
       throw new Error('Email is required')
@@ -30,6 +30,7 @@ serve(async (req) => {
         full_name: fullName,
         phone: phone,
       },
+      redirectTo: redirectTo,
     })
 
     if (error) throw error

@@ -44,6 +44,32 @@ export class LoginFormComponent {
     });
   }
 
+  async onForgotPassword() {
+    const email = this.loginForm.get('email')?.value;
+    if (!email) {
+      this.snackBar.open('Por favor, introduza o seu email primeiro', 'Fechar', {
+        duration: 3000
+      });
+      return;
+    }
+
+    this.isLoading.set(true);
+    const result = await this.authService.resetPassword(email);
+    this.isLoading.set(false);
+
+    if (result.success) {
+      this.snackBar.open('Email de recuperação enviado! Verifique a sua caixa de entrada.', 'Fechar', {
+        duration: 5000,
+        panelClass: ['success-snackbar']
+      });
+    } else {
+      this.snackBar.open(result.error || 'Erro ao enviar email de recuperação', 'Fechar', {
+        duration: 5000,
+        panelClass: ['error-snackbar']
+      });
+    }
+  }
+
   async onSubmit() {
     if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();

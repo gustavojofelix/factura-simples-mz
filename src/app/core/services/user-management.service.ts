@@ -159,7 +159,7 @@ export class UserManagementService {
     role: CompanyUser['role'],
     fullName?: string,
     phone?: string
-  ): Promise<boolean> {
+  ): Promise<{ success: boolean, error?: string }> {
     try {
       // Usar a nossa nova RPC para encontrar o ID do utilizador pelo email de forma segura
       const { data: targetUserId, error: rpcError } = await this.supabase.client
@@ -170,12 +170,22 @@ export class UserManagementService {
       // If user not found, invite them
       if (!targetUserId) {
         const { data: inviteData, error: inviteError } = await this.supabase.client.functions.invoke('invite-user', {
-          body: { email, fullName, phone }
+          body: { 
+            email, 
+            fullName, 
+            phone,
+            redirectTo: `${window.location.origin}/resetar-senha`
+          }
         });
 
-        if (inviteError || !inviteData?.user) {
-          console.error('Error inviting user:', inviteError);
-          return false;
+        if (inviteError) {
+          console.error('Error invoking invite-user function:', inviteError);
+          const errorMsg = inviteError.message || (typeof inviteError === 'string' ? inviteError : 'Erro desconhecido ao enviar convite');
+          return { success: false, error: `Falha ao convidar utilizador: ${errorMsg}` };
+        }
+
+        if (!inviteData?.user) {
+          return { success: false, error: 'O convite foi processado mas os dados do utilizador não foram retornados.' };
         }
 
         targetUser.id = inviteData.user.id;
@@ -193,7 +203,7 @@ export class UserManagementService {
           });
       }
 
-      if (!targetUser.id) return false;
+      if (!targetUser.id) return { success: false, error: 'Não foi possível obter o ID do utilizador.' };
 
       const { data: existingUser } = await this.supabase.client
         .from('company_users')
@@ -207,7 +217,7 @@ export class UserManagementService {
         if (existingUser.role !== role) {
           await this.updateUserRole(targetUser.id, companyId, role);
         }
-        return true;
+        return { success: true };
       }
 
       const { error } = await this.supabase.client
@@ -220,15 +230,15 @@ export class UserManagementService {
         });
 
       if (error) {
-        console.error('Error adding user:', error);
-        return false;
+        console.error('Error adding user to company_users:', error);
+        return { success: false, error: 'Erro ao associar utilizador à empresa.' };
       }
 
       await this.loadCompanyUsers(companyId);
-      return true;
-    } catch (error) {
-      console.error('Error adding user to company:', error);
-      return false;
+      return { success: true };
+    } catch (error: any) {
+      console.error('Unexpected error in addUserToCompany:', error);
+      return { success: false, error: error.message || 'Erro inesperado ao adicionar utilizador.' };
     }
   }
 
