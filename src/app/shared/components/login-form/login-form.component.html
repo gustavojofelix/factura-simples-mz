@@ -1,57 +1,64 @@
-<div class="bg-white rounded-2xl shadow-xl p-8">
-  <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
+<div class="bg-slate-900/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl">
+  <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-5">
     <!-- Email Field -->
-    <mat-form-field appearance="outline" class="w-full">
-      <mat-label>Email</mat-label>
-      <input matInput type="email" formControlName="email" placeholder="seu@email.com">
-      <mat-icon matPrefix class="!text-gray-400">email</mat-icon>
-      @if (getErrorMessage('email')) {
-      <mat-error>{{ getErrorMessage('email') }}</mat-error>
-      }
-    </mat-form-field>
+    <div class="flex flex-col gap-1.5">
+      <mat-form-field appearance="outline" class="w-full !m-0 custom-dark-form-field">
+        <mat-label class="!text-slate-400">Email</mat-label>
+        <input matInput type="email" formControlName="email" placeholder="seu@email.com" class="!text-white">
+        <mat-icon matPrefix class="!text-slate-400">email</mat-icon>
+        @if (getErrorMessage('email')) {
+        <mat-error class="!text-rose-400 font-semibold">{{ getErrorMessage('email') }}</mat-error>
+        }
+      </mat-form-field>
+    </div>
 
     <!-- Password Field -->
-    <mat-form-field appearance="outline" class="w-full">
-      <mat-label>Palavra-passe</mat-label>
-      <input matInput [type]="hidePassword() ? 'password' : 'text'" formControlName="password" placeholder="">
-      <mat-icon matPrefix class="!text-gray-400">lock</mat-icon>
-      <button mat-icon-button matSuffix type="button" (click)="hidePassword.set(!hidePassword())"
-        [attr.aria-label]="'Mostrar palavra-passe'" [attr.aria-pressed]="!hidePassword()">
-        <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
-      </button>
-      @if (getErrorMessage('password')) {
-      <mat-error>{{ getErrorMessage('password') }}</mat-error>
-      }
-    </mat-form-field>
+    <div class="flex flex-col gap-1.5">
+      <mat-form-field appearance="outline" class="w-full !m-0 custom-dark-form-field">
+        <mat-label class="!text-slate-400">Palavra-passe</mat-label>
+        <input matInput [type]="hidePassword() ? 'password' : 'text'" formControlName="password" placeholder="" class="!text-white">
+        <mat-icon matPrefix class="!text-slate-400">lock</mat-icon>
+        <button mat-icon-button matSuffix type="button" (click)="hidePassword.set(!hidePassword())"
+          [attr.aria-label]="'Mostrar palavra-passe'" [attr.aria-pressed]="!hidePassword()" class="!text-slate-400">
+          <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        @if (getErrorMessage('password')) {
+        <mat-error class="!text-rose-400 font-semibold">{{ getErrorMessage('password') }}</mat-error>
+        }
+      </mat-form-field>
+    </div>
 
     <!-- Submit Button -->
     <button mat-raised-button type="submit"
-      class="w-full !bg-ispc-orange !text-white !py-3 !text-lg !font-semibold !rounded-lg hover:!bg-ispc-orange/90 transition-all"
+      class="w-full !h-12 !bg-gradient-to-r !from-orange-500 !to-ispc-orange !text-white !text-sm !font-bold !rounded-xl hover:!from-orange-600 hover:!to-orange-500 !shadow-lg hover:!shadow-orange-500/20 active:scale-[0.98] transition-all flex items-center justify-center"
       [disabled]="isLoading()">
-      <span class="flex items-center justify-center gap-2">
-        @if (isLoading()) {
-        <mat-spinner diameter="20" class="!text-white"></mat-spinner>
+      @if (isLoading()) {
+      <div class="flex items-center gap-2">
+        <mat-spinner diameter="18" class="!text-white white-spinner"></mat-spinner>
         <span>A entrar...</span>
-        } @else {
-        <span>Entrar</span>
-        }
+      </div>
+      } @else {
+      <span class="flex items-center justify-center gap-2">
+        Entrar <mat-icon class="!text-sm !w-4 !h-4 flex items-center justify-center">login</mat-icon>
       </span>
+      }
     </button>
   </form>
 
   <!-- Divider -->
   <div class="mt-6 flex items-center justify-center">
-    <div class="border-t border-gray-300 flex-1"></div>
-    <span class="px-4 text-sm text-gray-500">ou</span>
-    <div class="border-t border-gray-300 flex-1"></div>
+    <div class="border-t border-slate-800/60 flex-1"></div>
+    <span class="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">ou</span>
+    <div class="border-t border-slate-800/60 flex-1"></div>
   </div>
 
   <!-- Register Link -->
   <div class="mt-6 text-center">
-    <p class="text-gray-600">
+    <p class="text-xs sm:text-sm text-slate-350">
       Ainda não tem conta?
-      <a routerLink="/registar" class="text-ispc-orange font-semibold hover:text-ispc-orange/80 transition-colors ml-1">
+      <a routerLink="/registar" class="text-orange-400 font-bold hover:text-orange-300 transition-colors ml-1 inline-flex items-center hover:underline">
         Criar conta grátis
+        <mat-icon class="!text-xs !w-3.5 !h-3.5 flex items-center justify-center ml-0.5">chevron_right</mat-icon>
       </a>
     </p>
   </div>
