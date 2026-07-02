@@ -7,6 +7,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTableModule } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { InvoiceService, Invoice } from '../../core/services/invoice.service';
 import { PaymentService, Payment } from '../../core/services/payment.service';
 import { CompanyService } from '../../core/services/company.service';
@@ -27,7 +28,8 @@ import { SupabaseService } from '../../core/services/supabase.service';
     MatCardModule,
     MatChipsModule,
     MatTableModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatSnackBarModule
   ],
   template: `
     <div class="max-w-5xl mx-auto p-6 printable-content">
@@ -425,6 +427,7 @@ export class InvoiceDetailComponent {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private dialog = inject(MatDialog);
+  private snackBar = inject(MatSnackBar);
 
   invoiceService = inject(InvoiceService);
   paymentService = inject(PaymentService);
@@ -566,7 +569,7 @@ export class InvoiceDetailComponent {
       this.pdfService.downloadPdf(blob, `Factura_${invoice.invoice_number}`);
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
-      alert('Erro ao gerar o ficheiro PDF. Por favor, tente novamente.');
+      this.snackBar.open('Erro ao gerar o ficheiro PDF. Por favor, tente novamente.', 'Fechar', { duration: 4000 });
     } finally {
       this.isGeneratingPdf.set(false);
     }
@@ -583,9 +586,9 @@ export class InvoiceDetailComponent {
     const success = await this.invoiceService.annulInvoice(invoice.id);
     if (success) {
       await this.loadInvoice(invoice.id);
-      alert('Factura anulada com sucesso!');
+      this.snackBar.open('Factura anulada com sucesso!', 'Fechar', { duration: 3000 });
     } else {
-      alert('Erro ao anular factura');
+      this.snackBar.open('Erro ao anular factura', 'Fechar', { duration: 3000 });
     }
   }
 
@@ -600,9 +603,9 @@ export class InvoiceDetailComponent {
     const success = await this.invoiceService.emitInvoice(invoice.id);
     if (success) {
       await this.loadInvoice(invoice.id);
-      alert('Factura emitida com sucesso!');
+      this.snackBar.open('Factura emitida com sucesso!', 'Fechar', { duration: 3000 });
     } else {
-      alert('Erro ao emitir factura');
+      this.snackBar.open('Erro ao emitir factura', 'Fechar', { duration: 3000 });
     }
   }
 
@@ -611,7 +614,7 @@ export class InvoiceDetailComponent {
     if (!invoice) return;
 
     if (!invoice.client?.email) {
-      alert('O cliente associado a esta factura não possui endereço de e-mail.');
+      this.snackBar.open('O cliente associado a esta factura não possui endereço de e-mail.', 'Fechar', { duration: 4000 });
       return;
     }
 
@@ -637,10 +640,10 @@ export class InvoiceDetailComponent {
 
       if (error) throw error;
       
-      alert(`E-mail com a factura ${invoice.invoice_number} enviado com sucesso para ${invoice.client.email}!`);
+      this.snackBar.open(`E-mail com a factura ${invoice.invoice_number} enviado com sucesso para ${invoice.client.email}!`, 'Fechar', { duration: 5000 });
     } catch (error) {
       console.error('Erro ao processar e-mail:', error);
-      alert('Ocorreu um erro ao comunicar com os nossos serviços de e-mail.');
+      this.snackBar.open('Ocorreu um erro ao comunicar com os nossos serviços de e-mail.', 'Fechar', { duration: 4000 });
     } finally {
       this.isGeneratingPdf.set(false);
     }

@@ -2,18 +2,20 @@ import "@supabase/functions-js/edge-runtime.d.ts";
 import nodemailer from "npm:nodemailer@6.9.11";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
 Deno.serve(async (req) => {
   // Handle CORS preflight request
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const { to_email, client_name, invoice_number, pdf_base64 } = await req.json();
+    const { to_email, client_name, invoice_number, pdf_base64 } =
+      await req.json();
 
     if (!to_email || !pdf_base64) {
       throw new Error("Missing required fields (to_email, pdf_base64)");
@@ -23,7 +25,7 @@ Deno.serve(async (req) => {
     const transporter = nodemailer.createTransport({
        host: "mail.ispcfacil.co.mz",
        port: 465,
-       secure: true, // true for 465, false for other ports
+       secure: true, // true for 465
        auth: {
          user: "notifications@ispcfacil.co.mz",
          pass: "&fF1;s*QJ$dJ",
@@ -40,23 +42,116 @@ Deno.serve(async (req) => {
       subject: `Factura ${invoice_number} - ISPC Fácil`,
       text: `Olá ${client_name},\n\nEm anexo, enviamos a sua factura ${invoice_number}.\n\nObrigado,\nEquipa ISPC Fácil`,
       html: `
-        <div style="font-family: sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 8px;">
-          <h2 style="color: #f97316;">ISPC Fácil</h2>
-          <p>Olá <strong>${client_name || 'Cliente'}</strong>,</p>
-          <p>Confirmamos a emissão da sua factura <strong>${invoice_number}</strong>. O documento encontra-se em anexo a este e-mail em formato PDF.</p>
-          <br/>
-          <p>Cumprimentos,<br/>Equipe LTS - ISPC Fácil</p>
-          <hr style="border: none; border-top: 1px solid #eee; margin-top: 30px;"/>
-          <p style="font-size: 11px; color: #888;">Este é um e-mail automático. Por favor, não responda directamente para este endereço.</p>
-        </div>
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Factura ${invoice_number} - ISPC Fácil</title>
+        </head>
+        <body style="margin: 0; padding: 0; background-color: #f7f5f4; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;">
+          <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f7f5f4; padding: 40px 0;">
+            <tr>
+              <td align="center">
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e5e0dd;">
+                  
+                  <!-- HEADER -->
+                  <tr>
+                    <td align="left" style="padding: 30px 40px; background: linear-gradient(135deg, #332d2a 0%, #1e1917 100%); border-bottom: 4px solid #f16c39;">
+                      <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                        <tr>
+                          <td>
+                            <span style="font-size: 24px; font-weight: 800; letter-spacing: -0.5px; color: #ffffff;">
+                              <span style="color: #f16c39;">ISPC</span> Fácil
+                            </span>
+                          </td>
+                          <td align="right" style="font-size: 13px; color: #e5e0dd; font-weight: 500;">
+                            Portal de Facturação
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+
+                  <!-- BODY CONTENT -->
+                  <tr>
+                    <td style="padding: 40px; color: #332d2a; line-height: 1.6;">
+                      <h1 style="margin: 0 0 20px 0; font-size: 22px; font-weight: 700; color: #332d2a;">Olá ${
+                        client_name || "Cliente"
+                      },</h1>
+                      <p style="margin: 0 0 24px 0; font-size: 15px; color: #5a524e;">Confirmamos a emissão do documento <strong>${invoice_number}</strong>. Segue em anexo a sua factura em formato PDF com todos os detalhes de facturação.</p>
+                      
+                      <!-- Document Info Box -->
+                      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #fcfbfa; border: 1px dashed #e5e0dd; border-radius: 8px; margin-bottom: 30px; padding: 20px;">
+                        <tr>
+                          <td width="50%" style="padding-bottom: 12px; font-size: 13px; color: #8c827d;">Documento</td>
+                          <td width="50%" style="padding-bottom: 12px; font-size: 13px; color: #8c827d;" align="right">Estado</td>
+                        </tr>
+                        <tr>
+                          <td width="50%" style="font-size: 16px; font-weight: 700; color: #332d2a; padding-bottom: 15px;">${invoice_number}</td>
+                          <td width="50%" style="padding-bottom: 15px;" align="right">
+                            <span style="background-color: #fdf2f0; color: #f16c39; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; border: 1px solid #fce5df;">Emitido</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td colspan="2" style="border-top: 1px solid #f1ece9; padding-top: 15px; font-size: 13px; color: #5a524e;">
+                            Por favor, verifique o documento em PDF anexo para mais detalhes sobre os produtos/serviços e os termos de pagamento.
+                          </td>
+                        </tr>
+                      </table>
+
+                      <p style="margin: 0 0 30px 0; font-size: 15px; color: #5a524e;">Se tiver alguma dúvida sobre este documento, entre em contacto connosco respondendo directamente para este e-mail ou pelos canais abaixo.</p>
+                      
+                      <p style="margin: 0; font-size: 15px; font-weight: 600; color: #332d2a;">Cumprimentos,</p>
+                      <p style="margin: 4px 0 0 0; font-size: 15px; font-weight: 700; color: #f16c39;">Equipa ISPC Fácil</p>
+                    </td>
+                  </tr>
+
+                  <!-- FOOTER -->
+                  <tr>
+                    <td style="padding: 30px 40px; background-color: #332d2a; color: #a69b97; font-size: 12px; border-top: 1px solid #4a423e;">
+                      <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                        <tr>
+                          <td style="padding-bottom: 20px;">
+                            <span style="font-size: 16px; font-weight: 700; color: #ffffff;"><span style="color: #f16c39;">ISPC</span> Fácil</span>
+                            <p style="margin: 5px 0 0 0; color: #a69b97; font-size: 11px;">A sua plataforma de facturação rápida e simplificada em Moçambique.</p>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="border-top: 1px solid #4a423e; padding-top: 20px;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                              <tr>
+                                <td style="font-size: 11px; color: #8c827d;">
+                                  &copy; 2026 ISPC Fácil. Todos os direitos reservados.
+                                </td>
+                                <td align="right" style="font-size: 11px; color: #a69b97;">
+                                  Contacto: <a href="mailto:info@ispcfacil.com" style="color: #f16c39; text-decoration: none; font-weight: 600;">info@ispcfacil.com</a>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
       `,
       attachments: [
         {
-          filename: `Factura_${(invoice_number || 'ND').replace(/\//g, '-')}.pdf`,
+          filename: `Factura_${(invoice_number || "ND").replace(
+            /\//g,
+            "-",
+          )}.pdf`,
           content: base64Data,
-          encoding: 'base64'
-        }
-      ]
+          encoding: "base64",
+        },
+      ],
     };
 
     // Send the email
@@ -65,13 +160,16 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({ success: true, messageId: info.messageId }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (error) {
     console.error("Failed to send email:", error);
     return new Response(
       JSON.stringify({ success: false, error: (error as Error).message }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      },
     );
   }
 });
