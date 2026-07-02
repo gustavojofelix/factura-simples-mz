@@ -34,6 +34,26 @@ serve(async (req) => {
 
     if (error) throw error
 
+    // Notify the admin of the invitation
+    try {
+      const functionUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/notify-admin`;
+      await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+        },
+        body: JSON.stringify({
+          type: 'invite',
+          email,
+          fullName,
+          phone
+        })
+      });
+    } catch (notifyError) {
+      console.error('Failed to notify admin of user invitation:', notifyError);
+    }
+
     return new Response(
       JSON.stringify({ user: data.user }),
       { 

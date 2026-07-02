@@ -29,8 +29,14 @@ import { AuthService } from '../../../core/services/auth.service';
 })
 export class LoginFormComponent {
   loginForm: FormGroup;
+  forgotForm: FormGroup;
+  mode = signal<'login' | 'forgot'>('login');
   isLoading = signal(false);
   hidePassword = signal(true);
+
+  setMode(newMode: 'login' | 'forgot') {
+    this.mode.set(newMode);
+  }
 
   constructor(
     private fb: FormBuilder,
@@ -41,6 +47,10 @@ export class LoginFormComponent {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]]
+    });
+
+    this.forgotForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]]
     });
   }
 
@@ -77,8 +87,9 @@ export class LoginFormComponent {
     }
   }
 
-  getErrorMessage(field: string): string {
-    const control = this.loginForm.get(field);
+  getErrorMessage(field: string, formName: 'login' | 'forgot' = 'login'): string {
+    const form = formName === 'login' ? this.loginForm : this.forgotForm;
+    const control = form.get(field);
     if (!control || !control.touched) return '';
 
     if (control.hasError('required')) {
@@ -91,5 +102,31 @@ export class LoginFormComponent {
       return 'A palavra-passe deve ter pelo menos 6 caracteres';
     }
     return '';
+  }
+
+  async onForgotPasswordSubmit() {
+    if (this.forgotForm.invalid) {
+      this.forgotForm.markAllAsTouched();
+      return;
+    }
+
+    this.isLoading.set(true);
+    const { email } = this.forgotForm.value;
+    const result = await this.authService.resetPassword(email);
+    this.isLoading.set(false);
+
+    if (result.success) {
+      this.snackBar.open('E-mail de recuperação enviado com sucesso!', 'Fechar', {
+        duration: 5000,
+        panelClass: ['success-snackbar']
+      });
+      this.mode.set('login');
+      this.forgotForm.reset();
+    } else {
+      this.snackBar.open(result.error || 'Erro ao enviar e-mail de recuperação', 'Fechar', {
+        duration: 5000,
+        panelClass: ['error-snackbar']
+      });
+    }
   }
 }

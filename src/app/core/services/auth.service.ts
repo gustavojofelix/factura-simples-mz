@@ -74,6 +74,17 @@ export class AuthService {
 
       if (data.user) {
         await this.createProfile(data.user.id, fullName, phone);
+
+        // Notify admin of new signup
+        this.supabase.client.functions.invoke('notify-admin', {
+          body: {
+            type: 'signup',
+            email,
+            fullName,
+            phone
+          }
+        }).catch(err => console.error('Error invoking notify-admin:', err));
+
         return { success: true, user: data.user };
       }
 
