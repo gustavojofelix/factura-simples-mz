@@ -4,10 +4,12 @@
       <h1 class="text-3xl font-bold text-gray-900 mb-2">Produtos e Serviços</h1>
       <p class="text-gray-600">Catálogo de {{ companyService.activeCompany()?.name }}</p>
     </div>
-    <button mat-raised-button class="!bg-ispc-orange !text-white" (click)="openDialog()">
-      <mat-icon>add</mat-icon>
-      <span>Novo Produto</span>
-    </button>
+    @if (companyService.activeRole() !== 'user') {
+      <button mat-raised-button class="!bg-ispc-orange !text-white" (click)="openDialog()">
+        <mat-icon>add</mat-icon>
+        <span>Novo Produto</span>
+      </button>
+    }
   </div>
 
   <mat-card class="!shadow-md">
@@ -93,10 +95,12 @@
               <button mat-button (click)="searchTerm.set('')">Limpar pesquisa</button>
             } @else {
               <p class="text-gray-600 mb-4">Ainda não tem produtos cadastrados</p>
-              <button mat-raised-button class="!bg-ispc-orange !text-white" (click)="openDialog()">
-                <mat-icon>add</mat-icon>
-                <span>Adicionar Primeiro Produto</span>
-              </button>
+              @if (companyService.activeRole() !== 'user') {
+                <button mat-raised-button class="!bg-ispc-orange !text-white" (click)="openDialog()">
+                  <mat-icon>add</mat-icon>
+                  <span>Adicionar Primeiro Produto</span>
+                </button>
+              }
             }
           </div>
         } @else {
@@ -182,8 +186,8 @@
                 </td>
               </ng-container>
 
-              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: displayedColumns" class="hover:bg-gray-50"></tr>
+              <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns()" class="hover:bg-gray-50"></tr>
             </table>
           </div>
 

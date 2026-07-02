@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { CompanyService } from './company.service';
+import { AuditLogService } from './audit-log.service';
 
 export interface Product {
   id: string;
@@ -25,7 +26,8 @@ export class ProductService {
 
   constructor(
     private supabase: SupabaseService,
-    private companyService: CompanyService
+    private companyService: CompanyService,
+    private auditLogService: AuditLogService
   ) {}
 
   async loadProducts() {
@@ -68,6 +70,15 @@ export class ProductService {
 
       if (error) throw error;
 
+      await this.auditLogService.log(
+        'Criou Produto/Serviço',
+        'products',
+        { name: data.name, code: data.code, price: data.price, type: data.type },
+        data.id,
+        data.name,
+        company.id
+      );
+
       // Reload from server to get the trigger-assigned code and correct ordering
       await this.loadProducts();
       return data;
@@ -79,6 +90,7 @@ export class ProductService {
 
   async updateProduct(id: string, updates: Partial<Product>): Promise<boolean> {
     try {
+      const prod = this.getProductById(id);
       const { error } = await this.supabase.db
         .from('products')
         .update(updates)
@@ -90,6 +102,15 @@ export class ProductService {
         products.map(p => p.id === id ? { ...p, ...updates } : p)
       );
 
+      await this.auditLogService.log(
+        'Atualizou Produto/Serviço',
+        'products',
+        { updates, old: prod ? { name: prod.name, code: prod.code, price: prod.price, type: prod.type, is_active: prod.is_active } : null },
+        id,
+        updates.name || prod?.name,
+        prod?.company_id
+      );
+
       return true;
     } catch (error) {
       console.error('Erro ao actualizar produto:', error);
@@ -99,6 +120,10 @@ export class ProductService {
 
   async deleteProduct(id: string): Promise<{ success: boolean; error?: string }> {
     try {
+      const prod = this.getProductById(id);
+      const companyId = prod?.company_id;
+      const name = prod?.name;
+
       // Verificar se o produto já foi vendido
       const sold = await this.isProductSold(id);
       if (sold) {
@@ -116,6 +141,16 @@ export class ProductService {
       if (error) throw error;
 
       this.products.update(products => products.filter(p => p.id !== id));
+
+      await this.auditLogService.log(
+        'Eliminou Produto/Serviço',
+        'products',
+        { name },
+        id,
+        name,
+        companyId
+      );
+
       return { success: true };
     } catch (error: any) {
       console.error('Erro ao eliminar produto:', error);

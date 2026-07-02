@@ -17,6 +17,7 @@ import { TaxService, TaxCalculation, TaxDeclaration, TaxSummary } from '../../co
 import { CompanyService } from '../../core/services/company.service';
 import { TaxPaymentDialogComponent } from '../../shared/components/tax-payment-dialog.component';
 import { Model30Component } from '../../shared/components/model30.component';
+import { AuditLogService } from '../../core/services/audit-log.service';
 
 @Component({
   selector: 'app-taxes',
@@ -68,7 +69,8 @@ export class TaxesComponent implements OnInit {
   constructor(
     public taxService: TaxService,
     public companyService: CompanyService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private auditLogService: AuditLogService
   ) {
     const currentYear = new Date().getFullYear();
     for (let i = currentYear; i >= currentYear - 5; i--) {
@@ -153,6 +155,15 @@ export class TaxesComponent implements OnInit {
   }
 
   openModel30(declaration: TaxDeclaration) {
+    this.auditLogService.log(
+      'Gerou Modelo 30',
+      'declarations',
+      { year: declaration.year, period: declaration.period },
+      declaration.id,
+      `${declaration.period}º Trim ${declaration.year}`,
+      declaration.company_id
+    );
+
     this.dialog.open(Model30Component, {
       width: '900px',
       maxWidth: '95vw',

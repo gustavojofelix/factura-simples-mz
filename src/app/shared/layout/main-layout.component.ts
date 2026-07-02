@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -43,8 +43,28 @@ export class MainLayoutComponent {
     { icon: 'inventory_2', label: 'Produtos e Serviços', route: '/produtos' },
     { icon: 'account_balance', label: 'Impostos', route: '/impostos' },
     { icon: 'assessment', label: 'Relatórios', route: '/relatorios' },
-    { icon: 'settings', label: 'Configurações', route: '/configuracoes' }
+    { icon: 'settings', label: 'Configurações', route: '/configuracoes' },
+    { icon: 'policy', label: 'Auditoria', route: '/auditoria' }
   ];
+
+  filteredMenuItems = computed(() => {
+    const role = this.companyService.activeRole();
+    
+    return this.menuItems.filter(item => {
+      // Vendedor (user) only gets Invoices, Clients, Products
+      if (role === 'user') {
+        return ['receipt_long', 'people', 'inventory_2'].includes(item.icon);
+      }
+      
+      // Gestor (manager) gets everything except Settings and Auditoria
+      if (role === 'manager') {
+        return item.route !== '/configuracoes' && item.route !== '/auditoria';
+      }
+      
+      // Administrador/Owner gets everything
+      return true;
+    });
+  });
 
   constructor(
     public authService: AuthService,

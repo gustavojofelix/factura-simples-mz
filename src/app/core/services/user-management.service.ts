@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { AuthService } from './auth.service';
+import { AuditLogService } from './audit-log.service';
 
 export interface CompanyUser {
   id: string;
@@ -55,7 +56,8 @@ export class UserManagementService {
 
   constructor(
     private supabase: SupabaseService,
-    private authService: AuthService
+    private authService: AuthService,
+    private auditLogService: AuditLogService
   ) {}
 
   async loadAllUsers(): Promise<void> {
@@ -224,6 +226,15 @@ export class UserManagementService {
         return false;
       }
 
+      await this.auditLogService.log(
+        'Adicionou Utilizador à Empresa',
+        'users',
+        { email, role },
+        targetUser.id,
+        email,
+        companyId
+      );
+
       await this.loadCompanyUsers(companyId);
       return true;
     } catch (error) {
@@ -233,51 +244,96 @@ export class UserManagementService {
   }
 
   async updateUserRole(userId: string, companyId: string, role: CompanyUser['role']): Promise<boolean> {
-    const { error } = await this.supabase.client
-      .from('company_users')
-      .update({ role, updated_at: new Date().toISOString() })
-      .eq('user_id', userId)
-      .eq('company_id', companyId);
+    try {
+      const user = this.companyUsersSignal().find(u => u.user_id === userId);
+      const { error } = await this.supabase.client
+        .from('company_users')
+        .update({ role, updated_at: new Date().toISOString() })
+        .eq('user_id', userId)
+        .eq('company_id', companyId);
 
-    if (error) {
+      if (error) {
+        console.error('Error updating user role:', error);
+        return false;
+      }
+
+      await this.auditLogService.log(
+        'Atualizou Papel do Utilizador',
+        'users',
+        { user_email: user?.user_email || userId, old_role: user?.role, new_role: role },
+        userId,
+        user?.user_email || userId,
+        companyId
+      );
+
+      await this.loadCompanyUsers(companyId);
+      return true;
+    } catch (error) {
       console.error('Error updating user role:', error);
       return false;
     }
-
-    await this.loadCompanyUsers(companyId);
-    return true;
   }
 
   async toggleUserActive(userId: string, companyId: string, isActive: boolean): Promise<boolean> {
-    const { error } = await this.supabase.client
-      .from('company_users')
-      .update({ is_active: isActive, updated_at: new Date().toISOString() })
-      .eq('user_id', userId)
-      .eq('company_id', companyId);
+    try {
+      const user = this.companyUsersSignal().find(u => u.user_id === userId);
+      const { error } = await this.supabase.client
+        .from('company_users')
+        .update({ is_active: isActive, updated_at: new Date().toISOString() })
+        .eq('user_id', userId)
+        .eq('company_id', companyId);
 
-    if (error) {
+      if (error) {
+        console.error('Error toggling user active status:', error);
+        return false;
+      }
+
+      await this.auditLogService.log(
+        isActive ? 'Ativou Utilizador' : 'Desativou Utilizador',
+        'users',
+        { user_email: user?.user_email || userId },
+        userId,
+        user?.user_email || userId,
+        companyId
+      );
+
+      await this.loadCompanyUsers(companyId);
+      return true;
+    } catch (error) {
       console.error('Error toggling user active status:', error);
       return false;
     }
-
-    await this.loadCompanyUsers(companyId);
-    return true;
   }
 
   async removeUserFromCompany(userId: string, companyId: string): Promise<boolean> {
-    const { error } = await this.supabase.client
-      .from('company_users')
-      .delete()
-      .eq('user_id', userId)
-      .eq('company_id', companyId);
+    try {
+      const user = this.companyUsersSignal().find(u => u.user_id === userId);
+      const { error } = await this.supabase.client
+        .from('company_users')
+        .delete()
+        .eq('user_id', userId)
+        .eq('company_id', companyId);
 
-    if (error) {
+      if (error) {
+        console.error('Error removing user:', error);
+        return false;
+      }
+
+      await this.auditLogService.log(
+        'Removeu Utilizador da Empresa',
+        'users',
+        { user_email: user?.user_email || userId },
+        userId,
+        user?.user_email || userId,
+        companyId
+      );
+
+      await this.loadCompanyUsers(companyId);
+      return true;
+    } catch (error) {
       console.error('Error removing user:', error);
       return false;
     }
-
-    await this.loadCompanyUsers(companyId);
-    return true;
   }
 
   async loadSystemSettings(companyId: string): Promise<void> {
@@ -296,18 +352,32 @@ export class UserManagementService {
   }
 
   async updateSystemSettings(companyId: string, updates: Partial<SystemSettings>): Promise<boolean> {
-    const { error } = await this.supabase.client
-      .from('system_settings')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('company_id', companyId);
+    try {
+      const { error } = await this.supabase.client
+        .from('system_settings')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('company_id', companyId);
 
-    if (error) {
+      if (error) {
+        console.error('Error updating system settings:', error);
+        return false;
+      }
+
+      await this.auditLogService.log(
+        'Atualizou Configurações do Sistema',
+        'system',
+        { updates },
+        undefined,
+        undefined,
+        companyId
+      );
+
+      await this.loadSystemSettings(companyId);
+      return true;
+    } catch (error) {
       console.error('Error updating system settings:', error);
       return false;
     }
-
-    await this.loadSystemSettings(companyId);
-    return true;
   }
 
   getUserRole(userId: string): CompanyUser['role'] | null {

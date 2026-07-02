@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { CompanyService } from './company.service';
+import { AuditLogService } from './audit-log.service';
 
 export interface InvoiceItem {
   id?: string;
@@ -49,7 +50,8 @@ export class InvoiceService {
 
   constructor(
     private supabase: SupabaseService,
-    private companyService: CompanyService
+    private companyService: CompanyService,
+    private auditLogService: AuditLogService
   ) {}
 
   async loadInvoices() {
@@ -284,6 +286,15 @@ export class InvoiceService {
         }
       }
 
+      await this.auditLogService.log(
+        status === 'rascunho' ? 'Criou Rascunho de Factura' : 'Gerou Factura',
+        'invoices',
+        { invoice_number: invoice.invoice_number, total: invoice.total, status: invoice.status },
+        invoice.id,
+        invoice.invoice_number,
+        company.id
+      );
+
       await this.loadInvoices();
 
       return invoice;
@@ -327,6 +338,15 @@ export class InvoiceService {
       if (items && items.length > 0) {
         await this.handleStockUpdate(items, 'decrement');
       }
+
+      await this.auditLogService.log(
+        'Gerou Factura (Emitiu Rascunho)',
+        'invoices',
+        { invoice_number: invoiceNumber, old_number: invoice.invoice_number, total: invoice.total },
+        invoiceId,
+        invoiceNumber,
+        company.id
+      );
 
       await this.loadInvoices();
       return true;
@@ -411,6 +431,15 @@ export class InvoiceService {
         await this.handleStockUpdate(items, 'decrement');
       }
 
+      await this.auditLogService.log(
+        'Atualizou Factura',
+        'invoices',
+        { invoice_number: invoice.invoice_number, old_total: invoice.total, new_total: total },
+        id,
+        invoice.invoice_number,
+        invoice.company_id
+      );
+
       await this.loadInvoices();
       return updatedInvoice;
     } catch (error) {
@@ -441,6 +470,16 @@ export class InvoiceService {
       if (error) throw error;
 
       this.invoices.update(invoices => invoices.filter(inv => inv.id !== invoiceId));
+
+      await this.auditLogService.log(
+        'Eliminou Rascunho de Factura',
+        'invoices',
+        { invoice_number: invoice?.invoice_number, total: invoice?.total },
+        invoiceId,
+        invoice?.invoice_number,
+        invoice?.company_id
+      );
+
       return true;
     } catch (error) {
       console.error('Erro ao eliminar factura:', error);
@@ -474,6 +513,15 @@ export class InvoiceService {
       if (invoice.items && invoice.items.length > 0) {
         await this.handleStockUpdate(invoice.items, 'increment');
       }
+
+      await this.auditLogService.log(
+        'Anulou Factura',
+        'invoices',
+        { invoice_number: invoice.invoice_number, total: invoice.total },
+        id,
+        invoice.invoice_number,
+        invoice.company_id
+      );
 
       await this.loadInvoices();
       return true;

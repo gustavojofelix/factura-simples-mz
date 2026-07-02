@@ -63,6 +63,10 @@ export const routes: Routes = [
       {
         path: 'perfil',
         loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent)
+      },
+      {
+        path: 'auditoria',
+        loadComponent: () => import('./pages/audit-logs/audit-logs.component').then(m => m.AuditLogsComponent)
       }
     ]
   },
@@ -95,6 +99,10 @@ export const routes: Routes = [
           {
             path: 'financeiro',
             loadComponent: () => import('./pages/admin/revenue/admin-revenue.component').then(m => m.AdminRevenueComponent)
+          },
+          {
+            path: 'auditoria',
+            loadComponent: () => import('./pages/admin/audit-logs/admin-audit-logs.component').then(m => m.AdminAuditLogsComponent)
           }
         ]
       }

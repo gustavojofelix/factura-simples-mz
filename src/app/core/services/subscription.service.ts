@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { SupabaseService } from './supabase.service';
+import { AuditLogService } from './audit-log.service';
 
 export interface Subscription {
   id: string;
@@ -89,7 +90,10 @@ export class SubscriptionService {
     }
   ];
 
-  constructor(private supabase: SupabaseService) {}
+  constructor(
+    private supabase: SupabaseService,
+    private auditLogService: AuditLogService
+  ) {}
 
   async loadSubscription(companyId: string): Promise<void> {
     const { data, error } = await this.supabase.client
@@ -109,6 +113,7 @@ export class SubscriptionService {
   }
 
   async updateSubscription(subscriptionId: string, updates: Partial<Subscription>): Promise<boolean> {
+    const currentSub = this.subscriptionSignal();
     const { error } = await this.supabase.client
       .from('subscriptions')
       .update({ ...updates, updated_at: new Date().toISOString() })
@@ -119,10 +124,18 @@ export class SubscriptionService {
       return false;
     }
 
-    const currentSub = this.subscriptionSignal();
     if (currentSub && currentSub.id === subscriptionId) {
       this.subscriptionSignal.set({ ...currentSub, ...updates });
     }
+
+    await this.auditLogService.log(
+      'Alterou Subscrição',
+      'subscriptions',
+      { updates, old: currentSub ? { plan_name: currentSub.plan_name, status: currentSub.status, amount: currentSub.amount } : null },
+      subscriptionId,
+      updates.plan_name || currentSub?.plan_name,
+      currentSub?.company_id
+    );
 
     return true;
   }

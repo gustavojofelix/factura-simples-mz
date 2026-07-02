@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { CompanyService } from './company.service';
+import { AuditLogService } from './audit-log.service';
 
 export interface Client {
   id: string;
@@ -27,7 +28,8 @@ export class ClientService {
 
   constructor(
     private supabase: SupabaseService,
-    private companyService: CompanyService
+    private companyService: CompanyService,
+    private auditLogService: AuditLogService
   ) { }
 
   async loadClients() {
@@ -70,6 +72,15 @@ export class ClientService {
 
       if (error) throw error;
 
+      await this.auditLogService.log(
+        'Criou Cliente',
+        'clients',
+        { name: data.name, nuit: data.nuit },
+        data.id,
+        data.name,
+        company.id
+      );
+
       // Reload from server to get the trigger-assigned client_code and correct ordering
       await this.loadClients();
       return data;
@@ -81,6 +92,7 @@ export class ClientService {
 
   async updateClient(id: string, updates: Partial<Client>): Promise<boolean> {
     try {
+      const client = this.getClientById(id);
       const { error } = await this.supabase.db
         .from('clients')
         .update(updates)
@@ -92,6 +104,15 @@ export class ClientService {
         clients.map(c => c.id === id ? { ...c, ...updates } : c)
       );
 
+      await this.auditLogService.log(
+        'Atualizou Cliente',
+        'clients',
+        { updates, old: client ? { name: client.name, nuit: client.nuit, is_active: client.is_active } : null },
+        id,
+        updates.name || client?.name,
+        client?.company_id
+      );
+
       return true;
     } catch (error) {
       console.error('Erro ao actualizar cliente:', error);
@@ -101,6 +122,10 @@ export class ClientService {
 
   async deleteClient(id: string): Promise<{ success: boolean; error?: string }> {
     try {
+      const client = this.getClientById(id);
+      const companyId = client?.company_id;
+      const name = client?.name;
+
       // Verificar se o cliente já possui facturas
       const used = await this.isClientUsed(id);
       if (used) {
@@ -118,6 +143,16 @@ export class ClientService {
       if (error) throw error;
 
       this.clients.update(clients => clients.filter(c => c.id !== id));
+
+      await this.auditLogService.log(
+        'Eliminou Cliente',
+        'clients',
+        { name },
+        id,
+        name,
+        companyId
+      );
+
       return { success: true };
     } catch (error: any) {
       console.error('Erro ao eliminar cliente:', error);

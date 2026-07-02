@@ -2,6 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { SupabaseService } from './supabase.service';
 import { User, AuthError } from '@supabase/supabase-js';
+import { AuditLogService } from './audit-log.service';
 
 export interface AuthResponse {
   success: boolean;
@@ -30,7 +31,8 @@ export class AuthService {
 
   constructor(
     private supabase: SupabaseService,
-    private router: Router
+    private router: Router,
+    private auditLogService: AuditLogService
   ) {
     this.initAuthListener();
   }
@@ -106,6 +108,11 @@ export class AuthService {
       }
 
       if (data.user) {
+        await this.auditLogService.log(
+          'Entrou no Sistema (Login)',
+          'auth',
+          { email: data.user.email }
+        );
         return { success: true, user: data.user };
       }
 
@@ -116,6 +123,14 @@ export class AuthService {
   }
 
   async signOut(): Promise<void> {
+    const user = this.currentUser();
+    if (user) {
+      await this.auditLogService.log(
+        'Saiu do Sistema (Logout)',
+        'auth',
+        { email: user.email }
+      );
+    }
     await this.supabase.auth.signOut();
     this.router.navigate(['/']);
   }

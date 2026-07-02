@@ -1,6 +1,7 @@
 import { Injectable, signal, computed, effect } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { AuthService } from './auth.service';
+import { AuditLogService } from './audit-log.service';
 
 export interface Company {
   id: string;
@@ -40,11 +41,13 @@ export interface Company {
 export class CompanyService {
   companies = signal<Company[]>([]);
   activeCompany = signal<Company | null>(null);
+  activeRole = signal<string | null>(null);
   isLoading = signal(false);
 
   constructor(
     private supabase: SupabaseService,
-    private authService: AuthService
+    private authService: AuthService,
+    private auditLogService: AuditLogService
   ) {
     effect(() => {
       const user = this.authService.currentUser();
@@ -53,6 +56,7 @@ export class CompanyService {
       } else {
         this.companies.set([]);
         this.activeCompany.set(null);
+        this.activeRole.set(null);
       }
     }, { allowSignalWrites: true });
   }
@@ -92,7 +96,7 @@ export class CompanyService {
         const company = savedCompanyId
           ? allCompanies.find(c => c.id === savedCompanyId) || allCompanies[0]
           : allCompanies[0];
-        this.setActiveCompany(company);
+        await this.setActiveCompany(company);
       }
     } catch (error) {
       console.error('Erro ao carregar empresas:', error);
@@ -101,9 +105,16 @@ export class CompanyService {
     }
   }
 
-  setActiveCompany(company: Company) {
+  async setActiveCompany(company: Company) {
     this.activeCompany.set(company);
     localStorage.setItem('activeCompanyId', company.id);
+    this.activeRole.set(null);
+    try {
+      const role = await this.getUserRole(company.id);
+      this.activeRole.set(role);
+    } catch (error) {
+      console.error('Erro ao buscar cargo do utilizador:', error);
+    }
   }
 
   async createCompany(companyData: Partial<Company>): Promise<Company | null> {
@@ -123,7 +134,16 @@ export class CompanyService {
       if (error) throw error;
 
       this.companies.update(companies => [...companies, data]);
-      this.setActiveCompany(data);
+      await this.setActiveCompany(data);
+
+      await this.auditLogService.log(
+        'Criou Empresa',
+        'settings',
+        { company_name: data.name, nuit: data.nuit },
+        data.id,
+        data.name,
+        data.id
+      );
 
       return data;
     } catch (error) {
@@ -134,6 +154,7 @@ export class CompanyService {
 
   async updateCompany(id: string, updates: Partial<Company>): Promise<boolean> {
     try {
+      const oldCompany = this.companies().find(c => c.id === id);
       const { error } = await this.supabase.db
         .from('companies')
         .update(updates)
@@ -149,6 +170,15 @@ export class CompanyService {
         this.activeCompany.update(c => c ? { ...c, ...updates } : null);
       }
 
+      await this.auditLogService.log(
+        'Atualizou Configurações da Empresa',
+        'settings',
+        { updates, old: oldCompany ? { name: oldCompany.name, nuit: oldCompany.nuit } : null },
+        id,
+        updates.name || oldCompany?.name,
+        id
+      );
+
       return true;
     } catch (error) {
       console.error('Erro ao actualizar empresa:', error);
@@ -158,6 +188,7 @@ export class CompanyService {
 
   async deleteCompany(id: string): Promise<{ success: boolean; error?: string }> {
     try {
+      const oldCompany = this.companies().find(c => c.id === id);
       // 1. Check for dependent records
       const checks = [
         { table: 'invoices', label: 'facturas' },
@@ -194,8 +225,22 @@ export class CompanyService {
 
       if (this.activeCompany()?.id === id) {
         const remaining = this.companies();
-        this.activeCompany.set(remaining.length > 0 ? remaining[0] : null);
+        if (remaining.length > 0) {
+          await this.setActiveCompany(remaining[0]);
+        } else {
+          this.activeCompany.set(null);
+          this.activeRole.set(null);
+        }
       }
+
+      await this.auditLogService.log(
+        'Eliminou Empresa',
+        'settings',
+        { company_name: oldCompany?.name, nuit: oldCompany?.nuit },
+        id,
+        oldCompany?.name,
+        id
+      );
 
       return { success: true };
     } catch (error: any) {
@@ -231,3 +276,4 @@ export class CompanyService {
     return company?.user_id === user.id;
   }
 }
+

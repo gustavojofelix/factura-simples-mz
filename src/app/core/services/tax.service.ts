@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { CompanyService } from './company.service';
+import { AuditLogService } from './audit-log.service';
 
 export interface TaxDeclaration {
   id: string;
@@ -76,7 +77,8 @@ export class TaxService {
 
   constructor(
     private supabase: SupabaseService,
-    private companyService: CompanyService
+    private companyService: CompanyService,
+    private auditLogService: AuditLogService
   ) {}
 
   async loadDeclarations(): Promise<void> {
@@ -323,6 +325,15 @@ export class TaxService {
 
       if (error) throw error;
 
+      await this.auditLogService.log(
+        'Criou Declaração Fiscal',
+        'declarations',
+        { year: data.year, period: data.period, amount: data.ispc_amount },
+        data.id,
+        `${data.period}º Trim ${data.year}`,
+        company.id
+      );
+
       await this.loadDeclarations();
       return data;
     } catch (error) {
@@ -347,6 +358,16 @@ export class TaxService {
         .eq('id', declarationId);
 
       if (error) throw error;
+
+      const decl = this.declarations().find(d => d.id === declarationId);
+      await this.auditLogService.log(
+        status === 'submetida' ? 'Submeteu Declaração Fiscal' : 'Atualizou Estado da Declaração',
+        'declarations',
+        { status, dates },
+        declarationId,
+        decl ? `${decl.period}º Trim ${decl.year}` : undefined,
+        decl?.company_id
+      );
 
       await this.loadDeclarations();
       return true;
@@ -390,6 +411,15 @@ export class TaxService {
           });
         }
       }
+
+      await this.auditLogService.log(
+        'Registou Pagamento de Imposto',
+        'payments',
+        { amount, paymentDate, reference, paymentMethod },
+        declarationId,
+        declaration ? `${declaration.period}º Trim ${declaration.year}` : undefined,
+        declaration?.company_id
+      );
 
       await this.loadDeclarations();
       return true;

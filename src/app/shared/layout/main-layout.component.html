@@ -24,7 +24,7 @@
 
       <!-- Navigation -->
       <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto custom-scrollbar">
-        @for (item of menuItems; track item.route) {
+        @for (item of filteredMenuItems(); track item.route) {
         <a [routerLink]="item.route" routerLinkActive="bg-ispc-orange/10 text-ispc-orange !font-semibold border-l-4 border-ispc-orange"
           class="flex items-center px-4 py-3.5 text-slate-700 rounded-lg hover:bg-slate-100/50 hover:text-slate-900 transition-all duration-200">
           <mat-icon class="mr-3 text-slate-500">{{ item.icon }}</mat-icon>
@@ -115,7 +115,7 @@
         }
 
         <nav class="flex-1 px-1 py-2 space-y-1 overflow-y-auto custom-scrollbar">
-          @for (item of menuItems; track item.route) {
+          @for (item of filteredMenuItems(); track item.route) {
           <a [routerLink]="item.route" (click)="toggleMobileMenu()"
             routerLinkActive="bg-ispc-orange/10 text-ispc-orange !font-semibold border-l-4 border-ispc-orange"
             class="flex items-center px-4 py-3 text-slate-700 rounded-lg hover:bg-slate-100/50 transition-all duration-150">

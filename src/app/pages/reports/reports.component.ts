@@ -16,6 +16,7 @@ import { InvoiceService } from '../../core/services/invoice.service';
 import { CompanyService } from '../../core/services/company.service';
 import { ExportService } from '../../core/services/export.service';
 import { ClientService } from '../../core/services/client.service';
+import { AuditLogService } from '../../core/services/audit-log.service';
 
 interface SalesReport {
   totalSales: number;
@@ -357,7 +358,8 @@ export class ReportsComponent implements OnInit {
     private invoiceService: InvoiceService,
     private companyService: CompanyService,
     private exportService: ExportService,
-    private clientService: ClientService
+    private clientService: ClientService,
+    private auditLogService: AuditLogService
   ) {
     const today = new Date();
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -446,6 +448,15 @@ export class ReportsComponent implements OnInit {
     try {
       const startDate = this.formatDateForDB(this.filterForm.get('startDate')?.value);
       const endDate = this.formatDateForDB(this.filterForm.get('endDate')?.value);
+
+      await this.auditLogService.log(
+        'Gerou Relatório de Vendas',
+        'reports',
+        { startDate, endDate, clientId: this.filterForm.get('clientId')?.value },
+        undefined,
+        undefined,
+        company.id
+      );
 
       await this.invoiceService.loadInvoices();
       const allInvoices = this.invoiceService.invoices();
@@ -559,6 +570,16 @@ export class ReportsComponent implements OnInit {
     const report = this.report();
     if (!report) return;
 
+    const company = this.companyService.activeCompany();
+    this.auditLogService.log(
+      'Exportou Relatório para CSV',
+      'reports',
+      {},
+      undefined,
+      undefined,
+      company?.id
+    );
+
     let csv = 'Relatório de Vendas\n\n';
     csv += 'Resumo\n';
     csv += 'Total de Vendas,' + report.totalSales + '\n';
@@ -588,6 +609,16 @@ export class ReportsComponent implements OnInit {
   async exportToExcel() {
     const report = this.report();
     if (!report) return;
+
+    const company = this.companyService.activeCompany();
+    this.auditLogService.log(
+      'Exportou Relatório para Excel',
+      'reports',
+      {},
+      undefined,
+      undefined,
+      company?.id
+    );
 
     this.isLoading.set(true);
     try {

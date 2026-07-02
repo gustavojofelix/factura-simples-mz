@@ -194,7 +194,13 @@ export class ProductDialogComponent implements OnInit {
   styleUrls: ['./products.component.css']
 })
 export class ProductsComponent implements OnInit {
-  displayedColumns = ['code', 'name', 'price', 'unit', 'stock', 'status', 'actions'];
+  displayedColumns = computed(() => {
+    const role = this.companyService.activeRole();
+    if (role === 'user') {
+      return ['code', 'name', 'price', 'unit', 'stock', 'status'];
+    }
+    return ['code', 'name', 'price', 'unit', 'stock', 'status', 'actions'];
+  });
   searchTerm = signal('');
   sortField = signal<string>('code');
   sortDirection = signal<'asc' | 'desc'>('asc');
