@@ -12,6 +12,7 @@ import { MatCardModule } from '@angular/material/card';
 import { AuthService } from '../../core/services/auth.service';
 import { CompanyService } from '../../core/services/company.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
+import { ChatbotComponent } from '../components/chatbot/chatbot.component';
 import { effect } from '@angular/core';
 
 @Component({
@@ -28,7 +29,8 @@ import { effect } from '@angular/core';
     MatButtonModule,
     MatMenuModule,
     MatSelectModule,
-    MatCardModule
+    MatCardModule,
+    ChatbotComponent
   ],
   templateUrl: './main-layout.component.html',
   styleUrls: ['./main-layout.component.css']
