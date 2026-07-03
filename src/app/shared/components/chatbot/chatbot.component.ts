@@ -1,10 +1,13 @@
 import { Component, ElementRef, ViewChild, AfterViewChecked, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ChatbotService } from '../../../core/services/chatbot.service';
+import { AiActionsService } from '../../../core/services/ai-actions.service';
+import { AiActionPanelComponent } from '../ai-action-panel/ai-action-panel.component';
 
 @Component({
   selector: 'app-chatbot',
@@ -12,8 +15,10 @@ import { ChatbotService } from '../../../core/services/chatbot.service';
   imports: [
     CommonModule,
     FormsModule,
+    RouterLink,
     MatIconModule,
-    MatButtonModule
+    MatButtonModule,
+    AiActionPanelComponent
   ],
   templateUrl: './chatbot.component.html',
   styleUrls: ['./chatbot.component.css']
@@ -27,6 +32,7 @@ export class ChatbotComponent implements AfterViewChecked {
 
   constructor(
     public chatbotService: ChatbotService,
+    private aiActionsService: AiActionsService,
     private sanitizer: DomSanitizer
   ) {
     // Monitor messages signal changes to trigger automatic scrolling
@@ -34,6 +40,14 @@ export class ChatbotComponent implements AfterViewChecked {
       const msgs = this.chatbotService.messages();
       if (msgs.length > 0) {
         this.shouldScrollToBottom = true;
+      }
+    });
+
+    // Sync pending actions from chatbot to ai-actions service
+    effect(() => {
+      const actions = this.chatbotService.pendingActions();
+      if (actions.length > 0) {
+        this.aiActionsService.setPendingActions(actions as any);
       }
     });
 

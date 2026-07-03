@@ -19,6 +19,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/register/register.component').then(m => m.RegisterComponent)
   },
   {
+    path: 'assistente',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/ai-assistant/ai-assistant.component').then(m => m.AiAssistantComponent)
+  },
+  {
     path: 'configurar-empresa',
     canActivate: [authGuard],
     loadComponent: () => import('./pages/company-setup/company-setup.component').then(m => m.CompanySetupComponent)
@@ -67,6 +72,14 @@ export const routes: Routes = [
       {
         path: 'auditoria',
         loadComponent: () => import('./pages/audit-logs/audit-logs.component').then(m => m.AuditLogsComponent)
+      },
+      {
+        path: 'designer-de-facturas',
+        loadComponent: () => import('./pages/invoice-designer/invoice-designer.component').then(m => m.InvoiceDesignerComponent)
+      },
+      {
+        path: 'insights-ia',
+        loadComponent: () => import('./pages/ai-insights/ai-insights.component').then(m => m.AiInsightsComponent)
       }
     ]
   },

@@ -39,6 +39,9 @@
         </div>
       </div>
       <div class="header-actions">
+        <a routerLink="/assistente" (click)="chatbotService.setOpen(false)" mat-icon-button title="Abrir em ecrã completo">
+          <mat-icon class="!text-lg">open_in_full</mat-icon>
+        </a>
         <button mat-icon-button (click)="clearChat()" title="Limpar conversa">
           <mat-icon class="!text-lg">delete_sweep</mat-icon>
         </button>
@@ -50,24 +53,37 @@
 
     <!-- Messages Area -->
     <div class="chat-messages" #scrollContainer>
-      @for (msg of chatbotService.messages(); track msg.id) {
-        <div class="message-wrapper" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant'">
-          <div class="message-bubble" [innerHTML]="sanitizeAndFormat(msg.content)"></div>
-          
-          <!-- Suggestion Chips (Only for assistant messages, if they exist and it's the last message) -->
-          @if (msg.role === 'assistant' && msg.suggestions && msg.suggestions.length > 0 && $last && !chatbotService.isLoading()) {
-            <div class="quick-suggestions">
-              @for (suggestion of msg.suggestions; track suggestion) {
-                <button class="suggestion-chip" (click)="selectSuggestion(suggestion)">
-                  {{ suggestion }}
-                </button>
-              }
-            </div>
-          }
-          
-          <span class="message-time">{{ msg.timestamp | date:'HH:mm' }}</span>
-        </div>
-      }
+        @for (msg of chatbotService.messages(); track msg.id) {
+          <div class="message-wrapper" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant'">
+            <div class="message-bubble" [innerHTML]="sanitizeAndFormat(msg.content)"></div>
+            
+            <!-- Action chips (if any) -->
+            @if (msg.role === 'assistant' && msg.actions && msg.actions.length > 0) {
+              <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">
+                @for (action of msg.actions; track action.type) {
+                  <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.25);color:#f97316;font-size:11px;font-weight:600;">
+                    {{ action.label }}
+                    @if (action.status === 'done') { ✅ }
+                    @if (action.status === 'error') { ❌ }
+                  </span>
+                }
+              </div>
+            }
+
+            <!-- Suggestion Chips (Only for assistant messages, if they exist and it's the last message) -->
+            @if (msg.role === 'assistant' && msg.suggestions && msg.suggestions.length > 0 && $last && !chatbotService.isLoading()) {
+              <div class="quick-suggestions">
+                @for (suggestion of msg.suggestions; track suggestion) {
+                  <button class="suggestion-chip" (click)="selectSuggestion(suggestion)">
+                    {{ suggestion }}
+                  </button>
+                }
+              </div>
+            }
+            
+            <span class="message-time">{{ msg.timestamp | date:'HH:mm' }}</span>
+          </div>
+        }
 
       <!-- Typing Indicator -->
       @if (chatbotService.isLoading()) {
@@ -86,13 +102,13 @@
     <!-- Input Bar -->
     <div class="chat-input-bar">
       <div class="input-container">
-        <textarea 
-          #chatInput
-          [(ngModel)]="userMessageText" 
-          (keydown.enter)="onEnterKey($event)" 
-          placeholder="Faça uma pergunta sobre finanças ou impostos..."
-          rows="1">
-        </textarea>
+          <textarea 
+            #chatInput
+            [(ngModel)]="userMessageText" 
+            (keydown.enter)="onEnterKey($event)" 
+            placeholder="Diga o que quer fazer... ex: &quot;Cria produtos de electrónica&quot;"
+            rows="1">
+          </textarea>
         <button 
           mat-icon-button 
           [disabled]="!userMessageText.trim() || chatbotService.isLoading()" 
@@ -107,3 +123,6 @@
 
   </div>
 </div>
+
+<!-- AI Action Panel (shown above chatbot widget) -->
+<app-ai-action-panel></app-ai-action-panel>

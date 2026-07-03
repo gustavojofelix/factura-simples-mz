@@ -24,6 +24,13 @@
 
       <!-- Navigation -->
       <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto custom-scrollbar">
+        <!-- AI Assistant CTA -->
+        <a routerLink="/assistente"
+          class="flex items-center px-4 py-3 mb-3 text-white rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 shadow-md hover:shadow-orange-300/50 hover:from-orange-600 hover:to-orange-700 transition-all duration-200 font-semibold">
+          <mat-icon class="mr-3">auto_awesome</mat-icon>
+          <span class="text-sm font-bold">Falar com a IA</span>
+          <mat-icon class="ml-auto text-orange-200 text-sm">arrow_forward</mat-icon>
+        </a>
         @for (item of filteredMenuItems(); track item.route) {
         <a [routerLink]="item.route" routerLinkActive="bg-ispc-orange/10 text-ispc-orange !font-semibold border-l-4 border-ispc-orange"
           class="flex items-center px-4 py-3.5 text-slate-700 rounded-lg hover:bg-slate-100/50 hover:text-slate-900 transition-all duration-200">
@@ -114,6 +121,12 @@
         </div>
         }
 
+        <!-- AI CTA Mobile -->
+        <a routerLink="/assistente" (click)="toggleMobileMenu()"
+          class="flex items-center px-4 py-3 text-white rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 shadow-md mb-2">
+          <mat-icon class="mr-3">auto_awesome</mat-icon>
+          <span class="text-sm font-bold">Falar com a IA</span>
+        </a>
         <nav class="flex-1 px-1 py-2 space-y-1 overflow-y-auto custom-scrollbar">
           @for (item of filteredMenuItems(); track item.route) {
           <a [routerLink]="item.route" (click)="toggleMobileMenu()"

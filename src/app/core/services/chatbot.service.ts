@@ -10,6 +10,15 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
   suggestions?: string[];
+  actions?: AIAction[];
+}
+
+export interface AIAction {
+  type: 'CREATE_PRODUCTS' | 'CREATE_CLIENTS' | 'NAVIGATE' | 'FILTER_DATA' | 'GENERATE_REPORT';
+  label: string;
+  requiresConfirmation: boolean;
+  payload: any;
+  status?: 'pending' | 'executing' | 'done' | 'error';
 }
 
 @Injectable({
@@ -20,6 +29,7 @@ export class ChatbotService {
   isLoading = signal<boolean>(false);
   messages = signal<ChatMessage[]>([]);
   currentPageContext = signal<string>('painel');
+  pendingActions = signal<AIAction[]>([]);
 
   private readonly STORAGE_KEY = 'fs_chatbot_history';
 
@@ -30,7 +40,6 @@ export class ChatbotService {
   ) {
     this.loadHistory();
 
-    // Listen to route changes to dynamically update context
     this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event: any) => {
@@ -49,27 +58,20 @@ export class ChatbotService {
 
   private updateContextFromUrl(url: string) {
     let context = 'painel';
-    if (url.includes('/facturas')) {
-      context = 'facturas';
-    } else if (url.includes('/clientes')) {
-      context = 'clientes';
-    } else if (url.includes('/produtos')) {
-      context = 'produtos';
-    } else if (url.includes('/impostos')) {
-      context = 'impostos';
-    } else if (url.includes('/relatorios')) {
-      context = 'relatorios';
-    } else if (url.includes('/configuracoes')) {
-      context = 'configuracoes';
-    } else if (url.includes('/perfil')) {
-      context = 'perfil';
-    } else if (url.includes('/auditoria')) {
-      context = 'auditoria';
-    }
-    
+    if (url.includes('/facturas')) context = 'facturas';
+    else if (url.includes('/clientes')) context = 'clientes';
+    else if (url.includes('/produtos')) context = 'produtos';
+    else if (url.includes('/impostos')) context = 'impostos';
+    else if (url.includes('/relatorios')) context = 'relatorios';
+    else if (url.includes('/configuracoes')) context = 'configuracoes';
+    else if (url.includes('/perfil')) context = 'perfil';
+    else if (url.includes('/auditoria')) context = 'auditoria';
+    else if (url.includes('/assistente')) context = 'assistente';
+    else if (url.includes('/designer-de-facturas')) context = 'designer-de-facturas';
+    else if (url.includes('/insights-ia')) context = 'insights-ia';
+
     this.currentPageContext.set(context);
 
-    // If chat is open and empty, generate a context-aware welcome message
     if (this.messages().length === 0) {
       this.sendWelcomeMessage();
     }
@@ -77,37 +79,49 @@ export class ChatbotService {
 
   sendWelcomeMessage() {
     const context = this.currentPageContext();
-    let content = 'Olá! Sou o seu assistente inteligente do ISPC Fácil. Como posso ajudar com as finanças da sua empresa hoje?';
+    let content = 'Olá! Sou o seu assistente inteligente. Diga-me o que quer fazer e eu faço por si. Por exemplo: *"Cria produtos de electrónica"* ou *"Emite uma factura para o cliente João"*.';
     let suggestions: string[] = [
-      'Como funciona o ISPC?',
+      'Cria produtos de electrónica para a minha empresa',
       'Como emitir uma factura?',
-      'Como consultar relatórios?'
+      'Analisa as minhas vendas deste mês'
     ];
 
     switch (context) {
       case 'facturas':
-        content = 'Olá! Vejo que está na secção de Facturas. Deseja que eu explique como emitir uma factura certificada pela AT ou como gerir faturas pendentes?';
-        suggestions = ['Como emitir factura?', 'Como anular factura?', 'Ver faturas atrasadas'];
+        content = 'Está na secção de **Facturas**. Posso criar facturas, anular, ou ajudar a gerir facturas pendentes. O que deseja?';
+        suggestions = ['Cria uma factura de teste', 'Ver facturas em atraso', 'Como anular uma factura?'];
         break;
       case 'clientes':
-        content = 'Olá! Está na lista de Clientes. Deseja saber como verificar um NUIT de Moçambique ou como ver o histórico de facturação de um cliente específico?';
-        suggestions = ['Como validar NUIT?', 'Clientes com mais dívida', 'Cadastrar cliente estrangeiro'];
+        content = 'Está nos **Clientes**. Posso adicionar clientes, verificar NUITs ou criar clientes de exemplo. O que precisa?';
+        suggestions = ['Cria 3 clientes de teste', 'Como validar um NUIT?', 'Ver clientes com mais dívida'];
         break;
       case 'produtos':
-        content = 'Olá! Está na secção de Produtos e Serviços. Precisa de ajuda para cadastrar um produto ou gerir códigos de produtos por empresa?';
-        suggestions = ['Cadastrar produto novo', 'Isenção de IVA em produtos', 'Como associar código'];
+        content = 'Está nos **Produtos e Serviços**. Posso criar um catálogo completo para o seu sector com um único comando!';
+        suggestions = ['Cria produtos de electrónica', 'Cria serviços de construção civil', 'Cria produtos de alimentação'];
         break;
       case 'impostos':
-        content = 'Olá! Está na secção de Impostos. Precisa de ajuda para simular ou calcular as parcelas progressivas do ISPC (3%, 4%, 5% ou 20%) para este período?';
-        suggestions = ['Calcular ISPC deste trimestre', 'Limites do ISPC em Moçambique', 'Como funciona a retenção de 20%?'];
+        content = 'Está nos **Impostos**. Posso calcular o ISPC, explicar os prazos e ajudar com declarações. O que precisa?';
+        suggestions = ['Calcula o ISPC deste trimestre', 'Quando vence o próximo ISPC?', 'Explica o ISPC progressivo'];
         break;
       case 'relatorios':
-        content = 'Olá! Está na área de Relatórios. Deseja que eu faça uma análise inteligente das suas vendas ou resuma o desempenho financeiro do trimestre?';
-        suggestions = ['Resumir minhas vendas', 'Análise de fluxo de caixa', 'Exportar dados para contabilidade'];
+        content = 'Está nos **Relatórios**. Posso resumir as suas vendas, analisar o fluxo de caixa e identificar tendências.';
+        suggestions = ['Resume as minhas vendas', 'Análise de fluxo de caixa', 'Exportar dados para contabilidade'];
+        break;
+      case 'assistente':
+        content = '# Olá! Sou o seu Assistente de IA 🤖\n\nPosso **fazer coisas** por si, não apenas explicar. Experimente:\n\n- *"Tenho uma empresa de TI, cria o meu catálogo de serviços"*\n- *"Cria 5 clientes de teste com dados reais"*\n- *"Explica-me como funciona o ISPC"*\n\nO que posso fazer por si hoje?';
+        suggestions = ['Cria catálogo de produtos de electrónica', 'Cria 5 clientes de teste', 'Analisa a minha situação fiscal'];
+        break;
+      case 'designer-de-facturas':
+        content = 'Está no **Designer de Facturas**. Escolha um tema, personalize as cores com o seu logotipo e activa o design para todas as suas facturas!';
+        suggestions = ['Que tema combina com tecnologia?', 'Como adicionar o logotipo?', 'Qual é o melhor tema para serviços?'];
+        break;
+      case 'insights-ia':
+        content = 'Está nos **Insights de IA**. Analisei os dados da sua empresa e tenho sugestões importantes para si!';
+        suggestions = ['Quais são os meus riscos financeiros?', 'Como melhorar o fluxo de caixa?', 'Quando devo pagar o ISPC?'];
         break;
       case 'configuracoes':
-        content = 'Olá! Está nas Configurações. Quer ajuda para configurar os dados da empresa, gerir utilizadores ou atualizar a subscrição?';
-        suggestions = ['Adicionar utilizador', 'Configurar SMTP do email', 'Alterar dados de faturação'];
+        content = 'Está nas **Configurações**. Posso ajudar a configurar a empresa, gerir utilizadores ou actualizar a subscrição.';
+        suggestions = ['Adicionar utilizador', 'Configurar SMTP de email', 'Alterar dados de faturação'];
         break;
     }
 
@@ -116,7 +130,8 @@ export class ChatbotService {
       role: 'assistant',
       content,
       timestamp: new Date(),
-      suggestions
+      suggestions,
+      actions: []
     };
 
     this.messages.set([welcomeMsg]);
@@ -133,7 +148,6 @@ export class ChatbotService {
       timestamp: new Date()
     };
 
-    // Add user message to history
     this.messages.update(msgs => [...msgs, userMessage]);
     this.saveHistory();
     this.isLoading.set(true);
@@ -142,7 +156,6 @@ export class ChatbotService {
       const activeCompany = this.companyService.activeCompany();
       const activeRole = this.companyService.activeRole();
 
-      // Invoke Supabase Edge Function
       const { data, error } = await this.supabase.client.functions.invoke('chat-assistant', {
         body: {
           message: content,
@@ -158,23 +171,35 @@ export class ChatbotService {
 
       if (error) throw error;
 
+      const actions: AIAction[] = (data?.actions || []).map((a: any) => ({
+        ...a,
+        status: 'pending' as const
+      }));
+
+      // Set pending actions for the AI Action Panel
+      if (actions.length > 0) {
+        this.pendingActions.set(actions);
+      }
+
       const assistantMessage: ChatMessage = {
         id: Math.random().toString(36).substring(7),
         role: 'assistant',
         content: data?.reply || 'Desculpe, ocorreu um erro ao processar a resposta.',
         timestamp: new Date(),
-        suggestions: data?.suggestions || []
+        suggestions: data?.suggestions || [],
+        actions
       };
 
       this.messages.update(msgs => [...msgs, assistantMessage]);
       this.saveHistory();
     } catch (err) {
-      console.error('Error calling chat-assistant Edge Function:', err);
+      console.error('Error calling chat-assistant:', err);
       const errorMessage: ChatMessage = {
         id: Math.random().toString(36).substring(7),
         role: 'assistant',
-        content: 'Desculpe, de momento não consegui ligar-me ao servidor do assistente inteligente. Por favor, tente novamente.',
-        timestamp: new Date()
+        content: 'Desculpe, de momento não consegui ligar-me ao servidor do assistente. Por favor, tente novamente.',
+        timestamp: new Date(),
+        actions: []
       };
       this.messages.update(msgs => [...msgs, errorMessage]);
     } finally {
@@ -182,8 +207,13 @@ export class ChatbotService {
     }
   }
 
+  clearPendingActions() {
+    this.pendingActions.set([]);
+  }
+
   clearChat() {
     this.messages.set([]);
+    this.pendingActions.set([]);
     this.sendWelcomeMessage();
     this.saveHistory();
   }
@@ -192,7 +222,7 @@ export class ChatbotService {
     try {
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.messages()));
     } catch (e) {
-      console.error('Error saving chat history to localStorage:', e);
+      console.error('Error saving chat history:', e);
     }
   }
 
@@ -200,9 +230,7 @@ export class ChatbotService {
     try {
       const historyStr = localStorage.getItem(this.STORAGE_KEY);
       if (historyStr) {
-        const loadedMsgs = JSON.parse(historyStr);
-        // Map string dates back to Date objects
-        const msgs = loadedMsgs.map((m: any) => ({
+        const msgs = JSON.parse(historyStr).map((m: any) => ({
           ...m,
           timestamp: new Date(m.timestamp)
         }));
@@ -211,7 +239,7 @@ export class ChatbotService {
         this.sendWelcomeMessage();
       }
     } catch (e) {
-      console.error('Error loading chat history from localStorage:', e);
+      console.error('Error loading chat history:', e);
       this.sendWelcomeMessage();
     }
   }

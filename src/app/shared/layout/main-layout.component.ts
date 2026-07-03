@@ -45,6 +45,8 @@ export class MainLayoutComponent {
     { icon: 'inventory_2', label: 'Produtos e Serviços', route: '/produtos' },
     { icon: 'account_balance', label: 'Impostos', route: '/impostos' },
     { icon: 'assessment', label: 'Relatórios', route: '/relatorios' },
+    { icon: 'insights', label: 'Insights IA', route: '/insights-ia' },
+    { icon: 'palette', label: 'Designer de Facturas', route: '/designer-de-facturas' },
     { icon: 'settings', label: 'Configurações', route: '/configuracoes' },
     { icon: 'policy', label: 'Auditoria', route: '/auditoria' }
   ];
@@ -67,6 +69,10 @@ export class MainLayoutComponent {
       return true;
     });
   });
+
+  openAiAssistant() {
+    this.router.navigate(['/assistente']);
+  }
 
   constructor(
     public authService: AuthService,
