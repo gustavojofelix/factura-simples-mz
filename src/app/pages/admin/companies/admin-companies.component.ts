@@ -2,6 +2,7 @@ import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../../core/services/supabase.service';
+import { AuditLogService } from '../../../core/services/audit-log.service';
 import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories';
 
 @Component({
@@ -758,7 +759,7 @@ export class AdminCompaniesComponent implements OnInit {
     return list;
   });
 
-  constructor(private supabase: SupabaseService) { }
+  constructor(private supabase: SupabaseService, private auditLogService: AuditLogService) { }
 
   ngOnInit() {
     this.loadCompanies();
@@ -841,6 +842,15 @@ export class AdminCompaniesComponent implements OnInit {
       console.error('Error updating company status:', error);
       return;
     }
+
+    await this.auditLogService.log(
+      newStatus === 'suspended' ? 'Contribuinte Suspenso' : 'Contribuinte Ativado',
+      'admin_companies',
+      { company_id: company.id, new_status: newStatus },
+      company.id,
+      company.name
+    );
+
     this.loadCompanies();
   }
 
@@ -949,6 +959,14 @@ export class AdminCompaniesComponent implements OnInit {
       return;
     }
 
+    await this.auditLogService.log(
+      'Contribuinte Atualizado',
+      'admin_companies',
+      { company_id: this.editingCompany.id, changes: this.editingCompany },
+      this.editingCompany.id,
+      this.editingCompany.name
+    );
+
     this.closeEditModal();
     this.loadCompanies();
   }
@@ -1010,7 +1028,7 @@ export class AdminCompaniesComponent implements OnInit {
     this.createError = '';
 
     try {
-      const { error } = await this.supabase.db
+      const { data, error } = await this.supabase.db
         .from('companies')
         .insert({
           name: this.newCompany.name,
@@ -1033,9 +1051,20 @@ export class AdminCompaniesComponent implements OnInit {
             administrativePost: this.newCompany.administrativePost || null
           }
 
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+      
+      await this.auditLogService.log(
+        'Novo Contribuinte Registado',
+        'admin_companies',
+        { company_id: data.id, name: this.newCompany.name, nuit: this.newCompany.nuit },
+        data.id,
+        this.newCompany.name
+      );
+
       this.closeCreateModal();
       this.loadCompanies();
     } catch (error: any) {

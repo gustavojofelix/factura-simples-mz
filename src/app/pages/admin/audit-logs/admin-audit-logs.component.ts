@@ -231,11 +231,8 @@ export class AdminAuditLogsComponent implements OnInit {
 
   categories = [
     { id: 'auth', label: 'Login e Logout' },
-    { id: 'reports', label: 'Relatórios' },
-    { id: 'settings', label: 'Configurações' },
-    { id: 'users', label: 'Utilizadores' },
-    { id: 'subscriptions', label: 'Subscrições' },
-    { id: 'system', label: 'Sistema' }
+    { id: 'admin_subscribers', label: 'Subscritores (Back Office)' },
+    { id: 'admin_companies', label: 'Contribuintes (Back Office)' }
   ];
 
   filteredLogs = computed(() => {
@@ -301,7 +298,7 @@ export class AdminAuditLogsComponent implements OnInit {
           *,
           company:companies (id, name, nuit)
         `)
-        .not('category', 'in', '("clients","products","invoices","payments","declarations")')
+        .or('category.ilike.admin_%,category.eq.auth')
         .order('created_at', { ascending: false });
 
       if (this.selectedUserEmail !== 'all') {
@@ -358,6 +355,7 @@ export class AdminAuditLogsComponent implements OnInit {
   }
 
   getCategoryBadge(category: string): string {
+    if (category.startsWith('admin_')) return 'bg-slate-800 border-slate-900 text-white';
     switch (category) {
       case 'auth': return 'bg-cyan-50 border-cyan-200 text-cyan-700';
       case 'clients': return 'bg-sky-50 border-sky-200 text-sky-700';

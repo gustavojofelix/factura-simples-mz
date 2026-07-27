@@ -2,6 +2,7 @@ import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../../core/services/supabase.service';
+import { AuditLogService } from '../../../core/services/audit-log.service';
 import { createClient } from '@supabase/supabase-js';
 import { environment } from '../../../../environments/environment';
 import { PaginationComponent, PageChangeEvent } from '../../../shared/components/pagination.component';
@@ -418,7 +419,7 @@ export class AdminSubscribersComponent implements OnInit {
     return list.slice(start, start + this.pageSize());
   });
 
-  constructor(private supabase: SupabaseService) { }
+  constructor(private supabase: SupabaseService, private auditLogService: AuditLogService) { }
 
   ngOnInit() {
     this.loadSubscribers();
@@ -487,6 +488,14 @@ export class AdminSubscribersComponent implements OnInit {
       return;
     }
 
+    await this.auditLogService.log(
+      newStatus === 'suspended' ? 'Subscritor Suspenso' : 'Subscritor Ativado',
+      'admin_subscribers',
+      { subscriber_id: subscriber.id, new_status: newStatus },
+      subscriber.id,
+      subscriber.full_name
+    );
+
     this.loadSubscribers();
   }
 
@@ -524,6 +533,14 @@ export class AdminSubscribersComponent implements OnInit {
       alert('Erro ao guardar perfil');
       return;
     }
+
+    await this.auditLogService.log(
+      'Perfil de Subscritor Atualizado',
+      'admin_subscribers',
+      { subscriber_id: this.editingSub.id, name: this.editingSub.full_name, phone: this.editingSub.phone, status: this.editingSub.status },
+      this.editingSub.id,
+      this.editingSub.full_name
+    );
 
     this.closeEditModal();
     this.loadSubscribers();
@@ -631,6 +648,14 @@ export class AdminSubscribersComponent implements OnInit {
             status: this.newSub.status
           })
           .eq('id', data.user.id);
+          
+        await this.auditLogService.log(
+          'Novo Subscritor Criado',
+          'admin_subscribers',
+          { subscriber_id: data.user.id, name: this.newSub.full_name, email: this.newSub.email },
+          data.user.id,
+          this.newSub.full_name
+        );
       }
 
       this.closeCreateModal();
