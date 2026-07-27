@@ -231,12 +231,7 @@ export class AdminAuditLogsComponent implements OnInit {
 
   categories = [
     { id: 'auth', label: 'Login e Logout' },
-    { id: 'clients', label: 'Clientes' },
-    { id: 'products', label: 'Produtos e Serviços' },
-    { id: 'invoices', label: 'Facturas' },
     { id: 'reports', label: 'Relatórios' },
-    { id: 'declarations', label: 'Declarações Fiscais' },
-    { id: 'payments', label: 'Pagamentos' },
     { id: 'settings', label: 'Configurações' },
     { id: 'users', label: 'Utilizadores' },
     { id: 'subscriptions', label: 'Subscrições' },
@@ -306,6 +301,7 @@ export class AdminAuditLogsComponent implements OnInit {
           *,
           company:companies (id, name, nuit)
         `)
+        .not('category', 'in', '("clients","products","invoices","payments","declarations")')
         .order('created_at', { ascending: false });
 
       if (this.selectedUserEmail !== 'all') {

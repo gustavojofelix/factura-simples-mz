@@ -322,18 +322,10 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
 
             <div class="flex-1 overflow-y-auto p-6 space-y-8">
               <!-- Stats Grid -->
-              <div class="grid grid-cols-3 gap-4">
+              <div class="grid grid-cols-1 gap-4">
                 <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100 text-center">
                   <span class="text-[10px] font-bold text-blue-400 uppercase">Utilizadores</span>
                   <p class="text-xl font-bold text-blue-700">{{ selectedCompany().user_count }}</p>
-                </div>
-                <div class="bg-orange-50 p-4 rounded-2xl border border-orange-100 text-center">
-                  <span class="text-[10px] font-bold text-orange-400 uppercase">Produtos</span>
-                  <p class="text-xl font-bold text-orange-700">{{ selectedCompany().product_count || 0 }}</p>
-                </div>
-                <div class="bg-green-50 p-4 rounded-2xl border border-green-100 text-center">
-                  <span class="text-[10px] font-bold text-green-400 uppercase">Faturas</span>
-                  <p class="text-xl font-bold text-green-700">{{ selectedCompany().invoice_count || 0 }}</p>
                 </div>
               </div>
 
@@ -358,30 +350,7 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
                 </div>
               </div>
 
-              <!-- Recent Invoices -->
-              <div class="space-y-4">
-                <h4 class="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center">
-                  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  Últimas Faturas
-                </h4>
-                <div class="space-y-2">
-                  <div *ngFor="let inv of selectedCompany().recent_invoices" class="flex justify-between items-center p-3 bg-gray-50 rounded-xl border border-gray-100">
-                    <div>
-                      <p class="text-xs font-bold text-gray-800">{{ inv.invoice_number }}</p>
-                      <p class="text-[10px] text-gray-500">{{ inv.date | date:'dd/MM/yyyy' }}</p>
-                    </div>
-                    <div class="text-right">
-                      <p class="text-sm font-bold text-gray-900">{{ inv.total | currency:'MZN':'symbol':'1.2-2':'pt-MZ' }}</p>
-                      <span class="text-[8px] px-1.5 py-0.5 rounded-full font-bold uppercase border"
-                            [class]="inv.status === 'paga' ? 'bg-green-50 text-green-600 border-green-100' : 'bg-yellow-50 text-yellow-600 border-yellow-100'">
-                        {{ inv.status }}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+
             </div>
           </div>
         </div>
@@ -437,14 +406,6 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
               <select [ngModel]="activityTypeFilter()" (ngModelChange)="activityTypeFilter.set($event)" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
                 <option value="all">Tipo de Actividade</option>
                 <option *ngFor="let a of activityTypes" [value]="a.key">{{ a.label }}</option>
-              </select>
-            </div>
-            <div>
-              <select [ngModel]="businessVolumeFilter()" (ngModelChange)="businessVolumeFilter.set($event)" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
-                <option value="all">Volume de Negócio</option>
-                <option value="low">Baixo (&lt; 50,000 MZN)</option>
-                <option value="medium">Médio (50,000 - 500,000 MZN)</option>
-                <option value="high">Alto (&gt; 500,000 MZN)</option>
               </select>
             </div>
           </div>
@@ -518,14 +479,7 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
                       </svg>
                     </div>
                   </th>
-                  <th (click)="toggleSort('usage_30d')" class="px-4 py-4 text-right cursor-pointer hover:bg-gray-100 transition-colors">
-                    <div class="flex items-center justify-end space-x-1">
-                      <span>Uso (30d)</span>
-                      <svg *ngIf="sortColumn() === 'usage_30d'" class="w-3 h-3" [class.rotate-180]="sortDirection() === 'desc'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                      </svg>
-                    </div>
-                  </th>
+
                   <th class="px-4 py-4 text-center">Ações</th>
                 </tr>
               </thead>
@@ -591,13 +545,7 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
                       <span *ngIf="!company.last_access" class="text-[10px] text-gray-400">—</span>
                     </div>
                   </td>
-                  <!-- Uso (30d) -->
-                  <td class="px-4 py-4 text-right">
-                    <div class="flex flex-col">
-                      <span class="font-bold text-gray-900 text-xs">{{ company.usage_30d | currency:'MZN':'symbol':'1.2-2':'pt-MZ' }}</span>
-                      <span class="text-[10px] text-gray-500">{{ company.usage_count_30d }} faturas</span>
-                    </div>
-                  </td>
+
                   <!-- Ações -->
                   <td class="px-4 py-4 text-center">
                     <div class="flex items-center justify-center space-x-2">
@@ -829,25 +777,13 @@ export class AdminCompaniesComponent implements OnInit {
           *,
           profiles (full_name, last_sign_in_at),
           subscriptions (plan_name, next_billing_date, status),
-          company_users (count),
-          invoices (total, created_at)
+          company_users (count)
         `)
         .order('name', { ascending: true });
 
       if (error) throw error;
 
       this.companies.set(data?.map(c => {
-        // Aggregate 30d usage
-        let usage30d = 0;
-        let usageCount30d = 0;
-        c.invoices?.forEach((inv: any) => {
-          const invDate = new Date(inv.created_at);
-          if (invDate >= thirtyDaysAgo) {
-            usage30d += Number(inv.total) || 0;
-            usageCount30d++;
-          }
-        });
-
         // Active subscription
         const activeSub = c.subscriptions?.find((s: any) => s.status === 'active') || c.subscriptions?.[0];
 
@@ -857,9 +793,7 @@ export class AdminCompaniesComponent implements OnInit {
           last_access: c.profiles?.last_sign_in_at || null,
           plan: activeSub?.plan_name || 'Trial',
           plan_expiry: activeSub?.next_billing_date || null,
-          user_count: c.company_users?.[0]?.count || 0,
-          usage_30d: usage30d,
-          usage_count_30d: usageCount30d
+          user_count: c.company_users?.[0]?.count || 0
         };
       }) || []);
     } catch (error) {
@@ -1020,37 +954,17 @@ export class AdminCompaniesComponent implements OnInit {
   }
 
   async openDetails(company: any) {
-    this.selectedCompany.set({ ...company, users: [], recent_invoices: [], product_count: 0, invoice_count: 0 });
+    this.selectedCompany.set({ ...company, users: [] });
     this.isDetailsOpen = true;
 
-    const [usersRes, invRes, prodRes] = await Promise.all([
-      this.supabase.db
-        .from('company_users')
-        .select('*, profiles:profiles!company_users_user_id_fkey(full_name, email)')
-        .eq('company_id', company.id),
-      this.supabase.db
-        .from('invoices')
-        .select('*')
-        .eq('company_id', company.id)
-        .order('date', { ascending: false })
-        .limit(5),
-      this.supabase.db
-        .from('products')
-        .select('id', { count: 'exact' })
-        .eq('company_id', company.id)
-    ]);
-
-    const invCount = await this.supabase.db
-      .from('invoices')
-      .select('id', { count: 'exact' })
+    const { data: usersData } = await this.supabase.db
+      .from('company_users')
+      .select('*, profiles:profiles!company_users_user_id_fkey(full_name, email)')
       .eq('company_id', company.id);
 
     this.selectedCompany.set({
       ...company,
-      users: usersRes.data || [],
-      recent_invoices: invRes.data || [],
-      product_count: prodRes.count || 0,
-      invoice_count: invCount.count || 0
+      users: usersData || []
     });
   }
 
@@ -1135,7 +1049,7 @@ export class AdminCompaniesComponent implements OnInit {
     const data = this.filteredCompanies();
     if (data.length === 0) return;
 
-    const headers = ['ID', 'Nome', 'NUIT', 'Provincia', 'Distrito', 'Proprietario', 'Plano', 'Data Limite Plano', 'Ultimo Acesso', 'Utilizadores', 'Uso (30d)', 'Faturas (30d)'];
+    const headers = ['ID', 'Nome', 'NUIT', 'Provincia', 'Distrito', 'Proprietario', 'Plano', 'Data Limite Plano', 'Ultimo Acesso', 'Utilizadores'];
 
     const rows = data.map(c => [
       `"${(c.company_code || '').replace(/"/g, '""')}"`,
@@ -1147,9 +1061,7 @@ export class AdminCompaniesComponent implements OnInit {
       `"${(c.plan || 'Trial').replace(/"/g, '""')}"`,
       `"${c.plan_expiry ? new Date(c.plan_expiry).toLocaleDateString('pt-MZ') : 'N/A'}"`,
       `"${c.last_access ? new Date(c.last_access).toLocaleDateString('pt-MZ') : 'N/A'}"`,
-      c.user_count ?? 0,
-      c.usage_30d ?? 0,
-      c.usage_count_30d ?? 0
+      c.user_count ?? 0
     ]);
 
     const csvContent = '\uFEFF'
