@@ -228,7 +228,8 @@ export class AuthService {
       'User already registered': 'Este email já está registado',
       'Password should be at least 6 characters': 'A palavra-passe deve ter pelo menos 6 caracteres',
       'Unable to validate email address': 'Email inválido',
-      'Email rate limit exceeded': 'Demasiadas tentativas. Tente novamente mais tarde'
+      'Email rate limit exceeded': 'Demasiadas tentativas. Tente novamente mais tarde',
+      'Database error granting user': 'Erro na base de dados ao autenticar o utilizador. Por favor, execute as migrações mais recentes no Supabase.'
     };
 
     return errorMap[error.message] || error.message || 'Erro ao processar pedido';
