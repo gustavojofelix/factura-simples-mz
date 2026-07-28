@@ -375,7 +375,7 @@ export class ReportsComponent implements OnInit {
   ngOnInit() {
     this.clientService.loadClients();
     this.onPeriodChange();
-    this.generateReport();
+    //  this.generateReport();
   }
 
   onPeriodChange() {
@@ -448,15 +448,6 @@ export class ReportsComponent implements OnInit {
     try {
       const startDate = this.formatDateForDB(this.filterForm.get('startDate')?.value);
       const endDate = this.formatDateForDB(this.filterForm.get('endDate')?.value);
-
-      await this.auditLogService.log(
-        'Gerou Relatório de Vendas',
-        'reports',
-        { startDate, endDate, clientId: this.filterForm.get('clientId')?.value },
-        undefined,
-        undefined,
-        company.id
-      );
 
       await this.invoiceService.loadInvoices();
       const allInvoices = this.invoiceService.invoices();
@@ -536,6 +527,15 @@ export class ReportsComponent implements OnInit {
       };
 
       this.report.set(report);
+
+      await this.auditLogService.log(
+        'Gerou Relatório de Vendas',
+        'reports',
+        { startDate, endDate, clientId: this.filterForm.get('clientId')?.value },
+        undefined,
+        undefined,
+        company.id
+      );
     } catch (error) {
       console.error('Erro ao gerar relatório:', error);
     } finally {
