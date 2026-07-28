@@ -279,7 +279,7 @@ export class InvoiceService {
       if (status !== 'rascunho') {
         const updateSuccess = await this.companyService.updateCompany(company.id, {
           invoice_number: company.invoice_number + 1
-        });
+        }, true);
 
         if (!updateSuccess) {
           console.error('Erro ao actualizar número da factura');
@@ -327,7 +327,7 @@ export class InvoiceService {
 
       await this.companyService.updateCompany(company.id, {
         invoice_number: company.invoice_number + 1
-      });
+      }, true);
 
       // Stock management: Decrement stock when emitting draft
       const { data: items } = await this.supabase.db

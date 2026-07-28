@@ -152,7 +152,7 @@ export class CompanyService {
     }
   }
 
-  async updateCompany(id: string, updates: Partial<Company>): Promise<boolean> {
+  async updateCompany(id: string, updates: Partial<Company>, skipAuditLog = false): Promise<boolean> {
     try {
       const oldCompany = this.companies().find(c => c.id === id);
       const { error } = await this.supabase.db
@@ -170,14 +170,16 @@ export class CompanyService {
         this.activeCompany.update(c => c ? { ...c, ...updates } : null);
       }
 
-      await this.auditLogService.log(
-        'Atualizou Configurações da Empresa',
-        'settings',
-        { updates, old: oldCompany ? { name: oldCompany.name, nuit: oldCompany.nuit } : null },
-        id,
-        updates.name || oldCompany?.name,
-        id
-      );
+      if (!skipAuditLog) {
+        await this.auditLogService.log(
+          'Atualizou Configurações da Empresa',
+          'settings',
+          { updates, old: oldCompany ? { name: oldCompany.name, nuit: oldCompany.nuit } : null },
+          id,
+          updates.name || oldCompany?.name,
+          id
+        );
+      }
 
       return true;
     } catch (error) {
