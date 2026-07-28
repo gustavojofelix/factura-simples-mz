@@ -41,51 +41,24 @@ export class SubscriptionService {
       monthly_price: 0,
       yearly_price: 0,
       features: [
-        'Até 50 faturas por mês',
-        'Até 2 usuários',
-        'Suporte básico',
-        'Relatórios básicos'
+        'Acesso completo durante 14 dias',
+        'Faturação ilimitada no período',
+        'Gestão de clientes e produtos',
+        'Cálculo automático de ISPC'
       ]
     },
     {
-      name: 'Basic',
-      description: 'Plano básico para pequenas empresas',
-      monthly_price: 1500,
-      yearly_price: 15000,
-      features: [
-        'Até 200 faturas por mês',
-        'Até 5 usuários',
-        'Suporte por email',
-        'Relatórios avançados',
-        'Backup automático'
-      ]
-    },
-    {
-      name: 'Pro',
-      description: 'Plano profissional para empresas em crescimento',
-      monthly_price: 3500,
-      yearly_price: 35000,
-      features: [
-        'Faturas ilimitadas',
-        'Usuários ilimitados',
-        'Suporte prioritário',
-        'Relatórios personalizados',
-        'API de integração',
-        'Múltiplas empresas'
-      ]
-    },
-    {
-      name: 'Enterprise',
-      description: 'Solução completa para grandes empresas',
+      name: 'Standard',
+      description: 'Plano completo e ilimitado para a sua empresa',
       monthly_price: 7500,
       yearly_price: 75000,
       features: [
-        'Tudo do plano Pro',
-        'Suporte dedicado 24/7',
-        'Treinamento personalizado',
-        'Customizações sob medida',
-        'SLA garantido',
-        'Gerente de conta dedicado'
+        'Faturação e recibos ilimitados',
+        'Utilizadores e acessos ilimitados',
+        'Suporte prioritário 24/7',
+        'Modelos fiscais e relatórios completos',
+        'Backup automático na nuvem',
+        'Conformidade legal e fiscal total (AT / MZN)'
       ]
     }
   ];
@@ -229,5 +202,52 @@ export class SubscriptionService {
     }
 
     return sub.status === 'active';
+  }
+
+  async processMobilePayment(
+    companyId: string,
+    subscriptionId: string | undefined,
+    planName: string,
+    billingCycle: 'monthly' | 'yearly',
+    amount: number,
+    paymentMethod: 'mpesa' | 'emola',
+    phoneNumber: string
+  ): Promise<{ success: boolean; message?: string; error?: string; referenceCode?: string }> {
+    try {
+      const { data, error } = await this.supabase.client.functions.invoke('process-subscription-payment', {
+        body: {
+          companyId,
+          subscriptionId,
+          planName,
+          billingCycle,
+          amount,
+          paymentMethod,
+          phoneNumber
+        }
+      });
+
+      if (error) {
+        console.error('Error invoking process-subscription-payment:', error);
+        return { success: false, error: error.message || 'Erro ao comunicar com o servidor de pagamentos' };
+      }
+
+      if (data && data.success) {
+        await this.loadSubscription(companyId);
+        await this.auditLogService.log(
+          `Pagamento Subscrição (${paymentMethod.toUpperCase()})`,
+          'subscriptions',
+          { planName, billingCycle, amount, paymentMethod, phoneNumber, referenceCode: data.referenceCode },
+          subscriptionId,
+          planName,
+          companyId
+        );
+        return { success: true, message: data.message, referenceCode: data.referenceCode };
+      }
+
+      return { success: false, error: data?.error || 'Erro ao processar pagamento de subscrição' };
+    } catch (err: any) {
+      console.error('Exception processing mobile payment:', err);
+      return { success: false, error: err.message || 'Erro inesperado durante o pagamento' };
+    }
   }
 }

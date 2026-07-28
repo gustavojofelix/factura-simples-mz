@@ -20,6 +20,7 @@ import { UserManagementService, UserWithCompanies } from '../../core/services/us
 import { AuthService } from '../../core/services/auth.service';
 import { CompanyDialogComponent } from '../../shared/components/company-dialog.component';
 import { UserCompanyDialogComponent } from '../../shared/components/user-company-dialog.component';
+import { PaymentDialogComponent } from '../../shared/components/payment-dialog/payment-dialog.component';
 
 @Component({
   selector: 'app-settings',
@@ -272,20 +273,44 @@ export class SettingsComponent implements OnInit {
 
   async changePlan(plan: SubscriptionPlan, cycle: 'monthly' | 'yearly') {
     const sub = this.subscription();
-    if (!sub) {
+    const companyId = this.selectedCompanyId();
+
+    if (!companyId) {
       this.snackBar.open('Selecione uma empresa primeiro', 'Fechar', { duration: 3000 });
+      return;
+    }
+
+    if (plan.monthly_price > 0) {
+      // Launch Mobile Payment Dialog for M-Pesa / e-Mola
+      const dialogRef = this.dialog.open(PaymentDialogComponent, {
+        data: {
+          companyId,
+          subscriptionId: sub?.id,
+          plan,
+          billingCycle: cycle
+        },
+        width: '450px',
+        maxWidth: '95vw',
+        panelClass: 'dark-dialog'
+      });
+
+      dialogRef.afterClosed().subscribe(async (success) => {
+        if (success) {
+          await this.loadCompanySettings(companyId);
+        }
+      });
       return;
     }
 
     this.loading.set(true);
     const success = await this.subscriptionService.changePlan(
-      sub.id,
+      sub?.id || '',
       plan.name,
       cycle
     );
 
     if (success) {
-      await this.loadCompanySettings(sub.company_id);
+      await this.loadCompanySettings(companyId);
     }
 
     this.loading.set(false);
