@@ -218,14 +218,27 @@ export class AuthService {
     if (!user) return [];
 
     try {
-      const { data, error } = await this.supabase.db
+      const { data: owned, error: ownedError } = await this.supabase.db
         .from('companies')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data || [];
+      if (ownedError) throw ownedError;
+
+      const { data: shared, error: sharedError } = await this.supabase.db
+        .from('company_users')
+        .select('companies(*)')
+        .eq('user_id', user.id)
+        .neq('role', 'owner');
+
+      if (sharedError) throw sharedError;
+
+      const sharedCompanies = (shared || [])
+        .map((cu: any) => cu.companies)
+        .filter((c: any) => c !== null);
+
+      return [...(owned || []), ...sharedCompanies];
     } catch (error) {
       console.error('Erro ao carregar empresas:', error);
       return [];
