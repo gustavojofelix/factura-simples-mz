@@ -160,7 +160,10 @@ export class UserManagementService {
     companyId: string, 
     role: CompanyUser['role'],
     fullName?: string,
-    phone?: string
+    phone?: string,
+    companyName?: string,
+    inviterName?: string,
+    roleName?: string
   ): Promise<boolean> {
     try {
       // Usar a nossa nova RPC para encontrar o ID do utilizador pelo email de forma segura
@@ -172,7 +175,7 @@ export class UserManagementService {
       // If user not found, invite them
       if (!targetUserId) {
         const { data: inviteData, error: inviteError } = await this.supabase.client.functions.invoke('invite-user', {
-          body: { email, fullName, phone }
+          body: { email, fullName, phone, companyName, role: roleName || role, inviterName }
         });
 
         if (inviteError || !inviteData?.user) {

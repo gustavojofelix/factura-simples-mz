@@ -14,6 +14,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CompanyService, Company } from '../../core/services/company.service';
 import { SubscriptionService, SubscriptionPlan } from '../../core/services/subscription.service';
 import { UserManagementService, UserWithCompanies } from '../../core/services/user-management.service';
@@ -40,7 +41,8 @@ import { PaymentDialogComponent } from '../../shared/components/payment-dialog/p
     MatChipsModule,
     MatDialogModule,
     MatSnackBarModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatProgressSpinnerModule
   ],
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.css']
@@ -235,8 +237,14 @@ export class SettingsComponent implements OnInit {
         this.loading.set(true);
 
         // Adicionar utilizador (convidar se não existir)
+        const currentUserProfile = await this.authService.getCurrentProfile();
+        const currentUserEmail = this.authService.currentUser()?.email;
+        const inviterName = currentUserProfile?.full_name || currentUserEmail || 'Um administrador';
+
         for (let i = 0; i < result.companies.length; i++) {
           const { company_id, role } = result.companies[i];
+          const companyName = this.getCompanyName(company_id);
+          const translatedRole = this.getRoleLabel(role);
           // Só passamos fullName/phone na primeira iteração para evitar convites duplicados
           // ou o serviço tratará de convidar apenas se não existir.
           // Mas como o serviço atual já faz listUsers e find, ele lidará com isso.
@@ -245,7 +253,10 @@ export class SettingsComponent implements OnInit {
             company_id,
             role as any,
             i === 0 ? result.fullName : undefined,
-            i === 0 ? result.phone : undefined
+            i === 0 ? result.phone : undefined,
+            companyName,
+            inviterName,
+            translatedRole
           );
         }
 
