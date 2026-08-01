@@ -30,11 +30,12 @@ import { AuthService } from '../../../core/services/auth.service';
 export class LoginFormComponent {
   loginForm: FormGroup;
   forgotForm: FormGroup;
-  mode = signal<'login' | 'forgot'>('login');
+  mode = signal<'login' | 'forgot' | 'forgot_sent'>('login');
+  sentEmail = signal<string>('');
   isLoading = signal(false);
   hidePassword = signal(true);
 
-  setMode(newMode: 'login' | 'forgot') {
+  setMode(newMode: 'login' | 'forgot' | 'forgot_sent') {
     this.mode.set(newMode);
   }
 
@@ -116,12 +117,12 @@ export class LoginFormComponent {
     this.isLoading.set(false);
 
     if (result.success) {
+      this.sentEmail.set(email);
+      this.mode.set('forgot_sent');
       this.snackBar.open('E-mail de recuperação enviado com sucesso!', 'Fechar', {
         duration: 5000,
         panelClass: ['success-snackbar']
       });
-      this.mode.set('login');
-      this.forgotForm.reset();
     } else {
       this.snackBar.open(result.error || 'Erro ao enviar e-mail de recuperação', 'Fechar', {
         duration: 5000,

@@ -151,6 +151,32 @@ export class AuthService {
     }
   }
 
+  async completePasswordReset(newPassword: string): Promise<AuthResponse> {
+    try {
+      const { data, error } = await this.supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) {
+        return { success: false, error: this.translateError(error) };
+      }
+
+      if (data.user) {
+        this.currentUser.set(data.user);
+        await this.auditLogService.log(
+          'Alterou a Palavra-passe (Recuperação)',
+          'auth',
+          { email: data.user.email, method: 'password_reset_recovery' }
+        );
+        return { success: true, user: data.user };
+      }
+
+      return { success: false, error: 'Erro ao atualizar a palavra-passe' };
+    } catch (error: any) {
+      return { success: false, error: error.message || 'Erro desconhecido' };
+    }
+  }
+
   async getCurrentProfile(): Promise<UserProfile | null> {
     const user = this.currentUser();
     if (!user) return null;
@@ -229,6 +255,7 @@ export class AuthService {
       'Password should be at least 6 characters': 'A palavra-passe deve ter pelo menos 6 caracteres',
       'Unable to validate email address': 'Email inválido',
       'Email rate limit exceeded': 'Demasiadas tentativas. Tente novamente mais tarde',
+      'New password should be different from the old password': 'A nova palavra-passe deve ser diferente da antiga',
       'Database error granting user': 'Erro na base de dados ao autenticar o utilizador. Por favor, execute as migrações mais recentes no Supabase.'
     };
 
