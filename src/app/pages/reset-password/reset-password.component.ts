@@ -76,8 +76,28 @@ export class ResetPasswordComponent implements OnInit {
       // Check if session exists after initial parsing
       const { data: { session } } = await this.supabaseService.auth.getSession();
       if (!session) {
-        if (window.location.hash.includes('access_token') || window.location.hash.includes('type=recovery')) {
-          this.tokenValid.set(true);
+        const hash = window.location.hash;
+        if (hash.includes('access_token=')) {
+          // Manually extract access_token and refresh_token because HashLocationStrategy breaks Supabase's automatic extraction
+          const hashString = hash.substring(hash.indexOf('access_token='));
+          const urlParams = new URLSearchParams(hashString);
+          const accessToken = urlParams.get('access_token');
+          const refreshToken = urlParams.get('refresh_token');
+
+          if (accessToken && refreshToken) {
+            const { error: sessionError } = await this.supabaseService.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken
+            });
+            
+            if (sessionError) {
+              throw sessionError;
+            } else {
+              this.tokenValid.set(true);
+            }
+          } else {
+            throw new Error('Token de recuperação incompleto no link.');
+          }
         } else {
           this.tokenValid.set(false);
           this.tokenErrorMessage.set('O link de recuperação de palavra-passe é inválido ou expirou.');
