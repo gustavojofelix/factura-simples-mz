@@ -1,7 +1,7 @@
 import { Component, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../../core/services/auth.service';
+import { SupabaseService } from '../../core/services/supabase.service';
 
 @Component({
   selector: 'app-reset-password',
@@ -30,6 +31,9 @@ import { AuthService } from '../../core/services/auth.service';
 export class ResetPasswordComponent implements OnInit {
   resetForm: FormGroup;
   isLoading = signal(false);
+  isVerifying = signal(true);
+  tokenValid = signal(true);
+  tokenErrorMessage = signal('');
   hidePassword = signal(true);
   hideConfirmPassword = signal(true);
   isSuccess = signal(false);
@@ -37,6 +41,8 @@ export class ResetPasswordComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
+    private supabaseService: SupabaseService,
+    private route: ActivatedRoute,
     private router: Router,
     private snackBar: MatSnackBar
   ) {
@@ -47,7 +53,45 @@ export class ResetPasswordComponent implements OnInit {
   }
 
   async ngOnInit() {
+    this.isVerifying.set(true);
     await this.authService.waitForInitialization();
+
+    // Check for query parameters (token_hash or code) or hash fragments
+    const queryParams = this.route.snapshot.queryParams;
+    const tokenHash = queryParams['token_hash'];
+    const code = queryParams['code'];
+
+    try {
+      if (tokenHash) {
+        const { error } = await this.supabaseService.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: 'recovery'
+        });
+        if (error) throw error;
+      } else if (code) {
+        const { error } = await this.supabaseService.auth.exchangeCodeForSession(code);
+        if (error) throw error;
+      }
+
+      // Check if session exists after initial parsing
+      const { data: { session } } = await this.supabaseService.auth.getSession();
+      if (!session) {
+        if (window.location.hash.includes('access_token') || window.location.hash.includes('type=recovery')) {
+          this.tokenValid.set(true);
+        } else {
+          this.tokenValid.set(false);
+          this.tokenErrorMessage.set('O link de recuperação de palavra-passe é inválido ou expirou.');
+        }
+      } else {
+        this.tokenValid.set(true);
+      }
+    } catch (err: any) {
+      console.error('Erro ao verificar token de recuperação:', err);
+      this.tokenValid.set(false);
+      this.tokenErrorMessage.set(err.message || 'O link de recuperação caducou ou é inválido.');
+    } finally {
+      this.isVerifying.set(false);
+    }
   }
 
   passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
@@ -95,7 +139,6 @@ export class ResetPasswordComponent implements OnInit {
         panelClass: ['success-snackbar']
       });
 
-      // Auto redirect user after 1.5 seconds
       setTimeout(async () => {
         const companies = await this.authService.getUserCompanies();
         if (companies.length === 0) {
