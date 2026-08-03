@@ -1074,9 +1074,15 @@ export class AdminCompaniesComponent implements OnInit {
     }
   }
 
-  exportCompanies() {
+  async exportCompanies() {
     const data = this.filteredCompanies();
     if (data.length === 0) return;
+    
+    await this.auditLogService.log(
+      'Exportação de Contribuintes',
+      'admin_companies',
+      { records_count: data.length }
+    );
 
     const headers = ['ID', 'Nome', 'NUIT', 'Provincia', 'Distrito', 'Proprietario', 'Plano', 'Data Limite Plano', 'Ultimo Acesso', 'Utilizadores'];
 

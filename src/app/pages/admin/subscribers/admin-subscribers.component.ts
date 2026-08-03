@@ -556,9 +556,15 @@ export class AdminSubscribersComponent implements OnInit {
     this.selectedSub.set({});
   }
 
-  exportSubscribers() {
+  async exportSubscribers() {
     const data = this.filteredSubscribers();
     if (data.length === 0) return;
+    
+    await this.auditLogService.log(
+      'Exportação de Subscritores',
+      'admin_subscribers',
+      { records_count: data.length }
+    );
 
     const headers = ['ID', 'Nome', 'E-mail', 'Telefone', 'Estado', 'Contribuintes', 'Utilizadores', 'Data de Criação'];
 
