@@ -112,3 +112,25 @@ button, a, input, select, textarea, [role="button"], .mat-mdc-menu-item {
   background-color: rgba(241, 108, 57, 0.4);
 }
 
+/* ——— Full-screen dialog (Modelo 30) ——— */
+.fullscreen-dialog {
+  padding: 0 !important;
+}
+
+.fullscreen-dialog .mat-mdc-dialog-container {
+  padding: 0 !important;
+  border-radius: 0 !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  width: 100vw !important;
+  height: 100vh !important;
+}
+
+.fullscreen-dialog .mdc-dialog__surface {
+  border-radius: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  overflow: hidden;
+}

@@ -13,12 +13,16 @@ import { CompanyService, Company } from '../../core/services/company.service';
   template: `
     <!-- Toolbar (no-print) -->
     <div class="no-print toolbar">
-      <h2 style="margin:0; font-size:16px; font-weight:700;">Modelo 30 - ISPC</h2>
-      <div style="display:flex; gap:8px;">
-        <button mat-raised-button color="primary" (click)="print()">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <mat-icon style="color:#f16c39;">description</mat-icon>
+        <h2 style="margin:0; font-size:16px; font-weight:700;">Modelo 30 — Declaração Periódica ISPC</h2>
+        <span style="font-size:12px; color:#666; margin-left:4px;">{{ data.declaration.period }}º Trimestre {{ data.declaration.year }}</span>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button mat-stroked-button (click)="print()" style="gap:6px;">
           <mat-icon>print</mat-icon> Imprimir / Guardar PDF
         </button>
-        <button mat-icon-button (click)="close()"><mat-icon>close</mat-icon></button>
+        <button mat-icon-button (click)="close()" style="color:#666;"><mat-icon>close</mat-icon></button>
       </div>
     </div>
 
@@ -445,27 +449,32 @@ import { CompanyService, Company } from '../../core/services/company.service';
     </div>
   `,
   styles: [`
-    :host { display: block; }
+    :host {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
 
     /* ——— Toolbar ——— */
     .toolbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 16px;
-      border-bottom: 1px solid #ddd;
-      background: #f8f8f8;
-      position: sticky;
-      top: 0;
+      padding: 10px 20px;
+      border-bottom: 2px solid #e8e8e8;
+      background: #fff;
+      flex-shrink: 0;
       z-index: 10;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
     /* ——— Scroll area ——— */
     .print-scroll-area {
-      padding: 16px;
-      max-height: 85vh;
+      padding: 24px;
+      flex: 1;
       overflow-y: auto;
-      background: #e0e0e0;
+      background: #cdd1d6;
     }
 
     /* ——— Page ——— */

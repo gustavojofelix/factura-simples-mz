@@ -165,8 +165,11 @@ export class TaxesComponent implements OnInit {
     );
 
     this.dialog.open(Model30Component, {
-      width: '900px',
-      maxWidth: '95vw',
+      width: '100vw',
+      height: '100vh',
+      maxWidth: '100vw',
+      maxHeight: '100vh',
+      panelClass: 'fullscreen-dialog',
       data: { declaration }
     });
   }
