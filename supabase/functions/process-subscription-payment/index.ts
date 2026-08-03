@@ -41,9 +41,11 @@ serve(async (req) => {
     }
 
     // ── Generate transactionId (max 22 alphanumeric chars per Sislog docs) ──
-    const timestamp     = Date.now().toString().slice(-8); // 8 digits
-    const random        = Math.floor(1000 + Math.random() * 9000); // 4 digits
-    const referenceCode = `SUB${timestamp}${random}`;     // 15 chars — within 22 char limit
+    // crypto.randomUUID() + timestamp ensures true uniqueness across all calls,
+    // even when triggered multiple times within the same millisecond.
+    const uuid          = crypto.randomUUID().replace(/-/g, '').slice(0, 9).toUpperCase(); // 9 hex chars
+    const ts            = Date.now().toString().slice(-9); // 9 digits
+    const referenceCode = `S${ts}${uuid}`;  // 19 chars — well within 22 char limit
 
     // ── Value format: 2 decimal places, no comma or point ──────────────────
     // e.g. 7500.00 MZN → "750000"
@@ -87,12 +89,17 @@ serve(async (req) => {
       }
 
       // Sislog returns status 'Valid' or 'Invalid' (case-insensitive)
+      console.log('=> SISLOG payload:', JSON.stringify(sislogPayload));
+      console.log('=> SISLOG response:', JSON.stringify(sislogResult));
+
       if (
         sislogResult.status?.toLowerCase() === 'invalid' ||
         !sislogResponse.ok
       ) {
         sislogOk = false;
-        console.error("Sislog returned error:", sislogResult.errorMessage || sislogResult);
+        const sislogError = sislogResult.errorMessage || `HTTP ${sislogResponse.status}`;
+        console.error('Sislog returned error:', sislogError);
+        sislogResult._errorMessage = sislogError; // surface to client
       }
     } catch (err: any) {
       console.error("Erro na comunicação com Sislog:", err);
@@ -124,7 +131,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success:        false,
-          error:          sislogResult.errorMessage || "A Sislog rejeitou o pedido. Verifique as credenciais.",
+          error:          sislogResult._errorMessage || sislogResult.errorMessage || "A Sislog rejeitou o pedido. Verifique as credenciais.",
           sislogResponse: sislogResult,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 502 }
