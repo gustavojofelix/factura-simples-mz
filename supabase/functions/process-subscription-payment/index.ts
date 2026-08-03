@@ -41,13 +41,6 @@ serve(async (req) => {
 
     // Sislog API Payload
     const sislogPayload = {
-      user: SISLOG_USER,
-      apiKey: SISLOG_API_KEY,
-      msisdn: cleanPhone,
-      amount: Number(amount),
-      reference: referenceCode,
-      service: serviceCode,
-      // PascalCase fallbacks
       User: SISLOG_USER,
       ApiKey: SISLOG_API_KEY,
       Msisdn: cleanPhone,
@@ -140,6 +133,16 @@ serve(async (req) => {
 
     // Send confirmation email
     try {
+      const authHeader = req.headers.get('Authorization');
+      let currentUserEmail: string | undefined;
+      if (authHeader) {
+        const authSupabase = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY') || '', {
+          global: { headers: { Authorization: authHeader } }
+        });
+        const { data: { user } } = await authSupabase.auth.getUser();
+        if (user && user.email) currentUserEmail = user.email;
+      }
+
       const { data: companyUser } = await supabase
         .from('company_users')
         .select(`
@@ -202,9 +205,15 @@ serve(async (req) => {
           </div>
         `;
 
+        const ccEmails = ['info@ispcfacil.com'];
+        if (currentUserEmail && currentUserEmail !== userEmail) {
+          ccEmails.push(currentUserEmail);
+        }
+
         await transporter.sendMail({
           from: '"ISPC Fácil" <notifications@ispcfacil.co.mz>',
           to: userEmail,
+          cc: ccEmails.join(', '),
           subject: '[ISPC Fácil] Confirmação de Subscrição',
           html: htmlContent,
         });
