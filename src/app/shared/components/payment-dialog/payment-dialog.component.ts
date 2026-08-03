@@ -41,7 +41,7 @@ export interface PaymentDialogData {
           </div>
           <div>
             <h2 class="text-lg font-bold text-white leading-tight">Pagamento da Subscrição</h2>
-            <p class="text-xs text-slate-400">Plano {{ data.plan.name }} • 7.500 MZN</p>
+            <p class="text-xs text-slate-400">Plano {{ data.plan.name }} • {{ data.plan.monthly_price | number:'1.0-0' }} MZN</p>
           </div>
         </div>
         <button mat-icon-button (click)="dialogRef.close(false)" [disabled]="loading()" class="!text-slate-400 hover:!text-white">
@@ -101,11 +101,11 @@ export interface PaymentDialogData {
         <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 flex justify-between items-center">
           <div>
             <span class="text-xs text-slate-400 block">Total a Pagar</span>
-            <span class="text-lg font-black text-white">7.500 MZN</span>
+            <span class="text-lg font-black text-white">{{ (data.billingCycle === 'monthly' ? data.plan.monthly_price : data.plan.yearly_price) | number:'1.0-0' }} MZN</span>
           </div>
           <div class="text-right">
             <span class="text-[11px] px-2.5 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 font-bold uppercase">
-              Plano Standard
+              Plano {{ data.plan.name }}
             </span>
           </div>
         </div>
