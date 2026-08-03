@@ -95,4 +95,18 @@ export class MainLayoutComponent {
   toggleMobileMenu() {
     this.isMobileMenuOpen.update(v => !v);
   }
+
+  userInitials = computed(() => {
+    const user = this.authService.currentUser();
+    if (!user) return '';
+    const fullName = user.user_metadata?.['full_name'];
+    if (!fullName) {
+      const email = user.email || '';
+      return email.substring(0, 2).toUpperCase();
+    }
+    const parts = fullName.trim().split(' ').filter((p: string) => p.length > 0);
+    if (parts.length === 0) return '';
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  });
 }
