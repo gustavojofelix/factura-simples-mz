@@ -40,13 +40,15 @@ serve(async (req) => {
     const serviceCode = paymentMethod.toLowerCase() === 'emola' ? 'EMOLA' : 'MPESA';
 
     // Sislog API Payload
+    const deadlineDate = new Date();
+    deadlineDate.setDate(deadlineDate.getDate() + 3); // 3 days deadline
+    const deadlineStr = deadlineDate.toISOString().replace(/-/g, '').slice(0, 8); // YYYYMMDD
+
     const sislogPayload = {
-      User: SISLOG_USER,
-      ApiKey: SISLOG_API_KEY,
-      Msisdn: cleanPhone,
-      Amount: Number(amount),
-      Reference: referenceCode,
-      Service: serviceCode
+      username: SISLOG_USER,
+      transactionId: referenceCode,
+      value: (Number(amount) * 100).toString(),
+      deadline: deadlineStr
     };
 
     let sislogResult: any = {};
@@ -58,7 +60,8 @@ serve(async (req) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'apikey': SISLOG_API_KEY
         },
         body: JSON.stringify(sislogPayload)
       });
