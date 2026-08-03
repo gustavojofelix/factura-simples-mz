@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.8";
+import nodemailer from "npm:nodemailer@6.9.11";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -135,6 +136,82 @@ serve(async (req) => {
         next_billing_date: nextBillingDate.toISOString(),
         updated_at: new Date().toISOString()
       }, { onConflict: 'company_id' });
+    }
+
+    // Send confirmation email
+    try {
+      const { data: companyUser } = await supabase
+        .from('company_users')
+        .select(`
+          profiles ( email, full_name ),
+          companies ( name )
+        `)
+        .eq('company_id', companyId)
+        .eq('role', 'owner')
+        .single();
+        
+      if (companyUser && companyUser.profiles && (companyUser.profiles as any).email) {
+        const userEmail = (companyUser.profiles as any).email;
+        const userName = (companyUser.profiles as any).full_name || 'Estimado(a) Cliente';
+        const companyName = (companyUser.companies as any)?.name || 'sua empresa';
+
+        const transporter = nodemailer.createTransport({
+           host: "mail.ispcfacil.co.mz",
+           port: 465,
+           secure: true,
+           auth: {
+             user: "notifications@ispcfacil.co.mz",
+             pass: "&fF1;s*QJ$dJ",
+           },
+        });
+
+        const htmlContent = `
+          <div style="font-family: sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 8px;">
+            <h2 style="color: #f16c39; border-bottom: 2px solid #f16c39; padding-bottom: 10px;">Confirmação de Pagamento de Subscrição</h2>
+            <p>Olá <strong>${userName}</strong>,</p>
+            <p>Confirmamos a receção do pagamento da subscrição para a empresa <strong>${companyName}</strong> no ISPC Fácil.</p>
+            <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+              <tr>
+                <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; width: 150px;">Plano:</td>
+                <td style="padding: 8px; border-bottom: 1px solid #eee;">${planName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Ciclo de Faturação:</td>
+                <td style="padding: 8px; border-bottom: 1px solid #eee;">${billingCycle === 'yearly' ? 'Anual' : 'Mensal'}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Valor:</td>
+                <td style="padding: 8px; border-bottom: 1px solid #eee;">${amount.toLocaleString('pt-MZ', { minimumFractionDigits: 2 })} MT</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Método:</td>
+                <td style="padding: 8px; border-bottom: 1px solid #eee;">${paymentMethod.toUpperCase()} (${phoneNumber})</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Referência:</td>
+                <td style="padding: 8px; border-bottom: 1px solid #eee;">${referenceCode}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Próxima Faturação:</td>
+                <td style="padding: 8px; border-bottom: 1px solid #eee;">${nextBillingDate.toLocaleDateString('pt-PT')}</td>
+              </tr>
+            </table>
+            <p>Agradecemos a sua preferência. A sua subscrição encontra-se ativa e pode continuar a utilizar todas as funcionalidades sem interrupções.</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin-top: 30px;"/>
+            <p style="font-size: 11px; color: #888;">Este é um e-mail automático do ISPC Fácil. Por favor, não responda a este e-mail.</p>
+          </div>
+        `;
+
+        await transporter.sendMail({
+          from: '"ISPC Fácil" <notifications@ispcfacil.co.mz>',
+          to: userEmail,
+          subject: '[ISPC Fácil] Confirmação de Subscrição',
+          html: htmlContent,
+        });
+      }
+    } catch (emailErr) {
+      console.error("Erro ao enviar email de confirmação:", emailErr);
+      // We don't throw here to avoid failing the payment process if email fails
     }
 
     return new Response(
