@@ -50,7 +50,7 @@ export class SubscriptionService {
     {
       name: "Standard",
       description: "Plano completo e ilimitado para a sua empresa",
-      monthly_price: 7500,
+      monthly_price: 25,
       yearly_price: 8400000,
       features: [
         "Faturação e recibos ilimitados",
