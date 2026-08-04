@@ -94,13 +94,13 @@ export class LoginFormComponent {
     if (!control || !control.touched) return '';
 
     if (control.hasError('required')) {
-      return 'Este campo é obrigatório';
+      return 'Este campo é obrigatório.';
     }
     if (control.hasError('email')) {
-      return 'Email inválido';
+      return 'Email inválido.';
     }
     if (control.hasError('minlength')) {
-      return 'A palavra-passe deve ter pelo menos 6 caracteres';
+      return 'A palavra-passe deve ter pelo menos 6 caracteres.';
     }
     return '';
   }
@@ -124,7 +124,7 @@ export class LoginFormComponent {
         panelClass: ['success-snackbar']
       });
     } else {
-      this.snackBar.open(result.error || 'Erro ao enviar e-mail de recuperação', 'Fechar', {
+      this.snackBar.open(result.error || 'Erro ao enviar o e-mail de recuperação', 'Fechar', {
         duration: 5000,
         panelClass: ['error-snackbar']
       });

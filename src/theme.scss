@@ -1,10 +1,20 @@
+@use './styles/variables' as *;
 @import '@angular/material/prebuilt-themes/indigo-pink.css';
 
 :root {
-  --moz-orange: #f16c39;
-  --moz-dark: #332d2a;
-  --primary-color: #f16c39;
-  --accent-color: #332d2a;
+  --moz-orange: #{$orange-500};
+  --moz-dark: #{$navy-950};
+  --primary-color: #{$gold-500};
+  --accent-color: #{$navy-950};
+  --bg-page: #{$bg-page};
+  --bg-card: #{$bg-card};
+  --text-primary: #{$text-primary};
+  --text-secondary: #{$text-secondary};
+  --border-soft: #{$border-soft};
+  --shadow-md: #{$shadow-md};
+  --shadow-lg: #{$shadow-lg};
+  --radius-md: #{$radius-md};
+  --radius-lg: #{$radius-lg};
 }
 
 html,
@@ -14,7 +24,9 @@ body {
 
 body {
   margin: 0;
-  font-family: 'Inter', sans-serif;
+  font-family: $font-family-base;
+  background: $bg-page;
+  color: $text-primary;
 }
 
 .mat-mdc-raised-button.mat-primary,

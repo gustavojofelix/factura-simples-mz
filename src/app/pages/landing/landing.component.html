@@ -1,159 +1,542 @@
-<div class="min-h-screen bg-gradient-to-br from-gray-50 to-white relative overflow-hidden">
-  <!-- Subtle background patterns -->
-  <div class="absolute inset-0 z-0">
-    <div class="absolute top-0 right-0 w-1/3 h-1/3 bg-ispc-orange/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-    <div class="absolute bottom-0 left-0 w-1/2 h-1/2 bg-ispc-dark/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4"></div>
-  </div>
+<div class="landing-page">
+  <header class="landing-header" [class.scrolled]="isScrolled">
+    <nav class="container-xl" aria-label="Navegação principal">
+      <div class="nav-inner">
+        <a routerLink="/" class="nav-logo" aria-label="ISPC Fácil, página inicial">
+          <div class="logo-icon">
+            <i class="fas fa-file-invoice"></i>
+          </div>
+          <span class="logo-text">ISPC <span class="logo-accent">Fácil</span></span>
+        </a>
 
-  <header class="relative z-10 border-b border-gray-100 bg-white/80 backdrop-blur-md sticky top-0">
-    <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between items-center h-20">
-        <div class="flex items-center gap-2">
-          <img src="assets/ISPC.png" alt="ISPC Fácil" class="h-10 w-auto">
-          <span class="text-2xl font-bold text-gray-900">ISPC Fácil</span>
+        <div class="nav-links" id="mobile-nav" [class.open]="mobileMenuOpen">
+          <a href="#funcionalidades" class="nav-link" [class.active]="activeSection === 'funcionalidades'" (click)="scrollToSection('funcionalidades', $event)">Funcionalidades</a>
+          <a href="#sobre-nos" class="nav-link" [class.active]="activeSection === 'sobre-nos'" (click)="scrollToSection('sobre-nos', $event)">Sobre nós</a>
+          <a href="#precos" class="nav-link" [class.active]="activeSection === 'precos'" (click)="scrollToSection('precos', $event)">Preços</a>
+          <a href="#faq" class="nav-link" [class.active]="activeSection === 'faq'" (click)="scrollToSection('faq', $event)">FAQ</a>
+          <a href="#contacto" class="nav-link" [class.active]="activeSection === 'contacto'" (click)="scrollToSection('contacto', $event)">Contacto</a>
+          <div class="nav-cta-group">
+            <a routerLink="/entrar" class="btn-outline-nav" (click)="mobileMenuOpen=false">Entrar</a>
+            <a routerLink="/registar" class="btn-primary-nav" (click)="mobileMenuOpen=false">Criar conta grátis</a>
+          </div>
         </div>
-        <div class="hidden md:flex items-center space-x-8">
-          <a href="#funcionalidades" class="text-gray-600 hover:text-ispc-orange transition-colors font-medium">Funcionalidades</a>
-          <a href="#precos" class="text-gray-600 hover:text-ispc-orange transition-colors font-medium">Preços</a>
-          <button mat-stroked-button routerLink="/entrar" class="!border-ispc-orange !text-ispc-orange !px-6">
-            Entrar
-          </button>
-          <button mat-raised-button routerLink="/registar" class="!bg-ispc-orange !text-white !px-6">
-            Criar Conta
-          </button>
-        </div>
+
+        <button
+          type="button"
+          class="hamburger"
+          (click)="mobileMenuOpen=!mobileMenuOpen"
+          [class.active]="mobileMenuOpen"
+          [attr.aria-expanded]="mobileMenuOpen"
+          aria-controls="mobile-nav"
+          aria-label="Abrir menu"
+        >
+          <span></span><span></span><span></span>
+        </button>
       </div>
     </nav>
   </header>
 
-  <main class="relative z-10">
-    <!-- Hero Section -->
-    <section class="pt-6 pb-12 sm:pt-12 sm:pb-20 lg:py-32">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="grid lg:grid-cols-2 gap-12 items-center">
-          <div class="text-left">
-            <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-extrabold text-gray-900 leading-[1.1] mb-4 sm:mb-6">
-              Facturação fácil para o seu negócio em <span class="text-ispc-orange">Moçambique</span>
-            </h1>
-            <p class="hidden sm:block text-base sm:text-lg md:text-xl text-gray-600 mb-6 sm:mb-10 leading-relaxed max-w-xl">
-              Simplifique a sua gestão, emita facturas em segundos e mantenha o seu negócio em conformidade com o ISPC Fácil.
-            </p>
-            <div class="hidden sm:flex flex-col sm:flex-row gap-4">
-              <button mat-raised-button routerLink="/registar" class="!bg-ispc-orange !text-white !py-4 !px-10 !text-xl !h-auto !rounded-xl shadow-lg shadow-ispc-orange/20 hover:scale-[1.02] transition-transform">
-                Começar Grátis por 14 Dias
-                <mat-icon class="ml-2">arrow_forward</mat-icon>
-              </button>
-            </div>
-            <div class="mt-8 flex items-center gap-4 text-sm text-gray-500">
-              <div class="flex -space-x-2">
-                <div class="w-8 h-8 rounded-full bg-ispc-orange/20 border-2 border-white flex items-center justify-center text-[10px] font-bold">JF</div>
-                <div class="w-8 h-8 rounded-full bg-ispc-dark/20 border-2 border-white flex items-center justify-center text-[10px] font-bold">AM</div>
-                <div class="w-8 h-8 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-[10px] font-bold">+50</div>
-              </div>
-              <span>Junte-se a centenas de negócios moçambicanos</span>
-            </div>
+  <section id="hero" class="hero-section">
+    <div class="hero-bg-glow hero-glow-1"></div>
+    <div class="hero-bg-glow hero-glow-2"></div>
+
+    <div class="container-xl hero-grid">
+      <div
+        #revealItem
+        class="hero-copy reveal-item"
+        [attr.data-reveal-key]="'hero-copy'"
+        [class.is-visible]="isVisible('hero-copy')"
+      >
+        <div class="hero-badge">
+          <i class="fas fa-bolt"></i>
+          <span>Líder em facturação para PMEs em Moçambique</span>
+        </div>
+        <h1 class="hero-title">
+          Facturação <span class="highlight">inteligente</span> para o seu negócio em
+          <span class="highlight-mz">Moçambique</span>
+        </h1>
+        <p class="hero-subtitle">
+          Emita facturas em segundos, calcule o ISPC automaticamente e mantenha o seu negócio em plena conformidade.
+          Simples, rápido e feito para o mercado moçambicano.
+        </p>
+        <div class="hero-actions">
+          <a routerLink="/registar" class="btn-primary-hero">
+            Começar grátis - 14 dias
+            <i class="fas fa-arrow-right"></i>
+          </a>
+          <a href="#funcionalidades" class="btn-ghost-hero" (click)="scrollToSection('funcionalidades', $event)">
+            <i class="fas fa-play-circle"></i>
+            Ver funcionalidades
+          </a>
+        </div>
+        <div class="hero-proof">
+          <div class="proof-avatars" aria-hidden="true">
+            <div class="avatar av-1">JF</div>
+            <div class="avatar av-2">AM</div>
+            <div class="avatar av-3">SC</div>
+            <div class="avatar av-more">+50</div>
           </div>
-          <div class="relative lg:block">
-            <div class="absolute -inset-4 bg-gradient-to-tr from-ispc-orange to-orange-300 rounded-3xl blur-2xl opacity-20 animate-pulse"></div>
-            <div class="relative w-full max-w-md mx-auto">
-              <div class="absolute -inset-4 bg-gradient-to-tr from-ispc-orange to-orange-300 rounded-3xl blur-2xl opacity-20 animate-pulse"></div>
-              <div class="relative">
-                <app-login-form></app-login-form>
+          <div class="proof-text">
+            <div class="proof-stars" aria-hidden="true">
+              <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+              <i class="fas fa-star"></i><i class="fas fa-star"></i>
+            </div>
+            <span>Centenas de negócios moçambicanos confiam em nós</span>
+          </div>
+        </div>
+      </div>
+
+      <div
+        #revealItem
+        class="hero-form-wrapper reveal-item"
+        [attr.data-reveal-key]="'hero-form'"
+        [class.is-visible]="isVisible('hero-form')"
+      >
+        <div class="hero-form-card">
+          <div class="form-card-header">
+            <h2>Aceder à conta</h2>
+            <p>Entre na sua conta ou crie uma nova</p>
+          </div>
+          <app-login-form></app-login-form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="stats-section">
+    <div class="container-xl stats-grid">
+      <div
+        #revealItem
+        class="stat-item reveal-item"
+        *ngFor="let stat of stats; let i = index"
+        [attr.data-reveal-key]="'stat-' + i"
+        [class.is-visible]="isVisible('stat-' + i)"
+      >
+        <div class="stat-number">{{ stat.value }}</div>
+        <div class="stat-label">{{ stat.label }}</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="funcionalidades" class="features-section">
+    <div class="container-xl">
+      <div #revealItem class="section-header reveal-item" [attr.data-reveal-key]="'features-header'" [class.is-visible]="isVisible('features-header')">
+        <div class="section-badge">
+          <i class="fas fa-sparkles"></i> Funcionalidades
+        </div>
+        <h2 class="section-title">Tudo o que precisa para <span class="highlight">crescer</span></h2>
+        <p class="section-subtitle">Ferramentas pensadas especificamente para o mercado moçambicano.</p>
+      </div>
+      <div class="features-grid">
+        <div
+          #revealItem
+          class="feature-card reveal-item"
+          *ngFor="let feature of features; let i = index"
+          [attr.data-reveal-key]="'feature-' + i"
+          [class.is-visible]="isVisible('feature-' + i)"
+          [style.animation-delay]="(i * 0.08) + 's'"
+        >
+          <div class="feature-icon-wrap" [style.background]="feature.bgColor">
+            <i [class]="'fas ' + feature.faIcon" [style.color]="feature.color"></i>
+          </div>
+          <h3 class="feature-title">{{ feature.title }}</h3>
+          <p class="feature-desc">{{ feature.description }}</p>
+          <div class="feature-arrow">
+            <i class="fas fa-arrow-right"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="sobre-nos" class="about-section">
+    <div class="about-bg-accent"></div>
+    <div class="container-xl about-grid">
+      <div
+        #revealItem
+        class="about-visual reveal-item"
+        [attr.data-reveal-key]="'about-visual'"
+        [class.is-visible]="isVisible('about-visual')"
+      >
+        <div class="about-img-frame">
+          <div class="about-illustration">
+            <div class="illus-circle-1"></div>
+            <div class="illus-circle-2"></div>
+            <div class="dashboard-card">
+              <div class="dashboard-topbar">
+                <span></span><span></span><span></span>
               </div>
+              <div class="dashboard-body">
+                <div class="dashboard-kpi">
+                  <span>Resumo diário</span>
+                  <strong>2.480 MZN</strong>
+                  <p>+18% face à semana passada</p>
+                </div>
+                <div class="dashboard-bars" aria-hidden="true">
+                  <span style="height: 42%"></span>
+                  <span style="height: 68%"></span>
+                  <span style="height: 54%"></span>
+                  <span style="height: 82%"></span>
+                  <span style="height: 60%"></span>
+                </div>
+              </div>
+            </div>
+            <div class="illus-badge illus-badge-1">
+              <i class="fas fa-check-circle"></i>
+              <span>Feito em Moçambique</span>
+            </div>
+            <div class="illus-badge illus-badge-2">
+              <i class="fas fa-shield-alt"></i>
+              <span>Dados 100% seguros</span>
             </div>
           </div>
         </div>
       </div>
-    </section>
 
-    <!-- Features Section -->
-    <section id="funcionalidades" class="py-24 bg-gray-50/50">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center max-w-3xl mx-auto mb-16">
-          <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">Tudo o que precisa para crescer</h2>
-          <p class="text-gray-600 text-lg">Funcionalidades pensadas especificamente para o mercado moçambicano.</p>
+      <div
+        #revealItem
+        class="about-content reveal-item"
+        [attr.data-reveal-key]="'about-content'"
+        [class.is-visible]="isVisible('about-content')"
+      >
+        <div class="section-badge">
+          <i class="fas fa-building"></i> Sobre nós
         </div>
-        <div class="grid md:grid-cols-3 gap-8">
-          <div *ngFor="let feature of features" class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
-            <div class="w-14 h-14 bg-ispc-orange/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-ispc-orange transition-colors">
-              <mat-icon class="!text-ispc-orange group-hover:!text-white transition-colors">{{ feature.icon }}</mat-icon>
+        <h2 class="section-title">Nascemos para <span class="highlight">simplificar</span> o seu negócio</h2>
+        <p class="about-lead">
+          Somos uma equipa moçambicana que acredita que a tecnologia deve estar ao serviço de todos os negócios,
+          independentemente do tamanho. Criámos o ISPC Fácil porque conhecemos os desafios reais do mercado local.
+        </p>
+        <div class="about-values">
+          <div
+            #revealItem
+            class="value-item reveal-item"
+            *ngFor="let value of values; let i = index"
+            [attr.data-reveal-key]="'value-' + i"
+            [class.is-visible]="isVisible('value-' + i)"
+          >
+            <div class="value-icon" [style.background]="value.bg">
+              <i [class]="'fas ' + value.icon" [style.color]="value.color"></i>
             </div>
-            <h3 class="text-xl font-bold text-gray-900 mb-3">{{ feature.title }}</h3>
-            <p class="text-gray-600 leading-relaxed">{{ feature.description }}</p>
+            <div class="value-text">
+              <h4>{{ value.title }}</h4>
+              <p>{{ value.desc }}</p>
+            </div>
           </div>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- Pricing Section -->
-    <section id="precos" class="py-24">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center max-w-3xl mx-auto mb-16">
-          <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">Planos simples e transparentes</h2>
-          <p class="text-gray-600 text-lg">Escolha o plano ideal para a sua empresa.</p>
+  <section id="precos" class="pricing-section">
+    <div class="container-xl">
+      <div #revealItem class="section-header reveal-item" [attr.data-reveal-key]="'pricing-header'" [class.is-visible]="isVisible('pricing-header')">
+        <div class="section-badge">
+          <i class="fas fa-tag"></i> Preços
         </div>
-        <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          <div *ngFor="let plan of plans" 
-               class="bg-white p-10 rounded-3xl shadow-sm border-2 transition-all hover:shadow-xl"
-               [class.border-ispc-orange]="plan.highlighted"
-               [class.border-gray-100]="!plan.highlighted"
-               [class.scale-105]="plan.highlighted">
-            <div *ngIf="plan.highlighted" class="bg-ispc-orange text-white text-[10px] font-bold px-3 py-1 rounded-full w-fit mb-4 uppercase tracking-widest">Mais Popular</div>
-            <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ plan.name }}</h3>
-            <div class="flex items-baseline gap-1 mb-6">
-              <span class="text-4xl font-black text-gray-900">{{ plan.price }}</span>
-              <span class="text-gray-500 font-medium">MZN/{{ plan.period }}</span>
+        <h2 class="section-title">Planos <span class="highlight">simples</span> e transparentes</h2>
+        <p class="section-subtitle">Sem custos ocultos. Escolha e comece hoje mesmo - 14 dias grátis.</p>
+      </div>
+      <div class="pricing-grid">
+        <div
+          #revealItem
+          class="pricing-card reveal-item"
+          *ngFor="let plan of plans; let i = index"
+          [attr.data-reveal-key]="'plan-' + i"
+          [class.is-visible]="isVisible('plan-' + i)"
+          [class.pricing-featured]="plan.highlighted"
+        >
+          <div class="pricing-badge" *ngIf="plan.highlighted">
+            <i class="fas fa-crown"></i> Mais popular
+          </div>
+          <div class="plan-header">
+            <h3 class="plan-name">{{ plan.name }}</h3>
+            <p class="plan-desc">{{ plan.description }}</p>
+          </div>
+          <div class="plan-price">
+            <span class="price-amount">{{ plan.price }}</span>
+            <div class="price-meta">
+              <span class="price-currency">{{ plan.currency }}</span>
+              <span class="price-period">/{{ plan.period }}</span>
             </div>
-            <ul class="space-y-4 mb-8">
-              <li *ngFor="let feature of plan.features" class="flex items-center gap-3 text-gray-600">
-                <mat-icon class="!text-green-500 !text-sm">check_circle</mat-icon>
-                {{ feature }}
-              </li>
-            </ul>
-            <button mat-raised-button routerLink="/registar" 
-                    class="w-full !py-4 !rounded-xl !text-lg !font-bold transition-all"
-                    [class.!bg-ispc-orange]="plan.highlighted"
-                    [class.!text-white]="plan.highlighted"
-                    [class.!bg-gray-900]="!plan.highlighted"
-                    [class.!text-white]="!plan.highlighted">
-              Escolher {{ plan.name }}
+          </div>
+          <ul class="plan-features">
+            <li *ngFor="let feature of plan.features">
+              <i class="fas fa-check-circle"></i>
+              {{ feature }}
+            </li>
+          </ul>
+          <a
+            routerLink="/registar"
+            class="plan-cta"
+            [class.plan-cta-primary]="plan.highlighted"
+            [class.plan-cta-outline]="!plan.highlighted"
+          >
+            Começar com {{ plan.name }}
+            <i class="fas fa-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+
+      <div class="pricing-guarantee">
+        <i class="fas fa-shield-check"></i>
+        <p><strong>Garantia de 14 dias.</strong> Experimente sem riscos - sem cartão de crédito necessário.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq" class="faq-section">
+    <div class="container-xl">
+      <div #revealItem class="section-header reveal-item" [attr.data-reveal-key]="'faq-header'" [class.is-visible]="isVisible('faq-header')">
+        <div class="section-badge">
+          <i class="fas fa-question-circle"></i> FAQ
+        </div>
+        <h2 class="section-title">Perguntas <span class="highlight">frequentes</span></h2>
+        <p class="section-subtitle">Tem dúvidas? Temos respostas.</p>
+      </div>
+      <div class="faq-list">
+        <div
+          #revealItem
+          class="faq-item reveal-item"
+          *ngFor="let item of faqs; let i = index"
+          [attr.data-reveal-key]="'faq-' + i"
+          [class.is-visible]="isVisible('faq-' + i)"
+          [class.open]="openFaqIndex === i"
+        >
+          <button
+            type="button"
+            class="faq-question"
+            (click)="toggleFaq(i)"
+            [attr.aria-expanded]="openFaqIndex === i"
+            [attr.aria-controls]="'faq-answer-' + i"
+          >
+            <span>{{ item.question }}</span>
+            <div class="faq-icon">
+              <i class="fas" [class.fa-plus]="openFaqIndex !== i" [class.fa-minus]="openFaqIndex === i"></i>
+            </div>
+          </button>
+          <div class="faq-answer" [id]="'faq-answer-' + i" [@faqExpand]="openFaqIndex === i ? 'open' : 'closed'">
+            <p>{{ item.answer }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="contacto" class="contact-section">
+    <div class="contact-bg-glow"></div>
+    <div class="container-xl contact-grid">
+      <div
+        #revealItem
+        class="contact-info reveal-item"
+        [attr.data-reveal-key]="'contact-info'"
+        [class.is-visible]="isVisible('contact-info')"
+      >
+        <div class="section-badge">
+          <i class="fas fa-envelope"></i> Contacto
+        </div>
+        <h2 class="section-title">Fale <span class="highlight">connosco</span></h2>
+        <p class="contact-lead">
+          A nossa equipa está disponível para o ajudar. Envie-nos uma mensagem e responderemos o mais rápido possível.
+        </p>
+        <div class="contact-methods">
+          <div class="contact-method">
+            <div class="method-icon"><i class="fas fa-envelope"></i></div>
+            <div>
+              <strong>Email</strong>
+              <span>suporte&#64;ispcfacil.co.mz</span>
+            </div>
+          </div>
+          <div class="contact-method">
+            <div class="method-icon"><i class="fas fa-phone"></i></div>
+            <div>
+              <strong>Telefone / WhatsApp</strong>
+              <span>+258 84 000 0000</span>
+            </div>
+          </div>
+          <div class="contact-method">
+            <div class="method-icon"><i class="fas fa-map-marker-alt"></i></div>
+            <div>
+              <strong>Localização</strong>
+              <span>Maputo, Moçambique</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        #revealItem
+        class="contact-form-wrapper reveal-item"
+        [attr.data-reveal-key]="'contact-form'"
+        [class.is-visible]="isVisible('contact-form')"
+      >
+        @if (!contactSuccess) {
+          <form [formGroup]="contactForm" (ngSubmit)="onContactSubmit()" class="contact-form" novalidate>
+            <div class="form-row">
+              <div class="form-group" [class.has-error]="isFieldInvalid('nome')">
+                <label for="contact-nome">Nome completo *</label>
+                <div class="input-wrap">
+                  <i class="fas fa-user"></i>
+                  <input
+                    id="contact-nome"
+                    type="text"
+                    formControlName="nome"
+                    placeholder="Ex: João Silva"
+                    autocomplete="name"
+                    [attr.aria-invalid]="isFieldInvalid('nome')"
+                  >
+                </div>
+                <span class="field-error" *ngIf="isFieldInvalid('nome')">
+                  <i class="fas fa-exclamation-circle"></i>
+                  {{ getContactError('nome') }}
+                </span>
+              </div>
+              <div class="form-group" [class.has-error]="isFieldInvalid('email')">
+                <label for="contact-email">Email *</label>
+                <div class="input-wrap">
+                  <i class="fas fa-envelope"></i>
+                  <input
+                    id="contact-email"
+                    type="email"
+                    formControlName="email"
+                    placeholder="seu@email.com"
+                    autocomplete="email"
+                    [attr.aria-invalid]="isFieldInvalid('email')"
+                  >
+                </div>
+                <span class="field-error" *ngIf="isFieldInvalid('email')">
+                  <i class="fas fa-exclamation-circle"></i>
+                  {{ getContactError('email') }}
+                </span>
+              </div>
+            </div>
+            <div class="form-group" [class.has-error]="isFieldInvalid('assunto')">
+              <label for="contact-assunto">Assunto *</label>
+              <div class="input-wrap">
+                <i class="fas fa-tag"></i>
+                <input
+                  id="contact-assunto"
+                  type="text"
+                  formControlName="assunto"
+                  placeholder="Como podemos ajudar?"
+                  autocomplete="off"
+                  [attr.aria-invalid]="isFieldInvalid('assunto')"
+                >
+              </div>
+              <span class="field-error" *ngIf="isFieldInvalid('assunto')">
+                <i class="fas fa-exclamation-circle"></i>
+                {{ getContactError('assunto') }}
+              </span>
+            </div>
+            <div class="form-group" [class.has-error]="isFieldInvalid('mensagem')">
+              <label for="contact-mensagem">Mensagem *</label>
+              <div class="input-wrap textarea-wrap">
+                <i class="fas fa-comment-alt"></i>
+                <textarea
+                  id="contact-mensagem"
+                  formControlName="mensagem"
+                  rows="5"
+                  placeholder="Descreva a sua questão ou pedido..."
+                  [attr.aria-invalid]="isFieldInvalid('mensagem')"
+                ></textarea>
+              </div>
+              <span class="field-error" *ngIf="isFieldInvalid('mensagem')">
+                <i class="fas fa-exclamation-circle"></i>
+                {{ getContactError('mensagem') }}
+              </span>
+            </div>
+            <button type="submit" class="btn-contact-submit" [class.loading]="contactLoading" [disabled]="contactLoading">
+              @if (contactLoading) {
+                <i class="fas fa-circle-notch fa-spin"></i> A enviar...
+              } @else {
+                <i class="fas fa-paper-plane"></i> Enviar mensagem
+              }
+            </button>
+          </form>
+        } @else {
+          <div class="contact-success">
+            <div class="success-icon">
+              <i class="fas fa-check-circle"></i>
+            </div>
+            <h3>Mensagem enviada</h3>
+            <p>Obrigado pelo contacto. A nossa equipa irá responder em breve.</p>
+            <button type="button" class="btn-contact-reset" (click)="resetContact()">
+              <i class="fas fa-redo"></i> Enviar nova mensagem
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container-xl">
+      <div
+        #revealItem
+        class="footer-grid reveal-item"
+        [attr.data-reveal-key]="'footer-grid'"
+        [class.is-visible]="isVisible('footer-grid')"
+      >
+        <div class="footer-brand">
+          <div class="footer-logo">
+            <div class="logo-icon">
+              <i class="fas fa-file-invoice"></i>
+            </div>
+            <span class="logo-text">ISPC <span class="logo-accent">Fácil</span></span>
+          </div>
+          <p class="footer-tagline">
+            Facturação simplificada para o mercado moçambicano. Foque no que realmente importa - o seu negócio.
+          </p>
+          <div class="footer-social">
+            <button type="button" class="social-btn" aria-label="Facebook em breve">
+              <i class="fab fa-facebook-f"></i>
+            </button>
+            <button type="button" class="social-btn" aria-label="X em breve">
+              <i class="fab fa-twitter"></i>
+            </button>
+            <button type="button" class="social-btn" aria-label="LinkedIn em breve">
+              <i class="fab fa-linkedin-in"></i>
+            </button>
+            <button type="button" class="social-btn" aria-label="WhatsApp em breve">
+              <i class="fab fa-whatsapp"></i>
             </button>
           </div>
         </div>
-      </div>
-    </section>
-  </main>
 
-  <footer class="bg-gray-900 text-white py-16">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="grid md:grid-cols-4 gap-12 mb-12">
-        <div class="col-span-1 md:col-span-2">
-          <div class="flex items-center gap-2 mb-6">
-            <img src="assets/ISPC.png" alt="ISPC Fácil" class="h-10 w-auto">
-            <span class="text-2xl font-bold">ISPC Fácil</span>
-          </div>
-          <p class="text-gray-400 max-w-sm mb-6 leading-relaxed">
-            Facturação simplificada para o mercado Moçambicano. Focamos na facilidade de uso para que possa focar no que realmente importa: o seu negócio.
-          </p>
-        </div>
-        <div>
-          <h4 class="font-bold text-lg mb-6">Links Rápidos</h4>
-          <ul class="space-y-4 text-gray-400">
-            <li><a href="#" class="hover:text-white transition-colors">Funcionalidades</a></li>
-            <li><a href="#" class="hover:text-white transition-colors">Preços</a></li>
-            <li><a href="#" class="hover:text-white transition-colors">Suporte</a></li>
+        <div class="footer-col">
+          <h4>Produto</h4>
+          <ul>
+            <li><a href="#funcionalidades" (click)="scrollToSection('funcionalidades', $event)"><i class="fas fa-chevron-right"></i>Funcionalidades</a></li>
+            <li><a href="#precos" (click)="scrollToSection('precos', $event)"><i class="fas fa-chevron-right"></i>Preços</a></li>
+            <li><a href="#faq" (click)="scrollToSection('faq', $event)"><i class="fas fa-chevron-right"></i>FAQ</a></li>
+            <li><a href="#sobre-nos" (click)="scrollToSection('sobre-nos', $event)"><i class="fas fa-chevron-right"></i>Sobre nós</a></li>
           </ul>
         </div>
-        <div>
-          <h4 class="font-bold text-lg mb-6">Legal</h4>
-          <ul class="space-y-4 text-gray-400">
-            <li><a href="#" class="hover:text-white transition-colors">Termos de Uso</a></li>
-            <li><a href="#" class="hover:text-white transition-colors">Privacidade</a></li>
+
+        <div class="footer-col">
+          <h4>Empresa</h4>
+          <ul>
+            <li><a href="#contacto" (click)="scrollToSection('contacto', $event)"><i class="fas fa-chevron-right"></i>Contacto</a></li>
+            <li><a href="#faq" (click)="scrollToSection('faq', $event)"><i class="fas fa-chevron-right"></i>Suporte</a></li>
+            <li><a href="#funcionalidades" (click)="scrollToSection('funcionalidades', $event)"><i class="fas fa-chevron-right"></i>Blog</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="#contacto" (click)="scrollToSection('contacto', $event)"><i class="fas fa-chevron-right"></i>Termos de uso</a></li>
+            <li><a href="#contacto" (click)="scrollToSection('contacto', $event)"><i class="fas fa-chevron-right"></i>Política de privacidade</a></li>
+            <li><a href="#contacto" (click)="scrollToSection('contacto', $event)"><i class="fas fa-chevron-right"></i>Cookies</a></li>
           </ul>
         </div>
       </div>
-      <div class="border-t border-gray-800 pt-8 flex flex-col md:row justify-between items-center gap-4 text-gray-500 text-sm">
-        <p>&copy; 2024 ISPC Fácil. Todos os direitos reservados.</p>
+
+      <div class="footer-bottom">
+        <p class="footer-copy">&copy; {{ currentYear }} ISPC Fácil. Todos os direitos reservados.</p>
+        <p class="footer-made">
+          Feito com <i class="fas fa-heart" style="color:#f59e0b"></i> em Moçambique
+        </p>
       </div>
     </div>
   </footer>
