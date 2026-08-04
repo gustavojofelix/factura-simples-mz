@@ -32,26 +32,64 @@ import { AuditLogService } from '../../../core/services/audit-log.service';
             </label>
           </div>
           <div class="divide-y divide-gray-100">
-            <div *ngFor="let activity of activities" class="p-4 hover:bg-gray-50 cursor-pointer" [class.bg-blue-50]="selected?.id === activity.id" (click)="select(activity)">
-              <div class="flex items-center justify-between gap-3">
-                <div class="min-w-0" [style.padding-left.px]="(activity.level - 1) * 24">
-                  <div class="flex items-center gap-2">
-                    <span class="font-semibold text-gray-800">{{ activity.name }}</span>
-                    <span class="text-[10px] uppercase rounded px-2 py-0.5" [class.bg-green-100]="activity.is_active" [class.text-green-700]="activity.is_active" [class.bg-gray-100]="!activity.is_active" [class.text-gray-500]="!activity.is_active">
-                      {{ activity.is_active ? 'Activa' : 'Inactiva' }}
-                    </span>
+            <ng-container *ngFor="let activity of rootActivities">
+              <div class="p-4 hover:bg-gray-50" [class.bg-blue-50]="selected?.id === activity.id">
+                <div class="flex items-center justify-between gap-3">
+                  <button type="button" class="flex-1 min-w-0 text-left cursor-pointer" (click)="select(activity)">
+                    <div class="flex items-center gap-2">
+                      <span class="font-semibold text-gray-800">{{ activity.name }}</span>
+                      <span class="text-[10px] uppercase rounded px-2 py-0.5" [class.bg-green-100]="activity.is_active" [class.text-green-700]="activity.is_active" [class.bg-gray-100]="!activity.is_active" [class.text-gray-500]="!activity.is_active">
+                        {{ activity.is_active ? 'Activa' : 'Inactiva' }}
+                      </span>
+                    </div>
+                    <span class="text-xs text-gray-400 font-mono">{{ activity.code }}</span>
+                  </button>
+                  <div class="flex items-center gap-3">
+                    <span class="text-xs text-gray-500">{{ activity.activity_type_rules?.[0]?.tax_rate ?? '—' }}%</span>
+                    <button *ngIf="childrenOf(activity.id).length" type="button" (click)="toggleExpanded(activity.id)" class="w-7 h-7 rounded-full hover:bg-gray-200 text-gray-500" [attr.aria-label]="isExpanded(activity.id) ? 'Recolher' : 'Expandir'">
+                      <span class="text-lg leading-none">{{ isExpanded(activity.id) ? '−' : '+' }}</span>
+                    </button>
                   </div>
-                  <span class="text-xs text-gray-400 font-mono">{{ activity.code }}</span>
                 </div>
-                <span class="text-xs text-gray-500">{{ activity.activity_type_rules?.[0]?.tax_rate ?? '—' }}%</span>
+
+                <div *ngIf="childrenOf(activity.id).length && isExpanded(activity.id)" class="mt-3 ml-5 border-l-2 border-gray-100">
+                  <div *ngFor="let child of childrenOf(activity.id)" class="ml-3 border-b border-gray-50 last:border-0">
+                    <div class="py-3 flex items-center justify-between gap-3" [class.bg-blue-50]="selected?.id === child.id">
+                      <button type="button" class="flex-1 text-left cursor-pointer" (click)="select(child)">
+                        <div class="flex items-center gap-2">
+                          <span class="font-medium text-gray-700">{{ child.name }}</span>
+                          <span class="text-[10px] uppercase rounded px-2 py-0.5" [class.bg-green-100]="child.is_active" [class.text-green-700]="child.is_active" [class.bg-gray-100]="!child.is_active" [class.text-gray-500]="!child.is_active">
+                            {{ child.is_active ? 'Activa' : 'Inactiva' }}
+                          </span>
+                        </div>
+                        <span class="text-xs text-gray-400 font-mono">{{ child.code }}</span>
+                      </button>
+                      <div class="flex items-center gap-3">
+                        <span class="text-xs text-gray-500">{{ child.activity_type_rules?.[0]?.tax_rate ?? '—' }}%</span>
+                        <button *ngIf="childrenOf(child.id).length" type="button" (click)="toggleExpanded(child.id)" class="w-7 h-7 rounded-full hover:bg-gray-200 text-gray-500" [attr.aria-label]="isExpanded(child.id) ? 'Recolher' : 'Expandir'">
+                          <span class="text-lg leading-none">{{ isExpanded(child.id) ? '−' : '+' }}</span>
+                        </button>
+                      </div>
+                    </div>
+                    <div *ngIf="childrenOf(child.id).length && isExpanded(child.id)" class="ml-5 border-l-2 border-gray-100">
+                      <button *ngFor="let leaf of childrenOf(child.id)" type="button" (click)="select(leaf)" class="w-full text-left py-2 pl-3 hover:bg-gray-50 cursor-pointer" [class.bg-blue-50]="selected?.id === leaf.id">
+                        <div class="flex items-center justify-between gap-3">
+                          <span class="text-sm text-gray-600">{{ leaf.name }}</span>
+                          <span class="text-xs text-gray-400">{{ leaf.activity_type_rules?.[0]?.tax_rate ?? '—' }}%</span>
+                        </div>
+                        <span class="text-xs text-gray-400 font-mono">{{ leaf.code }}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            </ng-container>
             <div *ngIf="!loading && activities.length === 0" class="p-8 text-center text-gray-500">Nenhuma actividade encontrada.</div>
             <div *ngIf="loading" class="p-8 text-center text-gray-500">A carregar...</div>
           </div>
         </section>
 
-        <section class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <section class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 xl:fixed xl:top-24 xl:right-8 xl:w-[380px] xl:max-h-[calc(100vh-7rem)] xl:overflow-y-auto z-10">
           <h3 class="font-bold text-gray-800 mb-4">{{ editingId ? 'Editar actividade' : 'Nova actividade' }}</h3>
           <div class="space-y-4">
             <div>
@@ -102,6 +140,7 @@ export class AdminActivitiesComponent implements OnInit {
   error = '';
   message = '';
   form: { name: string; code: string; parent_id: string | null; level: number; display_order: number; tax_rate: number; rule_id?: string; is_active: boolean } = this.emptyForm();
+  expandedIds = new Set<string>();
 
   constructor(
     private activityService: ActivityService,
@@ -110,6 +149,17 @@ export class AdminActivitiesComponent implements OnInit {
   ) {}
 
   ngOnInit() { this.load(); }
+
+  get rootActivities() { return this.activities.filter(activity => !activity.parent_id); }
+
+  childrenOf(parentId: string) { return this.activities.filter(activity => activity.parent_id === parentId); }
+
+  isExpanded(id: string) { return this.expandedIds.has(id); }
+
+  toggleExpanded(id: string) {
+    if (this.expandedIds.has(id)) this.expandedIds.delete(id);
+    else this.expandedIds.add(id);
+  }
 
   async load() {
     this.loading = true;
