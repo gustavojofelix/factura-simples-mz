@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { TaxDeclaration } from '../../core/services/tax.service';
 import { CompanyService, Company } from '../../core/services/company.service';
+import { PdfService } from '../../core/services/pdf.service';
 
 @Component({
   selector: 'app-model30',
@@ -19,14 +20,17 @@ import { CompanyService, Company } from '../../core/services/company.service';
         <span style="font-size:12px; color:#666; margin-left:4px;">{{ data.declaration.period }}º Trimestre {{ data.declaration.year }}</span>
       </div>
       <div style="display:flex; gap:8px; align-items:center;">
-        <button mat-stroked-button (click)="print()" style="gap:6px;">
-          <mat-icon>print</mat-icon> Imprimir / Guardar PDF
+        <button mat-stroked-button (click)="downloadPdf()" [disabled]="isGeneratingPdf()" style="gap:6px;">
+          <mat-icon>picture_as_pdf</mat-icon> {{ isGeneratingPdf() ? 'A gerar PDF...' : 'Descarregar PDF' }}
+        </button>
+        <button mat-stroked-button (click)="print()" [disabled]="isGeneratingPdf()" style="gap:6px;">
+          <mat-icon>print</mat-icon> Imprimir
         </button>
         <button mat-icon-button (click)="close()" style="color:#666;"><mat-icon>close</mat-icon></button>
       </div>
     </div>
 
-    <div class="print-scroll-area">
+    <div id="model30-document" class="print-scroll-area">
       @if (company()) {
         <!-- ============================================================ -->
         <!-- PAGE 1                                                        -->
@@ -789,6 +793,7 @@ import { CompanyService, Company } from '../../core/services/company.service';
 })
 export class Model30Component implements OnInit {
   company = signal<Company | null>(null);
+  isGeneratingPdf = signal(false);
 
   field01 = 0;
   field02 = 0;
@@ -802,7 +807,8 @@ export class Model30Component implements OnInit {
   constructor(
     public dialogRef: MatDialogRef<Model30Component>,
     @Inject(MAT_DIALOG_DATA) public data: { declaration: TaxDeclaration },
-    private companyService: CompanyService
+    private companyService: CompanyService,
+    private pdfService: PdfService
   ) {}
 
   ngOnInit() {
@@ -883,6 +889,23 @@ export class Model30Component implements OnInit {
 
   getTotalPaid(): number {
     return (this.data.declaration.payments || []).reduce((sum, p) => sum + p.amount, 0);
+  }
+
+  async downloadPdf() {
+    if (this.isGeneratingPdf()) return;
+
+    try {
+      this.isGeneratingPdf.set(true);
+      const blob = await this.pdfService.generateMultiPagePdf('model30-document');
+      const period = this.data.declaration.period;
+      const year = this.data.declaration.year;
+      this.pdfService.downloadPdf(blob, `Modelo_30_${year}_T${period}`);
+    } catch (error) {
+      console.error('Erro ao gerar o PDF do Modelo 30:', error);
+      window.alert('Não foi possível gerar o PDF. Por favor, tente novamente.');
+    } finally {
+      this.isGeneratingPdf.set(false);
+    }
   }
 
   print() { window.print(); }
