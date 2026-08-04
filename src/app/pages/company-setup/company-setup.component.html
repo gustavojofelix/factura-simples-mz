@@ -49,14 +49,14 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <mat-form-field appearance="outline" class="w-full">
                     <mat-label>Actividade Principal</mat-label>
-                    <mat-select formControlName="category1">
+                    <mat-select formControlName="category1" [disabled]="isLoadingActivities()">
                       @for (cat of getCat1Options(); track cat.id) {
                       <mat-option [value]="cat.id">{{ cat.label }}</mat-option>
                       }
                     </mat-select>
                   </mat-form-field>
 
-                  @if (getCat2Options().length > 0) {
+                  @if (!isLoadingActivities() && getCat2Options().length > 0) {
                   <mat-form-field appearance="outline" class="w-full">
                     <mat-label>Actividade(s) Comerciais</mat-label>
                     <mat-select formControlName="category2">
@@ -67,12 +67,12 @@
                   </mat-form-field>
                   }
 
-                  @if (getCat3Options().length > 0) {
+                  @if (!isLoadingActivities() && getCat3Options().length > 0) {
                   <mat-form-field appearance="outline" class="w-full">
                     <mat-label>Actividade(s) de Prestação de Serviço</mat-label>
                     <mat-select formControlName="category3">
-                      @for (cat of getCat3Options(); track cat) {
-                      <mat-option [value]="cat">{{ cat }}</mat-option>
+                      @for (cat of getCat3Options(); track cat.id) {
+                      <mat-option [value]="cat.id">{{ cat.label }}</mat-option>
                       }
                     </mat-select>
                   </mat-form-field>

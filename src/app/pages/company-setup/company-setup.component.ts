@@ -17,8 +17,8 @@ import { nuitValidator } from '../../core/validators/nuit.validator';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { DocumentProcessingService } from '../../core/services/document-processing.service';
 import { SupabaseService } from '../../core/services/supabase.service';
-import { ACTIVITY_HIERARCHY } from '../../core/constants/activity-categories';
 import { CompanyDocument } from '../../core/services/document-processing.service';
+import { ActivityService, ActivityType } from '../../core/services/activity.service';
 
 
 @Component({
@@ -69,7 +69,8 @@ export class CompanySetupComponent {
     'Zambézia', 'Nampula', 'Niassa', 'Cabo Delgado'
   ];
 
-  activityHierarchy = ACTIVITY_HIERARCHY;
+  activityTypes = signal<ActivityType[]>([]);
+  isLoadingActivities = signal(false);
 
   constructor(
     private fb: FormBuilder,
@@ -77,7 +78,8 @@ export class CompanySetupComponent {
     private supabase: SupabaseService,
     private router: Router,
     private snackBar: MatSnackBar,
-    private documentService: DocumentProcessingService
+    private documentService: DocumentProcessingService,
+    private activityService: ActivityService
   ) {
     this.companyInfoForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
@@ -102,6 +104,19 @@ export class CompanySetupComponent {
     });
 
     this.setupCategoryWatchers();
+    this.loadActivityCatalog();
+  }
+
+  async loadActivityCatalog() {
+    this.isLoadingActivities.set(true);
+    try {
+      this.activityTypes.set(await this.activityService.list(false));
+    } catch (error) {
+      console.error('Erro ao carregar catálogo de actividades:', error);
+      this.snackBar.open('Não foi possível carregar os tipos de actividades.', 'Fechar', { duration: 5000 });
+    } finally {
+      this.isLoadingActivities.set(false);
+    }
   }
 
   setupCategoryWatchers() {
@@ -138,17 +153,19 @@ export class CompanySetupComponent {
   }
 
   getCat1Options() {
-    return Object.entries(this.activityHierarchy).map(([id, cat]) => ({ id, label: cat.label }));
+    return this.activityTypes()
+      .filter(activity => !activity.parent_id)
+      .map(activity => ({ id: activity.code, label: activity.name }));
   }
 
   getCat2Options() {
     const cat1 = this.companyInfoForm.get('category1')?.value;
-    if (!cat1 || !this.activityHierarchy[cat1]?.subcategories) return [];
-
-    return Object.entries(this.activityHierarchy[cat1].subcategories!).map(([id, cat]) => ({
-      id,
-      label: cat.label
-    }));
+    if (!cat1) return [];
+    const parent = this.activityTypes().find(activity => activity.code === cat1);
+    if (!parent) return [];
+    return this.activityTypes()
+      .filter(activity => activity.parent_id === parent.id)
+      .map(activity => ({ id: activity.code, label: activity.name }));
   }
 
   getCat3Options() {
@@ -156,11 +173,11 @@ export class CompanySetupComponent {
     const cat2 = this.companyInfoForm.get('category2')?.value;
 
     if (!cat1 || !cat2) return [];
-
-    const cat2Obj = (this.activityHierarchy[cat1]?.subcategories as any)?.[cat2];
-    if (!cat2Obj || !cat2Obj.subcategories) return [];
-
-    return cat2Obj.subcategories;
+    const parent = this.activityTypes().find(activity => activity.code === cat2);
+    if (!parent) return [];
+    return this.activityTypes()
+      .filter(activity => activity.parent_id === parent.id)
+      .map(activity => ({ id: activity.code, label: activity.name }));
   }
 
   get alvaraDoc(): Partial<CompanyDocument> | undefined {
@@ -431,6 +448,19 @@ export class CompanySetupComponent {
         .single();
 
       if (error) throw error;
+
+      const category1 = this.companyInfoForm.value.category1;
+      const category2 = this.companyInfoForm.value.category2;
+      const category3 = this.companyInfoForm.value.category3;
+      const companyActivities = [
+        category1 ? { activity_type_id: this.activityTypes().find(a => a.code === category1)?.id, activity_role: 'principal' as const, is_primary: true } : null,
+        category2 ? { activity_type_id: this.activityTypes().find(a => a.code === category2)?.id, activity_role: this.getServiceType() ? 'servico' as const : 'comercial' as const, is_primary: false } : null,
+        category3 ? { activity_type_id: this.activityTypes().find(a => a.code === category3)?.id, activity_role: this.getServiceType() ? 'servico' as const : 'comercial' as const, is_primary: false } : null
+      ].filter((activity): activity is { activity_type_id: string; activity_role: 'principal' | 'comercial' | 'servico'; is_primary: boolean } => !!activity?.activity_type_id);
+
+      if (companyActivities.length > 0) {
+        await this.activityService.saveCompanyActivities(data.id, companyActivities);
+      }
 
       // 2. Salvar documentos adicionais se existirem
       if (this.otherDocuments().length > 0) {

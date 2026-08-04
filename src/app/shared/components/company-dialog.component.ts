@@ -12,8 +12,8 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { DocumentProcessingService, CompanyDocument } from '../../core/services/document-processing.service';
 import { Company } from '../../core/services/company.service';
-import { ACTIVITY_HIERARCHY } from '../../core/constants/activity-categories';
 import { SupabaseService } from '../../core/services/supabase.service';
+import { ActivityService, ActivityType, CompanyActivity } from '../../core/services/activity.service';
 
 @Component({
   selector: 'app-company-dialog',
@@ -193,8 +193,8 @@ import { SupabaseService } from '../../core/services/supabase.service';
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>Actividade(s) de Prestação de Serviços</mat-label>
                   <mat-select formControlName="category3">
-                    @for (cat of getCat3Options(); track cat) {
-                      <mat-option [value]="cat">{{ cat }}</mat-option>
+                  @for (cat of getCat3Options(); track cat.id) {
+                  <mat-option [value]="cat.id">{{ cat.label }}</mat-option>
                     }
                   </mat-select>
                 </mat-form-field>
@@ -495,7 +495,9 @@ export class CompanyDialogComponent {
     'Zambézia', 'Nampula', 'Niassa', 'Cabo Delgado'
   ];
 
-  activityHierarchy = ACTIVITY_HIERARCHY;
+  activityTypes = signal<ActivityType[]>([]);
+  isLoadingActivities = signal(false);
+  companyActivities = signal<CompanyActivity[]>([]);
 
   get alvaraDoc(): CompanyDocument | undefined {
     return this.otherDocuments().find(d => d.type === 'Alvará');
@@ -511,6 +513,7 @@ export class CompanyDialogComponent {
     private documentService: DocumentProcessingService,
     private snackBar: MatSnackBar,
     private supabase: SupabaseService,
+    private activityService: ActivityService,
     @Inject(MAT_DIALOG_DATA) public data: { company?: Company }
 
   ) {
@@ -537,7 +540,35 @@ export class CompanyDialogComponent {
     });
 
     this.setupCategoryWatchers();
+    this.loadActivityCatalog();
     this.loadOtherDocuments();
+  }
+
+  async loadActivityCatalog() {
+    this.isLoadingActivities.set(true);
+    try {
+      this.activityTypes.set(await this.activityService.list(false));
+      if (this.data.company?.id) await this.loadCompanyActivities(this.data.company.id);
+    } catch (error) {
+      console.error('Erro ao carregar catálogo de actividades:', error);
+      this.snackBar.open('Não foi possível carregar os tipos de actividades.', 'Fechar', { duration: 5000 });
+    } finally {
+      this.isLoadingActivities.set(false);
+    }
+  }
+
+  async loadCompanyActivities(companyId: string) {
+    const activities = await this.activityService.getCompanyActivities(companyId);
+    this.companyActivities.set(activities);
+
+    const principal = activities.find(a => a.activity_role === 'principal')?.activity_type;
+    const category2 = activities.find(a => a.activity_type?.level === 2)?.activity_type;
+    const category3 = activities.find(a => a.activity_type?.level === 3)?.activity_type;
+    this.form.patchValue({
+      category1: principal?.code || this.form.get('category1')?.value || '',
+      category2: category2?.code || this.form.get('category2')?.value || '',
+      category3: category3?.code || this.form.get('category3')?.value || ''
+    }, { emitEvent: false });
   }
 
   async loadOtherDocuments() {
@@ -581,17 +612,17 @@ export class CompanyDialogComponent {
   }
 
   getCat1Options() {
-    return Object.entries(this.activityHierarchy).map(([id, cat]) => ({ id, label: cat.label }));
+    return this.activityTypes().filter(activity => !activity.parent_id)
+      .map(activity => ({ id: activity.code, label: activity.name }));
   }
 
   getCat2Options() {
     const cat1 = this.form.get('category1')?.value;
-    if (!cat1 || !this.activityHierarchy[cat1]?.subcategories) return [];
-
-    return Object.entries(this.activityHierarchy[cat1].subcategories!).map(([id, cat]) => ({
-      id,
-      label: cat.label
-    }));
+    if (!cat1) return [];
+    const parent = this.activityTypes().find(activity => activity.code === cat1);
+    if (!parent) return [];
+    return this.activityTypes().filter(activity => activity.parent_id === parent.id)
+      .map(activity => ({ id: activity.code, label: activity.name }));
   }
 
   getCat3Options() {
@@ -599,11 +630,10 @@ export class CompanyDialogComponent {
     const cat2 = this.form.get('category2')?.value;
 
     if (!cat1 || !cat2) return [];
-
-    const cat2Obj = (this.activityHierarchy[cat1]?.subcategories as any)?.[cat2];
-    if (!cat2Obj || !cat2Obj.subcategories) return [];
-
-    return cat2Obj.subcategories;
+    const parent = this.activityTypes().find(activity => activity.code === cat2);
+    if (!parent) return [];
+    return this.activityTypes().filter(activity => activity.parent_id === parent.id)
+      .map(activity => ({ id: activity.code, label: activity.name }));
   }
 
   onLogoSelected(event: Event) {
@@ -842,7 +872,14 @@ export class CompanyDialogComponent {
   onSave(): void {
     if (this.form.valid) {
       const formValue = this.form.value;
-      const formData: Partial<Company> = {
+      const serviceRole = this.getServiceType() ? 'servico' as const : 'comercial' as const;
+      const selectedActivities = [
+        formValue.category1 ? { activity_type_id: this.activityTypes().find(a => a.code === formValue.category1)?.id, activity_role: 'principal' as const, is_primary: true } : null,
+        formValue.category2 ? { activity_type_id: this.activityTypes().find(a => a.code === formValue.category2)?.id, activity_role: serviceRole, is_primary: false } : null,
+        formValue.category3 ? { activity_type_id: this.activityTypes().find(a => a.code === formValue.category3)?.id, activity_role: serviceRole, is_primary: false } : null
+      ].filter((activity): activity is { activity_type_id: string; activity_role: 'principal' | 'comercial' | 'servico'; is_primary: boolean } => !!activity?.activity_type_id);
+
+      const formData: Partial<Company> & { companyActivities: typeof selectedActivities } = {
         name: formValue.name,
         nuit: formValue.nuit,
         entity_type: formValue.entity_type,
@@ -866,7 +903,8 @@ export class CompanyDialogComponent {
         category1: formValue.category1,
         category2: formValue.category2,
         category3: formValue.category3,
-        business_volume: formValue.business_volume
+        business_volume: formValue.business_volume,
+        companyActivities: selectedActivities
       };
 
       this.dialogRef.close(formData);

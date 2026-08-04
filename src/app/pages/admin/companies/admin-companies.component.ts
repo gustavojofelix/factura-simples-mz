@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { AuditLogService } from '../../../core/services/audit-log.service';
-import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories';
+import { ActivityService, ActivityType } from '../../../core/services/activity.service';
 
 @Component({
   selector: 'app-admin-companies',
@@ -79,7 +79,7 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
                     <label class="text-[10px] font-bold text-gray-500 uppercase">Actividade de Serviço</label>
                     <select [(ngModel)]="editingCompany.category3" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                       <option value="">Selecionar...</option>
-                      <option *ngFor="let cat of getEditCat3Options()" [value]="cat">{{ cat }}</option>
+                <option *ngFor="let cat of getEditCat3Options()" [value]="cat.id">{{ cat.label }}</option>
                     </select>
                   </div>
 
@@ -224,7 +224,7 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
                       <label class="text-[10px] font-bold text-gray-500 uppercase">Actividade de Serviço</label>
                       <select [(ngModel)]="newCompany.category3" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                         <option value="">Selecionar...</option>
-                        <option *ngFor="let cat of getCat3Options()" [value]="cat">{{ cat }}</option>
+                        <option *ngFor="let cat of getCat3Options()" [value]="cat.id">{{ cat.label }}</option>
                       </select>
                     </div>
 
@@ -406,7 +406,7 @@ import { ACTIVITY_HIERARCHY } from '../../../core/constants/activity-categories'
             <div>
               <select [ngModel]="activityTypeFilter()" (ngModelChange)="activityTypeFilter.set($event)" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
                 <option value="all">Tipo de Actividade</option>
-                <option *ngFor="let a of activityTypes" [value]="a.key">{{ a.label }}</option>
+                <option *ngFor="let a of activityTypes()" [value]="a.code">{{ a.name }}</option>
               </select>
             </div>
           </div>
@@ -604,11 +604,8 @@ export class AdminCompaniesComponent implements OnInit {
 
   provinces = ['Maputo', 'Gaza', 'Inhambane', 'Sofala', 'Manica', 'Tete', 'Zambézia', 'Nampula', 'Cabo Delgado', 'Niassa'];
 
-  activityTypes = Object.entries(ACTIVITY_HIERARCHY).map(([key, value]) => ({
-    key,
-    label: value.label
-  }));
-  activityHierarchy = ACTIVITY_HIERARCHY;
+  activityTypes = signal<ActivityType[]>([]);
+  isLoadingActivities = signal(false);
 
   // Modals Extra Logic
   onCategory1Change() {
@@ -645,25 +642,27 @@ export class AdminCompaniesComponent implements OnInit {
   }
 
   getCat1Options() {
-    return Object.entries(this.activityHierarchy).map(([id, cat]) => ({ id, label: cat.label }));
+    return this.activityTypes().filter(activity => !activity.parent_id)
+      .map(activity => ({ id: activity.code, label: activity.name }));
   }
 
   getCat2Options() {
     const cat1 = this.newCompany.category1;
-    if (!cat1 || !this.activityHierarchy[cat1]?.subcategories) return [];
-    return Object.entries(this.activityHierarchy[cat1].subcategories!).map(([id, cat]) => ({
-      id,
-      label: cat.label
-    }));
+    if (!cat1) return [];
+    const parent = this.activityTypes().find(activity => activity.code === cat1);
+    if (!parent) return [];
+    return this.activityTypes().filter(activity => activity.parent_id === parent.id)
+      .map(activity => ({ id: activity.code, label: activity.name }));
   }
 
   getCat3Options() {
     const cat1 = this.newCompany.category1;
     const cat2 = this.newCompany.category2;
     if (!cat1 || !cat2) return [];
-    const cat2Obj = (this.activityHierarchy[cat1]?.subcategories as any)?.[cat2];
-    if (!cat2Obj || !cat2Obj.subcategories) return [];
-    return cat2Obj.subcategories;
+    const parent = this.activityTypes().find(activity => activity.code === cat2);
+    if (!parent) return [];
+    return this.activityTypes().filter(activity => activity.parent_id === parent.id)
+      .map(activity => ({ id: activity.code, label: activity.name }));
   }
 
   formatNuit() {
@@ -759,11 +758,27 @@ export class AdminCompaniesComponent implements OnInit {
     return list;
   });
 
-  constructor(private supabase: SupabaseService, private auditLogService: AuditLogService) { }
+  constructor(
+    private supabase: SupabaseService,
+    private auditLogService: AuditLogService,
+    private activityService: ActivityService
+  ) { }
 
   ngOnInit() {
     this.loadCompanies();
     this.loadAllCompanies();
+    this.loadActivityCatalog();
+  }
+
+  async loadActivityCatalog() {
+    this.isLoadingActivities.set(true);
+    try {
+      this.activityTypes.set(await this.activityService.list(false));
+    } catch (error) {
+      console.error('Erro ao carregar catálogo de actividades:', error);
+    } finally {
+      this.isLoadingActivities.set(false);
+    }
   }
 
   async loadCompanies() {
@@ -810,7 +825,7 @@ export class AdminCompaniesComponent implements OnInit {
   }
 
   getActivityLabel(key: string): string {
-    return ACTIVITY_HIERARCHY[key]?.label || key;
+    return this.activityTypes().find(activity => activity.code === key)?.name || key;
   }
 
   toggleSort(column: string) {
@@ -855,11 +870,18 @@ export class AdminCompaniesComponent implements OnInit {
   }
 
   // Phase 2: Edit Methods
-  openEditModal(company: any) {
+  async openEditModal(company: any) {
     this.editingCompany = {
       ...company,
       administrativePost: company.documents_metadata?.administrativePost || ''
     };
+    const activities = await this.activityService.getCompanyActivities(company.id);
+    const principal = activities.find(a => a.activity_role === 'principal')?.activity_type;
+    const category2 = activities.find(a => a.activity_type?.level === 2)?.activity_type;
+    const category3 = activities.find(a => a.activity_type?.level === 3)?.activity_type;
+    this.editingCompany.category1 = principal?.code || this.editingCompany.category1 || '';
+    this.editingCompany.category2 = category2?.code || this.editingCompany.category2 || '';
+    this.editingCompany.category3 = category3?.code || this.editingCompany.category3 || '';
     this.isEditModalOpen = true;
   }
 
@@ -912,20 +934,32 @@ export class AdminCompaniesComponent implements OnInit {
 
   getEditCat2Options() {
     const cat1 = this.editingCompany.category1;
-    if (!cat1 || !this.activityHierarchy[cat1]?.subcategories) return [];
-    return Object.entries(this.activityHierarchy[cat1].subcategories!).map(([id, cat]) => ({
-      id,
-      label: cat.label
-    }));
+    if (!cat1) return [];
+    const parent = this.activityTypes().find(activity => activity.code === cat1);
+    if (!parent) return [];
+    return this.activityTypes().filter(activity => activity.parent_id === parent.id)
+      .map(activity => ({ id: activity.code, label: activity.name }));
   }
 
   getEditCat3Options() {
     const cat1 = this.editingCompany.category1;
     const cat2 = this.editingCompany.category2;
     if (!cat1 || !cat2) return [];
-    const cat2Obj = (this.activityHierarchy[cat1]?.subcategories as any)?.[cat2];
-    if (!cat2Obj || !cat2Obj.subcategories) return [];
-    return cat2Obj.subcategories;
+    const parent = this.activityTypes().find(activity => activity.code === cat2);
+    if (!parent) return [];
+    return this.activityTypes().filter(activity => activity.parent_id === parent.id)
+      .map(activity => ({ id: activity.code, label: activity.name }));
+  }
+
+  getCompanyActivityPayload(company: any) {
+    const serviceRole = company.category2 === 'servicos_liberais' || company.category2 === 'servicos_nao_liberais'
+      ? 'servico' as const
+      : 'comercial' as const;
+    return [
+      company.category1 ? { activity_type_id: this.activityTypes().find(a => a.code === company.category1)?.id, activity_role: 'principal' as const, is_primary: true } : null,
+      company.category2 ? { activity_type_id: this.activityTypes().find(a => a.code === company.category2)?.id, activity_role: serviceRole, is_primary: false } : null,
+      company.category3 ? { activity_type_id: this.activityTypes().find(a => a.code === company.category3)?.id, activity_role: serviceRole, is_primary: false } : null
+    ].filter((activity): activity is { activity_type_id: string; activity_role: 'principal' | 'comercial' | 'servico'; is_primary: boolean } => !!activity?.activity_type_id);
   }
 
   async saveCompany() {
@@ -958,6 +992,11 @@ export class AdminCompaniesComponent implements OnInit {
       alert('Erro ao guardar contribuinte');
       return;
     }
+
+    await this.activityService.saveCompanyActivities(
+      this.editingCompany.id,
+      this.getCompanyActivityPayload(this.editingCompany)
+    );
 
     await this.auditLogService.log(
       'Contribuinte Atualizado',
@@ -1056,6 +1095,11 @@ export class AdminCompaniesComponent implements OnInit {
         .single();
 
       if (error) throw error;
+
+      await this.activityService.saveCompanyActivities(
+        data.id,
+        this.getCompanyActivityPayload(this.newCompany)
+      );
       
       await this.auditLogService.log(
         'Novo Contribuinte Registado',

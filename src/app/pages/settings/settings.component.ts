@@ -22,6 +22,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { CompanyDialogComponent } from '../../shared/components/company-dialog.component';
 import { UserCompanyDialogComponent } from '../../shared/components/user-company-dialog.component';
 import { PaymentDialogComponent } from '../../shared/components/payment-dialog/payment-dialog.component';
+import { ActivityService } from '../../core/services/activity.service';
 
 @Component({
   selector: 'app-settings',
@@ -93,7 +94,8 @@ export class SettingsComponent implements OnInit {
     private userManagementService: UserManagementService,
     private authService: AuthService,
     private dialog: MatDialog,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private activityService: ActivityService
   ) {
     this.availablePlans = this.subscriptionService.availablePlans;
   }
@@ -185,15 +187,18 @@ export class SettingsComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(async (result) => {
       if (result) {
+        const { companyActivities, ...companyData } = result;
         if (company) {
-          const success = await this.companyService.updateCompany(company.id, result);
+          const success = await this.companyService.updateCompany(company.id, companyData);
           if (success) {
+            await this.activityService.saveCompanyActivities(company.id, companyActivities || []);
             this.snackBar.open('Empresa atualizada com sucesso', 'Fechar', { duration: 3000 });
             await this.companyService.loadCompanies();
           }
         } else {
-          const newCompany = await this.companyService.createCompany(result);
+          const newCompany = await this.companyService.createCompany(companyData);
           if (newCompany) {
+            await this.activityService.saveCompanyActivities(newCompany.id, companyActivities || []);
             this.snackBar.open('Empresa criada com sucesso', 'Fechar', { duration: 3000 });
             await this.companyService.loadCompanies();
           }

@@ -22,6 +22,17 @@ export interface ActivityRule {
   is_active: boolean;
 }
 
+export type CompanyActivityRole = 'principal' | 'comercial' | 'servico';
+
+export interface CompanyActivity {
+  id?: string;
+  company_id: string;
+  activity_type_id: string;
+  activity_role: CompanyActivityRole;
+  is_primary: boolean;
+  activity_type?: ActivityType;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ActivityService {
   constructor(private supabase: SupabaseService) {}
@@ -58,5 +69,32 @@ export class ActivityService {
     const { data, error } = await query;
     if (error) throw error;
     return data as ActivityRule;
+  }
+
+  async getCompanyActivities(companyId: string): Promise<CompanyActivity[]> {
+    const { data, error } = await this.supabase.db
+      .from('company_activities')
+      .select('*, activity_type:activity_types(*, activity_type_rules(*))')
+      .eq('company_id', companyId)
+      .order('is_primary', { ascending: false });
+    if (error) throw error;
+    return (data || []) as CompanyActivity[];
+  }
+
+  async saveCompanyActivities(companyId: string, activities: Omit<CompanyActivity, 'id' | 'company_id'>[]) {
+    const { error: deleteError } = await this.supabase.db
+      .from('company_activities')
+      .delete()
+      .eq('company_id', companyId);
+    if (deleteError) throw deleteError;
+
+    if (activities.length === 0) return [];
+    const rows = activities.map(activity => ({ ...activity, company_id: companyId }));
+    const { data, error } = await this.supabase.db
+      .from('company_activities')
+      .insert(rows)
+      .select('*, activity_type:activity_types(*, activity_type_rules(*))');
+    if (error) throw error;
+    return (data || []) as CompanyActivity[];
   }
 }

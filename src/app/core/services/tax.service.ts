@@ -2,6 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { CompanyService } from './company.service';
 import { AuditLogService } from './audit-log.service';
+import { ActivityService } from './activity.service';
 
 export interface TaxDeclaration {
   id: string;
@@ -78,7 +79,8 @@ export class TaxService {
   constructor(
     private supabase: SupabaseService,
     private companyService: CompanyService,
-    private auditLogService: AuditLogService
+    private auditLogService: AuditLogService,
+    private activityService: ActivityService
   ) {}
 
   async loadDeclarations(): Promise<void> {
@@ -116,13 +118,33 @@ export class TaxService {
   /**
    * Retorna a taxa de ISPC baseada nas categorias de atividade e volume selecionado
    */
-  private calculateISPCRate(company: any): number {
+  private async getConfiguredActivityRate(company: any): Promise<{ baseRate: number; isScaleActivity: boolean }> {
     const cat2 = company.category2;
-    
-    if (cat2 === 'servicos_nao_liberais') return 12;
-    if (cat2 === 'servicos_liberais') return 15;
-    
-    return parseInt(company.business_volume || '3');
+    const fallbackRate = cat2 === 'servicos_nao_liberais'
+      ? 12
+      : cat2 === 'servicos_liberais'
+        ? 15
+        : parseInt(company.business_volume || '3');
+    const fallbackIsScale = cat2 !== 'servicos_nao_liberais' && cat2 !== 'servicos_liberais';
+
+    try {
+      const activities = await this.activityService.getCompanyActivities(company.id);
+      const selected = activities.find(activity => activity.activity_role === 'servico')
+        || activities.find(activity => activity.is_primary)
+        || activities[0];
+      const rule = selected?.activity_type?.activity_type_rules?.find(rule => rule.is_active && rule.rule_type === 'ispc_rate');
+
+      if (rule?.tax_rate !== undefined && rule.tax_rate !== null) {
+        return {
+          baseRate: Number(rule.tax_rate),
+          isScaleActivity: selected?.activity_role !== 'servico'
+        };
+      }
+    } catch (error) {
+      console.warn('Não foi possível carregar a regra da actividade; a usar compatibilidade antiga.', error);
+    }
+
+    return { baseRate: fallbackRate, isScaleActivity: fallbackIsScale };
   }
 
   async calculateTaxForPeriod(year: number, period: number): Promise<TaxCalculation | null> {
@@ -168,8 +190,9 @@ export class TaxService {
         .reduce((sum, inv) => sum + (inv.total || 0), 0);
 
       // Determinar a taxa baseada no tipo de atividade e volume anual
-      const baseRate = this.calculateISPCRate(company);
-      const isScaleActivity = company.category2 !== 'servicos_nao_liberais' && company.category2 !== 'servicos_liberais';
+      const configuredActivity = await this.getConfiguredActivityRate(company);
+      const baseRate = configuredActivity.baseRate;
+      const isScaleActivity = configuredActivity.isScaleActivity;
 
       // Calcular ISPC com escalões progressivos
       let ispcAmount = 0;
@@ -178,7 +201,7 @@ export class TaxService {
       const ispcSplits: IspcSplit[] = [];
 
       const thresholds = [1000000, 2500000, 4000000];
-      const scaleRates = [3, 4, 5, 20];
+      const scaleRates = [baseRate, 4, 5, 20];
       const serviceRates = [baseRate, baseRate, baseRate, 20];
       const rates = isScaleActivity ? scaleRates : serviceRates;
 
