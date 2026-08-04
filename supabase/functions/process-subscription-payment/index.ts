@@ -127,6 +127,9 @@ serve(async (req) => {
     });
 
     // ── Return error if Sislog rejected ──────────────────────────────────────
+    // NOTE: We return HTTP 200 even on Sislog failure so that Supabase's
+    // functions.invoke() does NOT throw a FunctionsHttpError.  The caller
+    // checks `data.success` to distinguish success from failure.
     if (!sislogOk) {
       return new Response(
         JSON.stringify({
@@ -134,7 +137,7 @@ serve(async (req) => {
           error:          sislogResult._errorMessage || sislogResult.errorMessage || "A Sislog rejeitou o pedido. Verifique as credenciais.",
           sislogResponse: sislogResult,
         }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 502 }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
     }
 
