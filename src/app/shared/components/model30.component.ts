@@ -23,9 +23,6 @@ import { PdfService } from '../../core/services/pdf.service';
         <button mat-stroked-button (click)="downloadPdf()" [disabled]="isGeneratingPdf()" style="gap:6px;">
           <mat-icon>picture_as_pdf</mat-icon> {{ isGeneratingPdf() ? 'A gerar PDF...' : 'Descarregar PDF' }}
         </button>
-        <button mat-stroked-button (click)="print()" [disabled]="isGeneratingPdf()" style="gap:6px;">
-          <mat-icon>print</mat-icon> Imprimir
-        </button>
         <button mat-icon-button (click)="close()" style="color:#666;"><mat-icon>close</mat-icon></button>
       </div>
     </div>
@@ -607,17 +604,22 @@ import { PdfService } from '../../core/services/pdf.service';
     .digit-box {
       width: 16px;
       height: 18px;
+      box-sizing: border-box;
       border: 1px solid #000;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 9pt;
+      line-height: 16px;
+      padding: 0;
       font-weight: bold;
+      text-align: center;
     }
     .digit-box.small {
       width: 13px;
       height: 15px;
       font-size: 7.5pt;
+      line-height: 13px;
     }
 
     /* ——— Checkboxes ——— */

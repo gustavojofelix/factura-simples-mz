@@ -99,7 +99,10 @@ export class PdfService {
           backgroundColor: '#ffffff',
           ignoreElements: (element) =>
             element.classList.contains('no-print') || element.tagName === 'BUTTON',
-          onclone: (clonedDoc) => this.removeUnsupportedColorFunctions(clonedDoc)
+          onclone: (clonedDoc) => {
+            this.removeUnsupportedColorFunctions(clonedDoc);
+            this.prepareModel30PdfClone(clonedDoc, containerId);
+          }
         });
 
         const imageData = canvas.toDataURL('image/png');
@@ -134,6 +137,43 @@ export class PdfService {
         );
       }
     });
+  }
+
+  private prepareModel30PdfClone(clonedDoc: Document, containerId: string) {
+    const container = clonedDoc.getElementById(containerId);
+    if (!container) return;
+
+    // These rules are applied only to the cloned document used for PDF
+    // generation. The on-screen Modelo 30 remains unchanged.
+    container.classList.add('pdf-export-mode');
+    const style = clonedDoc.createElement('style');
+    style.textContent = `
+      .pdf-export-mode .dotted-field-inline {
+        vertical-align: baseline !important;
+        line-height: 1.15 !important;
+      }
+      .pdf-export-mode .dotted-field {
+        line-height: 1.15 !important;
+      }
+      .pdf-export-mode .digit-box {
+        line-height: 1 !important;
+      }
+      .pdf-export-mode .section-header,
+      .pdf-export-mode .instruction-bar,
+      .pdf-export-mode .check-label,
+      .pdf-export-mode .q6-line,
+      .pdf-export-mode .q7-body,
+      .pdf-export-mode .q8-check-line,
+      .pdf-export-mode .q9-value-cell,
+      .pdf-export-mode .q10-table,
+      .pdf-export-mode .q11-value-box,
+      .pdf-export-mode .q12-body,
+      .pdf-export-mode .q13-col,
+      .pdf-export-mode .payments-table {
+        line-height: 1.15 !important;
+      }
+    `;
+    clonedDoc.head.appendChild(style);
   }
 
   downloadPdf(blob: Blob, fileName: string) {
