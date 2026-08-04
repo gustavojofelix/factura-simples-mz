@@ -39,6 +39,14 @@ import { AuthService } from '../../../core/services/auth.service';
             <span>Contribuintes</span>
           </a>
 
+          <a routerLink="/admin/actividades" routerLinkActive="bg-slate-800 text-white"
+             class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h10" />
+            </svg>
+            <span>Actividades</span>
+          </a>
+
           <a routerLink="/admin/financeiro" routerLinkActive="bg-slate-800 text-white"
              class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
