@@ -113,6 +113,10 @@ export const routes: Routes = [
             loadComponent: () => import('./pages/admin/plans/admin-plans.component').then(m => m.AdminPlansComponent)
           },
           {
+            path: 'vouchers',
+            loadComponent: () => import('./pages/admin/vouchers/admin-vouchers.component').then(m => m.AdminVouchersComponent)
+          },
+          {
             path: 'conteudo',
             loadComponent: () => import('./pages/admin/cms/admin-landing-cms.component').then(m => m.AdminLandingCmsComponent)
           },
