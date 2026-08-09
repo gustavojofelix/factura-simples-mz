@@ -256,7 +256,11 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
             features: p.features || [],
             highlighted: !!p.is_popular
           }));
+
+          // Mark plan reveal items as visible
+          this.plans.forEach((_, i) => this.visibleItems.add(`plan-${i}`));
           this.cdr.markForCheck();
+          setTimeout(() => this.observeRevealItems(), 100);
         }
       }
     } catch (e) {
@@ -265,6 +269,9 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit() {
+    // Also mark initial plans as visible by default
+    this.plans.forEach((_, i) => this.visibleItems.add(`plan-${i}`));
+
     if (typeof IntersectionObserver === 'undefined') {
       return;
     }
@@ -322,6 +329,9 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   isVisible(key: string): boolean {
+    if (key && key.startsWith('plan-')) {
+      return true;
+    }
     return this.visibleItems.has(key);
   }
 

@@ -128,6 +128,10 @@ export class SettingsComponent implements OnInit {
       this.companyService.loadCompanies(),
       this.userManagementService.loadAllUsers()
     ]);
+    const list = this.companies();
+    if (list.length > 0 && !this.selectedCompanyId()) {
+      await this.loadCompanySettings(list[0].id);
+    }
     this.loading.set(false);
   }
 
