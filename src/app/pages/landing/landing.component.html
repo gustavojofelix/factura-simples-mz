@@ -48,25 +48,23 @@
         [class.is-visible]="isVisible('hero-copy')"
       >
         <div class="hero-badge">
-          <i class="fas fa-bolt"></i>
-          <span>Líder em facturação para PMEs em Moçambique</span>
+          <i class="fas" [ngClass]="hero.badgeIcon || 'fa-bolt'"></i>
+          <span>{{ hero.badge }}</span>
         </div>
         <h1 class="hero-title">
-          Facturação <span class="highlight">inteligente</span> para o seu negócio em
-          <span class="highlight-mz">Moçambique</span>
+          {{ hero.title }}
         </h1>
         <p class="hero-subtitle">
-          Emita facturas em segundos, calcule o ISPC automaticamente e mantenha o seu negócio em plena conformidade.
-          Simples, rápido e feito para o mercado moçambicano.
+          {{ hero.subtitle }}
         </p>
         <div class="hero-actions">
-          <a routerLink="/registar" class="btn-primary-hero">
-            Começar grátis - 14 dias
+          <a [routerLink]="hero.primaryCtaLink || '/registar'" class="btn-primary-hero">
+            {{ hero.primaryCtaText }}
             <i class="fas fa-arrow-right"></i>
           </a>
-          <a href="#funcionalidades" class="btn-ghost-hero" (click)="scrollToSection('funcionalidades', $event)">
+          <a [href]="hero.secondaryCtaLink || '#funcionalidades'" class="btn-ghost-hero" (click)="scrollToSection('funcionalidades', $event)">
             <i class="fas fa-play-circle"></i>
-            Ver funcionalidades
+            {{ hero.secondaryCtaText }}
           </a>
         </div>
         <div class="hero-proof">
@@ -344,21 +342,21 @@
             <div class="method-icon"><i class="fas fa-envelope"></i></div>
             <div>
               <strong>Email</strong>
-              <span>suporte&#64;ispcfacil.co.mz</span>
+              <span>{{ contact.email }}</span>
             </div>
           </div>
           <div class="contact-method">
             <div class="method-icon"><i class="fas fa-phone"></i></div>
             <div>
               <strong>Telefone / WhatsApp</strong>
-              <span>+258 84 000 0000</span>
+              <span>{{ contact.phone || contact.whatsapp }}</span>
             </div>
           </div>
           <div class="contact-method">
             <div class="method-icon"><i class="fas fa-map-marker-alt"></i></div>
             <div>
               <strong>Localização</strong>
-              <span>Maputo, Moçambique</span>
+              <span>{{ contact.address }}</span>
             </div>
           </div>
         </div>
