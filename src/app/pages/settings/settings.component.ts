@@ -60,7 +60,9 @@ export class SettingsComponent implements OnInit {
   selectedTab = signal(0);
   loading = signal(false);
 
-  availablePlans: SubscriptionPlan[] = [];
+  get availablePlans(): SubscriptionPlan[] {
+    return this.subscriptionService.availablePlans.filter((p) => p.is_active !== false);
+  }
   companyColumns = ['name', 'nuit', 'phone', 'actions'];
   userColumns = ['email', 'companies', 'actions'];
 
@@ -90,15 +92,13 @@ export class SettingsComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private companyService: CompanyService,
-    private subscriptionService: SubscriptionService,
+    public subscriptionService: SubscriptionService,
     private userManagementService: UserManagementService,
     private authService: AuthService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private activityService: ActivityService
-  ) {
-    this.availablePlans = this.subscriptionService.availablePlans;
-  }
+  ) {}
 
   async ngOnInit() {
     const user = this.authService.currentUser();
@@ -210,49 +210,29 @@ export class SettingsComponent implements OnInit {
   async deleteCompany(company: Company) {
     if (!confirm(`Tem certeza que deseja eliminar a empresa "${company.name}"?`)) return;
 
-    const result = await this.companyService.deleteCompany(company.id);
-    if (result.success) {
+    const success = await this.companyService.deleteCompany(company.id);
+    if (success) {
       this.snackBar.open('Empresa eliminada com sucesso', 'Fechar', { duration: 3000 });
-    } else {
-      this.snackBar.open(result.error || 'Erro ao eliminar empresa', 'Fechar', { duration: 5000 });
     }
   }
 
-  async openUserDialog(user?: UserWithCompanies) {
-    let userCompanies: Array<{ company_id: string; role: string }> = [];
-
-    if (user) {
-      userCompanies = user.companies.map(c => ({
-        company_id: c.company_id,
-        role: c.role
-      }));
-    }
-
+  openUserDialog(user?: UserWithCompanies) {
     const dialogRef = this.dialog.open(UserCompanyDialogComponent, {
-      data: {
-        userId: user?.user_id,
-        userEmail: user?.user_email,
-        userCompanies
-      },
-      width: '700px'
+      data: { user, companies: this.companies() },
+      maxWidth: '95vw'
     });
 
     dialogRef.afterClosed().subscribe(async (result) => {
       if (result) {
         this.loading.set(true);
+        const inviter = this.authService.currentUser();
+        const inviterName = inviter?.user_metadata?.['full_name'] || inviter?.email || 'Um administrador';
 
-        // Adicionar utilizador (convidar se não existir)
-        const currentUserProfile = await this.authService.getCurrentProfile();
-        const currentUserEmail = this.authService.currentUser()?.email;
-        const inviterName = currentUserProfile?.full_name || currentUserEmail || 'Um administrador';
-
-        for (let i = 0; i < result.companies.length; i++) {
-          const { company_id, role } = result.companies[i];
+        for (let i = 0; i < result.assignments.length; i++) {
+          const { company_id, role } = result.assignments[i];
           const companyName = this.getCompanyName(company_id);
           const translatedRole = this.getRoleLabel(role);
-          // Só passamos fullName/phone na primeira iteração para evitar convites duplicados
-          // ou o serviço tratará de convidar apenas se não existir.
-          // Mas como o serviço atual já faz listUsers e find, ele lidará com isso.
+
           await this.userManagementService.addUserToCompany(
             result.email,
             company_id,

@@ -20,11 +20,19 @@ export interface Subscription {
 }
 
 export interface SubscriptionPlan {
+  id?: string;
+  code: string;
   name: string;
   description: string;
   monthly_price: number;
   yearly_price: number;
+  currency?: string;
   features: string[];
+  is_active?: boolean;
+  is_popular?: boolean;
+  sort_order?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 @Injectable({
@@ -34,24 +42,71 @@ export class SubscriptionService {
   private subscriptionSignal = signal<Subscription | null>(null);
   subscription = this.subscriptionSignal.asReadonly();
 
-  availablePlans: SubscriptionPlan[] = [
+  private plansSignal = signal<SubscriptionPlan[]>([]);
+  plans = this.plansSignal.asReadonly();
+  loadingPlans = signal<boolean>(false);
+
+  private defaultPlans: SubscriptionPlan[] = [
     {
+      code: "trial",
       name: "Trial",
       description: "Período de teste de 14 dias",
       monthly_price: 0,
       yearly_price: 0,
+      currency: "MZN",
       features: [
         "Acesso completo durante 14 dias",
         "Faturação ilimitada no período",
         "Gestão de clientes e produtos",
         "Cálculo automático de ISPC",
       ],
+      is_active: true,
+      sort_order: 1,
     },
     {
+      code: "essencial",
+      name: "Essencial",
+      description: "Ideal para autónomos e microempresas",
+      monthly_price: 2500,
+      yearly_price: 25000,
+      currency: "MZN",
+      features: [
+        "Até 100 facturas/mês",
+        "Clientes ilimitados",
+        "Cálculo automático de ISPC",
+        "Envio por email",
+        "1 empresa",
+        "Suporte por email",
+      ],
+      is_active: true,
+      sort_order: 2,
+    },
+    {
+      code: "profissional",
+      name: "Profissional",
+      description: "Para empresas em crescimento que precisam de mais recursos",
+      monthly_price: 7500,
+      yearly_price: 75000,
+      currency: "MZN",
+      features: [
+        "Facturação ilimitada",
+        "Utilizadores ilimitados",
+        "Suporte prioritário 24/7",
+        "Relatórios e modelos fiscais",
+        "Backup automático",
+        "Múltiplas empresas",
+      ],
+      is_active: true,
+      is_popular: true,
+      sort_order: 3,
+    },
+    {
+      code: "standard",
       name: "Standard",
       description: "Plano completo e ilimitado para a sua empresa",
-      monthly_price: 25,
-      yearly_price: 8400000,
+      monthly_price: 7500,
+      yearly_price: 75000,
+      currency: "MZN",
       features: [
         "Faturação e recibos ilimitados",
         "Utilizadores e acessos ilimitados",
@@ -60,13 +115,140 @@ export class SubscriptionService {
         "Backup automático na nuvem",
         "Conformidade legal e fiscal total (AT / MZN)",
       ],
+      is_active: true,
+      sort_order: 4,
     },
   ];
+
+  get availablePlans(): SubscriptionPlan[] {
+    const loaded = this.plansSignal();
+    return loaded.length > 0 ? loaded : this.defaultPlans;
+  }
 
   constructor(
     private supabase: SupabaseService,
     private auditLogService: AuditLogService,
-  ) {}
+  ) {
+    this.loadPlans();
+  }
+
+  async loadPlans(): Promise<SubscriptionPlan[]> {
+    this.loadingPlans.set(true);
+    try {
+      const { data, error } = await this.supabase.client
+        .from("subscription_plans")
+        .select("*")
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.error("Error loading subscription plans:", error);
+        return this.availablePlans;
+      }
+
+      if (data && data.length > 0) {
+        const parsedPlans: SubscriptionPlan[] = data.map((p: any) => ({
+          ...p,
+          features: Array.isArray(p.features)
+            ? p.features
+            : typeof p.features === "string"
+              ? JSON.parse(p.features)
+              : [],
+          monthly_price: Number(p.monthly_price),
+          yearly_price: Number(p.yearly_price),
+        }));
+        this.plansSignal.set(parsedPlans);
+        return parsedPlans;
+      }
+    } catch (err) {
+      console.error("Exception loading plans:", err);
+    } finally {
+      this.loadingPlans.set(false);
+    }
+    return this.availablePlans;
+  }
+
+  async createPlan(plan: Partial<SubscriptionPlan>): Promise<boolean> {
+    const code =
+      plan.code ||
+      plan.name?.toLowerCase().replace(/\s+/g, "_") ||
+      `plan_${Date.now()}`;
+    const payload = {
+      code,
+      name: plan.name,
+      description: plan.description || "",
+      monthly_price: plan.monthly_price || 0,
+      yearly_price: plan.yearly_price || 0,
+      currency: plan.currency || "MZN",
+      features: plan.features || [],
+      is_active: plan.is_active ?? true,
+      is_popular: plan.is_popular ?? false,
+      sort_order: plan.sort_order ?? 0,
+    };
+
+    const { error } = await this.supabase.client
+      .from("subscription_plans")
+      .insert(payload);
+
+    if (error) {
+      console.error("Error creating subscription plan:", error);
+      return false;
+    }
+
+    await this.auditLogService.log(
+      "Criou Plano de Subscrição",
+      "subscription_plans",
+      payload,
+    );
+    await this.loadPlans();
+    return true;
+  }
+
+  async updatePlan(
+    id: string,
+    updates: Partial<SubscriptionPlan>,
+  ): Promise<boolean> {
+    const { error } = await this.supabase.client
+      .from("subscription_plans")
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error updating subscription plan:", error);
+      return false;
+    }
+
+    await this.auditLogService.log(
+      "Atualizou Plano de Subscrição",
+      "subscription_plans",
+      { id, updates },
+    );
+    await this.loadPlans();
+    return true;
+  }
+
+  async deletePlan(id: string): Promise<boolean> {
+    const { error } = await this.supabase.client
+      .from("subscription_plans")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error deleting subscription plan:", error);
+      return false;
+    }
+
+    await this.auditLogService.log(
+      "Eliminou Plano de Subscrição",
+      "subscription_plans",
+      { id },
+    );
+    await this.loadPlans();
+    return true;
+  }
 
   async loadSubscription(companyId: string): Promise<void> {
     const { data, error } = await this.supabase.client
@@ -130,7 +312,11 @@ export class SubscriptionService {
     planName: string,
     billingCycle: "monthly" | "yearly",
   ): Promise<boolean> {
-    const plan = this.availablePlans.find((p) => p.name === planName);
+    const plan = this.availablePlans.find(
+      (p) =>
+        p.name.toLowerCase() === planName.toLowerCase() ||
+        (p.code && p.code.toLowerCase() === planName.toLowerCase()),
+    );
     if (!plan) return false;
 
     const amount =

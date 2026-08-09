@@ -14,6 +14,7 @@ import { RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { LoginFormComponent } from '../../shared/components/login-form/login-form.component';
+import { SubscriptionService } from '../../core/services/subscription.service';
 
 @Component({
   selector: 'app-landing',
@@ -216,10 +217,11 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
     private fb: FormBuilder,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private subscriptionService: SubscriptionService
   ) {}
 
-  ngOnInit() {
+  async ngOnInit() {
     this.contactForm = this.fb.group({
       nome: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
@@ -235,6 +237,31 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
 
     window.addEventListener('scroll', this.scrollListener, { passive: true });
     this.scrollListener();
+
+    await this.loadDynamicPlans();
+  }
+
+  async loadDynamicPlans() {
+    try {
+      const dbPlans = await this.subscriptionService.loadPlans();
+      if (dbPlans && dbPlans.length > 0) {
+        const activePlans = dbPlans.filter(p => p.is_active !== false && p.code !== 'trial');
+        if (activePlans.length > 0) {
+          this.plans = activePlans.map(p => ({
+            name: p.name,
+            description: p.description || '',
+            price: p.monthly_price ? p.monthly_price.toLocaleString('pt-MZ') : '0',
+            currency: p.currency || 'MZN',
+            period: 'mês',
+            features: p.features || [],
+            highlighted: !!p.is_popular
+          }));
+          this.cdr.markForCheck();
+        }
+      }
+    } catch (e) {
+      console.error('Error loading dynamic plans in landing:', e);
+    }
   }
 
   ngAfterViewInit() {
