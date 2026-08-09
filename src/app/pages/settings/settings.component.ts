@@ -306,7 +306,8 @@ export class SettingsComponent implements OnInit {
     const success = await this.subscriptionService.changePlan(
       sub?.id || '',
       plan.name,
-      cycle
+      cycle,
+      companyId
     );
 
     if (success) {
