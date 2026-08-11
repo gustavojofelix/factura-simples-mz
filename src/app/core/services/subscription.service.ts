@@ -521,18 +521,31 @@ export class SubscriptionService {
 
   isTrialExpired(): boolean {
     const sub = this.subscriptionSignal();
-    if (!sub || sub.status !== "trialing" || !sub.end_date) return false;
+    if (!sub || sub.status !== "trialing") return false;
 
-    const endDate = new Date(sub.end_date);
-    const today = new Date();
-    return today > endDate;
+    let endDate: Date;
+    if (sub.end_date) {
+      endDate = new Date(sub.end_date);
+    } else {
+      const start = sub.start_date ? new Date(sub.start_date) : new Date(sub.created_at || Date.now());
+      endDate = new Date(start.getTime() + 14 * 24 * 60 * 60 * 1000);
+    }
+
+    return new Date() > endDate;
   }
 
   getDaysRemainingInTrial(): number {
     const sub = this.subscriptionSignal();
-    if (!sub || sub.status !== "trialing" || !sub.end_date) return 0;
+    if (!sub || sub.status !== "trialing") return 0;
 
-    const endDate = new Date(sub.end_date);
+    let endDate: Date;
+    if (sub.end_date) {
+      endDate = new Date(sub.end_date);
+    } else {
+      const start = sub.start_date ? new Date(sub.start_date) : new Date(sub.created_at || Date.now());
+      endDate = new Date(start.getTime() + 14 * 24 * 60 * 60 * 1000);
+    }
+
     const today = new Date();
     const diff = endDate.getTime() - today.getTime();
     const days = Math.ceil(diff / (1000 * 60 * 60 * 24));

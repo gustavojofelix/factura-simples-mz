@@ -306,7 +306,20 @@ export class VoucherService {
     discountApplied: number = 0
   ): Promise<boolean> {
     try {
-      // 1. Insert redemption record
+      // 1. Try RPC function (SECURITY DEFINER to bypass RLS blocks)
+      const { data: rpcSuccess, error: rpcErr } = await this.supabase.client
+        .rpc('redeem_voucher', {
+          p_voucher_id: voucherId,
+          p_company_id: companyId || null,
+          p_user_id: userId || null,
+          p_discount_applied: discountApplied
+        });
+
+      if (!rpcErr && rpcSuccess) {
+        return true;
+      }
+
+      // 2. Direct fallback if RPC is not available yet
       const { error: redemptionErr } = await this.supabase.client
         .from('voucher_redemptions')
         .insert({
@@ -321,15 +334,13 @@ export class VoucherService {
         console.error('Error recording voucher redemption:', redemptionErr);
       }
 
-      // 2. Increment uses_count
       const { data: v } = await this.supabase.client
         .from('vouchers')
         .select('uses_count')
         .eq('id', voucherId)
-        .single();
+        .maybeSingle();
 
       const currentCount = v?.uses_count || 0;
-
       await this.supabase.client
         .from('vouchers')
         .update({

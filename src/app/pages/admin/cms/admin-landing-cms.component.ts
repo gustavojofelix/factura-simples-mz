@@ -150,6 +150,11 @@ import {
             <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Botão Secundário - Link</label>
             <input type="text" [(ngModel)]="heroForm.secondaryCtaLink" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none">
           </div>
+
+          <div class="md:col-span-2">
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Texto Prova Social (Abaixo do Formulário)</label>
+            <input type="text" [(ngModel)]="heroForm.proofText" placeholder="ex: Centenas de negócios moçambicanos confiam em nós" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+          </div>
         </div>
       </div>
 

@@ -13,6 +13,7 @@ export interface HeroContent {
   secondaryCtaText: string;
   secondaryCtaLink: string;
   guaranteeText: string;
+  proofText: string;
 }
 
 export interface StatContent {
@@ -63,7 +64,8 @@ export class LandingCmsService {
     primaryCtaLink: '/registar',
     secondaryCtaText: 'Ver Funcionalidades',
     secondaryCtaLink: '#funcionalidades',
-    guaranteeText: '14 dias de teste sem compromisso • Sem cartão de crédito'
+    guaranteeText: '14 dias de teste sem compromisso • Sem cartão de crédito',
+    proofText: 'Centenas de negócios moçambicanos confiam em nós'
   });
 
   stats = signal<StatContent[]>([

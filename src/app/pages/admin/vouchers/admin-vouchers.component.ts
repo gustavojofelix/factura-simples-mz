@@ -36,7 +36,7 @@ interface CompanyOption {
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
           </svg>
-          <span>Criar Novo Voucher</span>
+          <span>Criar Voucher</span>
         </button>
       </div>
 
@@ -175,10 +175,10 @@ interface CompanyOption {
 
                 <td class="py-4 px-6 font-semibold">
                   <span *ngIf="voucher.discount_type === 'percentage'" class="text-green-600 font-bold text-base">
-                    -{{ voucher.discount_value }}% Off
+                    {{ voucher.discount_value }}% Off
                   </span>
                   <span *ngIf="voucher.discount_type === 'fixed_amount'" class="text-green-600 font-bold text-base">
-                    -{{ voucher.discount_value | number:'1.2-2' }} MZN
+                    {{ voucher.discount_value | number:'1.2-2' }} MZN
                   </span>
                   <span *ngIf="voucher.discount_type === 'trial_days'" class="text-blue-600 font-bold text-base">
                     +{{ voucher.discount_value }} Dias Grátis
@@ -213,7 +213,7 @@ interface CompanyOption {
                 </td>
 
                 <td class="py-4 px-6 text-right space-x-2">
-                  <button (click)="viewRedemptions(voucher)" title="Ver Histórico de Resgates" class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all">
+                  <button (click)="viewRedemptions(voucher)" title="Ver Histórico de Utilizações" class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
