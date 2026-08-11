@@ -132,18 +132,26 @@
                     </span>
                   </div>
 
-                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 mb-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
                     <div>
-                      <p class="text-sm text-gray-600">Valor</p>
-                      <p class="text-lg font-semibold">{{ formatCurrency(sub.amount, sub.currency || 'MZN') }}</p>
+                      <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Valor</p>
+                      <p class="text-base font-bold text-gray-900 mt-1">{{ formatCurrency(sub.amount, sub.currency || 'MZN') }}</p>
                     </div>
                     <div>
-                      <p class="text-sm text-gray-600">Próxima Cobrança</p>
-                      <p class="text-lg font-semibold">{{ sub.next_billing_date ? formatDate(sub.next_billing_date) : '-' }}</p>
+                      <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Data de Início</p>
+                      <p class="text-base font-bold text-gray-900 mt-1">{{ sub.start_date ? formatDate(sub.start_date) : (formatDate(sub.created_at) || '-') }}</p>
                     </div>
                     <div>
-                      <p class="text-sm text-gray-600">Método de Pagamento</p>
-                      <p class="text-lg font-semibold">{{ sub.payment_method || 'Não definido' }}</p>
+                      <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Data de Expiração</p>
+                      <p class="text-base font-bold text-blue-600 mt-1">{{ sub.end_date ? formatDate(sub.end_date) : (sub.next_billing_date ? formatDate(sub.next_billing_date) : '-') }}</p>
+                    </div>
+                    <div>
+                      <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Próxima Cobrança</p>
+                      <p class="text-base font-bold text-gray-900 mt-1">{{ sub.next_billing_date ? formatDate(sub.next_billing_date) : '-' }}</p>
+                    </div>
+                    <div>
+                      <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Método de Pagamento</p>
+                      <p class="text-base font-bold text-gray-900 mt-1 uppercase">{{ sub.payment_method || 'Não definido' }}</p>
                     </div>
                   </div>
 

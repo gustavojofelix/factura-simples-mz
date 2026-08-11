@@ -96,6 +96,9 @@ serve(async (req) => {
       nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
     }
 
+    const startDateStr = new Date().toISOString().substring(0, 10);
+    const nextBillingDateStr = nextBillingDate.toISOString().substring(0, 10);
+
     if (payment.subscription_id) {
       await supabase.from('subscriptions').update({
         plan_name:         payment.plan_name,
@@ -103,20 +106,45 @@ serve(async (req) => {
         amount:            payment.amount,
         status:            'active',
         payment_method:    payment.payment_method,
-        next_billing_date: nextBillingDate.toISOString(),
+        start_date:        startDateStr,
+        end_date:          nextBillingDateStr,
+        next_billing_date: nextBillingDateStr,
         updated_at:        new Date().toISOString(),
       }).eq('id', payment.subscription_id);
     } else {
-      await supabase.from('subscriptions').upsert({
-        company_id:        payment.company_id,
-        plan_name:         payment.plan_name,
-        billing_cycle:     payment.billing_cycle,
-        amount:            payment.amount,
-        status:            'active',
-        payment_method:    payment.payment_method,
-        next_billing_date: nextBillingDate.toISOString(),
-        updated_at:        new Date().toISOString(),
-      }, { onConflict: 'company_id' });
+      const { data: existingSub } = await supabase
+        .from('subscriptions')
+        .select('id')
+        .eq('company_id', payment.company_id)
+        .limit(1)
+        .maybeSingle();
+
+      if (existingSub?.id) {
+        await supabase.from('subscriptions').update({
+          plan_name:         payment.plan_name,
+          billing_cycle:     payment.billing_cycle,
+          amount:            payment.amount,
+          status:            'active',
+          payment_method:    payment.payment_method,
+          start_date:        startDateStr,
+          end_date:          nextBillingDateStr,
+          next_billing_date: nextBillingDateStr,
+          updated_at:        new Date().toISOString(),
+        }).eq('id', existingSub.id);
+      } else {
+        await supabase.from('subscriptions').insert({
+          company_id:        payment.company_id,
+          plan_name:         payment.plan_name,
+          billing_cycle:     payment.billing_cycle,
+          amount:            payment.amount,
+          status:            'active',
+          payment_method:    payment.payment_method,
+          start_date:        startDateStr,
+          end_date:          nextBillingDateStr,
+          next_billing_date: nextBillingDateStr,
+          updated_at:        new Date().toISOString(),
+        });
+      }
     }
 
     // 3. Send confirmation email

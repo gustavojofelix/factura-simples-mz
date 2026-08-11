@@ -269,6 +269,7 @@ export class SubscriptionService {
       .from("subscriptions")
       .select("*")
       .eq("company_id", companyId)
+      .order("updated_at", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -327,44 +328,78 @@ export class SubscriptionService {
   ): Promise<boolean> {
     if (!companyId) return false;
 
-    const nextBillingDate = updates.next_billing_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const cycle = updates.billing_cycle || 'monthly';
+    let monthsToAdd = 1;
+    if (cycle === 'quarterly') monthsToAdd = 3;
+    else if (cycle === 'semiannual') monthsToAdd = 6;
+    else if (cycle === 'yearly') monthsToAdd = 12;
+
+    const startDate = updates.start_date || new Date().toISOString().substring(0, 10);
+    const endDateObj = new Date();
+    endDateObj.setMonth(endDateObj.getMonth() + monthsToAdd);
+    const endDateStr = endDateObj.toISOString().substring(0, 10);
+    const nextBillingDateStr = updates.next_billing_date ? updates.next_billing_date.substring(0, 10) : endDateStr;
+
+    const { data: existing } = await this.supabase.client
+      .from('subscriptions')
+      .select('id')
+      .eq('company_id', companyId)
+      .limit(1)
+      .maybeSingle();
 
     const payload = {
       company_id: companyId,
       plan_name: updates.plan_name || 'Trial',
       status: updates.status || 'active',
-      billing_cycle: updates.billing_cycle || 'monthly',
+      billing_cycle: cycle,
       amount: updates.amount !== undefined ? updates.amount : 0,
       currency: updates.currency || 'MZN',
       payment_method: updates.payment_method || 'mpesa',
-      start_date: updates.start_date || new Date().toISOString().substring(0, 10),
-      next_billing_date: nextBillingDate.substring(0, 10),
+      start_date: startDate,
+      end_date: updates.end_date || endDateStr,
+      next_billing_date: nextBillingDateStr,
       auto_renew: updates.auto_renew ?? true,
       updated_at: new Date().toISOString()
     };
 
-    const { data, error } = await this.supabase.client
-      .from('subscriptions')
-      .upsert(payload, { onConflict: 'company_id' })
-      .select('*')
-      .maybeSingle();
+    let resultData: any = null;
+    if (existing?.id) {
+      const { data: updated, error: updateError } = await this.supabase.client
+        .from('subscriptions')
+        .update(payload)
+        .eq('id', existing.id)
+        .select('*')
+        .maybeSingle();
 
-    if (error) {
-      console.error('Error upserting subscription:', error);
-      return false;
-    }
-
-    if (data) {
-      this.subscriptionSignal.set(data);
+      if (updateError) {
+        console.error('Error updating subscription:', updateError);
+        return false;
+      }
+      resultData = updated;
     } else {
-      await this.loadSubscription(companyId);
+      const { data: inserted, error: insertError } = await this.supabase.client
+        .from('subscriptions')
+        .insert(payload)
+        .select('*')
+        .maybeSingle();
+
+      if (insertError) {
+        console.error('Error inserting subscription:', insertError);
+        return false;
+      }
+      resultData = inserted;
     }
+
+    if (resultData) {
+      this.subscriptionSignal.set(resultData);
+    }
+    await this.loadSubscription(companyId);
 
     await this.auditLogService.log(
       'Ativou/Atualizou Subscrição da Empresa',
       'subscriptions',
       payload,
-      data?.id,
+      resultData?.id,
       payload.plan_name,
       companyId
     );
