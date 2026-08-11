@@ -62,7 +62,9 @@ export class SettingsComponent implements OnInit {
   selectedCycle = signal<'monthly' | 'quarterly' | 'semiannual' | 'yearly'>('monthly');
 
   get availablePlans(): SubscriptionPlan[] {
-    return this.subscriptionService.availablePlans.filter((p) => p.is_active !== false);
+    return this.subscriptionService.availablePlans
+      .filter((p) => p.is_active !== false)
+      .sort((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0));
   }
   companyColumns = ['name', 'nuit', 'phone', 'actions'];
   userColumns = ['email', 'companies', 'actions'];

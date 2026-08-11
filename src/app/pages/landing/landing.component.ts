@@ -193,6 +193,8 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
         priceVal = p.yearly_price;
       }
 
+      const isPopular = p.is_popular === true || String(p.is_popular).toLowerCase() === 'true' || p.is_popular === 1;
+
       return {
         name: p.name,
         description: p.description || '',
@@ -200,7 +202,7 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
         currency: p.currency || 'MZN',
         period: periodMap[this.selectedCycle],
         features: p.features || [],
-        highlighted: !!p.is_popular
+        highlighted: isPopular
       };
     });
   }
@@ -209,7 +211,10 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
     try {
       const dbPlans = await this.subscriptionService.loadPlans();
       if (dbPlans && dbPlans.length > 0) {
-        const activePlans = dbPlans.filter(p => p.is_active !== false && p.code !== 'trial');
+        const activePlans = dbPlans
+          .filter(p => p.is_active !== false && p.code !== 'trial')
+          .sort((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0));
+
         if (activePlans.length > 0) {
           this.rawPlans = activePlans;
           this.updateDisplayedPlans();

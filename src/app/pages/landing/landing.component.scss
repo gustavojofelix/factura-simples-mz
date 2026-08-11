@@ -949,14 +949,14 @@ section[id] {
     }
 
     &:hover {
-      color: $text-heading;
-      background: rgba($primary, 0.05);
+      color: $text-primary;
+      background: rgba(241, 108, 57, 0.05);
     }
 
     &.active {
-      background: $primary;
+      background: $orange-500;
       color: #ffffff;
-      box-shadow: 0 4px 12px rgba($primary, 0.35);
+      box-shadow: 0 4px 12px rgba(241, 108, 57, 0.35);
 
       .cycle-sub {
         opacity: 0.9;
@@ -968,9 +968,9 @@ section[id] {
 
 .pricing-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1.5rem;
-  max-width: 860px;
+  max-width: 1140px;
   margin: 0 auto;
 }
 

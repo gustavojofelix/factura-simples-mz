@@ -205,12 +205,21 @@
               </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl">
               @for (plan of availablePlans; track plan.name) {
-                <mat-card class="plan-card border rounded-2xl shadow-sm transition-all" [class.current-plan]="subscription()?.plan_name === plan.name">
+                <mat-card class="plan-card border rounded-2xl shadow-sm transition-all relative overflow-hidden" [class.border-amber-400]="plan.is_popular" [class.current-plan]="subscription()?.plan_name === plan.name">
                   <mat-card-header>
-                    <mat-card-title class="!text-xl !font-bold">{{ plan.name }}</mat-card-title>
-                    <mat-card-subtitle>{{ plan.description }}</mat-card-subtitle>
+                    <div class="w-full flex justify-between items-start">
+                      <div>
+                        <mat-card-title class="!text-xl !font-bold">{{ plan.name }}</mat-card-title>
+                        <mat-card-subtitle>{{ plan.description }}</mat-card-subtitle>
+                      </div>
+                      @if (plan.is_popular) {
+                        <span class="inline-flex items-center gap-1 bg-amber-100 text-amber-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-amber-200 shadow-xs">
+                          <mat-icon class="!w-3.5 !h-3.5 !text-xs !leading-none text-amber-600">star</mat-icon> Mais Popular
+                        </span>
+                      }
+                    </div>
                   </mat-card-header>
                   <mat-card-content>
                     <div class="text-center my-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
