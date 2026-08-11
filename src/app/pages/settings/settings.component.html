@@ -135,7 +135,7 @@
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div>
                       <p class="text-sm text-gray-600">Valor</p>
-                      <p class="text-lg font-semibold">{{ formatCurrency(sub.amount) }}</p>
+                      <p class="text-lg font-semibold">{{ formatCurrency(sub.amount, sub.currency || 'MZN') }}</p>
                     </div>
                     <div>
                       <p class="text-sm text-gray-600">Próxima Cobrança</p>
@@ -224,7 +224,7 @@
                   <mat-card-content>
                     <div class="text-center my-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
                       <p class="text-3xl font-black text-slate-900">
-                        {{ plan.monthly_price === 0 ? 'Gratuito' : formatCurrency(getPlanPriceForCycle(plan, selectedCycle())) }}
+                        {{ plan.monthly_price === 0 ? 'Gratuito' : formatCurrency(getPlanPriceForCycle(plan, selectedCycle()), plan.currency || 'MZN') }}
                       </p>
                       <p class="text-slate-500 text-xs mt-1 font-medium">
                         {{ plan.monthly_price === 0 ? '14 dias de teste' : ('Período: ' + getCycleLabel(selectedCycle())) }}

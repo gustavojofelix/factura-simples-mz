@@ -44,7 +44,7 @@ export interface PaymentDialogData {
           </div>
           <div>
             <h2 class="text-lg font-bold text-white leading-tight">Ativação da Subscrição</h2>
-            <p class="text-xs text-slate-400">Plano {{ data.plan.name }} • {{ getOriginalPrice() | number:'1.0-0' }} MZN/{{ getCycleSuffix() }}</p>
+            <p class="text-xs text-slate-400">Plano {{ data.plan.name }} • {{ getOriginalPrice() | number:'1.0-0' }} {{ data.plan.currency || 'MZN' }}/{{ getCycleSuffix() }}</p>
           </div>
         </div>
         <button mat-icon-button (click)="dialogRef.close(false)" [disabled]="loading()" class="!text-slate-400 hover:!text-white">
@@ -104,10 +104,10 @@ export interface PaymentDialogData {
           <span class="text-xs text-slate-400 block">Valor Final a Pagar</span>
           <div class="flex items-baseline gap-2">
             <span *ngIf="voucherResult()?.valid && (voucherResult()?.discountAmount || 0) > 0" class="text-xs text-slate-400 line-through">
-              {{ getOriginalPrice() | number:'1.0-0' }} MZN
+              {{ getOriginalPrice() | number:'1.0-0' }} {{ data.plan.currency || 'MZN' }}
             </span>
             <span class="text-xl font-black text-white">
-              {{ getFinalPrice() | number:'1.0-0' }} MZN
+              {{ getFinalPrice() | number:'1.0-0' }} {{ data.plan.currency || 'MZN' }}
             </span>
           </div>
         </div>
@@ -204,7 +204,7 @@ export interface PaymentDialogData {
                 </div>
               } @else {
                 <div class="flex items-center justify-center gap-2">
-                  <span>Pagar {{ getFinalPrice() | number:'1.0-0' }} MZN</span>
+                  <span>Pagar {{ getFinalPrice() | number:'1.0-0' }} {{ data.plan.currency || 'MZN' }}</span>
                   <mat-icon class="!text-sm !w-4 !h-4">send</mat-icon>
                 </div>
               }

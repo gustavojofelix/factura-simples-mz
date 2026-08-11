@@ -386,11 +386,13 @@ export class SettingsComponent implements OnInit {
     return this.companies().find(c => c.id === companyId)?.name || 'Unknown';
   }
 
-  formatCurrency(value: number): string {
-    return new Intl.NumberFormat('pt-MZ', {
-      style: 'currency',
-      currency: 'MZN'
+  formatCurrency(value: number, currency?: string): string {
+    const curr = currency || 'MZN';
+    const formatted = new Intl.NumberFormat('pt-MZ', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(value);
+    return `${formatted} ${curr}`;
   }
 
   formatDate(date: string): string {
