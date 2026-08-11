@@ -235,6 +235,42 @@
         <h2 class="section-title">Planos <span class="highlight">simples</span> e transparentes</h2>
         <p class="section-subtitle">Sem custos ocultos. Escolha e comece hoje mesmo - 14 dias grátis.</p>
       </div>
+
+      <div class="pricing-cycle-switcher">
+        <button 
+          type="button" 
+          class="cycle-btn" 
+          [class.active]="selectedCycle === 'monthly'" 
+          (click)="setBillingCycle('monthly')"
+        >
+          Mensal <span class="cycle-sub">1 Mês</span>
+        </button>
+        <button 
+          type="button" 
+          class="cycle-btn" 
+          [class.active]="selectedCycle === 'quarterly'" 
+          (click)="setBillingCycle('quarterly')"
+        >
+          Trimestral <span class="cycle-sub">3 Meses</span>
+        </button>
+        <button 
+          type="button" 
+          class="cycle-btn" 
+          [class.active]="selectedCycle === 'semiannual'" 
+          (click)="setBillingCycle('semiannual')"
+        >
+          Semestral <span class="cycle-sub">6 Meses</span>
+        </button>
+        <button 
+          type="button" 
+          class="cycle-btn" 
+          [class.active]="selectedCycle === 'yearly'" 
+          (click)="setBillingCycle('yearly')"
+        >
+          Anual <span class="cycle-sub">1 Ano</span>
+        </button>
+      </div>
+
       <div class="pricing-grid">
         <div
           #revealItem

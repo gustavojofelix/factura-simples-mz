@@ -137,6 +137,9 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   ];
 
+  selectedCycle: 'monthly' | 'quarterly' | 'semiannual' | 'yearly' = 'monthly';
+  rawPlans: any[] = [];
+
   constructor(
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
@@ -164,21 +167,52 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
     await this.loadDynamicPlans();
   }
 
+  setBillingCycle(cycle: 'monthly' | 'quarterly' | 'semiannual' | 'yearly') {
+    this.selectedCycle = cycle;
+    this.updateDisplayedPlans();
+    this.cdr.markForCheck();
+  }
+
+  updateDisplayedPlans() {
+    if (!this.rawPlans || this.rawPlans.length === 0) return;
+
+    const periodMap = {
+      monthly: 'mês',
+      quarterly: '3 meses',
+      semiannual: '6 meses',
+      yearly: 'ano'
+    };
+
+    this.plans = this.rawPlans.map(p => {
+      let priceVal = p.monthly_price;
+      if (this.selectedCycle === 'quarterly') {
+        priceVal = p.three_months_price || (p.monthly_price * 3);
+      } else if (this.selectedCycle === 'semiannual') {
+        priceVal = p.six_months_price || (p.monthly_price * 6);
+      } else if (this.selectedCycle === 'yearly') {
+        priceVal = p.yearly_price;
+      }
+
+      return {
+        name: p.name,
+        description: p.description || '',
+        price: priceVal ? priceVal.toLocaleString('pt-MZ') : '0',
+        currency: p.currency || 'MZN',
+        period: periodMap[this.selectedCycle],
+        features: p.features || [],
+        highlighted: !!p.is_popular
+      };
+    });
+  }
+
   async loadDynamicPlans() {
     try {
       const dbPlans = await this.subscriptionService.loadPlans();
       if (dbPlans && dbPlans.length > 0) {
         const activePlans = dbPlans.filter(p => p.is_active !== false && p.code !== 'trial');
         if (activePlans.length > 0) {
-          this.plans = activePlans.map(p => ({
-            name: p.name,
-            description: p.description || '',
-            price: p.monthly_price ? p.monthly_price.toLocaleString('pt-MZ') : '0',
-            currency: p.currency || 'MZN',
-            period: 'mês',
-            features: p.features || [],
-            highlighted: !!p.is_popular
-          }));
+          this.rawPlans = activePlans;
+          this.updateDisplayedPlans();
 
           // Mark plan reveal items as visible
           this.plans.forEach((_, i) => this.visibleItems.add(`plan-${i}`));

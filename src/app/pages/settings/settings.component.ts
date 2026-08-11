@@ -59,6 +59,7 @@ export class SettingsComponent implements OnInit {
 
   selectedTab = signal(0);
   loading = signal(false);
+  selectedCycle = signal<'monthly' | 'quarterly' | 'semiannual' | 'yearly'>('monthly');
 
   get availablePlans(): SubscriptionPlan[] {
     return this.subscriptionService.availablePlans.filter((p) => p.is_active !== false);
@@ -271,7 +272,8 @@ export class SettingsComponent implements OnInit {
     }
   }
 
-  async changePlan(plan: SubscriptionPlan, cycle: 'monthly' | 'yearly') {
+  async changePlan(plan: SubscriptionPlan, cycle?: 'monthly' | 'quarterly' | 'semiannual' | 'yearly') {
+    const targetCycle = cycle || this.selectedCycle();
     const sub = this.subscription();
     const companyId = this.selectedCompanyId();
 
@@ -287,7 +289,7 @@ export class SettingsComponent implements OnInit {
           companyId,
           subscriptionId: sub?.id,
           plan,
-          billingCycle: cycle
+          billingCycle: targetCycle
         },
         width: '450px',
         maxWidth: '95vw',
@@ -306,7 +308,7 @@ export class SettingsComponent implements OnInit {
     const success = await this.subscriptionService.changePlan(
       sub?.id || '',
       plan.name,
-      cycle,
+      targetCycle,
       companyId
     );
 
@@ -341,6 +343,30 @@ export class SettingsComponent implements OnInit {
       cancelled: 'Cancelado'
     };
     return labels[status] || status;
+  }
+
+  getCycleLabel(cycle: string): string {
+    const labels: Record<string, string> = {
+      monthly: 'Mensal (1 Mês)',
+      quarterly: 'Trimestral (3 Meses)',
+      semiannual: 'Semestral (6 Meses)',
+      yearly: 'Anual (1 Ano)'
+    };
+    return labels[cycle] || cycle;
+  }
+
+  getPlanPriceForCycle(plan: SubscriptionPlan, cycle: 'monthly' | 'quarterly' | 'semiannual' | 'yearly'): number {
+    switch (cycle) {
+      case 'quarterly':
+        return plan.three_months_price || (plan.monthly_price * 3);
+      case 'semiannual':
+        return plan.six_months_price || (plan.monthly_price * 6);
+      case 'yearly':
+        return plan.yearly_price;
+      case 'monthly':
+      default:
+        return plan.monthly_price;
+    }
   }
 
   getRoleLabel(role: string): string {

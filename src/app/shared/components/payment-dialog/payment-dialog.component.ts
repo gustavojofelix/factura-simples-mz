@@ -16,7 +16,7 @@ export interface PaymentDialogData {
   companyId: string;
   subscriptionId?: string;
   plan: SubscriptionPlan;
-  billingCycle: 'monthly' | 'yearly';
+  billingCycle: 'monthly' | 'quarterly' | 'semiannual' | 'yearly';
 }
 
 @Component({
@@ -44,7 +44,7 @@ export interface PaymentDialogData {
           </div>
           <div>
             <h2 class="text-lg font-bold text-white leading-tight">Ativação da Subscrição</h2>
-            <p class="text-xs text-slate-400">Plano {{ data.plan.name }} • {{ getOriginalPrice() | number:'1.0-0' }} MZN/{{ data.billingCycle === 'monthly' ? 'mês' : 'ano' }}</p>
+            <p class="text-xs text-slate-400">Plano {{ data.plan.name }} • {{ getOriginalPrice() | number:'1.0-0' }} MZN/{{ getCycleSuffix() }}</p>
           </div>
         </div>
         <button mat-icon-button (click)="dialogRef.close(false)" [disabled]="loading()" class="!text-slate-400 hover:!text-white">
@@ -268,9 +268,26 @@ export class PaymentDialogComponent implements OnInit {
   }
 
   getOriginalPrice(): number {
-    return this.data.billingCycle === 'monthly'
-      ? this.data.plan.monthly_price
-      : this.data.plan.yearly_price;
+    switch (this.data.billingCycle) {
+      case 'quarterly':
+        return this.data.plan.three_months_price || (this.data.plan.monthly_price * 3);
+      case 'semiannual':
+        return this.data.plan.six_months_price || (this.data.plan.monthly_price * 6);
+      case 'yearly':
+        return this.data.plan.yearly_price;
+      case 'monthly':
+      default:
+        return this.data.plan.monthly_price;
+    }
+  }
+
+  getCycleSuffix(): string {
+    switch (this.data.billingCycle) {
+      case 'quarterly': return '3 meses';
+      case 'semiannual': return '6 meses';
+      case 'yearly': return 'ano';
+      case 'monthly': default: return 'mês';
+    }
   }
 
   getFinalPrice(): number {

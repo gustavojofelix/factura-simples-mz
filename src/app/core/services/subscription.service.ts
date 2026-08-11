@@ -7,7 +7,7 @@ export interface Subscription {
   company_id: string;
   plan_name: string;
   status: "active" | "past_due" | "cancelled" | "trialing";
-  billing_cycle: "monthly" | "yearly";
+  billing_cycle: "monthly" | "quarterly" | "semiannual" | "yearly";
   amount: number;
   currency: string;
   payment_method?: string;
@@ -25,6 +25,8 @@ export interface SubscriptionPlan {
   name: string;
   description: string;
   monthly_price: number;
+  three_months_price?: number;
+  six_months_price?: number;
   yearly_price: number;
   currency?: string;
   features: string[];
@@ -52,6 +54,8 @@ export class SubscriptionService {
       name: "Trial",
       description: "Período de teste de 14 dias",
       monthly_price: 0,
+      three_months_price: 0,
+      six_months_price: 0,
       yearly_price: 0,
       currency: "MZN",
       features: [
@@ -68,6 +72,8 @@ export class SubscriptionService {
       name: "Essencial",
       description: "Ideal para autónomos e microempresas",
       monthly_price: 2500,
+      three_months_price: 7500,
+      six_months_price: 14000,
       yearly_price: 25000,
       currency: "MZN",
       features: [
@@ -86,6 +92,8 @@ export class SubscriptionService {
       name: "Profissional",
       description: "Para empresas em crescimento que precisam de mais recursos",
       monthly_price: 7500,
+      three_months_price: 22500,
+      six_months_price: 42000,
       yearly_price: 75000,
       currency: "MZN",
       features: [
@@ -105,6 +113,8 @@ export class SubscriptionService {
       name: "Standard",
       description: "Plano completo e ilimitado para a sua empresa",
       monthly_price: 7500,
+      three_months_price: 22500,
+      six_months_price: 42000,
       yearly_price: 75000,
       currency: "MZN",
       features: [
@@ -154,8 +164,10 @@ export class SubscriptionService {
             : typeof p.features === "string"
               ? JSON.parse(p.features)
               : [],
-          monthly_price: Number(p.monthly_price),
-          yearly_price: Number(p.yearly_price),
+          monthly_price: Number(p.monthly_price || 0),
+          three_months_price: p.three_months_price !== undefined && p.three_months_price !== null ? Number(p.three_months_price) : Number(p.monthly_price || 0) * 3,
+          six_months_price: p.six_months_price !== undefined && p.six_months_price !== null ? Number(p.six_months_price) : Number(p.monthly_price || 0) * 6,
+          yearly_price: Number(p.yearly_price || 0),
         }));
         this.plansSignal.set(parsedPlans);
         return parsedPlans;
@@ -178,6 +190,8 @@ export class SubscriptionService {
       name: plan.name,
       description: plan.description || "",
       monthly_price: plan.monthly_price || 0,
+      three_months_price: plan.three_months_price || (plan.monthly_price ? plan.monthly_price * 3 : 0),
+      six_months_price: plan.six_months_price || (plan.monthly_price ? plan.monthly_price * 6 : 0),
       yearly_price: plan.yearly_price || 0,
       currency: plan.currency || "MZN",
       features: plan.features || [],
@@ -361,7 +375,7 @@ export class SubscriptionService {
   async changePlan(
     subscriptionId: string | null | undefined,
     planName: string,
-    billingCycle: "monthly" | "yearly",
+    billingCycle: "monthly" | "quarterly" | "semiannual" | "yearly",
     companyId?: string
   ): Promise<boolean> {
     const plan = this.availablePlans.find(
@@ -371,12 +385,31 @@ export class SubscriptionService {
     );
     if (!plan) return false;
 
-    const amount =
-      billingCycle === "monthly" ? plan.monthly_price : plan.yearly_price;
+    let amount = plan.monthly_price;
+    let monthsToAdd = 1;
+
+    switch (billingCycle) {
+      case "quarterly":
+        amount = plan.three_months_price || (plan.monthly_price * 3);
+        monthsToAdd = 3;
+        break;
+      case "semiannual":
+        amount = plan.six_months_price || (plan.monthly_price * 6);
+        monthsToAdd = 6;
+        break;
+      case "yearly":
+        amount = plan.yearly_price;
+        monthsToAdd = 12;
+        break;
+      case "monthly":
+      default:
+        amount = plan.monthly_price;
+        monthsToAdd = 1;
+        break;
+    }
+
     const nextBillingDate = new Date();
-    nextBillingDate.setMonth(
-      nextBillingDate.getMonth() + (billingCycle === "monthly" ? 1 : 12),
-    );
+    nextBillingDate.setMonth(nextBillingDate.getMonth() + monthsToAdd);
 
     const targetCompanyId = companyId || this.subscriptionSignal()?.company_id;
 
@@ -486,7 +519,7 @@ export class SubscriptionService {
     companyId: string,
     subscriptionId: string | undefined,
     planName: string,
-    billingCycle: "monthly" | "yearly",
+    billingCycle: "monthly" | "quarterly" | "semiannual" | "yearly",
     amount: number,
     paymentMethod: "mpesa" | "emola",
     phoneNumber: string,

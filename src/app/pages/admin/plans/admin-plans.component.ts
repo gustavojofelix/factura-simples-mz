@@ -65,14 +65,22 @@ import { SubscriptionPlan, SubscriptionService } from '../../../core/services/su
             </div>
 
             <!-- Prices -->
-            <div class="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-xl mb-4 text-sm">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-gray-50 rounded-xl mb-4 text-sm">
               <div>
-                <span class="text-xs text-gray-500 block">Preço Mensal</span>
-                <span class="text-lg font-bold text-gray-800">{{ plan.monthly_price | number:'1.2-2' }} {{ plan.currency || 'MZN' }}</span>
+                <span class="text-xs text-gray-500 block">1 Mês (Mensal)</span>
+                <span class="text-base font-bold text-gray-800">{{ plan.monthly_price | number:'1.2-2' }} {{ plan.currency || 'MZN' }}</span>
               </div>
               <div>
-                <span class="text-xs text-gray-500 block">Preço Anual</span>
-                <span class="text-lg font-bold text-gray-800">{{ plan.yearly_price | number:'1.2-2' }} {{ plan.currency || 'MZN' }}</span>
+                <span class="text-xs text-gray-500 block">3 Meses (Trimestral)</span>
+                <span class="text-base font-bold text-gray-800">{{ (plan.three_months_price || plan.monthly_price * 3) | number:'1.2-2' }} {{ plan.currency || 'MZN' }}</span>
+              </div>
+              <div>
+                <span class="text-xs text-gray-500 block">6 Meses (Semestral)</span>
+                <span class="text-base font-bold text-gray-800">{{ (plan.six_months_price || plan.monthly_price * 6) | number:'1.2-2' }} {{ plan.currency || 'MZN' }}</span>
+              </div>
+              <div>
+                <span class="text-xs text-gray-500 block">1 Ano (Anual)</span>
+                <span class="text-base font-bold text-gray-800">{{ plan.yearly_price | number:'1.2-2' }} {{ plan.currency || 'MZN' }}</span>
               </div>
             </div>
 
@@ -115,11 +123,22 @@ import { SubscriptionPlan, SubscriptionService } from '../../../core/services/su
 
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Preço Mensal (MZN)</label>
+                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Preço 1 Mês (MZN)</label>
                 <input type="number" [(ngModel)]="form.monthly_price" name="monthly_price" min="0" step="0.01" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
               </div>
               <div>
-                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Preço Anual (MZN)</label>
+                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Preço 3 Meses (MZN)</label>
+                <input type="number" [(ngModel)]="form.three_months_price" name="three_months_price" min="0" step="0.01" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Preço 6 Meses (MZN)</label>
+                <input type="number" [(ngModel)]="form.six_months_price" name="six_months_price" min="0" step="0.01" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Preço 1 Ano (MZN)</label>
                 <input type="number" [(ngModel)]="form.yearly_price" name="yearly_price" min="0" step="0.01" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
               </div>
             </div>
@@ -185,6 +204,8 @@ export class AdminPlansComponent implements OnInit {
     code: '',
     description: '',
     monthly_price: 0,
+    three_months_price: 0,
+    six_months_price: 0,
     yearly_price: 0,
     currency: 'MZN',
     features: [],
@@ -213,6 +234,8 @@ export class AdminPlansComponent implements OnInit {
       code: '',
       description: '',
       monthly_price: 0,
+      three_months_price: 0,
+      six_months_price: 0,
       yearly_price: 0,
       currency: 'MZN',
       features: [],
@@ -269,6 +292,8 @@ export class AdminPlansComponent implements OnInit {
       ...this.form,
       features: featuresList,
       monthly_price: Number(this.form.monthly_price || 0),
+      three_months_price: Number(this.form.three_months_price || 0),
+      six_months_price: Number(this.form.six_months_price || 0),
       yearly_price: Number(this.form.yearly_price || 0),
       sort_order: Number(this.form.sort_order || 0)
     };

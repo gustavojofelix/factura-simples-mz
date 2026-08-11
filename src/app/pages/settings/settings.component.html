@@ -125,7 +125,7 @@
                   <div class="flex justify-between items-start mb-4">
                     <div>
                       <h3 class="text-lg font-semibold">Plano Actual: {{ sub.plan_name }}</h3>
-                      <p class="text-gray-600">{{ sub.billing_cycle === 'monthly' ? 'Mensal' : 'Anual' }}</p>
+                      <p class="text-gray-600 font-medium">{{ getCycleLabel(sub.billing_cycle) }}</p>
                     </div>
                     <span class="px-3 py-1 rounded-full text-white text-sm" [ngClass]="getStatusColor(sub.status)">
                       {{ getStatusLabel(sub.status) }}
@@ -165,7 +165,46 @@
               </div>
             }
 
-            <h3 class="text-lg font-semibold mb-4">Planos Disponíveis</h3>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <h3 class="text-lg font-semibold">Planos Disponíveis</h3>
+
+              <!-- Cycle Switcher Pills -->
+              <div class="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-semibold">
+                <button
+                  type="button"
+                  (click)="selectedCycle.set('monthly')"
+                  [class]="selectedCycle() === 'monthly' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                  class="px-3 py-1.5 rounded-lg transition-all"
+                >
+                  Mensal (1 Mês)
+                </button>
+                <button
+                  type="button"
+                  (click)="selectedCycle.set('quarterly')"
+                  [class]="selectedCycle() === 'quarterly' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                  class="px-3 py-1.5 rounded-lg transition-all"
+                >
+                  3 Meses
+                </button>
+                <button
+                  type="button"
+                  (click)="selectedCycle.set('semiannual')"
+                  [class]="selectedCycle() === 'semiannual' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                  class="px-3 py-1.5 rounded-lg transition-all"
+                >
+                  6 Meses
+                </button>
+                <button
+                  type="button"
+                  (click)="selectedCycle.set('yearly')"
+                  [class]="selectedCycle() === 'yearly' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                  class="px-3 py-1.5 rounded-lg transition-all"
+                >
+                  Anual (1 Ano)
+                </button>
+              </div>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
               @for (plan of availablePlans; track plan.name) {
                 <mat-card class="plan-card border rounded-2xl shadow-sm transition-all" [class.current-plan]="subscription()?.plan_name === plan.name">
@@ -176,9 +215,11 @@
                   <mat-card-content>
                     <div class="text-center my-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
                       <p class="text-3xl font-black text-slate-900">
-                        {{ plan.monthly_price === 0 ? 'Gratuito' : formatCurrency(plan.monthly_price) }}
+                        {{ plan.monthly_price === 0 ? 'Gratuito' : formatCurrency(getPlanPriceForCycle(plan, selectedCycle())) }}
                       </p>
-                      <p class="text-slate-500 text-xs mt-1 font-medium">{{ plan.monthly_price === 0 ? '14 dias de teste' : 'subscrição completa' }}</p>
+                      <p class="text-slate-500 text-xs mt-1 font-medium">
+                        {{ plan.monthly_price === 0 ? '14 dias de teste' : ('Período: ' + getCycleLabel(selectedCycle())) }}
+                      </p>
                     </div>
 
                     <ul class="space-y-2 mb-6 min-h-[140px]">
@@ -192,7 +233,7 @@
 
                     @if (subscription()?.plan_name !== plan.name) {
                       <div class="flex flex-col gap-2">
-                        <button mat-raised-button color="primary" class="!py-2.5 !rounded-xl !font-bold" (click)="changePlan(plan, 'monthly')">
+                        <button mat-raised-button color="primary" class="!py-2.5 !rounded-xl !font-bold" (click)="changePlan(plan)">
                           @if (plan.monthly_price === 0) {
                             Ativar Período de Teste
                           } @else {

@@ -88,6 +88,10 @@ serve(async (req) => {
     const nextBillingDate = new Date();
     if (payment.billing_cycle === 'yearly') {
       nextBillingDate.setFullYear(nextBillingDate.getFullYear() + 1);
+    } else if (payment.billing_cycle === 'semiannual') {
+      nextBillingDate.setMonth(nextBillingDate.getMonth() + 6);
+    } else if (payment.billing_cycle === 'quarterly') {
+      nextBillingDate.setMonth(nextBillingDate.getMonth() + 3);
     } else {
       nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
     }
@@ -137,6 +141,7 @@ serve(async (req) => {
         });
 
         const amountMZN = (Number(payment.amount)).toLocaleString('pt-MZ', { minimumFractionDigits: 2 });
+        const cycleLabel = payment.billing_cycle === 'yearly' ? 'Anual (1 Ano)' : payment.billing_cycle === 'semiannual' ? 'Semestral (6 Meses)' : payment.billing_cycle === 'quarterly' ? 'Trimestral (3 Meses)' : 'Mensal (1 Mês)';
 
         const htmlContent = `
           <div style="font-family:sans-serif;padding:24px;max-width:600px;margin:0 auto;border:1px solid #eee;border-radius:10px;">
@@ -145,7 +150,7 @@ serve(async (req) => {
             <p>Confirmamos a receção do pagamento da subscrição para a empresa <strong>${companyName}</strong> no ISPC Fácil. A sua subscrição já está activa!</p>
             <table style="width:100%;border-collapse:collapse;margin:20px 0;">
               <tr><td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;width:160px;">Plano:</td><td style="padding:8px;border-bottom:1px solid #eee;">${payment.plan_name}</td></tr>
-              <tr><td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;">Ciclo:</td><td style="padding:8px;border-bottom:1px solid #eee;">${payment.billing_cycle === 'yearly' ? 'Anual' : 'Mensal'}</td></tr>
+              <tr><td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;">Ciclo:</td><td style="padding:8px;border-bottom:1px solid #eee;">${cycleLabel}</td></tr>
               <tr><td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;">Valor:</td><td style="padding:8px;border-bottom:1px solid #eee;">${amountMZN} MT</td></tr>
               <tr><td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;">Método:</td><td style="padding:8px;border-bottom:1px solid #eee;">${payment.payment_method?.toUpperCase() || provider} (${payment.phone_number || ''})</td></tr>
               <tr><td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;">Referência Sislog:</td><td style="padding:8px;border-bottom:1px solid #eee;">${reference || transactionId}</td></tr>
