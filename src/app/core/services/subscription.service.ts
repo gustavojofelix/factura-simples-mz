@@ -571,6 +571,7 @@ export class SubscriptionService {
     amount: number,
     paymentMethod: "mpesa" | "emola",
     phoneNumber: string,
+    userEmail = '',
   ): Promise<{
     success: boolean;
     message?: string;
@@ -590,6 +591,7 @@ export class SubscriptionService {
             amount,
             paymentMethod,
             phoneNumber,
+            userEmail,
           },
         },
       );

@@ -388,7 +388,8 @@ export class PaymentDialogComponent implements OnInit {
       this.data.billingCycle,
       finalAmount,
       method,
-      phone
+      phone,
+      this.currentUserEmail
     );
 
     if (result.success) {

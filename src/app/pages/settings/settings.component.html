@@ -223,8 +223,8 @@
                         <mat-card-subtitle>{{ plan.description }}</mat-card-subtitle>
                       </div>
                       @if (plan.is_popular) {
-                        <span class="inline-flex items-center gap-1 bg-amber-100 text-amber-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-amber-200 shadow-xs">
-                          <mat-icon class="!w-3.5 !h-3.5 !text-xs !leading-none text-amber-600">star</mat-icon> Mais Popular
+                        <span class="inline-flex items-center gap-1 bg-amber-100 text-amber-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-amber-200 shadow-xs whitespace-nowrap">
+                          <mat-icon class="!w-3.5 !h-3.5 !text-[11px] !leading-none text-amber-600 !inline-flex !items-center">star</mat-icon><span>Mais Popular</span>
                         </span>
                       }
                     </div>
@@ -249,15 +249,22 @@
                     </ul>
 
                     @if (subscription()?.plan_name !== plan.name) {
-                      <div class="flex flex-col gap-2">
-                        <button mat-raised-button color="primary" class="!py-2.5 !rounded-xl !font-bold" (click)="changePlan(plan)">
-                          @if (plan.monthly_price === 0) {
-                            Ativar Período de Teste
-                          } @else {
-                            Subscrever (M-Pesa / e-Mola)
-                          }
-                        </button>
-                      </div>
+                      @if (plan.monthly_price === 0 && isPaidPlan(subscription()?.plan_name)) {
+                        <!-- Bloquear downgrade para plano gratuito/trial quando já tem plano pago -->
+                        <div class="text-center py-2.5 bg-slate-100 rounded-xl border border-slate-200">
+                          <span class="text-slate-500 font-medium text-sm">Não disponível</span>
+                        </div>
+                      } @else {
+                        <div class="flex flex-col gap-2">
+                          <button mat-raised-button color="primary" class="!py-2.5 !rounded-xl !font-bold" (click)="changePlan(plan)">
+                            @if (plan.monthly_price === 0) {
+                              Ativar Período de Teste
+                            } @else {
+                              Subscrever (M-Pesa / e-Mola)
+                            }
+                          </button>
+                        </div>
+                      }
                     } @else {
                       <div class="text-center py-2.5 bg-green-50 rounded-xl border border-green-200">
                         <span class="text-green-700 font-bold text-sm">Plano Atual</span>

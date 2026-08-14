@@ -398,4 +398,17 @@ export class SettingsComponent implements OnInit {
   formatDate(date: string): string {
     return new Date(date).toLocaleDateString('pt-MZ');
   }
+
+  /**
+   * Returns true if the given plan name corresponds to a paid plan
+   * (i.e. not the free Trial plan). Used to block downgrade once a
+   * user has subscribed to a paid plan.
+   */
+  isPaidPlan(planName?: string): boolean {
+    if (!planName) return false;
+    const plan = this.availablePlans.find(
+      (p) => p.name.toLowerCase() === planName.toLowerCase()
+    );
+    return !!plan && plan.monthly_price > 0;
+  }
 }
