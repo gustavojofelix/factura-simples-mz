@@ -629,7 +629,12 @@ export class AdminSubscribersComponent implements OnInit {
 
     try {
       const tempClient = createClient(environment.supabaseUrl, environment.supabaseKey, {
-        auth: { persistSession: false }
+        auth: {
+          persistSession: false,
+          lock: async (_name: string, _acquireTimeout: number, fn: () => Promise<any>) => {
+            return await fn();
+          }
+        }
       });
 
       const { data, error } = await tempClient.auth.signUp({
