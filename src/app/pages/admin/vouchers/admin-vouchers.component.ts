@@ -523,17 +523,18 @@ export class AdminVouchersComponent implements OnInit {
   editVoucher(v: Voucher) {
     this.editingVoucherId = v.id || null;
     this.form = {
-      code: v.code,
-      description: v.description || '',
-      discount_type: v.discount_type,
-      discount_value: v.discount_value,
-      scope: v.scope,
+      code:              v.code,
+      description:       v.description || '',
+      discount_type:     v.discount_type,
+      discount_value:    Number(v.discount_value) || 0,
+      scope:             v.scope,
       target_company_id: v.target_company_id || null,
       target_user_email: v.target_user_email || '',
-      max_uses: v.max_uses,
-      min_amount: v.min_amount || 0,
-      valid_until: v.valid_until ? v.valid_until.substring(0, 10) : null,
-      is_active: v.is_active
+      max_uses:          v.max_uses != null ? Number(v.max_uses) : null,
+      // Explicit Number() cast so the input field shows the saved value
+      min_amount:        Number(v.min_amount) || 0,
+      valid_until:       v.valid_until ? v.valid_until.substring(0, 10) : null,
+      is_active:         v.is_active
     };
     this.showModal = true;
   }

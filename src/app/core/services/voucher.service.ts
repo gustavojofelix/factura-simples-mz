@@ -78,8 +78,8 @@ export class VoucherService {
       const list: Voucher[] = (data || []).map((row: any) => ({
         ...row,
         discount_value: Number(row.discount_value),
-        min_amount: row.min_amount ? Number(row.min_amount) : 0,
-        uses_count: row.uses_count || 0
+        min_amount:     Number(row.min_amount) || 0,
+        uses_count:     Number(row.uses_count)  || 0
       }));
 
       this.vouchers.set(list);
@@ -98,17 +98,18 @@ export class VoucherService {
 
     const payload = {
       code,
-      description: voucher.description || '',
-      discount_type: voucher.discount_type || 'percentage',
-      discount_value: Number(voucher.discount_value || 0),
-      scope: voucher.scope || 'global',
+      description:       voucher.description || '',
+      discount_type:     voucher.discount_type || 'percentage',
+      discount_value:    Number(voucher.discount_value) || 0,
+      scope:             voucher.scope || 'global',
       target_company_id: voucher.scope === 'specific_company' ? voucher.target_company_id : null,
       target_user_email: voucher.scope === 'specific_user' ? (voucher.target_user_email || '').trim().toLowerCase() : null,
-      max_uses: voucher.max_uses ? Number(voucher.max_uses) : null,
-      min_amount: voucher.min_amount ? Number(voucher.min_amount) : 0,
-      valid_from: voucher.valid_from || new Date().toISOString(),
-      valid_until: voucher.valid_until || null,
-      is_active: voucher.is_active !== false
+      max_uses:          voucher.max_uses != null && voucher.max_uses !== '' ? Number(voucher.max_uses) : null,
+      // Always send as number — never use falsy check that treats 0 as "no minimum"
+      min_amount:        Number(voucher.min_amount) || 0,
+      valid_from:        voucher.valid_from || new Date().toISOString(),
+      valid_until:       voucher.valid_until || null,
+      is_active:         voucher.is_active !== false
     };
 
     const { data, error } = await this.supabase.client
@@ -132,17 +133,18 @@ export class VoucherService {
 
   async updateVoucher(id: string, voucher: Partial<Voucher>): Promise<boolean> {
     const payload: any = {
-      description: voucher.description || '',
-      discount_type: voucher.discount_type || 'percentage',
-      discount_value: Number(voucher.discount_value || 0),
-      scope: voucher.scope || 'global',
+      description:       voucher.description || '',
+      discount_type:     voucher.discount_type || 'percentage',
+      discount_value:    Number(voucher.discount_value) || 0,
+      scope:             voucher.scope || 'global',
       target_company_id: voucher.scope === 'specific_company' ? voucher.target_company_id : null,
       target_user_email: voucher.scope === 'specific_user' ? (voucher.target_user_email || '').trim().toLowerCase() : null,
-      max_uses: voucher.max_uses ? Number(voucher.max_uses) : null,
-      min_amount: voucher.min_amount ? Number(voucher.min_amount) : 0,
-      valid_until: voucher.valid_until || null,
-      is_active: voucher.is_active !== false,
-      updated_at: new Date().toISOString()
+      max_uses:          voucher.max_uses != null && voucher.max_uses !== '' ? Number(voucher.max_uses) : null,
+      // Always send as number — never use falsy check that treats 0 as "no minimum"
+      min_amount:        Number(voucher.min_amount) || 0,
+      valid_until:       voucher.valid_until || null,
+      is_active:         voucher.is_active !== false,
+      updated_at:        new Date().toISOString()
     };
 
     if (voucher.code) {
@@ -227,9 +229,9 @@ export class VoucherService {
 
     const voucher: Voucher = {
       ...data,
-      discount_value: Number(data.discount_value),
-      min_amount: data.min_amount ? Number(data.min_amount) : 0,
-      uses_count: data.uses_count || 0
+      discount_value: Number(data.discount_value)  || 0,
+      min_amount:     Number(data.min_amount)       || 0,
+      uses_count:     Number(data.uses_count)       || 0
     };
 
     // 1. Check if active
@@ -269,10 +271,13 @@ export class VoucherService {
     }
 
     // 5. Check minimum amount
-    if (voucher.min_amount && originalPrice < voucher.min_amount) {
+    // Use explicit > 0 so that min_amount = 0 (no restriction) is never confused
+    // with a missing/null value. Number() ensures string values from the DB are cast.
+    const minAmount = Number(voucher.min_amount) || 0;
+    if (minAmount > 0 && Number(originalPrice) < minAmount) {
       return {
         valid: false,
-        message: `Este voucher requer um valor mínimo de compra de ${voucher.min_amount.toLocaleString('pt-MZ')} MZN.`
+        message: `Este voucher requer um valor mínimo de compra de ${minAmount.toLocaleString('pt-MZ', { minimumFractionDigits: 2 })} MZN.`
       };
     }
 
