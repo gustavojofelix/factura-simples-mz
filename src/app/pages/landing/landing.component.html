@@ -52,7 +52,10 @@
           <span>{{ hero.badge }}</span>
         </div>
         <h1 class="hero-title">
-          {{ hero.title }}
+          <ng-container *ngIf="hero.highlightWord && hero.title.includes(hero.highlightWord); else plainTitle">
+            {{ hero.title.split(hero.highlightWord)[0] }}<span class="hero-highlight">{{ hero.highlightWord }}</span>{{ hero.title.split(hero.highlightWord).slice(1).join(hero.highlightWord) }}
+          </ng-container>
+          <ng-template #plainTitle>{{ hero.title }}</ng-template>
         </h1>
         <p class="hero-subtitle">
           {{ hero.subtitle }}
@@ -67,6 +70,11 @@
             {{ hero.secondaryCtaText }}
           </a>
         </div>
+        <!-- Guarantee text below CTAs -->
+        <p *ngIf="hero.guaranteeText" class="hero-guarantee">
+          <i class="fas fa-shield-halved"></i>
+          {{ hero.guaranteeText }}
+        </p>
         <div class="hero-proof">
           <div class="proof-avatars" aria-hidden="true">
             <div class="avatar av-1">JF</div>

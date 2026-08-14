@@ -313,6 +313,14 @@ section[id] {
     background-clip: text;
     -webkit-text-fill-color: transparent;
   }
+
+  // Used by the CMS "Palavra a Destacar com Cor Laranja" field
+  .hero-highlight {
+    background: linear-gradient(135deg, $orange-500 0%, $gold-500 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
 }
 
 .hero-subtitle,
@@ -334,6 +342,23 @@ section[id] {
   flex-wrap: wrap;
   gap: 0.875rem;
   align-items: center;
+}
+
+// "Texto da Garantia" line shown below the CTA buttons
+.hero-guarantee {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  color: $text-muted;
+  font-size: 0.82rem;
+  font-weight: 600;
+
+  i {
+    color: $gold-500;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
 }
 
 .btn-primary-hero,
