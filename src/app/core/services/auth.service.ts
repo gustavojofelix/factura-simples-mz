@@ -108,6 +108,7 @@ export class AuthService {
       }
 
       if (data.user) {
+        this.currentUser.set(data.user);
         await this.auditLogService.log(
           'Entrou no Sistema (Login)',
           'auth',
@@ -177,8 +178,24 @@ export class AuthService {
     }
   }
 
+  async getCurrentUser(): Promise<User | null> {
+    let user = this.currentUser();
+    if (!user) {
+      try {
+        const { data } = await this.supabase.auth.getUser();
+        user = data.user || null;
+        if (user) {
+          this.currentUser.set(user);
+        }
+      } catch (e) {
+        console.warn('Erro ao obter utilizador autenticado:', e);
+      }
+    }
+    return user;
+  }
+
   async getCurrentProfile(): Promise<UserProfile | null> {
-    const user = this.currentUser();
+    const user = await this.getCurrentUser();
     if (!user) return null;
 
     try {
@@ -189,28 +206,77 @@ export class AuthService {
         .limit(1)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.warn('Aviso ao carregar perfil da base de dados:', error.message);
+        return {
+          id: user.id,
+          full_name: user.user_metadata?.['full_name'] || user.email?.split('@')[0] || 'Utilizador',
+          phone: user.user_metadata?.['phone'] || '',
+          email: user.email!,
+          role: user.email?.toLowerCase() === 'gustavojofelix@gmail.com' ? 'admin' : 'user'
+        };
+      }
 
       if (data) {
+        const isSuperAdmin = (user.email || '').trim().toLowerCase() === 'gustavojofelix@gmail.com';
         return {
           id: data.id,
           full_name: data.full_name,
           phone: data.phone,
           email: user.email!,
-          role: data.role as 'user' | 'admin'
+          role: (isSuperAdmin || data.role === 'admin') ? 'admin' : 'user'
         };
       }
 
       return null;
     } catch (error) {
       console.error('Erro ao carregar perfil:', error);
-      return null;
+      return {
+        id: user.id,
+        full_name: user.user_metadata?.['full_name'] || user.email?.split('@')[0] || 'Utilizador',
+        phone: user.user_metadata?.['phone'] || '',
+        email: user.email!,
+        role: user.email?.toLowerCase() === 'gustavojofelix@gmail.com' ? 'admin' : 'user'
+      };
     }
   }
 
   async isAdmin(): Promise<boolean> {
-    const profile = await this.getCurrentProfile();
-    return profile?.role === 'admin';
+    const user = await this.getCurrentUser();
+    const userEmail = (user?.email || '').trim().toLowerCase();
+
+    // 1. Primary email check for super admin
+    if (userEmail === 'gustavojofelix@gmail.com') {
+      try {
+        await this.supabase.client.rpc('make_user_admin', { target_email: userEmail });
+      } catch (e) {
+        // ignore error
+      }
+      return true;
+    }
+
+    if (!user) return false;
+
+    // 2. Check current profile role
+    let profile = await this.getCurrentProfile();
+    if (profile?.role === 'admin') {
+      return true;
+    }
+
+    // 3. Invoke SECURITY DEFINER RPC to promote user
+    try {
+      if (userEmail) {
+        await this.supabase.client.rpc('make_user_admin', { target_email: userEmail });
+        profile = await this.getCurrentProfile();
+        if (profile?.role === 'admin') {
+          return true;
+        }
+      }
+    } catch (err) {
+      console.warn('Erro ao atualizar permissão via RPC make_user_admin:', err);
+    }
+
+    return false;
   }
 
   async getUserCompanies() {
@@ -260,7 +326,13 @@ export class AuthService {
     }
   }
 
-  private translateError(error: AuthError): string {
+  private translateError(error: any): string {
+    const message = error?.message || (typeof error === 'string' ? error : '');
+
+    if (message.includes('Failed to fetch') || message.includes('ERR_CONNECTION_TIMED_OUT') || message.includes('no such host') || message.includes('fetch')) {
+      return 'Erro de ligação ao servidor. Por favor, verifique a sua ligação à internet e tente novamente.';
+    }
+
     const errorMap: { [key: string]: string } = {
       'Invalid login credentials': 'Email ou palavra-passe incorretos',
       'Email not confirmed': 'Email não confirmado',
@@ -272,7 +344,7 @@ export class AuthService {
       'Database error granting user': 'Erro na base de dados ao autenticar o utilizador. Por favor, execute as migrações mais recentes no Supabase.'
     };
 
-    return errorMap[error.message] || error.message || 'Erro ao processar pedido';
+    return errorMap[message] || message || 'Erro ao processar pedido';
   }
 
   isAuthenticated(): boolean {

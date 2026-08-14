@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard } from './core/guards/auth.guard';
-import { adminGuard } from './core/guards/admin.guard';
+import { adminGuard, adminGuestGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
   // Rotas normais para clientes (ispcfacil.co.mz)
@@ -80,7 +80,7 @@ export const routes: Routes = [
     children: [
       {
         path: 'entrar',
-        canActivate: [guestGuard],
+        canActivate: [adminGuestGuard],
         loadComponent: () => import('./pages/admin/login/admin-login.component').then(m => m.AdminLoginComponent)
       },
       {

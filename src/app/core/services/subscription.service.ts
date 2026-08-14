@@ -152,8 +152,9 @@ export class SubscriptionService {
         .order("created_at", { ascending: true });
 
       if (error) {
-        console.error("Error loading subscription plans:", error);
-        return this.availablePlans;
+        console.warn("Nao foi possivel carregar planos da base de dados (erro de rede/timeout); a usar planos padrao.", error);
+        this.plansSignal.set(this.defaultPlans);
+        return this.defaultPlans;
       }
 
       if (data && data.length > 0) {
@@ -171,13 +172,17 @@ export class SubscriptionService {
         }));
         this.plansSignal.set(parsedPlans);
         return parsedPlans;
+      } else {
+        this.plansSignal.set(this.defaultPlans);
+        return this.defaultPlans;
       }
     } catch (err) {
-      console.error("Exception loading plans:", err);
+      console.warn("Excepcao ao carregar planos de subscricao; a usar planos padrao.", err);
+      this.plansSignal.set(this.defaultPlans);
+      return this.defaultPlans;
     } finally {
       this.loadingPlans.set(false);
     }
-    return this.availablePlans;
   }
 
   async createPlan(plan: Partial<SubscriptionPlan>): Promise<boolean> {
