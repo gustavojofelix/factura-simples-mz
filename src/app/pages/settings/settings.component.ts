@@ -225,7 +225,11 @@ export class SettingsComponent implements OnInit {
 
   openUserDialog(user?: UserWithCompanies) {
     const dialogRef = this.dialog.open(UserCompanyDialogComponent, {
-      data: { user, companies: this.companies() },
+      data: {
+        userId: user?.user_id,
+        userEmail: user?.user_email,
+        userCompanies: user?.companies
+      },
       maxWidth: '95vw'
     });
 
@@ -235,12 +239,26 @@ export class SettingsComponent implements OnInit {
         const inviter = this.authService.currentUser();
         const inviterName = inviter?.user_metadata?.['full_name'] || inviter?.email || 'Um administrador';
 
-        for (let i = 0; i < result.assignments.length; i++) {
-          const { company_id, role } = result.assignments[i];
+        const newCompanies = result.companies || [];
+        const newCompanyIds = new Set(newCompanies.map((c: any) => c.company_id));
+
+        // If editing an existing user, remove access for unselected companies
+        if (user) {
+          for (const oldComp of user.companies) {
+            if (!newCompanyIds.has(oldComp.company_id)) {
+              await this.userManagementService.removeUserFromCompany(user.user_id, oldComp.company_id);
+            }
+          }
+        }
+
+        // Add or update company access
+        let hasSuccess = false;
+        for (let i = 0; i < newCompanies.length; i++) {
+          const { company_id, role } = newCompanies[i];
           const companyName = this.getCompanyName(company_id);
           const translatedRole = this.getRoleLabel(role);
 
-          await this.userManagementService.addUserToCompany(
+          const ok = await this.userManagementService.addUserToCompany(
             result.email,
             company_id,
             role as any,
@@ -250,16 +268,25 @@ export class SettingsComponent implements OnInit {
             inviterName,
             translatedRole
           );
+          if (ok) hasSuccess = true;
         }
 
         this.loading.set(false);
         await this.userManagementService.loadAllUsers();
 
-        this.snackBar.open(
-          user ? 'Acesso atualizado com sucesso' : 'Utilizador adicionado com sucesso',
-          'Fechar',
-          { duration: 3000 }
-        );
+        if (hasSuccess || (user && newCompanies.length === 0)) {
+          this.snackBar.open(
+            user ? 'Acesso atualizado com sucesso' : 'Utilizador adicionado com sucesso',
+            'Fechar',
+            { duration: 3000 }
+          );
+        } else {
+          this.snackBar.open(
+            'Erro ao adicionar utilizador. Tente novamente.',
+            'Fechar',
+            { duration: 5000 }
+          );
+        }
       }
     });
   }

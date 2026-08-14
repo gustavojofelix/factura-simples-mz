@@ -104,7 +104,7 @@ export class VoucherService {
       scope:             voucher.scope || 'global',
       target_company_id: voucher.scope === 'specific_company' ? voucher.target_company_id : null,
       target_user_email: voucher.scope === 'specific_user' ? (voucher.target_user_email || '').trim().toLowerCase() : null,
-      max_uses:          voucher.max_uses != null && voucher.max_uses !== '' ? Number(voucher.max_uses) : null,
+      max_uses:          voucher.max_uses != null && !isNaN(Number(voucher.max_uses)) ? Number(voucher.max_uses) : null,
       // Always send as number — never use falsy check that treats 0 as "no minimum"
       min_amount:        Number(voucher.min_amount) || 0,
       valid_from:        voucher.valid_from || new Date().toISOString(),
@@ -139,7 +139,7 @@ export class VoucherService {
       scope:             voucher.scope || 'global',
       target_company_id: voucher.scope === 'specific_company' ? voucher.target_company_id : null,
       target_user_email: voucher.scope === 'specific_user' ? (voucher.target_user_email || '').trim().toLowerCase() : null,
-      max_uses:          voucher.max_uses != null && voucher.max_uses !== '' ? Number(voucher.max_uses) : null,
+      max_uses:          voucher.max_uses != null && !isNaN(Number(voucher.max_uses)) ? Number(voucher.max_uses) : null,
       // Always send as number — never use falsy check that treats 0 as "no minimum"
       min_amount:        Number(voucher.min_amount) || 0,
       valid_until:       voucher.valid_until || null,

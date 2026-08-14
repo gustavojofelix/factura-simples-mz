@@ -156,7 +156,7 @@ export class UserManagementService {
   }
 
   async addUserToCompany(
-    email: string, 
+    rawEmail: string, 
     companyId: string, 
     role: CompanyUser['role'],
     fullName?: string,
@@ -166,51 +166,72 @@ export class UserManagementService {
     roleName?: string
   ): Promise<boolean> {
     try {
-      // Usar a nossa nova RPC para encontrar o ID do utilizador pelo email de forma segura
-      const { data: targetUserId, error: rpcError } = await this.supabase.client
+      const email = (rawEmail || '').trim().toLowerCase();
+      if (!email) return false;
+
+      let targetUserId: string | null = null;
+
+      // 1. Try RPC function to find user ID by email
+      const { data: rpcUserId, error: rpcError } = await this.supabase.client
         .rpc('get_user_id_by_email', { email_query: email });
 
-      const targetUser = { id: targetUserId };
+      if (rpcUserId) {
+        targetUserId = rpcUserId;
+      } else {
+        // Fallback: check profiles table by email
+        const { data: profile } = await this.supabase.client
+          .from('profiles')
+          .select('id')
+          .ilike('email', email)
+          .maybeSingle();
+
+        if (profile?.id) {
+          targetUserId = profile.id;
+        }
+      }
       
-      // If user not found, invite them
+      // 2. If user not found in auth or profiles, invite them via Edge Function
       if (!targetUserId) {
         const { data: inviteData, error: inviteError } = await this.supabase.client.functions.invoke('invite-user', {
           body: { email, fullName, phone, companyName, role: roleName || role, inviterName }
         });
 
-        if (inviteError || !inviteData?.user) {
+        if (inviteError || !inviteData?.user?.id) {
           console.error('Error inviting user:', inviteError);
           return false;
         }
 
-        targetUser.id = inviteData.user.id;
+        targetUserId = inviteData.user.id;
       }
       
-      // Sincronizar dados extras no perfil se necessário (se o perfil já existir)
-      if (fullName && targetUser.id) {
+      // 3. Sync extra profile data if user exists
+      if (fullName && targetUserId) {
         await this.supabase.client
           .from('profiles')
           .upsert({
-            id: targetUser.id,
+            id: targetUserId,
             full_name: fullName,
             email: email,
             phone: phone
           });
       }
 
-      if (!targetUser.id) return false;
+      if (!targetUserId) return false;
 
       const { data: existingUser } = await this.supabase.client
         .from('company_users')
         .select('*')
         .eq('company_id', companyId)
-        .eq('user_id', targetUser.id)
+        .eq('user_id', targetUserId)
         .maybeSingle();
 
       if (existingUser) {
-        // Se já existe, apenas atualizamos o papel se for diferente
-        if (existingUser.role !== role) {
-          await this.updateUserRole(targetUser.id, companyId, role);
+        // If already exists, update role and ensure active
+        if (existingUser.role !== role || !existingUser.is_active) {
+          await this.supabase.client
+            .from('company_users')
+            .update({ role, is_active: true, updated_at: new Date().toISOString() })
+            .eq('id', existingUser.id);
         }
         return true;
       }
@@ -219,7 +240,7 @@ export class UserManagementService {
         .from('company_users')
         .insert({
           company_id: companyId,
-          user_id: targetUser.id,
+          user_id: targetUserId,
           role,
           is_active: true
         });
@@ -233,7 +254,7 @@ export class UserManagementService {
         'Adicionou Utilizador à Empresa',
         'users',
         { email, role },
-        targetUser.id,
+        targetUserId,
         email,
         companyId
       );
