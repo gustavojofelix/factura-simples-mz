@@ -35,7 +35,7 @@ export interface PaymentDialogData {
     MatSnackBarModule
   ],
   template: `
-    <div class="p-6 max-w-md w-full bg-slate-900 text-white rounded-2xl border border-slate-800 shadow-2xl space-y-5">
+    <div class="relative p-6 max-w-md w-full bg-slate-900 text-white rounded-2xl border border-slate-800 shadow-2xl space-y-5">
       <!-- Header -->
       <div class="flex items-center justify-between border-b border-slate-800 pb-4">
         <div class="flex items-center gap-3">
@@ -200,11 +200,11 @@ export interface PaymentDialogData {
               @if (loading()) {
                 <div class="flex items-center gap-2">
                   <mat-spinner diameter="18" class="!text-white white-spinner"></mat-spinner>
-                  <span>A enviar...</span>
+                  <span>A enviar pedido...</span>
                 </div>
               } @else {
                 <div class="flex items-center justify-center gap-2">
-                  <span>Pagar {{ getFinalPrice() | number:'1.0-0' }} {{ data.plan.currency || 'MZN' }}</span>
+                  <span>Enviar Pedido de {{ getFinalPrice() | number:'1.0-0' }} {{ data.plan.currency || 'MZN' }}</span>
                   <mat-icon class="!text-sm !w-4 !h-4">send</mat-icon>
                 </div>
               }
@@ -212,6 +212,32 @@ export interface PaymentDialogData {
           </div>
         </form>
       </div>
+
+      <!-- PUSH SENT – awaiting PIN confirmation screen -->
+      @if (pushSent()) {
+        <div class="absolute inset-0 bg-slate-900 rounded-2xl flex flex-col items-center justify-center gap-5 p-8 text-center z-10">
+          <div class="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
+            <mat-icon class="!text-4xl text-amber-400">phonelink_ring</mat-icon>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-white mb-1">Confirme no seu telemóvel</h3>
+            <p class="text-sm text-slate-400 leading-relaxed">
+              Um pedido de pagamento foi enviado para <strong class="text-white">{{ paymentForm.value.phone }}</strong>.<br>
+              Por favor, introduza o seu PIN <strong class="text-amber-400">{{ selectedMethod() === 'mpesa' ? 'M-Pesa' : 'e-Mola' }}</strong> para confirmar o pagamento.
+            </p>
+            <p class="text-xs text-slate-500 mt-2">O plano será ativado automaticamente após a confirmação do pagamento.</p>
+          </div>
+          @if (referenceCode()) {
+            <div class="px-4 py-2 bg-slate-800 rounded-lg border border-slate-700">
+              <span class="text-xs text-slate-400">Referência: </span>
+              <span class="text-xs font-mono text-amber-300 font-bold">{{ referenceCode() }}</span>
+            </div>
+          }
+          <button mat-raised-button (click)="dialogRef.close(false)" class="!bg-slate-700 hover:!bg-slate-600 !text-white !rounded-xl !font-bold !px-8">
+            Fechar
+          </button>
+        </div>
+      }
     </div>
   `,
   styles: [`
@@ -233,6 +259,10 @@ export class PaymentDialogComponent implements OnInit {
   paymentForm: FormGroup;
   selectedMethod = signal<'mpesa' | 'emola'>('mpesa');
   loading = signal(false);
+
+  /** True after a successful PUSH has been sent – shows the "awaiting PIN" screen. */
+  pushSent = signal(false);
+  referenceCode = signal('');
 
   voucherInput = '';
   validatingVoucher = signal(false);
@@ -406,12 +436,11 @@ export class PaymentDialogComponent implements OnInit {
       }
 
       this.loading.set(false);
-      this.snackBar.open(
-        result.message || `Pedido de pagamento enviado para ${phone}!`,
-        'Fechar',
-        { duration: 5000 }
-      );
-      this.dialogRef.close(true);
+      // Store reference code and show the "awaiting PIN" overlay.
+      // Do NOT close with true – the plan is not yet active.
+      // The sislog-webhook will activate it after the user enters the PIN.
+      this.referenceCode.set(result.referenceCode || '');
+      this.pushSent.set(true);
     } else {
       this.loading.set(false);
       this.snackBar.open(

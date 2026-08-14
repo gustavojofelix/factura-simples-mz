@@ -579,7 +579,12 @@ export class SubscriptionService {
     referenceCode?: string;
   }> {
     try {
-      // 1. Try invoking Edge Function
+      // Invoke the Edge Function which:
+      //   1. Sends a USSD PUSH to the user's phone via Sislog
+      //   2. Saves a 'pending' payment record in subscription_payments
+      //
+      // The plan is NOT activated here. Activation happens in the
+      // sislog-webhook edge function once Sislog confirms the PIN was entered.
       const { data, error } = await this.supabase.client.functions.invoke(
         "process-subscription-payment",
         {
@@ -597,41 +602,17 @@ export class SubscriptionService {
       );
 
       if (!error && data && data.success) {
-        await this.upsertSubscription(companyId, {
-          plan_name: planName,
-          billing_cycle: billingCycle,
-          amount,
-          payment_method: paymentMethod,
-          status: 'active'
-        });
         return {
           success: true,
-          message: data.message || `Pedido enviado para ${phoneNumber}. Subscrição ativada!`,
+          message: data.message || `Pedido enviado para ${phoneNumber}. Aguarde a confirmação no seu telemóvel.`,
           referenceCode: data.referenceCode,
         };
       }
 
-      // 2. Direct activation fallback
-      const refCode = `PAY-${Date.now().toString(36).toUpperCase()}`;
-      const activated = await this.upsertSubscription(companyId, {
-        plan_name: planName,
-        billing_cycle: billingCycle,
-        amount,
-        payment_method: paymentMethod,
-        status: 'active'
-      });
-
-      if (activated) {
-        return {
-          success: true,
-          message: `Pedido de pagamento via ${paymentMethod.toUpperCase()} enviado para ${phoneNumber}. Subscrição ativada!`,
-          referenceCode: refCode,
-        };
-      }
-
+      // Edge Function failed or returned success:false
       return {
         success: false,
-        error: error?.message || data?.error || "Erro ao processar pagamento de subscrição",
+        error: data?.error || error?.message || "Erro ao enviar pedido de pagamento. Tente novamente.",
       };
     } catch (err: any) {
       console.error("Exception processing mobile payment:", err);
