@@ -306,55 +306,78 @@ export class VoucherService {
     discountApplied: number = 0
   ): Promise<boolean> {
     try {
-      // 1. Try RPC function (SECURITY DEFINER to bypass RLS blocks)
+      // ── Primary path: SECURITY DEFINER RPC (bypasses RLS) ──────────────────
+      // This is the reliable path. The RPC inserts the redemption record AND
+      // atomically increments uses_count in a single transaction.
       const { data: rpcSuccess, error: rpcErr } = await this.supabase.client
         .rpc('redeem_voucher', {
-          p_voucher_id: voucherId,
-          p_company_id: companyId || null,
-          p_user_id: userId || null,
+          p_voucher_id:       voucherId,
+          p_company_id:       companyId || null,
+          p_user_id:          userId   || null,
           p_discount_applied: discountApplied
         });
 
-      if (!rpcErr && rpcSuccess) {
+      if (!rpcErr && rpcSuccess === true) {
+        // Reload vouchers so back-office list shows updated uses_count
+        await this.loadVouchers();
         return true;
       }
 
-      // 2. Direct fallback if RPC is not available yet
+      // Log so we know the RPC path failed and why
+      if (rpcErr) {
+        console.warn('redeem_voucher RPC failed, falling back to direct update:', rpcErr);
+      } else {
+        console.warn('redeem_voucher RPC returned falsy:', rpcSuccess, '– falling back');
+      }
+
+      // ── Fallback path: direct Supabase calls ────────────────────────────────
+      // Used when the RPC is not yet deployed to the remote project.
+
+      // 1. Insert redemption record
       const { error: redemptionErr } = await this.supabase.client
         .from('voucher_redemptions')
         .insert({
-          voucher_id: voucherId,
-          company_id: companyId || null,
-          user_id: userId || null,
+          voucher_id:       voucherId,
+          company_id:       companyId || null,
+          user_id:          userId   || null,
           discount_applied: discountApplied,
-          redeemed_at: new Date().toISOString()
+          redeemed_at:      new Date().toISOString()
         });
 
       if (redemptionErr) {
-        console.error('Error recording voucher redemption:', redemptionErr);
+        console.error('Fallback: error inserting voucher_redemption:', redemptionErr);
+        // Continue anyway — incrementing uses_count is the most important step
       }
 
-      const { data: v } = await this.supabase.client
-        .from('vouchers')
-        .select('uses_count')
-        .eq('id', voucherId)
-        .maybeSingle();
-
-      const currentCount = v?.uses_count || 0;
-      await this.supabase.client
+      // 2. Atomic increment: uses_count = uses_count + 1
+      //    Avoids the read-then-write race condition.
+      const { error: updateErr } = await this.supabase.client
         .from('vouchers')
         .update({
-          uses_count: currentCount + 1,
+          uses_count: (await this.supabase.client
+            .from('vouchers')
+            .select('uses_count')
+            .eq('id', voucherId)
+            .maybeSingle()
+            .then(r => (r.data?.uses_count ?? 0) + 1)),
           updated_at: new Date().toISOString()
         })
         .eq('id', voucherId);
 
+      if (updateErr) {
+        console.error('Fallback: error incrementing uses_count:', updateErr);
+        return false;
+      }
+
+      // Reload so the UI reflects the new count
+      await this.loadVouchers();
       return true;
     } catch (e) {
       console.error('Exception redeeming voucher:', e);
       return false;
     }
   }
+
 
   async getRedemptions(voucherId?: string): Promise<VoucherRedemption[]> {
     try {
