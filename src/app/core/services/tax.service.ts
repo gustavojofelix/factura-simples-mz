@@ -135,9 +135,11 @@ export class TaxService {
       const rule = selected?.activity_type?.activity_type_rules?.find(rule => rule.is_active && rule.rule_type === 'ispc_rate');
 
       if (rule?.tax_rate !== undefined && rule.tax_rate !== null) {
+        const rateNum = Number(rule.tax_rate);
+        const isService = selected?.activity_role === 'servico' || cat2 === 'servicos_nao_liberais' || cat2 === 'servicos_liberais' || rateNum === 12 || rateNum === 15;
         return {
-          baseRate: Number(rule.tax_rate),
-          isScaleActivity: selected?.activity_role !== 'servico'
+          baseRate: rateNum,
+          isScaleActivity: !isService
         };
       }
     } catch (error) {
@@ -185,25 +187,22 @@ export class TaxService {
       const annualSalesBeforeQuarter = (yearInvoices || [])
         .filter(inv => inv.date < startDate)
         .reduce((sum, inv) => sum + (inv.total || 0), 0);
-      
-      const annualSales = (yearInvoices || [])
-        .reduce((sum, inv) => sum + (inv.total || 0), 0);
 
       // Determinar a taxa baseada no tipo de atividade e volume anual
       const configuredActivity = await this.getConfiguredActivityRate(company);
       const baseRate = configuredActivity.baseRate;
       const isScaleActivity = configuredActivity.isScaleActivity;
 
-      // Calcular ISPC com escalões progressivos
+      // Calcular ISPC
       let ispcAmount = 0;
       let remaining = totalSales;
       let currentAcc = annualSalesBeforeQuarter;
       const ispcSplits: IspcSplit[] = [];
 
-      const thresholds = [1000000, 2500000, 4000000];
-      const scaleRates = [baseRate, 4, 5, 20];
-      const serviceRates = [baseRate, baseRate, baseRate, 20];
-      const rates = isScaleActivity ? scaleRates : serviceRates;
+      // For scale activities (sale of goods): progressive 1M, 2.5M, 4M thresholds (3%, 4%, 5%, 20%)
+      // For flat-rate activities (services 12% or 15%): single threshold of 4M MZN (12%/15% up to 4M, 20% excess)
+      const thresholds = isScaleActivity ? [1000000, 2500000, 4000000] : [4000000];
+      const rates = isScaleActivity ? [baseRate, 4, 5, 20] : [baseRate, 20];
 
       let newVolume = company.business_volume;
 
@@ -220,8 +219,8 @@ export class TaxService {
             base: chunk,
             rate: rates[i],
             amount: chunkAmount,
-            isExcess: currentAcc >= 1000000,
-            label: currentAcc < 1000000 && ispcSplits.length === 0 ? 'Base Tributável' : 'Excesso de Base Tributável'
+            isExcess: currentAcc >= thresholds[0] && isScaleActivity,
+            label: ispcSplits.length === 0 ? 'Base Tributável' : 'Excesso de Base Tributável'
           });
 
           remaining -= chunk;
@@ -231,12 +230,13 @@ export class TaxService {
 
       // Valor excedente ao último threshold (4M)
       if (remaining > 0) {
-        const chunkAmount = (remaining * rates[3]) / 100;
+        const excessRate = rates[rates.length - 1]; // 20%
+        const chunkAmount = (remaining * excessRate) / 100;
         ispcAmount += chunkAmount;
         
         ispcSplits.push({
           base: remaining,
-          rate: rates[3],
+          rate: excessRate,
           amount: chunkAmount,
           isExcess: true,
           label: 'Excesso de Base Tributável'
@@ -246,13 +246,14 @@ export class TaxService {
       }
 
       // Determinar o novo volume sugerido baseado no acumulado
+      const maxThreshold = thresholds[thresholds.length - 1];
       if (isScaleActivity) {
         if (currentAcc > thresholds[2]) newVolume = '20';
         else if (currentAcc > thresholds[1]) newVolume = '5';
         else if (currentAcc > thresholds[0]) newVolume = '4';
         else newVolume = '3';
       } else {
-        if (currentAcc > thresholds[2]) newVolume = '20';
+        if (currentAcc > maxThreshold) newVolume = '20';
         else newVolume = baseRate.toString();
       }
 
@@ -267,7 +268,7 @@ export class TaxService {
         await this.companyService.loadCompanies();
       }
 
-      const ispcRate = currentAcc > thresholds[2] ? 20 : (isScaleActivity ? parseInt(newVolume) : baseRate);
+      const ispcRate = currentAcc > maxThreshold ? 20 : (isScaleActivity ? parseInt(newVolume) : baseRate);
 
       return {
         period,
