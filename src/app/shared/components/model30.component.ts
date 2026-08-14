@@ -606,20 +606,21 @@ import { PdfService } from '../../core/services/pdf.service';
       height: 18px;
       box-sizing: border-box;
       border: 1px solid #000;
-      display: flex;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
       font-size: 9pt;
-      line-height: 16px;
+      line-height: 18px;
       padding: 0;
       font-weight: bold;
       text-align: center;
+      vertical-align: middle;
     }
     .digit-box.small {
       width: 13px;
       height: 15px;
       font-size: 7.5pt;
-      line-height: 13px;
+      line-height: 15px;
     }
 
     /* ——— Checkboxes ——— */
