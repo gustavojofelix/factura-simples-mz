@@ -25,90 +25,116 @@ serve(async (req) => {
       throw new Error('Email is required')
     }
 
-    // Gerar o link de convite manualmente
-    const siteUrl = Deno.env.get('SITE_URL') ?? 'http://localhost:4200'
-    const { data: linkData, error: linkError } = await supabaseClient.auth.admin.generateLink({
-      type: 'invite',
-      email: email,
-      data: {
-        full_name: fullName,
-        phone: phone,
-      },
-      options: {
-        redirectTo: `${siteUrl}/#/resetar-senha`
+    const cleanEmail = email.trim().toLowerCase()
+    const siteUrl = Deno.env.get('SITE_URL') ?? 'https://ispcfacil.co.mz'
+    let actionLink = `${siteUrl}/#/entrar`
+    let isNewUser = false
+    let targetUserId: string | null = null
+
+    // 1. Check if user already exists in auth or profiles
+    const { data: existingProfile } = await supabaseClient
+      .from('profiles')
+      .select('id, full_name')
+      .ilike('email', cleanEmail)
+      .maybeSingle()
+
+    if (existingProfile?.id) {
+      targetUserId = existingProfile.id
+    }
+
+    // 2. Try to generate an invite link if user is not in profiles
+    if (!targetUserId) {
+      try {
+        const { data: linkData, error: linkError } = await supabaseClient.auth.admin.generateLink({
+          type: 'invite',
+          email: cleanEmail,
+          data: {
+            full_name: fullName,
+            phone: phone,
+          },
+          options: {
+            redirectTo: `${siteUrl}/#/resetar-senha`
+          }
+        })
+
+        if (!linkError && linkData?.properties?.action_link) {
+          actionLink = linkData.properties.action_link
+          targetUserId = linkData.user?.id || null
+          isNewUser = true
+        }
+      } catch (e) {
+        console.log('User might already exist in auth:', e)
       }
-    })
+    }
 
-    if (linkError) throw linkError
-
-    // Enviar e-mail de convite usando Nodemailer
+    // Send email notification/invite using Nodemailer
     const transporter = nodemailer.createTransport({
-       host: "mail.ispcfacil.co.mz",
-       port: 465,
-       secure: true,
-       auth: {
-         user: "notifications@ispcfacil.co.mz",
-         pass: "&fF1;s*QJ$dJ",
-       },
+      host: "mail.ispcfacil.co.mz",
+      port: 465,
+      secure: true,
+      auth: {
+        user: "notifications@ispcfacil.co.mz",
+        pass: "&fF1;s*QJ$dJ",
+      },
     })
 
     const roleName = role || 'Membro'
     const inviter = inviterName || 'Um administrador'
     const company = companyName || 'uma empresa'
 
+    const titleText = isNewUser
+      ? `Convite para aceder à empresa ${company}`
+      : `Adicionado à empresa ${company}`
+
+    const buttonText = isNewUser ? 'Aceitar Convite & Criar Senha' : 'Aceder ao ISPC Fácil'
+
     const htmlContent = `
-      <div style="font-family: sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 8px;">
-        <h2 style="color: #f16c39; border-bottom: 2px solid #f16c39; padding-bottom: 10px;">Convite para ISPC Fácil</h2>
-        <p>Olá ${fullName || 'Utilizador'},</p>
-        <p><strong>${inviter}</strong> convidou-o para aceder à empresa <strong>${company}</strong> no ISPC Fácil com o nível de acesso: <strong>${roleName}</strong>.</p>
-        <p>Para aceitar o convite e definir a sua palavra-passe, clique no botão abaixo:</p>
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${linkData.properties.action_link}" style="background-color: #f16c39; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Aceitar Convite</a>
+      <div style="font-family: sans-serif; padding: 24px; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 12px; background-color: #ffffff;">
+        <h2 style="color: #f16c39; border-bottom: 2px solid #f16c39; padding-bottom: 12px; margin-top: 0;">✅ ${titleText}</h2>
+        <p style="font-size: 15px; color: #333;">Olá <strong>${fullName || cleanEmail}</strong>,</p>
+        <p style="font-size: 14px; color: #555; line-height: 1.6;">
+          <strong>${inviter}</strong> adicionou-o(a) à empresa <strong>${company}</strong> no ISPC Fácil com o papel de <strong>${roleName}</strong>.
+        </p>
+        ${isNewUser ? `
+          <p style="font-size: 14px; color: #555; line-height: 1.6;">
+            Para aceitar o convite e definir a sua palavra-passe de acesso, clique no botão abaixo:
+          </p>
+        ` : `
+          <p style="font-size: 14px; color: #555; line-height: 1.6;">
+            A sua conta já tem acesso a esta empresa. Clique no botão abaixo para iniciar sessão:
+          </p>
+        `}
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${actionLink}" style="background-color: #f16c39; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; display: inline-block;">${buttonText}</a>
         </div>
-        <p>Se o botão não funcionar, copie e cole o seguinte link no seu navegador:</p>
-        <p style="word-break: break-all; font-size: 12px; color: #555;">${linkData.properties.action_link}</p>
-        <hr style="border: none; border-top: 1px solid #eee; margin-top: 30px;"/>
-        <p style="font-size: 11px; color: #888;">Este é um e-mail automático do sistema ISPC Fácil.</p>
+        <p style="font-size: 12px; color: #777;">Se o botão não funcionar, copie e cole o seguinte link no seu navegador:</p>
+        <p style="word-break: break-all; font-size: 11px; color: #999;">${actionLink}</p>
+        <hr style="border: none; border-top: 1px solid #eee; margin-top: 32px;"/>
+        <p style="font-size: 11px; color: #aaa; text-align: center;">Este é um e-mail automático do sistema ISPC Fácil. Não responda a esta mensagem.</p>
       </div>
     `
 
     const mailOptions = {
       from: '"ISPC Fácil" <notifications@ispcfacil.co.mz>',
-      to: email,
-      subject: `Convite para acesso à empresa ${company} - ISPC Fácil`,
+      to: cleanEmail,
+      subject: `[ISPC Fácil] ${titleText}`,
       html: htmlContent,
     }
 
     await transporter.sendMail(mailOptions)
 
-    // Notify the admin of the invitation
-    try {
-      const functionUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/notify-admin`;
-      await fetch(functionUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
-        },
-        body: JSON.stringify({
-          type: 'invite',
-          email,
-          fullName,
-          phone
-        })
-      });
-    } catch (notifyError) {
-      console.error('Failed to notify admin of user invitation:', notifyError);
-    }
-
     return new Response(
-      JSON.stringify({ user: linkData.user }),
+      JSON.stringify({
+        success: true,
+        user: { id: targetUserId, email: cleanEmail }
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200 
       }
     )
-  } catch (error) {
+  } catch (error: any) {
+    console.error('Error in invite-user function:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 

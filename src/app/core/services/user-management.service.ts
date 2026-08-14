@@ -88,7 +88,7 @@ export class UserManagementService {
           id,
           name
         ),
-        profiles!company_users_user_id_fkey (
+        profiles (
           email,
           full_name
         )
@@ -101,16 +101,32 @@ export class UserManagementService {
       return;
     }
 
+    // Fail-safe: fetch profiles directly for any user_ids to guarantee emails are found
+    const userIds = Array.from(new Set((data || []).map((r: any) => r.user_id)));
+    const profilesMap = new Map<string, { email: string; full_name: string }>();
+
+    if (userIds.length > 0) {
+      const { data: profData } = await this.supabase.client
+        .from('profiles')
+        .select('id, email, full_name')
+        .in('id', userIds);
+
+      (profData || []).forEach((p: any) => {
+        if (p.id) profilesMap.set(p.id, { email: p.email || '', full_name: p.full_name || '' });
+      });
+    }
+
     const usersMap = new Map<string, UserWithCompanies>();
 
     for (const row of data || []) {
       const userId = row.user_id;
       const profile = (row as any).profiles;
+      const userEmail = profile?.email || profilesMap.get(userId)?.email || 'N/A';
 
       if (!usersMap.has(userId)) {
         usersMap.set(userId, {
           user_id: userId,
-          user_email: profile?.email || 'N/A',
+          user_email: userEmail,
           companies: []
         });
       }
@@ -134,7 +150,7 @@ export class UserManagementService {
       .from('company_users')
       .select(`
         *,
-        profiles!company_users_user_id_fkey (
+        profiles (
           email,
           full_name
         )
@@ -147,9 +163,23 @@ export class UserManagementService {
       return;
     }
 
+    const userIds = Array.from(new Set((data || []).map((r: any) => r.user_id)));
+    const profilesMap = new Map<string, { email: string; full_name: string }>();
+
+    if (userIds.length > 0) {
+      const { data: profData } = await this.supabase.client
+        .from('profiles')
+        .select('id, email, full_name')
+        .in('id', userIds);
+
+      (profData || []).forEach((p: any) => {
+        if (p.id) profilesMap.set(p.id, { email: p.email || '', full_name: p.full_name || '' });
+      });
+    }
+
     const usersWithEmails = (data || []).map((row: any) => ({
       ...row,
-      user_email: row.profiles?.email || row.user_id
+      user_email: row.profiles?.email || profilesMap.get(row.user_id)?.email || row.user_id
     }));
 
     this.companyUsersSignal.set(usersWithEmails);
@@ -190,20 +220,18 @@ export class UserManagementService {
         }
       }
       
-      // 2. If user not found in auth or profiles, invite them via Edge Function
-      if (!targetUserId) {
-        const { data: inviteData, error: inviteError } = await this.supabase.client.functions.invoke('invite-user', {
-          body: { email, fullName, phone, companyName, role: roleName || role, inviterName }
-        });
+      // 2. Invoke invite-user Edge Function to create auth user (if new) and send confirmation/invite email
+      const { data: inviteData } = await this.supabase.client.functions.invoke('invite-user', {
+        body: { email, fullName, phone, companyName, role: roleName || role, inviterName }
+      }).catch(err => {
+        console.warn('Error invoking invite-user Edge Function:', err);
+        return { data: null };
+      });
 
-        if (inviteError || !inviteData?.user?.id) {
-          console.error('Error inviting user:', inviteError);
-          return false;
-        }
-
+      if (!targetUserId && inviteData?.user?.id) {
         targetUserId = inviteData.user.id;
       }
-      
+
       // 3. Sync extra profile data if user exists
       if (fullName && targetUserId) {
         await this.supabase.client
