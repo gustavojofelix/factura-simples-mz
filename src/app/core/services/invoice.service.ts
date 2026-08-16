@@ -48,6 +48,10 @@ export class InvoiceService {
   invoices = signal<Invoice[]>([]);
   isLoading = signal(false);
 
+  private roundMoney(value: number): number {
+    return Math.round((Number(value) || 0) * 100) / 100;
+  }
+
   constructor(
     private supabase: SupabaseService,
     private companyService: CompanyService,
@@ -224,8 +228,8 @@ export class InvoiceService {
     if (!company) return null;
 
     try {
-      const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
-      const total = subtotal;
+      const subtotal = this.roundMoney(items.reduce((sum, item) => sum + this.roundMoney(item.subtotal), 0));
+      const total = this.roundMoney(subtotal);
 
       let invoiceNumber = '';
       if (status === 'rascunho') {
@@ -261,8 +265,8 @@ export class InvoiceService {
         product_name: item.product_name,
         quantity: item.quantity,
         unit_price: item.unit_price,
-        subtotal: item.subtotal,
-        total: item.total
+        subtotal: this.roundMoney(item.subtotal),
+        total: this.roundMoney(item.total)
       }));
 
       const { error: itemsError } = await this.supabase.db
@@ -370,8 +374,8 @@ export class InvoiceService {
     }
 
     try {
-      const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
-      const total = subtotal;
+      const subtotal = this.roundMoney(items.reduce((sum, item) => sum + this.roundMoney(item.subtotal), 0));
+      const total = this.roundMoney(subtotal);
 
       // Update Header
       const { data: updatedInvoice, error: updateError } = await this.supabase.db
@@ -416,8 +420,8 @@ export class InvoiceService {
         product_name: item.product_name,
         quantity: item.quantity,
         unit_price: item.unit_price,
-        subtotal: item.subtotal,
-        total: item.total
+        subtotal: this.roundMoney(item.subtotal),
+        total: this.roundMoney(item.total)
       }));
 
       const { error: insertItemsError } = await this.supabase.db

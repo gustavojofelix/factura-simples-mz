@@ -164,8 +164,12 @@ export class InvoiceDialogComponent implements OnInit {
 
   displayedColumns = ['product', 'quantity', 'price', 'total', 'actions'];
 
+  private roundMoney(value: number): number {
+    return Math.round((Number(value) || 0) * 100) / 100;
+  }
+
   subtotal = computed(() =>
-    this.invoiceItems().reduce((sum, item) => sum + item.subtotal, 0)
+    this.roundMoney(this.invoiceItems().reduce((sum, item) => sum + this.roundMoney(item.subtotal), 0))
   );
 
   total = computed(() => this.subtotal());
@@ -273,12 +277,12 @@ export class InvoiceDialogComponent implements OnInit {
 
     if (!product || !qty) return;
 
-    const subtotal = product.price * qty;
+    const subtotal = this.roundMoney(product.price * Number(qty));
 
     const item: InvoiceItem = {
       product_id: product.id,
       product_name: product.name,
-      quantity: qty,
+      quantity: Number(qty),
       unit_price: product.price,
       subtotal: subtotal,
       total: subtotal
@@ -310,7 +314,7 @@ export class InvoiceDialogComponent implements OnInit {
         return newItems.filter((_, i) => i !== index);
       }
 
-      item.subtotal = item.unit_price * item.quantity;
+      item.subtotal = this.roundMoney(item.unit_price * item.quantity);
       item.total = item.subtotal;
       newItems[index] = item;
       return newItems;

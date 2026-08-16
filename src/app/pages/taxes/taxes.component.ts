@@ -86,7 +86,9 @@ export class TaxesComponent implements OnInit {
   }
 
   async ngOnInit() {
-    await this.loadData();
+    if (this.companyService.activeCompany()) {
+      await this.loadData();
+    }
   }
 
   async loadData() {

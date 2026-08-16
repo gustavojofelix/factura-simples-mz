@@ -1,4 +1,5 @@
-import { Component, Inject, signal } from '@angular/core';
+import { Component, DestroyRef, Inject, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
@@ -469,6 +470,7 @@ import { ActivityService, ActivityType, CompanyActivity } from '../../core/servi
   `]
 })
 export class CompanyDialogComponent {
+  private readonly destroyRef = inject(DestroyRef);
   form: FormGroup;
   loading = signal(false);
   logoUrl = signal<string | null>(this.data.company?.logo_url || null);
@@ -579,11 +581,11 @@ export class CompanyDialogComponent {
   }
 
   setupCategoryWatchers() {
-    this.form.get('category1')?.valueChanges.subscribe(() => {
+    this.form.get('category1')?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.form.patchValue({ category2: '', category3: '' }, { emitEvent: false });
     });
 
-    this.form.get('category2')?.valueChanges.subscribe((cat2) => {
+    this.form.get('category2')?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((cat2) => {
       this.form.patchValue({ category3: '' }, { emitEvent: false });
 
       if (cat2 === 'servicos_nao_liberais') {

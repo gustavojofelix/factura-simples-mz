@@ -239,28 +239,28 @@ import { PdfService } from '../../core/services/pdf.service';
                   <td class="q9-num-cell">01</td>
                   <td class="q9-value-cell">{{ formatAmount(field01) }}</td>
                   <td class="q9-num-cell">06</td>
-                  <td class="q9-value-cell"></td>
+                  <td class="q9-value-cell">{{ formatAmount(field06) }}</td>
                 </tr>
                 <tr>
                   <td class="q9-label">Imposto liquidado<span class="dots"></span></td>
                   <td class="q9-num-cell">02</td>
                   <td class="q9-value-cell">{{ formatAmount(field02) }}</td>
                   <td class="q9-num-cell">07</td>
-                  <td class="q9-value-cell"></td>
+                  <td class="q9-value-cell">{{ formatAmount(field07) }}</td>
                 </tr>
                 <tr>
                   <td class="q9-label">Excesso do volume de vendas (20%)<span class="dots"></span></td>
                   <td class="q9-num-cell">03</td>
                   <td class="q9-value-cell">{{ field03 > 0 ? formatAmount(field03) : '' }}</td>
                   <td class="q9-num-cell">08</td>
-                  <td class="q9-value-cell"></td>
+                  <td class="q9-value-cell">{{ field08 > 0 ? formatAmount(field08) : '' }}</td>
                 </tr>
                 <tr>
                   <td class="q9-label">Tributação sobre o excesso de volume de vendas<br>(alínea d) do nº1 do artigo 8, Código do ISPC)<span class="dots"></span></td>
                   <td class="q9-num-cell">04</td>
                   <td class="q9-value-cell">{{ field04 > 0 ? formatAmount(field04) : '' }}</td>
                   <td class="q9-num-cell">09</td>
-                  <td class="q9-value-cell"></td>
+                  <td class="q9-value-cell">{{ field09 > 0 ? formatAmount(field09) : '' }}</td>
                 </tr>
                 <tr class="q9-total-row">
                   <td class="q9-label"><strong>Total do imposto liquidado</strong> (05 = 02 + 04)</td>
@@ -290,18 +290,18 @@ import { PdfService } from '../../core/services/pdf.service';
               <tbody>
                 <tr>
                   <td class="q9-num-cell">10</td>
-                  <td class="q9-value-cell">{{ data.declaration.period === 4 ? formatAmount(field01) : '' }}</td>
+                    <td class="q9-value-cell">{{ data.declaration.period === 4 ? formatAmount(field10) : '' }}</td>
                   <td class="q9-num-cell">11</td>
-                  <td class="q9-value-cell">{{ data.declaration.period === 4 ? (data.declaration.ispc_rate + '%') : '' }}</td>
+                    <td class="q9-value-cell">{{ data.declaration.period === 4 ? (field11 + '%') : '' }}</td>
                   <td class="q9-num-cell">12</td>
-                  <td class="q9-value-cell">{{ data.declaration.period === 4 ? formatAmount(field05) : '' }}</td>
+                    <td class="q9-value-cell">{{ data.declaration.period === 4 ? formatAmount(field12) : '' }}</td>
                 </tr>
                 <tr>
                   <td colspan="4" class="q9-label" style="text-align:right; padding-right:8px;">
                     Imposto corrigido (13 = 12 - 7)<span class="dots"></span>
                   </td>
                   <td class="q9-num-cell">13</td>
-                  <td class="q9-value-cell"></td>
+                    <td class="q9-value-cell">{{ formatAmount(field13) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -481,7 +481,8 @@ import { PdfService } from '../../core/services/pdf.service';
     /* ——— Page ——— */
     .page {
       width: 210mm;
-      min-height: 297mm;
+      height: 297mm;
+      min-height: 0;
       margin: 0 auto 20px;
       background: #fff;
       border: 1px solid #999;
@@ -602,6 +603,7 @@ import { PdfService } from '../../core/services/pdf.service';
 
     /* ——— Digit boxes ——— */
     .digit-box {
+      flex: 0 0 16px;
       width: 16px;
       height: 18px;
       box-sizing: border-box;
@@ -610,17 +612,21 @@ import { PdfService } from '../../core/services/pdf.service';
       align-items: center;
       justify-content: center;
       font-size: 9pt;
-      line-height: 18px;
+      line-height: 16px;
       padding: 0;
       font-weight: bold;
       text-align: center;
       vertical-align: middle;
+      overflow: hidden;
+      letter-spacing: 0;
+      font-variant-numeric: tabular-nums;
     }
     .digit-box.small {
+      flex-basis: 13px;
       width: 13px;
       height: 15px;
       font-size: 7.5pt;
-      line-height: 15px;
+      line-height: 13px;
     }
 
     /* ——— Checkboxes ——— */
@@ -789,8 +795,11 @@ import { PdfService } from '../../core/services/pdf.service';
         box-shadow: none !important;
         padding: 10mm !important;
       }
-      .page-break { page-break-before: always; }
-      @page { size: A4; margin: 0; }
+      .page-break { page-break-before: auto; }
+      @page { size: A4 portrait; margin: 0; }
+      html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+      .page { width: 210mm !important; height: 297mm !important; min-height: 297mm !important; margin: 0 !important; padding: 8mm !important; overflow: hidden !important; break-after: page; page-break-after: always; }
+      .page:last-child { break-after: auto; page-break-after: auto; }
     }
   `]
 })
@@ -803,6 +812,14 @@ export class Model30Component implements OnInit {
   field03 = 0;
   field04 = 0;
   field05 = 0;
+  field06 = 0;
+  field07 = 0;
+  field08 = 0;
+  field09 = 0;
+  field10 = 0;
+  field11 = 0;
+  field12 = 0;
+  field13 = 0;
   field14 = 0;
   field15 = 0;
   field16 = 0;
@@ -823,13 +840,22 @@ export class Model30Component implements OnInit {
     const decl = this.data.declaration;
     this.field01 = decl.total_sales || 0;
 
+    const model = decl.model_30_data || {};
+    this.field06 = model.annual_sales || 0;
+    this.field07 = model.annual_normal_tax || 0;
+    this.field08 = model.annual_excess_base || 0;
+    this.field09 = model.annual_excess_tax || 0;
+    this.field10 = model.annual_sales || 0;
+    this.field11 = model.effective_rate || decl.ispc_rate || 0;
+    this.field12 = model.annual_tax || 0;
+
     const splits = decl.ispc_splits || [];
     const normalSplits = splits.filter((s: any) => s.rate !== 20);
     const excessSplits = splits.filter((s: any) => s.rate === 20);
 
-    this.field02 = normalSplits.reduce((sum: number, s: any) => sum + (s.amount || 0), 0);
-    this.field03 = excessSplits.reduce((sum: number, s: any) => sum + (s.base || 0), 0);
-    this.field04 = excessSplits.reduce((sum: number, s: any) => sum + (s.amount || 0), 0);
+    this.field02 = model.normal_tax_period ?? normalSplits.reduce((sum: number, s: any) => sum + (s.amount || 0), 0);
+    this.field03 = model.excess_base_period ?? excessSplits.reduce((sum: number, s: any) => sum + (s.base || 0), 0);
+    this.field04 = model.excess_tax_period ?? excessSplits.reduce((sum: number, s: any) => sum + (s.amount || 0), 0);
     this.field05 = this.field02 + this.field04;
 
     // If no splits available, fall back to stored ispc_amount
@@ -838,7 +864,8 @@ export class Model30Component implements OnInit {
       this.field05 = this.field02;
     }
 
-    this.field14 = this.field05;
+    this.field13 = this.field12 > 0 ? this.field12 - this.field07 : 0;
+    this.field14 = this.field05 + this.field13;
     this.field15 = 0;
     this.field16 = this.field14 + this.field15;
   }

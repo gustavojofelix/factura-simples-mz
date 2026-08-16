@@ -19,12 +19,25 @@ export interface TaxDeclaration {
   submission_date?: string;
   due_date?: string;
   payment_date?: string;
-  model_30_data?: any;
+  model_30_data?: Model30Data;
   notes?: string;
   created_at: string;
   updated_at: string;
   payments?: TaxPayment[];
   ispc_splits?: IspcSplit[];
+}
+
+export interface Model30Data {
+  ispc_splits?: IspcSplit[];
+  annual_sales?: number;
+  annual_normal_tax?: number;
+  annual_excess_base?: number;
+  annual_excess_tax?: number;
+  annual_tax?: number;
+  effective_rate?: number;
+  normal_tax_period?: number;
+  excess_base_period?: number;
+  excess_tax_period?: number;
 }
 
 export interface TaxPayment {
@@ -50,6 +63,7 @@ export interface TaxCalculation {
   ispcAmount: number;
   invoiceCount: number;
   ispcSplits: IspcSplit[];
+  model30Data: Model30Data;
 }
 
 export interface IspcSplit {
@@ -83,6 +97,70 @@ export class TaxService {
     private activityService: ActivityService
   ) {}
 
+  private toCents(value: number | string | null | undefined): number {
+    const amount = Number(value ?? 0);
+    if (!Number.isFinite(amount)) throw new Error('Valor monetário inválido');
+    return Math.round(amount * 100);
+  }
+
+  private fromCents(value: number): number {
+    return value / 100;
+  }
+
+  private taxCents(baseCents: number, rate: number): number {
+    return Math.round((baseCents * rate) / 100);
+  }
+
+  private calculateSplits(
+    periodSales: number,
+    annualSalesBeforePeriod: number,
+    baseRate: number,
+    isScaleActivity: boolean
+  ): { amount: number; splits: IspcSplit[]; annualSalesAfterPeriod: number } {
+    let remainingCents = this.toCents(periodSales);
+    let accumulatedCents = this.toCents(annualSalesBeforePeriod);
+    let totalTaxCents = 0;
+    const splits: IspcSplit[] = [];
+    const thresholds = isScaleActivity
+      ? [{ limit: 1_000_000 * 100, rate: 3 }, { limit: 2_500_000 * 100, rate: 4 }, { limit: 4_000_000 * 100, rate: 5 }]
+      : [{ limit: 4_000_000 * 100, rate: baseRate }];
+
+    for (const threshold of thresholds) {
+      if (remainingCents <= 0 || accumulatedCents >= threshold.limit) continue;
+      const baseCents = Math.min(remainingCents, threshold.limit - accumulatedCents);
+      const amountCents = this.taxCents(baseCents, threshold.rate);
+      splits.push({
+        base: this.fromCents(baseCents),
+        rate: threshold.rate,
+        amount: this.fromCents(amountCents),
+        isExcess: false,
+        label: `Base Tributável (${threshold.rate}%)`
+      });
+      totalTaxCents += amountCents;
+      remainingCents -= baseCents;
+      accumulatedCents += baseCents;
+    }
+
+    if (remainingCents > 0) {
+      const amountCents = this.taxCents(remainingCents, 20);
+      splits.push({
+        base: this.fromCents(remainingCents),
+        rate: 20,
+        amount: this.fromCents(amountCents),
+        isExcess: true,
+        label: 'Excesso de Limite ISPC'
+      });
+      totalTaxCents += amountCents;
+      accumulatedCents += remainingCents;
+    }
+
+    return {
+      amount: this.fromCents(totalTaxCents),
+      splits,
+      annualSalesAfterPeriod: this.fromCents(accumulatedCents)
+    };
+  }
+
   async loadDeclarations(): Promise<void> {
     const company = this.companyService.activeCompany();
     if (!company) return;
@@ -92,20 +170,27 @@ export class TaxService {
     try {
       const { data, error } = await this.supabase.db
         .from('tax_declarations')
-        .select('*')
+        .select(`
+          id, company_id, period, year, start_date, end_date,
+          total_sales, ispc_base, ispc_rate, ispc_amount, status,
+          submission_date, due_date, payment_date, model_30_data,
+          notes, created_at, updated_at,
+          payments:tax_payments(
+            id, tax_declaration_id, amount, payment_date,
+            payment_method, reference, receipt_url, notes, created_at
+          )
+        `)
         .eq('company_id', company.id)
         .order('year', { ascending: false })
         .order('period', { ascending: false });
 
       if (error) throw error;
 
-      const declarationsWithPayments = await Promise.all(
-        (data || []).map(async (declaration) => {
-          const payments = await this.getDeclarationPayments(declaration.id);
-          const ispc_splits = declaration.model_30_data?.ispc_splits;
-          return { ...declaration, payments, ispc_splits };
-        })
-      );
+      const declarationsWithPayments = (data || []).map((declaration: any) => ({
+        ...declaration,
+        payments: declaration.payments || [],
+        ispc_splits: declaration.model_30_data?.ispc_splits || []
+      }));
 
       this.declarations.set(declarationsWithPayments);
     } catch (error) {
@@ -169,7 +254,7 @@ export class TaxService {
       if (error) throw error;
 
       // Calcular total de vendas do trimestre
-      const totalSales = invoices?.reduce((sum, inv) => sum + (inv.total || 0), 0) || 0;
+      const totalSales = this.fromCents((invoices || []).reduce((sum, inv) => sum + this.toCents(inv.total), 0));
 
       // Buscar vendas anuais até este trimestre para determinar a taxa correta
       const yearStart = `${year}-01-01`;
@@ -186,7 +271,10 @@ export class TaxService {
 
       const annualSalesBeforeQuarter = (yearInvoices || [])
         .filter(inv => inv.date < startDate)
-        .reduce((sum, inv) => sum + (inv.total || 0), 0);
+        .reduce((sum, inv) => sum + this.toCents(inv.total), 0) / 100;
+
+      const annualSalesToDate = (yearInvoices || [])
+        .reduce((sum, inv) => sum + this.toCents(inv.total), 0) / 100;
 
       // Determinar a taxa baseada no tipo de atividade e volume anual
       const configuredActivity = await this.getConfiguredActivityRate(company);
@@ -261,7 +349,41 @@ export class TaxService {
       // corrupting the company's default registration category (3%, 12%, 15%).
       // The progressive calculation already correctly handles brackets using annual accumulated sales.
 
-      const ispcRate = currentAcc > maxThreshold ? 20 : (isScaleActivity ? parseInt(newVolume) : baseRate);
+      const precisePeriod = this.calculateSplits(totalSales, annualSalesBeforeQuarter, baseRate, isScaleActivity);
+      const preciseAnnual = this.calculateSplits(annualSalesToDate, 0, baseRate, isScaleActivity);
+
+      const { data: serverCalculation, error: serverCalculationError } = await this.supabase.db.rpc(
+        'calculate_ispc_for_period',
+        {
+          p_company_id: company.id,
+          p_start_date: startDate,
+          p_end_date: endDate,
+          p_base_rate: baseRate,
+          p_is_scale_activity: isScaleActivity
+        }
+      );
+
+      if (serverCalculationError) throw serverCalculationError;
+      if (Math.abs(Number(serverCalculation?.tax ?? 0) - precisePeriod.amount) > 0.01) {
+        throw new Error('Divergência entre o cálculo fiscal do cliente e do servidor');
+      }
+      const normalPeriod = precisePeriod.splits.filter(split => !split.isExcess);
+      const excessPeriod = precisePeriod.splits.filter(split => split.isExcess);
+      const normalAnnual = preciseAnnual.splits.filter(split => !split.isExcess);
+      const excessAnnual = preciseAnnual.splits.filter(split => split.isExcess);
+      const ispcRate = precisePeriod.splits.at(-1)?.rate ?? baseRate;
+      const model30Data: Model30Data = {
+        ispc_splits: precisePeriod.splits,
+        annual_sales: annualSalesToDate,
+        annual_normal_tax: normalAnnual.reduce((sum, split) => sum + split.amount, 0),
+        annual_excess_base: excessAnnual.reduce((sum, split) => sum + split.base, 0),
+        annual_excess_tax: excessAnnual.reduce((sum, split) => sum + split.amount, 0),
+        annual_tax: preciseAnnual.amount,
+        effective_rate: annualSalesToDate > 0 ? (preciseAnnual.amount / annualSalesToDate) * 100 : 0,
+        normal_tax_period: normalPeriod.reduce((sum, split) => sum + split.amount, 0),
+        excess_base_period: excessPeriod.reduce((sum, split) => sum + split.base, 0),
+        excess_tax_period: excessPeriod.reduce((sum, split) => sum + split.amount, 0)
+      };
 
       return {
         period,
@@ -271,9 +393,10 @@ export class TaxService {
         totalSales,
         ispcBase: totalSales,
         ispcRate,
-        ispcAmount,
+        ispcAmount: precisePeriod.amount,
         invoiceCount: invoices?.length || 0,
-        ispcSplits
+        ispcSplits: precisePeriod.splits,
+        model30Data
       };
     } catch (error) {
       console.error('Erro ao calcular impostos:', error);
@@ -319,7 +442,7 @@ export class TaxService {
         due_date: dueDate,
         status: existing?.status === 'paga' || existing?.status === 'submetida' ? existing.status : status,
         notes: notes || existing?.notes,
-        model_30_data: { ...existing?.model_30_data, ispc_splits: calculation.ispcSplits }
+        model_30_data: { ...existing?.model_30_data, ...calculation.model30Data }
       };
 
       let result;

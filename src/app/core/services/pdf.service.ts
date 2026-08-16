@@ -152,21 +152,29 @@ export class PdfService {
         box-shadow: none !important;
         width: 210mm !important;
         height: 297mm !important;
+        min-height: 297mm !important;
         box-sizing: border-box !important;
-        padding: 6mm !important;
+        padding: 8mm !important;
         background: #ffffff !important;
         overflow: hidden !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
       }
       .pdf-export-mode .digit-box {
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
-        line-height: 18px !important;
+        flex: 0 0 16px !important;
+        line-height: 16px !important;
         height: 18px !important;
         width: 16px !important;
         padding: 0 !important;
         margin: 0 !important;
+        font-family: Arial, sans-serif !important;
         font-size: 9pt !important;
+        letter-spacing: 0 !important;
+        font-variant-numeric: tabular-nums !important;
+        overflow: hidden !important;
         font-weight: bold !important;
         text-align: center !important;
         box-sizing: border-box !important;
@@ -176,7 +184,7 @@ export class PdfService {
       .pdf-export-mode .digit-box.small {
         height: 15px !important;
         width: 13px !important;
-        line-height: 15px !important;
+        line-height: 13px !important;
         font-size: 7.5pt !important;
       }
       .pdf-export-mode .digit-group {

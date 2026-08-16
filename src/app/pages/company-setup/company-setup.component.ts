@@ -1,4 +1,5 @@
-import { Component, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -42,6 +43,7 @@ import { ActivityService, ActivityType } from '../../core/services/activity.serv
   styleUrls: ['./company-setup.component.css']
 })
 export class CompanySetupComponent {
+  private readonly destroyRef = inject(DestroyRef);
   companyInfoForm: FormGroup;
   settingsForm: FormGroup;
   isLoading = signal(false);
@@ -120,11 +122,11 @@ export class CompanySetupComponent {
   }
 
   setupCategoryWatchers() {
-    this.companyInfoForm.get('category1')?.valueChanges.subscribe(() => {
+    this.companyInfoForm.get('category1')?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.companyInfoForm.patchValue({ category2: '', category3: '' }, { emitEvent: false });
     });
 
-    this.companyInfoForm.get('category2')?.valueChanges.subscribe((cat2) => {
+    this.companyInfoForm.get('category2')?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((cat2) => {
       this.companyInfoForm.patchValue({ category3: '' }, { emitEvent: false });
 
       if (cat2 === 'servicos_nao_liberais') {
