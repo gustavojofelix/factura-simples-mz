@@ -481,7 +481,7 @@ import { PdfService } from '../../core/services/pdf.service';
     /* ——— Page ——— */
     .page {
       width: 210mm;
-      height: 297mm;
+      height: auto;
       min-height: 0;
       margin: 0 auto 20px;
       background: #fff;
@@ -803,7 +803,7 @@ import { PdfService } from '../../core/services/pdf.service';
       .page-break { page-break-before: auto; }
       @page { size: A4 portrait; margin: 0; }
       html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
-      .page { width: 210mm !important; height: 297mm !important; min-height: 297mm !important; margin: 0 !important; padding: 8mm !important; overflow: hidden !important; break-after: page; page-break-after: always; }
+      .page { width: 210mm !important; height: auto !important; min-height: 0 !important; margin: 0 !important; padding: 8mm !important; overflow: visible !important; break-after: page; page-break-after: always; }
       .page:last-child { break-after: auto; page-break-after: auto; }
     }
   `]

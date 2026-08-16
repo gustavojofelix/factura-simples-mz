@@ -92,6 +92,8 @@ export class PdfService {
         compress: true
       });
 
+      const pageWidth = pdf.internal.pageSize.getWidth();
+
       for (let index = 0; index < pages.length; index++) {
         const canvas = await html2canvas(pages[index], {
           scale: 2,
@@ -106,17 +108,11 @@ export class PdfService {
           }
         });
 
-        // Use JPEG at 0.95 quality for ultra-fast generation and 90% smaller PDF file size
+        if (index > 0) pdf.addPage('a4', 'portrait');
         const imageData = canvas.toDataURL('image/jpeg', 0.95);
-        const pageWidth = pdf.internal.pageSize.getWidth();  // 210mm
-        const pageHeight = pdf.internal.pageSize.getHeight(); // 297mm
-
-        if (index > 0) {
-          pdf.addPage('a4', 'portrait');
-        }
-
-        // Exact 1-to-1 fit on A4 page without margins, shadows, or page splitting
-        pdf.addImage(imageData, 'JPEG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
+        const imageProps = pdf.getImageProperties(imageData);
+        const imageHeight = imageProps.height * pageWidth / imageProps.width;
+        pdf.addImage(imageData, 'JPEG', 0, 0, pageWidth, imageHeight, undefined, 'FAST');
       }
 
       return pdf.output('blob');
@@ -151,14 +147,21 @@ export class PdfService {
         border: none !important;
         box-shadow: none !important;
         width: 210mm !important;
-        height: 297mm !important;
-        min-height: 297mm !important;
+        height: auto !important;
+        min-height: 0 !important;
         box-sizing: border-box !important;
         padding: 8mm !important;
         background: #ffffff !important;
-        overflow: hidden !important;
+        overflow: visible !important;
         break-inside: avoid !important;
         page-break-inside: avoid !important;
+      }
+      .pdf-continuous-mode .page {
+        height: auto !important;
+        min-height: 0 !important;
+        margin-bottom: 0 !important;
+        break-after: auto !important;
+        page-break-after: auto !important;
       }
       .pdf-export-mode .digit-box {
         display: inline-flex !important;
