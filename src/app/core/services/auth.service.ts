@@ -24,6 +24,9 @@ export interface UserProfile {
 export class AuthService {
   currentUser = signal<User | null>(null);
   isLoading = signal<boolean>(true);
+
+  private _isAdminCache: boolean | null = null;
+  private _authResolved = false;
   private authInitialized = new Promise<void>((resolve) => {
     this.resolveAuth = resolve;
   });
@@ -41,15 +44,20 @@ export class AuthService {
     this.supabase.auth.getSession().then(({ data: { session } }) => {
       this.currentUser.set(session?.user ?? null);
       this.isLoading.set(false);
-      this.resolveAuth();
+      if (!this._authResolved) {
+        this._authResolved = true;
+        this.resolveAuth();
+      }
     });
 
     this.supabase.auth.onAuthStateChange((event, session) => {
-      (() => {
-        this.currentUser.set(session?.user ?? null);
-        this.isLoading.set(false);
+      this.currentUser.set(session?.user ?? null);
+      this.isLoading.set(false);
+      this._isAdminCache = null; // Invalidate cache on auth state change
+      if (!this._authResolved) {
+        this._authResolved = true;
         this.resolveAuth();
-      })();
+      }
     });
   }
 
@@ -109,6 +117,7 @@ export class AuthService {
 
       if (data.user) {
         this.currentUser.set(data.user);
+        this._isAdminCache = null; // Clear cache on new login
         await this.auditLogService.log(
           'Entrou no Sistema (Login)',
           'auth',
@@ -124,6 +133,7 @@ export class AuthService {
   }
 
   async signOut(): Promise<void> {
+    this._isAdminCache = null; // Clear admin cache on logout
     const user = this.currentUser();
     if (user) {
       await this.auditLogService.log(
@@ -201,7 +211,7 @@ export class AuthService {
     try {
       const { data, error } = await this.supabase.db
         .from('profiles')
-        .select('*')
+        .select('id, full_name, phone, email, role')
         .eq('id', user.id)
         .limit(1)
         .maybeSingle();
@@ -213,18 +223,17 @@ export class AuthService {
           full_name: user.user_metadata?.['full_name'] || user.email?.split('@')[0] || 'Utilizador',
           phone: user.user_metadata?.['phone'] || '',
           email: user.email!,
-          role: user.email?.toLowerCase() === 'gustavojofelix@gmail.com' ? 'admin' : 'user'
+          role: 'user'
         };
       }
 
       if (data) {
-        const isSuperAdmin = (user.email || '').trim().toLowerCase() === 'gustavojofelix@gmail.com';
         return {
           id: data.id,
           full_name: data.full_name,
           phone: data.phone,
           email: user.email!,
-          role: (isSuperAdmin || data.role === 'admin') ? 'admin' : 'user'
+          role: data.role === 'admin' ? 'admin' : 'user'
         };
       }
 
@@ -236,34 +245,22 @@ export class AuthService {
         full_name: user.user_metadata?.['full_name'] || user.email?.split('@')[0] || 'Utilizador',
         phone: user.user_metadata?.['phone'] || '',
         email: user.email!,
-        role: user.email?.toLowerCase() === 'gustavojofelix@gmail.com' ? 'admin' : 'user'
+        role: 'user'
       };
     }
   }
 
   async isAdmin(): Promise<boolean> {
+    // Return cached result if available (avoids repeated DB calls per navigation)
+    if (this._isAdminCache !== null) return this._isAdminCache;
     const user = await this.getCurrentUser();
-    const userEmail = (user?.email || '').trim().toLowerCase();
-
-    // 1. Primary email check for super admin
-    if (userEmail === 'gustavojofelix@gmail.com') {
-      try {
-        await this.supabase.client.rpc('make_user_admin', { target_email: userEmail });
-      } catch (e) {
-        // ignore error
-      }
-      return true;
+    if (!user) {
+      this._isAdminCache = false;
+      return false;
     }
-
-    if (!user) return false;
-
-    // 2. Check current profile role
     const profile = await this.getCurrentProfile();
-    if (profile?.role === 'admin') {
-      return true;
-    }
-
-    return false;
+    this._isAdminCache = profile?.role === 'admin';
+    return this._isAdminCache;
   }
 
   async getUserCompanies() {
@@ -273,7 +270,7 @@ export class AuthService {
     try {
       const { data: owned, error: ownedError } = await this.supabase.db
         .from('companies')
-        .select('*')
+        .select('id, name, user_id, created_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -281,7 +278,7 @@ export class AuthService {
 
       const { data: shared, error: sharedError } = await this.supabase.db
         .from('company_users')
-        .select('companies(*)')
+        .select('companies(id, name, user_id, created_at)')
         .eq('user_id', user.id)
         .neq('role', 'owner');
 
@@ -305,7 +302,6 @@ export class AuthService {
         .insert({
           id: userId,
           full_name: fullName,
-          email: fullName.includes('@') ? fullName : undefined, // Fallback if email is passed as fullName (unlikely but safe)
           phone: phone
         });
     } catch (error) {
@@ -339,29 +335,29 @@ export class AuthService {
   }
 
   async updateUserProfile(data: { fullName: string; phone?: string }): Promise<void> {
-  const user = this.currentUser();
-  if (!user) throw new Error('Utilizador não autenticado');
+    const user = this.currentUser();
+    if (!user) throw new Error('Utilizador não autenticado');
 
-  const { error } = await this.supabase.db
-    .from('profiles')
-    .update({ full_name: data.fullName, phone: data.phone ?? null })
-    .eq('id', user.id);
+    const { error } = await this.supabase.db
+      .from('profiles')
+      .update({ full_name: data.fullName, phone: data.phone ?? null })
+      .eq('id', user.id);
 
-  if (error) throw error;
-}
+    if (error) throw error;
+  }
 
-async updateUserPassword(currentPassword: string, newPassword: string): Promise<void> {
-  const user = this.currentUser();
-  if (!user?.email) throw new Error('Utilizador não encontrado');
+  async updateUserPassword(currentPassword: string, newPassword: string): Promise<void> {
+    const user = this.currentUser();
+    if (!user?.email) throw new Error('Utilizador não encontrado');
 
-  const { error: signInError } = await this.supabase.auth.signInWithPassword({
-    email: user.email,
-    password: currentPassword
-  });
+    const { error: signInError } = await this.supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword
+    });
 
-  if (signInError) throw new Error('Palavra-passe atual incorreta');
+    if (signInError) throw new Error('Palavra-passe atual incorreta');
 
-  const { error } = await this.supabase.auth.updateUser({ password: newPassword });
-  if (error) throw error;
-}
+    const { error } = await this.supabase.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+  }
 }

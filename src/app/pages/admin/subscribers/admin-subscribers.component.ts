@@ -3,8 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { AuditLogService } from '../../../core/services/audit-log.service';
-import { createClient } from '@supabase/supabase-js';
-import { environment } from '../../../../environments/environment';
+import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { PaginationComponent, PageChangeEvent } from '../../../shared/components/pagination.component';
 
 @Component({
@@ -103,6 +102,7 @@ import { PaginationComponent, PageChangeEvent } from '../../../shared/components
               </div>
             </div>
 
+            <p *ngIf="editError" class="text-xs text-red-600 font-medium px-6 pb-2">{{ editError }}</p>
             <div class="p-6 bg-gray-50 border-t border-gray-100 flex space-x-3">
               <button (click)="closeEditModal()" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-white transition-colors text-sm font-semibold uppercase tracking-tight">
                 Cancelar
@@ -360,6 +360,7 @@ export class AdminSubscribersComponent implements OnInit {
 
   // Phase 2 & 3: UI Logic
   isEditModalOpen = false;
+  editError = '';
   isDetailsOpen = false;
   editingSub: any = {};
   selectedSub = signal<any>({});
@@ -375,14 +376,15 @@ export class AdminSubscribersComponent implements OnInit {
   ];
 
   filteredSubscribers = computed(() => {
-    let list = this.subscribers();
+    // Use a copy to avoid mutating the Signal's array in place
+    let list = [...this.subscribers()];
 
     if (this.activeStatus() !== 'all') {
       list = list.filter(s => (s.status || 'active') === this.activeStatus());
     }
 
-    if (this.searchTerm) {
-      const term = this.searchTerm().toLowerCase();
+    const term = this.searchTerm().trim().toLowerCase();
+    if (term) {
       list = list.filter(s =>
         s.full_name?.toLowerCase().includes(term) ||
         s.email?.toLowerCase().includes(term) ||
@@ -390,21 +392,14 @@ export class AdminSubscribersComponent implements OnInit {
       );
     }
 
-    // Apply Sorting
     const col = this.sortColumn();
     const dir = this.sortDirection();
 
     list.sort((a, b) => {
-      let valA = a[col];
-      let valB = b[col];
-
-      // Handle nulls
-      if (valA === null || valA === undefined) valA = '';
-      if (valB === null || valB === undefined) valB = '';
-
+      let valA = a[col] ?? '';
+      let valB = b[col] ?? '';
       if (typeof valA === 'string') valA = valA.toLowerCase();
       if (typeof valB === 'string') valB = valB.toLowerCase();
-
       if (valA < valB) return dir === 'asc' ? -1 : 1;
       if (valA > valB) return dir === 'asc' ? 1 : -1;
       return 0;
@@ -419,7 +414,7 @@ export class AdminSubscribersComponent implements OnInit {
     return list.slice(start, start + this.pageSize());
   });
 
-  constructor(private supabase: SupabaseService, private auditLogService: AuditLogService) { }
+  constructor(private supabase: SupabaseService, private auditLogService: AuditLogService, private confirmDialog: ConfirmDialogService) { }
 
   ngOnInit() {
     this.loadSubscribers();
@@ -476,8 +471,18 @@ export class AdminSubscribersComponent implements OnInit {
   }
 
   async toggleSuspend(subscriber: any) {
-    const newStatus = subscriber.status === 'suspended' ? 'active' : 'suspended';
+    const isSuspending = subscriber.status !== 'suspended';
+    const confirmed = await this.confirmDialog.confirm({
+      title: isSuspending ? 'Suspender Subscritor?' : 'Ativar Subscritor?',
+      message: isSuspending
+        ? `O acesso de "${subscriber.full_name}" será suspenso imediatamente.`
+        : `O acesso de "${subscriber.full_name}" será reativado.`,
+      confirmLabel: isSuspending ? 'Suspender' : 'Ativar',
+      danger: isSuspending
+    });
+    if (!confirmed) return;
 
+    const newStatus = isSuspending ? 'suspended' : 'active';
     const { error } = await this.supabase.db
       .from('profiles')
       .update({ status: newStatus })
@@ -516,6 +521,7 @@ export class AdminSubscribersComponent implements OnInit {
   closeEditModal() {
     this.isEditModalOpen = false;
     this.editingSub = {};
+    this.editError = '';
   }
 
   async saveSubscriber() {
@@ -530,7 +536,7 @@ export class AdminSubscribersComponent implements OnInit {
 
     if (error) {
       console.error('Error saving profile:', error);
-      alert('Erro ao guardar perfil');
+      this.editError = 'Erro ao guardar perfil. Tente novamente.';
       return;
     }
 
@@ -628,46 +634,29 @@ export class AdminSubscribersComponent implements OnInit {
     this.createError = '';
 
     try {
-      const tempClient = createClient(environment.supabaseUrl, environment.supabaseKey, {
-        auth: {
-          persistSession: false,
-          lock: async (_name: string, _acquireTimeout: number, fn: () => Promise<any>) => {
-            return await fn();
-          }
+      // Create user via Edge Function (server-side, with service role key)
+      const { data, error } = await this.supabase.client.functions.invoke('admin-create-user', {
+        body: {
+          email: this.newSub.email.trim().toLowerCase(),
+          password: this.newSub.password,
+          full_name: this.newSub.full_name.trim(),
+          phone: this.newSub.phone || null,
+          status: this.newSub.status
         }
       });
 
-      const { data, error } = await tempClient.auth.signUp({
-        email: this.newSub.email,
-        password: this.newSub.password,
-        options: {
-          data: {
-            full_name: this.newSub.full_name,
-            phone: this.newSub.phone || null
-          }
-        }
-      });
-
-      if (error) throw error;
-
-      if (data.user) {
-        await this.supabase.db
-          .from('profiles')
-          .update({
-            full_name: this.newSub.full_name,
-            phone: this.newSub.phone || null,
-            status: this.newSub.status
-          })
-          .eq('id', data.user.id);
-          
-        await this.auditLogService.log(
-          'Novo Subscritor Criado',
-          'admin_subscribers',
-          { subscriber_id: data.user.id, name: this.newSub.full_name, email: this.newSub.email },
-          data.user.id,
-          this.newSub.full_name
-        );
+      if (error || !data?.success) {
+        this.createError = data?.error || error?.message || 'Erro ao criar subscritor.';
+        return;
       }
+
+      await this.auditLogService.log(
+        'Novo Subscritor Criado',
+        'admin_subscribers',
+        { name: this.newSub.full_name, email: this.newSub.email },
+        data.userId,
+        this.newSub.full_name
+      );
 
       this.closeCreateModal();
       this.loadSubscribers();

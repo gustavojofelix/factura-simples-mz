@@ -232,15 +232,19 @@ export class AdminAuditLogsComponent implements OnInit {
   categories = [
     { id: 'auth', label: 'Login e Logout' },
     { id: 'admin_subscribers', label: 'Subscritores (Back Office)' },
-    { id: 'admin_companies', label: 'Contribuintes (Back Office)' }
+    { id: 'admin_companies', label: 'Contribuintes (Back Office)' },
+    { id: 'admin_plans', label: 'Planos' },
+    { id: 'subscriptions', label: 'Subscrições' },
+    { id: 'security', label: 'Segurança e Acessos' },
+    { id: 'invoices', label: 'Faturas' },
+    { id: 'users', label: 'Utilizadores' }
   ];
 
-  filteredLogs = computed(() => {
-    let list = this.logs();
+  totalLogsCount = signal(0);
 
-    if (this.selectedCategory !== 'all') {
-      list = list.filter(l => l.category === this.selectedCategory);
-    }
+  filteredLogs = computed(() => {
+    // Only client-side text search remains — category/user/company/date are server-side
+    let list = this.logs();
 
     if (this.searchTerm) {
       const term = this.searchTerm.toLowerCase();
@@ -257,9 +261,8 @@ export class AdminAuditLogsComponent implements OnInit {
   });
 
   paginatedLogs = computed(() => {
-    const list = this.filteredLogs();
-    const start = (this.currentPage() - 1) * this.pageSize();
-    return list.slice(start, start + this.pageSize());
+    // Pagination is now server-side, this just returns all loaded logs
+    return this.filteredLogs();
   });
 
   constructor(private supabase: SupabaseService) {}
@@ -292,14 +295,24 @@ export class AdminAuditLogsComponent implements OnInit {
   async loadLogs() {
     this.isLoading.set(true);
     try {
+      const pageSize = this.pageSize();
+      const page = this.currentPage();
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+
       let query = this.supabase.db
         .from('audit_logs')
-        .select(`
-          *,
-          company:companies (id, name, nuit)
-        `)
-        .or('category.ilike.admin_%,category.eq.auth')
-        .order('created_at', { ascending: false });
+        .select(`*, company:companies(id, name, nuit)`, { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+      // Apply category filter SERVER-SIDE
+      if (this.selectedCategory !== 'all') {
+        query = query.eq('category', this.selectedCategory);
+      } else {
+        // Default: show admin + auth categories
+        query = query.or('category.ilike.admin_%,category.eq.auth,category.eq.security,category.eq.subscriptions');
+      }
 
       if (this.selectedUserEmail !== 'all') {
         query = query.eq('user_email', this.selectedUserEmail);
@@ -311,11 +324,11 @@ export class AdminAuditLogsComponent implements OnInit {
         query = query.gte('created_at', `${this.startDate}T00:00:00Z`);
       }
 
-      const { data, error } = await query;
+      const { data, error, count } = await query;
       if (error) throw error;
 
       this.logs.set(data || []);
-      this.currentPage.set(1);
+      this.totalLogsCount.set(count || 0);
     } catch (error) {
       console.error('Erro ao carregar histórico global de auditoria:', error);
     } finally {
@@ -330,6 +343,7 @@ export class AdminAuditLogsComponent implements OnInit {
   onPageChange(event: PageChangeEvent) {
     this.currentPage.set(event.page);
     this.pageSize.set(event.pageSize);
+    this.loadLogs(); // Reload from server with new page
   }
 
   clearFilters() {

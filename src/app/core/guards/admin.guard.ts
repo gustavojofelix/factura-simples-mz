@@ -8,23 +8,16 @@ export const adminGuard: CanActivateFn = async (route, state) => {
 
   await authService.waitForInitialization();
 
+  // Check user existence FIRST — never allow access without an authenticated user
   const user = await authService.getCurrentUser();
-  const userEmail = (user?.email || '').trim().toLowerCase();
-
-  // Super admin email bypass: ALWAYS allow access for gustavojofelix@gmail.com
-  if (userEmail === 'gustavojofelix@gmail.com') {
-    return true;
-  }
-
-  const isAdmin = await authService.isAdmin();
-  if (isAdmin) {
-    return true;
-  }
-
   if (!user) {
     router.navigate(['/admin/entrar'], { queryParams: { returnUrl: state.url } });
     return false;
   }
+
+  // Delegate role check entirely to the service (reads from DB, no hardcoded emails)
+  const isAdmin = await authService.isAdmin();
+  if (isAdmin) return true;
 
   router.navigate(['/admin/entrar']);
   return false;
@@ -37,17 +30,11 @@ export const adminGuestGuard: CanActivateFn = async (route, state) => {
   await authService.waitForInitialization();
 
   const user = await authService.getCurrentUser();
-  const userEmail = (user?.email || '').trim().toLowerCase();
 
-  if (userEmail === 'gustavojofelix@gmail.com') {
-    router.navigate(['/admin']);
-    return false;
-  }
+  // If not logged in, allow access to the login page
+  if (!user) return true;
 
-  if (!user) {
-    return true;
-  }
-
+  // If already an admin, redirect to the back office
   const isAdmin = await authService.isAdmin();
   if (isAdmin) {
     router.navigate(['/admin']);

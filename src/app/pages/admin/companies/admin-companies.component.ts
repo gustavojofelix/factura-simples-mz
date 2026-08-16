@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { AuditLogService } from '../../../core/services/audit-log.service';
 import { ActivityService, ActivityType } from '../../../core/services/activity.service';
+import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 
 @Component({
   selector: 'app-admin-companies',
@@ -139,6 +140,7 @@ import { ActivityService, ActivityType } from '../../../core/services/activity.s
                 <label class="text-[10px] font-bold text-gray-500 uppercase">Endereço</label>
                 <textarea [(ngModel)]="editingCompany.address" rows="2" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"></textarea>
               </div>
+              <p *ngIf="saveError" class="text-xs text-red-600 font-medium px-1">{{ saveError }}</p>
             </div>
 
             <div class="p-6 bg-gray-50 border-t border-gray-100 flex space-x-3">
@@ -677,6 +679,7 @@ export class AdminCompaniesComponent implements OnInit {
   // Phase 2 & 3: UI Logic
   isEditModalOpen = false;
   editingCompany: any = {};
+  saveError = '';
   isDetailsOpen = false;
   selectedCompany = signal<any>({});
   isLoading = signal(false);
@@ -761,13 +764,17 @@ export class AdminCompaniesComponent implements OnInit {
   constructor(
     private supabase: SupabaseService,
     private auditLogService: AuditLogService,
-    private activityService: ActivityService
+    private activityService: ActivityService,
+    private confirmDialog: ConfirmDialogService
   ) { }
 
   ngOnInit() {
-    this.loadCompanies();
-    this.loadAllCompanies();
-    this.loadActivityCatalog();
+    // Run all init queries in parallel
+    Promise.all([
+      this.loadCompanies(),
+      this.loadAllCompanies(),
+      this.loadActivityCatalog()
+    ]);
   }
 
   async loadActivityCatalog() {
@@ -847,7 +854,18 @@ export class AdminCompaniesComponent implements OnInit {
   }
 
   async toggleSuspend(company: any) {
-    const newStatus = company.status === 'suspended' ? 'active' : 'suspended';
+    const isSuspending = company.status !== 'suspended';
+    const confirmed = await this.confirmDialog.confirm({
+      title: isSuspending ? 'Suspender Contribuinte?' : 'Ativar Contribuinte?',
+      message: isSuspending
+        ? `O acesso do contribuinte "${company.name}" será suspenso imediatamente.`
+        : `O contribuinte "${company.name}" será reativado.`,
+      confirmLabel: isSuspending ? 'Suspender' : 'Ativar',
+      danger: isSuspending
+    });
+    if (!confirmed) return;
+
+    const newStatus = isSuspending ? 'suspended' : 'active';
     const { error } = await this.supabase.db
       .from('companies')
       .update({ status: newStatus })
@@ -888,6 +906,7 @@ export class AdminCompaniesComponent implements OnInit {
   closeEditModal() {
     this.isEditModalOpen = false;
     this.editingCompany = {};
+    this.saveError = '';
   }
 
   formatEditNuit() {
@@ -963,6 +982,7 @@ export class AdminCompaniesComponent implements OnInit {
   }
 
   async saveCompany() {
+    this.saveError = '';
     const { error } = await this.supabase.db
       .from('companies')
       .update({
@@ -989,7 +1009,7 @@ export class AdminCompaniesComponent implements OnInit {
 
     if (error) {
       console.error('Error saving company:', error);
-      alert('Erro ao guardar contribuinte');
+      this.saveError = 'Erro ao guardar contribuinte. Tente novamente.';
       return;
     }
 

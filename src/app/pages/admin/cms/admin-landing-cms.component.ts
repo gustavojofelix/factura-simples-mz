@@ -410,18 +410,49 @@ export class AdminLandingCmsComponent implements OnInit {
   constructor(public cmsService: LandingCmsService) {}
 
   async ngOnInit() {
-    await this.cmsService.loadAllContent();
-    this.populateForms();
-    this.loaded = true;
+    try {
+      await this.cmsService.loadAllContent();
+      this.populateForms();
+    } catch (e) {
+      console.error('Error during init:', e);
+      this.error = 'Erro ao carregar dados da página.';
+    } finally {
+      // Defer setting loaded to true to the next tick to prevent NG0100
+      setTimeout(() => {
+        this.loaded = true;
+      });
+    }
   }
 
   populateForms() {
-    this.heroForm = { ...this.cmsService.hero() };
-    this.statsForm = this.cmsService.stats().map(s => ({ ...s }));
-    this.featuresForm = this.cmsService.features().map(f => ({ ...f }));
-    this.valuesForm = this.cmsService.values().map(v => ({ ...v }));
-    this.faqsForm = this.cmsService.faqs().map(f => ({ ...f }));
-    this.contactForm = { ...this.cmsService.contact() };
+    const heroDefaults: HeroContent = {
+      badge: '',
+      badgeIcon: '',
+      title: '',
+      highlightWord: '',
+      subtitle: '',
+      primaryCtaText: '',
+      primaryCtaLink: '',
+      secondaryCtaText: '',
+      secondaryCtaLink: '',
+      guaranteeText: '',
+      proofText: ''
+    };
+    this.heroForm = { ...heroDefaults, ...(this.cmsService.hero() || {}) };
+
+    this.statsForm = (this.cmsService.stats() || []).map(s => ({ ...s }));
+    this.featuresForm = (this.cmsService.features() || []).map(f => ({ ...f }));
+    this.valuesForm = (this.cmsService.values() || []).map(v => ({ ...v }));
+    this.faqsForm = (this.cmsService.faqs() || []).map(f => ({ ...f }));
+
+    const contactDefaults: ContactContent = {
+      email: '',
+      phone: '',
+      whatsapp: '',
+      address: '',
+      workHours: ''
+    };
+    this.contactForm = { ...contactDefaults, ...(this.cmsService.contact() || {}) };
   }
 
   // --- Hero Section ---

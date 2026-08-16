@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { AuditLogService } from '../../../core/services/audit-log.service';
+import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { PaginationComponent, PageChangeEvent } from '../../../shared/components/pagination.component';
 
 export interface AdminUserAccess {
@@ -507,6 +508,7 @@ export class AdminAccessComponent implements OnInit {
 
   // Edit Modal
   isEditModalOpen = false;
+  editError = signal<string | null>(null);
   editAdmin = {
     id: '',
     full_name: '',
@@ -518,7 +520,8 @@ export class AdminAccessComponent implements OnInit {
   constructor(
     private supabase: SupabaseService,
     private authService: AuthService,
-    private auditLogService: AuditLogService
+    private auditLogService: AuditLogService,
+    private confirmDialog: ConfirmDialogService
   ) {}
 
   async ngOnInit() {
@@ -542,7 +545,7 @@ export class AdminAccessComponent implements OnInit {
           this.users.set([{
             id: current.id,
             full_name: current.user_metadata?.['full_name'] || 'Administrador',
-            email: current.email || 'gustavojofelix@gmail.com',
+            email: current.email || '',
             phone: current.user_metadata?.['phone'] || '',
             role: 'admin',
             status: 'active',
@@ -570,7 +573,7 @@ export class AdminAccessComponent implements OnInit {
         this.users.set([{
           id: current.id,
           full_name: current.user_metadata?.['full_name'] || 'Administrador',
-          email: current.email || 'gustavojofelix@gmail.com',
+          email: current.email || '',
           phone: current.user_metadata?.['phone'] || '',
           role: 'admin',
           status: 'active',
@@ -742,6 +745,7 @@ export class AdminAccessComponent implements OnInit {
 
   // Edit Modal Handlers
   openEditModal(user: AdminUserAccess) {
+    this.editError.set(null);
     this.selectedUser = user;
     this.editAdmin = {
       id: user.id,
@@ -755,6 +759,7 @@ export class AdminAccessComponent implements OnInit {
 
   async submitEditAdmin() {
     if (!this.selectedUser) return;
+    this.editError.set(null);
     this.isSubmitting.set(true);
 
     try {
@@ -793,7 +798,7 @@ export class AdminAccessComponent implements OnInit {
       this.isEditModalOpen = false;
       await this.loadUsers();
     } catch (e: any) {
-      alert(e.message || 'Erro ao guardar alterações.');
+      this.editError.set(e.message || 'Erro ao guardar alterações.');
     } finally {
       this.isSubmitting.set(false);
     }
@@ -802,6 +807,18 @@ export class AdminAccessComponent implements OnInit {
   // Toggle user status (Activate / Suspend)
   async toggleUserStatus(user: AdminUserAccess, newStatus: 'active' | 'suspended') {
     if (user.id === this.currentUserId) return;
+    
+    const isSuspending = newStatus === 'suspended';
+    const confirmed = await this.confirmDialog.confirm({
+      title: isSuspending ? 'Suspender Utilizador?' : 'Reativar Utilizador?',
+      message: isSuspending
+        ? `O acesso de "${user.full_name || user.email}" ao Back Office será suspenso.`
+        : `O acesso de "${user.full_name || user.email}" será reativado.`,
+      confirmLabel: isSuspending ? 'Suspender' : 'Reativar',
+      danger: isSuspending
+    });
+    if (!confirmed) return;
+
     this.isSubmitting.set(true);
 
     try {
@@ -822,7 +839,7 @@ export class AdminAccessComponent implements OnInit {
 
       await this.loadUsers();
     } catch (e: any) {
-      alert(e.message || 'Erro ao alterar estado do utilizador.');
+      console.error('Erro ao alterar estado do utilizador:', e);
     } finally {
       this.isSubmitting.set(false);
     }

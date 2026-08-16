@@ -64,19 +64,7 @@ export class UserManagementService {
     const user = this.authService.currentUser();
     if (!user) return;
 
-    // First, get the list of company IDs the current user belongs to
-    const { data: userCompanies } = await this.supabase.client
-      .from('company_users')
-      .select('company_id')
-      .eq('user_id', user.id);
-
-    const companyIds = (userCompanies || []).map(c => c.company_id);
-
-    if (companyIds.length === 0) {
-      this.allUsersSignal.set([]);
-      return;
-    }
-
+    // Single query: get company_users with profile data via join
     const { data, error } = await this.supabase.client
       .from('company_users')
       .select(`
@@ -89,11 +77,11 @@ export class UserManagementService {
           name
         ),
         profiles!company_users_user_id_fkey (
+          id,
           email,
           full_name
         )
       `)
-      .in('company_id', companyIds)
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -101,27 +89,12 @@ export class UserManagementService {
       return;
     }
 
-    // Fail-safe: fetch profiles directly for any user_ids to guarantee emails are found
-    const userIds = Array.from(new Set((data || []).map((r: any) => r.user_id)));
-    const profilesMap = new Map<string, { email: string; full_name: string }>();
-
-    if (userIds.length > 0) {
-      const { data: profData } = await this.supabase.client
-        .from('profiles')
-        .select('id, email, full_name')
-        .in('id', userIds);
-
-      (profData || []).forEach((p: any) => {
-        if (p.id) profilesMap.set(p.id, { email: p.email || '', full_name: p.full_name || '' });
-      });
-    }
-
     const usersMap = new Map<string, UserWithCompanies>();
 
     for (const row of data || []) {
-      const userId = row.user_id;
+      const userId = (row as any).user_id as string;
       const profile = (row as any).profiles;
-      const userEmail = profile?.email || profilesMap.get(userId)?.email || 'N/A';
+      const userEmail = profile?.email || 'N/A';
 
       if (!usersMap.has(userId)) {
         usersMap.set(userId, {
@@ -131,26 +104,25 @@ export class UserManagementService {
         });
       }
 
-      const userEntry = usersMap.get(userId)!;
-      userEntry.companies.push({
-        company_id: row.company_id,
+      usersMap.get(userId)!.companies.push({
+        company_id: (row as any).company_id,
         company_name: (row as any).companies?.name || 'Unknown',
-        role: row.role,
-        is_active: row.is_active
+        role: (row as any).role,
+        is_active: (row as any).is_active
       });
     }
 
-    const usersArray = Array.from(usersMap.values());
-
-    this.allUsersSignal.set(usersArray);
+    this.allUsersSignal.set(Array.from(usersMap.values()));
   }
 
   async loadCompanyUsers(companyId: string): Promise<void> {
+    // Single query with join — no separate profiles fallback needed
     const { data, error } = await this.supabase.client
       .from('company_users')
       .select(`
         *,
         profiles!company_users_user_id_fkey (
+          id,
           email,
           full_name
         )
@@ -163,23 +135,9 @@ export class UserManagementService {
       return;
     }
 
-    const userIds = Array.from(new Set((data || []).map((r: any) => r.user_id)));
-    const profilesMap = new Map<string, { email: string; full_name: string }>();
-
-    if (userIds.length > 0) {
-      const { data: profData } = await this.supabase.client
-        .from('profiles')
-        .select('id, email, full_name')
-        .in('id', userIds);
-
-      (profData || []).forEach((p: any) => {
-        if (p.id) profilesMap.set(p.id, { email: p.email || '', full_name: p.full_name || '' });
-      });
-    }
-
     const usersWithEmails = (data || []).map((row: any) => ({
       ...row,
-      user_email: row.profiles?.email || profilesMap.get(row.user_id)?.email || row.user_id
+      user_email: row.profiles?.email || row.user_id
     }));
 
     this.companyUsersSignal.set(usersWithEmails);
