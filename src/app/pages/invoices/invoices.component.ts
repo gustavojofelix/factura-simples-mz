@@ -236,7 +236,8 @@ export class InvoicesComponent implements OnInit {
         invoiceNumber: invoice.invoice_number,
         totalAmount: invoice.total,
         amountPaid: invoice.amount_paid,
-        amountPending: invoice.amount_pending
+        amountPending: invoice.amount_pending,
+        invoiceDate: invoice.date
       }
     });
 

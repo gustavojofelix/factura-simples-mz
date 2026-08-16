@@ -17,6 +17,7 @@ export interface PaymentDialogData {
   totalAmount: number;
   amountPaid: number;
   amountPending: number;
+  invoiceDate?: string;
 }
 
 @Component({
@@ -70,11 +71,14 @@ export interface PaymentDialogData {
 
         <mat-form-field>
           <mat-label>Data do Pagamento</mat-label>
-          <input matInput [matDatepicker]="picker" formControlName="payment_date">
+          <input matInput [matDatepicker]="picker" formControlName="payment_date" [min]="minDate">
           <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
           <mat-datepicker #picker></mat-datepicker>
           @if (paymentForm.get('payment_date')?.hasError('required')) {
             <mat-error>Campo obrigatório</mat-error>
+          }
+          @if (paymentForm.get('payment_date')?.hasError('matDatepickerMin')) {
+            <mat-error>A data não pode ser anterior à da fatura ({{ getMinDateFormatted() }})</mat-error>
           }
         </mat-form-field>
 
@@ -128,6 +132,7 @@ export class PaymentDialogComponent {
 
   isSaving = signal(false);
   errorMessage = signal('');
+  minDate: Date | null = null;
 
   paymentForm = this.fb.group({
     amount: [0, [Validators.required, Validators.min(0.01), Validators.max(this.data.amountPending)]],
@@ -136,6 +141,32 @@ export class PaymentDialogComponent {
     reference: [''],
     notes: ['']
   });
+
+  constructor() {
+    if (this.data.invoiceDate) {
+      const parts = this.data.invoiceDate.split('-');
+      if (parts.length === 3) {
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1; // 0-based
+        const day = parseInt(parts[2], 10);
+        this.minDate = new Date(year, month, day);
+      } else {
+        this.minDate = new Date(this.data.invoiceDate);
+      }
+    }
+
+    // Set defaults: if today is before invoice date, initialize datepicker to invoice date
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (this.minDate && today < this.minDate) {
+      this.paymentForm.patchValue({ payment_date: this.minDate });
+    }
+  }
+
+  getMinDateFormatted(): string {
+    if (!this.minDate) return '';
+    return this.minDate.toLocaleDateString('pt-MZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
 
   setPartialPayment() {
     const halfAmount = this.data.amountPending / 2;

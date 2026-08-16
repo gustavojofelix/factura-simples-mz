@@ -202,7 +202,7 @@ export class TaxService {
       // For scale activities (sale of goods): progressive 1M, 2.5M, 4M thresholds (3%, 4%, 5%, 20%)
       // For flat-rate activities (services 12% or 15%): single threshold of 4M MZN (12%/15% up to 4M, 20% excess)
       const thresholds = isScaleActivity ? [1000000, 2500000, 4000000] : [4000000];
-      const rates = isScaleActivity ? [baseRate, 4, 5, 20] : [baseRate, 20];
+      const rates = isScaleActivity ? [3, 4, 5, 20] : [baseRate, 20];
 
       let newVolume = company.business_volume;
 
@@ -219,8 +219,8 @@ export class TaxService {
             base: chunk,
             rate: rates[i],
             amount: chunkAmount,
-            isExcess: currentAcc >= thresholds[0] && isScaleActivity,
-            label: ispcSplits.length === 0 ? 'Base Tributável' : 'Excesso de Base Tributável'
+            isExcess: rates[i] === 20,
+            label: rates[i] === 20 ? 'Excesso de Limite ISPC' : `Base Tributável (${rates[i]}%)`
           });
 
           remaining -= chunk;
@@ -239,7 +239,7 @@ export class TaxService {
           rate: excessRate,
           amount: chunkAmount,
           isExcess: true,
-          label: 'Excesso de Base Tributável'
+          label: 'Excesso de Limite ISPC'
         });
 
         currentAcc += remaining;
@@ -257,16 +257,9 @@ export class TaxService {
         else newVolume = baseRate.toString();
       }
 
-      // Se o volume mudou, atualizar a empresa (proativamente)
-      if (newVolume !== company.business_volume) {
-        await this.supabase.db
-          .from('companies')
-          .update({ business_volume: newVolume })
-          .eq('id', company.id);
-        
-        // Recarregar dados da empresa no serviço
-        await this.companyService.loadCompanies();
-      }
+      // NOTE: Overwriting company.business_volume dynamically in the DB is disabled to prevent
+      // corrupting the company's default registration category (3%, 12%, 15%).
+      // The progressive calculation already correctly handles brackets using annual accumulated sales.
 
       const ispcRate = currentAcc > maxThreshold ? 20 : (isScaleActivity ? parseInt(newVolume) : baseRate);
 

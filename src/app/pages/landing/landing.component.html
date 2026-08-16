@@ -52,8 +52,8 @@
           <span>{{ hero.badge }}</span>
         </div>
         <h1 class="hero-title">
-          <ng-container *ngIf="hero.highlightWord && hero.title.includes(hero.highlightWord); else plainTitle">
-            {{ hero.title.split(hero.highlightWord)[0] }}<span class="hero-highlight">{{ hero.highlightWord }}</span>{{ hero.title.split(hero.highlightWord).slice(1).join(hero.highlightWord) }}
+          <ng-container *ngIf="getHeroTitleParts().hasHighlight; else plainTitle">
+            {{ getHeroTitleParts().prefix }}<span class="hero-highlight">{{ getHeroTitleParts().highlight }}</span>{{ getHeroTitleParts().suffix }}
           </ng-container>
           <ng-template #plainTitle>{{ hero.title }}</ng-template>
         </h1>
@@ -322,7 +322,7 @@
 
       <div class="pricing-guarantee">
         <i class="fas fa-shield-check"></i>
-        <p><strong>Garantia de 14 dias.</strong> Experimente sem riscos - sem cartão de crédito necessário.</p>
+        <p>{{ hero.guaranteeText || 'Garantia de 14 dias. Experimente sem riscos - sem cartão de crédito necessário.' }}</p>
       </div>
     </div>
   </section>

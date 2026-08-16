@@ -375,7 +375,7 @@ export class PaymentDialogComponent implements OnInit {
 
       // 2. Redeem voucher if applied
       const vResult = this.voucherResult();
-      if (success && vResult?.voucher?.id) {
+      if (success && vResult?.valid && vResult?.voucher?.id) {
         const session = (await this.supabase.client.auth.getSession()).data?.session;
         await this.voucherService.redeemVoucher(
           vResult.voucher.id,
@@ -425,7 +425,7 @@ export class PaymentDialogComponent implements OnInit {
     if (result.success) {
       // Redeem voucher if applied
       const vResult = this.voucherResult();
-      if (vResult?.voucher?.id) {
+      if (vResult?.valid && vResult?.voucher?.id) {
         const session = (await this.supabase.client.auth.getSession()).data?.session;
         await this.voucherService.redeemVoucher(
           vResult.voucher.id,

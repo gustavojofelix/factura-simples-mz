@@ -227,26 +227,8 @@ serve(async (req) => {
       );
     }
 
-    // ── Send confirmation e-mail (best-effort – errors don't block response) ──
-    if (userEmail) {
-      try {
-        await sendSubscriptionEmail({
-          toEmail:       userEmail,
-          planName,
-          billingCycle,
-          amount:        Number(amount),
-          currency:      'MZN',
-          phoneNumber,
-          paymentMethod,
-          referenceCode,
-        });
-        console.log('=> Confirmation email sent to', userEmail);
-      } catch (mailErr: any) {
-        console.error('Failed to send confirmation email:', mailErr.message);
-      }
-    }
-
     // ── Success ──────────────────────────────────────────────────────────────
+
     const entity    = sislogResult.entity    || null;
     const reference = sislogResult.reference || null;
 

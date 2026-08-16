@@ -270,11 +270,13 @@ export class VoucherService {
       }
     }
 
+    const price = Number(originalPrice) || 0;
+
     // 5. Check minimum amount
     // Use explicit > 0 so that min_amount = 0 (no restriction) is never confused
     // with a missing/null value. Number() ensures string values from the DB are cast.
     const minAmount = Number(voucher.min_amount) || 0;
-    if (minAmount > 0 && Number(originalPrice) < minAmount) {
+    if (minAmount > 0 && price < minAmount) {
       return {
         valid: false,
         message: `Este voucher requer um valor mínimo de compra de ${minAmount.toLocaleString('pt-MZ', { minimumFractionDigits: 2 })} MZN.`
@@ -284,16 +286,16 @@ export class VoucherService {
     // 6. Calculate discount amount
     let discountAmount = 0;
     if (voucher.discount_type === 'percentage') {
-      discountAmount = (originalPrice * voucher.discount_value) / 100;
+      discountAmount = (price * voucher.discount_value) / 100;
     } else if (voucher.discount_type === 'fixed_amount') {
       discountAmount = voucher.discount_value;
     }
 
-    if (discountAmount > originalPrice) {
-      discountAmount = originalPrice;
+    if (discountAmount > price) {
+      discountAmount = price;
     }
 
-    const finalPrice = Math.max(0, originalPrice - discountAmount);
+    const finalPrice = Math.max(0, price - discountAmount);
 
     return {
       valid: true,

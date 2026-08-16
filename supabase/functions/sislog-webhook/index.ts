@@ -7,20 +7,49 @@ import nodemailer from "npm:nodemailer@6.9.11";
 // Failure:  entity == "00000", errormessage is set (Sislog API v1.3)
 
 serve(async (req) => {
-  const url = new URL(req.url);
+  // CORS support
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: { 'Access-Control-Allow-Origin': '*' } });
+  }
 
-  const entity          = url.searchParams.get('entity')          || '';
-  const reference       = url.searchParams.get('reference')       || '';
-  const value           = url.searchParams.get('value')           || '0';
-  const transactionId   = url.searchParams.get('transactionId')   || '';
-  const provider        = url.searchParams.get('provider')        || '';
-  const paymentdatetime = url.searchParams.get('paymentdatetime') || '';
-  const errormessage    = url.searchParams.get('errormessage')    || ''; // v1.3 – failed payments
+  const params: Record<string, string> = {};
+
+  // 1. Parse URL query parameters
+  const url = new URL(req.url);
+  url.searchParams.forEach((val, key) => {
+    params[key.toLowerCase()] = val;
+  });
+
+  // 2. If POST request, attempt to read JSON body parameters
+  if (req.method === 'POST') {
+    try {
+      const body = await req.json();
+      if (body && typeof body === 'object') {
+        Object.keys(body).forEach(key => {
+          params[key.toLowerCase()] = String(body[key] ?? '');
+        });
+      }
+    } catch (e) {
+      // Ignore body parsing errors
+    }
+  }
+
+  const entity          = params['entity']          || '';
+  const reference       = params['reference']       || '';
+  const value           = params['value']           || '0';
+  const transactionId   = params['transactionid']   || params['transaction_id'] || '';
+  const provider        = params['provider']        || '';
+  const paymentdatetime = params['paymentdatetime'] || '';
+  const errormessage    = params['errormessage']    || '';
 
   if (!transactionId) {
-    console.warn("sislog-webhook called without transactionId");
-    return new Response("Missing transactionId", { status: 400 });
+    console.warn("sislog-webhook called without transactionId. Params received:", params);
+    return new Response("Missing transactionId", { 
+      status: 400,
+      headers: { 'Access-Control-Allow-Origin': '*' } 
+    });
   }
+
 
   const supabaseUrl        = Deno.env.get('SUPABASE_URL') || '';
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY') || '';

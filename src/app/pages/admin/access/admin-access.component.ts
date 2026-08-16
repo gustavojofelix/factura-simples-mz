@@ -216,8 +216,7 @@ export interface AdminUserAccess {
 
         <app-pagination
           [totalItems]="filteredUsers().length"
-          [pageSize]="pageSize"
-          [currentPage]="currentPage"
+          [defaultPageSize]="pageSize"
           (pageChange)="onPageChange($event)">
         </app-pagination>
       </div>
@@ -544,38 +543,21 @@ export class AdminAccessComponent implements OnInit {
         return { data: null, error: err };
       });
 
-      // 2. Locate or create target profile and ensure role = 'admin'
-      const { data: existingProfile } = await this.supabase.db
+      // 2. Ensure the admin profile exists and is admin via RPC (bypasses RLS and handles race conditions)
+      await this.supabase.client.rpc('make_user_admin', { target_email: cleanEmail });
+
+      // 3. Update full name and phone safely now that the profile is guaranteed to exist
+      const { data: updatedProfile } = await this.supabase.db
         .from('profiles')
-        .select('id')
+        .update({
+          full_name: this.newAdmin.full_name.trim(),
+          phone: this.newAdmin.phone.trim() || undefined
+        })
         .ilike('email', cleanEmail)
+        .select('id')
         .maybeSingle();
 
-      let targetUserId = existingProfile?.id || inviteRes?.user?.id;
-
-      if (targetUserId) {
-        await this.supabase.db
-          .from('profiles')
-          .update({
-            full_name: this.newAdmin.full_name.trim(),
-            phone: this.newAdmin.phone.trim() || undefined,
-            role: 'admin'
-          })
-          .eq('id', targetUserId);
-      } else {
-        // Fallback upsert by email
-        const { data: upsertData } = await this.supabase.db
-          .from('profiles')
-          .upsert({
-            email: cleanEmail,
-            full_name: this.newAdmin.full_name.trim(),
-            phone: this.newAdmin.phone.trim() || undefined,
-            role: 'admin'
-          }, { onConflict: 'email' })
-          .select('id')
-          .single();
-        targetUserId = upsertData?.id;
-      }
+      const targetUserId = updatedProfile?.id || inviteRes?.user?.id || null;
 
       await this.auditLogService.log(
         'Adicionou Novo Administrador',

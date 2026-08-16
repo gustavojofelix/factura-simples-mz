@@ -80,6 +80,19 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.cmsService.hero();
   }
 
+  getHeroTitleParts() {
+    const title = this.hero.title || '';
+    const highlight = this.hero.highlightWord || '';
+    if (!highlight || !title.toLowerCase().includes(highlight.toLowerCase())) {
+      return { hasHighlight: false, prefix: title, highlight: '', suffix: '' };
+    }
+    const index = title.toLowerCase().indexOf(highlight.toLowerCase());
+    const prefix = title.substring(0, index);
+    const actualHighlight = title.substring(index, index + highlight.length);
+    const suffix = title.substring(index + highlight.length);
+    return { hasHighlight: true, prefix, highlight: actualHighlight, suffix };
+  }
+
   get stats() {
     return this.cmsService.stats();
   }
@@ -163,6 +176,13 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
 
     window.addEventListener('scroll', this.scrollListener, { passive: true });
     this.scrollListener();
+
+    try {
+      await this.cmsService.loadAllContent();
+      this.cdr.markForCheck();
+    } catch (e) {
+      console.error('Error loading CMS content:', e);
+    }
 
     await this.loadDynamicPlans();
   }

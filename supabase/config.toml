@@ -30,3 +30,14 @@ entrypoint = "./functions/invite-user/index.ts"
 enabled = true
 verify_jwt = true
 entrypoint = "./functions/notify-admin/index.ts"
+
+[functions.sislog-webhook]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/sislog-webhook/index.ts"
+
+[functions.process-subscription-payment]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/process-subscription-payment/index.ts"
+
