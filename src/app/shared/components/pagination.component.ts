@@ -104,7 +104,7 @@ export class PaginationComponent implements OnInit, OnChanges {
 
   @Output() pageChange = new EventEmitter<PageChangeEvent>();
 
-  currentPage = 1;
+  @Input() currentPage = 1;
   currentPageSize = 10;
   totalPages = 1;
   visiblePages: (number | string)[] = [];
@@ -124,6 +124,9 @@ export class PaginationComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    if (changes['currentPage']) {
+      this.currentPage = changes['currentPage'].currentValue;
+    }
     if (changes['totalItems'] || changes['defaultPageSize']) {
       if (changes['defaultPageSize'] && !changes['defaultPageSize'].firstChange) {
         this.currentPageSize = changes['defaultPageSize'].currentValue;

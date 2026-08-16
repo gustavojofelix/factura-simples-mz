@@ -19,7 +19,7 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     )
 
-    const { email, fullName, phone, companyName, role, inviterName } = await req.json()
+    const { email, fullName, phone, companyName, role, inviterName, isPlatformAdmin } = await req.json()
 
     if (!email) {
       throw new Error('Email is required')
@@ -82,9 +82,22 @@ serve(async (req) => {
     const inviter = inviterName || 'Um administrador'
     const company = companyName || 'uma empresa'
 
-    const titleText = isNewUser
-      ? `Convite para aceder à empresa ${company}`
-      : `Adicionado à empresa ${company}`
+    let titleText = '';
+    let bodyText = '';
+
+    if (isPlatformAdmin) {
+      titleText = isNewUser 
+        ? 'Convite para aceder ao Back Office' 
+        : 'Adicionado ao Back Office';
+      bodyText = isNewUser
+        ? `<strong>${inviter}</strong> adicionou-o(a) como <strong>${roleName}</strong> no Back Office do ISPC Fácil.`
+        : `A sua conta foi configurada com acesso de <strong>${roleName}</strong> no Back Office do ISPC Fácil.`;
+    } else {
+      titleText = isNewUser
+        ? `Convite para aceder à empresa ${company}`
+        : `Adicionado à empresa ${company}`;
+      bodyText = `<strong>${inviter}</strong> adicionou-o(a) à empresa <strong>${company}</strong> no ISPC Fácil com o papel de <strong>${roleName}</strong>.`;
+    }
 
     const buttonText = isNewUser ? 'Aceitar Convite & Criar Senha' : 'Aceder ao ISPC Fácil'
 
@@ -93,7 +106,7 @@ serve(async (req) => {
         <h2 style="color: #f16c39; border-bottom: 2px solid #f16c39; padding-bottom: 12px; margin-top: 0;">✅ ${titleText}</h2>
         <p style="font-size: 15px; color: #333;">Olá <strong>${fullName || cleanEmail}</strong>,</p>
         <p style="font-size: 14px; color: #555; line-height: 1.6;">
-          <strong>${inviter}</strong> adicionou-o(a) à empresa <strong>${company}</strong> no ISPC Fácil com o papel de <strong>${roleName}</strong>.
+          ${bodyText}
         </p>
         ${isNewUser ? `
           <p style="font-size: 14px; color: #555; line-height: 1.6;">
@@ -101,7 +114,7 @@ serve(async (req) => {
           </p>
         ` : `
           <p style="font-size: 14px; color: #555; line-height: 1.6;">
-            A sua conta já tem acesso a esta empresa. Clique no botão abaixo para iniciar sessão:
+            A sua conta já tem acesso a esta secção. Clique no botão abaixo para iniciar sessão:
           </p>
         `}
         <div style="text-align: center; margin: 32px 0;">

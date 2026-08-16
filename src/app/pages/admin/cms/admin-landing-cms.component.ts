@@ -61,7 +61,14 @@ import {
         <button (click)="error = ''" class="text-red-700 hover:text-red-900 text-xs font-bold uppercase">Fechar</button>
       </div>
 
-      <!-- Navigation Tabs -->
+      <!-- Loading State -->
+      <div *ngIf="!loaded" class="flex flex-col items-center justify-center p-12 bg-white rounded-3xl border border-gray-100 shadow-sm">
+        <div class="animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent mb-3"></div>
+        <p class="text-sm text-gray-500 font-medium">A carregar dados do site...</p>
+      </div>
+
+      <ng-container *ngIf="loaded">
+        <!-- Navigation Tabs -->
       <div class="flex border-b border-gray-200 overflow-x-auto no-scrollbar gap-2 bg-white p-2 rounded-2xl border border-gray-100 shadow-sm">
         <button (click)="activeTab = 'hero'" [class.bg-blue-600]="activeTab === 'hero'" [class.text-white]="activeTab === 'hero'" [class.text-gray-600]="activeTab !== 'hero'" [class.hover:bg-gray-100]="activeTab !== 'hero'" class="flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm transition-all whitespace-nowrap">
           <span>🚀 Hero & Banner</span>
@@ -382,6 +389,7 @@ import {
           </div>
         </div>
       </div>
+      </ng-container>
     </div>
   `
 })
@@ -390,6 +398,7 @@ export class AdminLandingCmsComponent implements OnInit {
   message = '';
   error = '';
   saving = false;
+  loaded = false;
 
   heroForm!: HeroContent;
   statsForm: StatContent[] = [];
@@ -403,6 +412,7 @@ export class AdminLandingCmsComponent implements OnInit {
   async ngOnInit() {
     await this.cmsService.loadAllContent();
     this.populateForms();
+    this.loaded = true;
   }
 
   populateForms() {

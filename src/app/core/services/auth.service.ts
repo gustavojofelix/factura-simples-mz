@@ -258,22 +258,9 @@ export class AuthService {
     if (!user) return false;
 
     // 2. Check current profile role
-    let profile = await this.getCurrentProfile();
+    const profile = await this.getCurrentProfile();
     if (profile?.role === 'admin') {
       return true;
-    }
-
-    // 3. Invoke SECURITY DEFINER RPC to promote user
-    try {
-      if (userEmail) {
-        await this.supabase.client.rpc('make_user_admin', { target_email: userEmail });
-        profile = await this.getCurrentProfile();
-        if (profile?.role === 'admin') {
-          return true;
-        }
-      }
-    } catch (err) {
-      console.warn('Erro ao atualizar permissão via RPC make_user_admin:', err);
     }
 
     return false;
