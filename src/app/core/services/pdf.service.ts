@@ -165,7 +165,7 @@ export class PdfService {
         align-items: center !important;
         justify-content: center !important;
         flex: 0 0 16px !important;
-        line-height: 16px !important;
+        line-height: 1 !important;
         height: 18px !important;
         width: 16px !important;
         padding: 0 !important;
@@ -174,7 +174,7 @@ export class PdfService {
         font-size: 9pt !important;
         letter-spacing: 0 !important;
         font-variant-numeric: tabular-nums !important;
-        overflow: hidden !important;
+        overflow: visible !important;
         font-weight: bold !important;
         text-align: center !important;
         box-sizing: border-box !important;
@@ -184,7 +184,7 @@ export class PdfService {
       .pdf-export-mode .digit-box.small {
         height: 15px !important;
         width: 13px !important;
-        line-height: 13px !important;
+        line-height: 1 !important;
         font-size: 7.5pt !important;
       }
       .pdf-export-mode .digit-group {
@@ -194,6 +194,15 @@ export class PdfService {
       .pdf-export-mode .nuit-row {
         display: inline-flex !important;
         align-items: center !important;
+      }
+      .pdf-export-mode .q2-period-row .digit-box,
+      .pdf-export-mode .nuit-row .digit-box {
+        transform: translateY(0) !important;
+      }
+      .pdf-export-mode .q2-period-row .digit-value,
+      .pdf-export-mode .nuit-row .digit-value {
+        display: inline-block !important;
+        transform: translateY(-5px) !important;
       }
       .pdf-export-mode .dotted-field-inline {
         vertical-align: baseline !important;

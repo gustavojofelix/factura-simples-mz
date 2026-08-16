@@ -78,13 +78,13 @@ import { PdfService } from '../../core/services/pdf.service';
                 <div class="q2-period-row">
                   <div class="digit-group">
                     @for (d of getMonthDigits(); track $index) {
-                      <div class="digit-box">{{ d }}</div>
+                      <div class="digit-box"><span class="digit-value">{{ d }}</span></div>
                     }
                     <span class="digit-label">(Mês)</span>
                   </div>
                   <div class="digit-group" style="margin-left:6px;">
                     @for (d of getYearDigits(); track $index) {
-                      <div class="digit-box">{{ d }}</div>
+                      <div class="digit-box"><span class="digit-value">{{ d }}</span></div>
                     }
                     <span class="digit-label">(Ano)</span>
                   </div>
@@ -104,7 +104,7 @@ import { PdfService } from '../../core/services/pdf.service';
               <div class="section-body q3-body">
                 <div class="nuit-row">
                   @for (d of getNuitDigits(); track $index) {
-                    <div class="digit-box">{{ d }}</div>
+                    <div class="digit-box"><span class="digit-value">{{ d }}</span></div>
                   }
                 </div>
                 <div class="q3-footer">
@@ -599,6 +599,10 @@ import { PdfService } from '../../core/services/pdf.service';
     /* ——— Quadro 3 ——— */
     .q3-body { padding: 4px 6px; }
     .nuit-row { display: flex; gap: 2px; margin-bottom: 4px; }
+    .q2-period-row .digit-box,
+    .nuit-row .digit-box { transform: translateY(0); }
+    .q2-period-row .digit-value,
+    .nuit-row .digit-value { display: inline-block; transform: translateY(-5px); }
     .q3-footer { font-size: 7.5pt; display: flex; align-items: center; border-top: 1px dotted #000; padding-top: 2px; }
 
     /* ——— Digit boxes ——— */
@@ -612,12 +616,13 @@ import { PdfService } from '../../core/services/pdf.service';
       align-items: center;
       justify-content: center;
       font-size: 9pt;
-      line-height: 16px;
+      line-height: 1;
       padding: 0;
       font-weight: bold;
       text-align: center;
       vertical-align: middle;
-      overflow: hidden;
+      overflow: visible;
+      font-family: Arial, sans-serif;
       letter-spacing: 0;
       font-variant-numeric: tabular-nums;
     }
@@ -626,7 +631,7 @@ import { PdfService } from '../../core/services/pdf.service';
       width: 13px;
       height: 15px;
       font-size: 7.5pt;
-      line-height: 13px;
+      line-height: 1;
     }
 
     /* ——— Checkboxes ——— */
