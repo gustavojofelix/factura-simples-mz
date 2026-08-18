@@ -410,17 +410,15 @@ export class AdminLandingCmsComponent implements OnInit {
   constructor(public cmsService: LandingCmsService) {}
 
   async ngOnInit() {
+    this.populateForms();
+    this.loaded = true;
+
     try {
       await this.cmsService.loadAllContent();
       this.populateForms();
     } catch (e) {
       console.error('Error during init:', e);
       this.error = 'Erro ao carregar dados da página.';
-    } finally {
-      // Defer setting loaded to true to the next tick to prevent NG0100
-      setTimeout(() => {
-        this.loaded = true;
-      });
     }
   }
 

@@ -180,20 +180,45 @@ export class LandingCmsService {
   });
 
   loading = signal<boolean>(false);
+  private contentLoadPromise: Promise<void> | null = null;
 
   constructor(
     private supabase: SupabaseService,
     private auditLogService: AuditLogService
-  ) {
-    this.loadAllContent();
-  }
+  ) {}
 
   async loadAllContent(): Promise<void> {
-    this.loading.set(true);
+    // Several pages use this service. Reuse the same request when they are
+    // initialised at the same time instead of issuing concurrent queries.
+    if (this.contentLoadPromise) return this.contentLoadPromise;
+
+    this.contentLoadPromise = this.loadContentWithTimeout();
     try {
-      const { data, error } = await this.supabase.client
+      await this.contentLoadPromise;
+    } finally {
+      this.contentLoadPromise = null;
+    }
+  }
+
+  private async loadContentWithTimeout(): Promise<void> {
+    this.loading.set(true);
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const request = this.supabase.client
         .from('landing_content')
         .select('*');
+
+      const result = await Promise.race([
+        request,
+        new Promise<{ data: null; error: Error }>((resolve) => {
+          timeoutId = setTimeout(() => resolve({
+            data: null,
+            error: new Error('A consulta do conteúdo demorou demasiado tempo.')
+          }), 15000);
+        })
+      ]);
+
+      const { data, error } = result;
 
       if (error) {
         console.error('Error loading landing content:', error);
@@ -230,6 +255,7 @@ export class LandingCmsService {
     } catch (err) {
       console.error('Exception loading landing content:', err);
     } finally {
+      if (timeoutId) clearTimeout(timeoutId);
       this.loading.set(false);
     }
   }
