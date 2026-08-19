@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.8";
-import nodemailer from "npm:nodemailer@6.9.11";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,90 +17,6 @@ const SMTP_PASS    = "&fF1;s*QJ$dJ";
 const FROM_ADDRESS = '"ISPC Fácil" <notifications@ispcfacil.co.mz>';
 const ADMIN_EMAIL  = "info@ispcfacil.com";
 
-/** Send subscription confirmation email to the user and a copy to the admin. */
-async function sendSubscriptionEmail(opts: {
-  toEmail: string;
-  planName: string;
-  billingCycle: string;
-  amount: number;
-  currency: string;
-  phoneNumber: string;
-  paymentMethod: string;
-  referenceCode: string;
-}) {
-  const cycleLabels: Record<string, string> = {
-    monthly:    'Mensal',
-    quarterly:  'Trimestral (3 meses)',
-    semiannual: 'Semestral (6 meses)',
-    yearly:     'Anual',
-  };
-  const cycleLabel      = cycleLabels[opts.billingCycle] || opts.billingCycle;
-  const methodLabel     = opts.paymentMethod.toUpperCase();
-  const amountFormatted = new Intl.NumberFormat('pt-MZ', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(opts.amount);
-
-  const transporter = nodemailer.createTransport({
-    host:   SMTP_HOST,
-    port:   SMTP_PORT,
-    secure: true,
-    auth:   { user: SMTP_USER, pass: SMTP_PASS },
-  });
-
-  const htmlUser = `
-    <div style="font-family: sans-serif; padding: 24px; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 8px;">
-      <h2 style="color: #f16c39; border-bottom: 2px solid #f16c39; padding-bottom: 10px;">Confirmação de Subscrição</h2>
-      <p>Olá,</p>
-      <p>O seu pedido de pagamento para a subscrição do <strong>Plano ${opts.planName}</strong> foi enviado com sucesso. Por favor, verifique o seu telemóvel e introduza o PIN ${methodLabel} para confirmar.</p>
-      <table style="width:100%; border-collapse:collapse; margin:20px 0;">
-        <tr><td style="padding:8px; border-bottom:1px solid #eee; font-weight:bold; width:160px;">Plano:</td><td style="padding:8px; border-bottom:1px solid #eee;">${opts.planName}</td></tr>
-        <tr><td style="padding:8px; border-bottom:1px solid #eee; font-weight:bold;">Período:</td><td style="padding:8px; border-bottom:1px solid #eee;">${cycleLabel}</td></tr>
-        <tr><td style="padding:8px; border-bottom:1px solid #eee; font-weight:bold;">Valor:</td><td style="padding:8px; border-bottom:1px solid #eee;">${amountFormatted} ${opts.currency}</td></tr>
-        <tr><td style="padding:8px; border-bottom:1px solid #eee; font-weight:bold;">Método:</td><td style="padding:8px; border-bottom:1px solid #eee;">${methodLabel}</td></tr>
-        <tr><td style="padding:8px; border-bottom:1px solid #eee; font-weight:bold;">Telemóvel:</td><td style="padding:8px; border-bottom:1px solid #eee;">${opts.phoneNumber}</td></tr>
-        <tr><td style="padding:8px; border-bottom:1px solid #eee; font-weight:bold;">Referência:</td><td style="padding:8px; border-bottom:1px solid #eee; font-family:monospace;">${opts.referenceCode}</td></tr>
-        <tr><td style="padding:8px; font-weight:bold;">Data:</td><td style="padding:8px;">${new Date().toLocaleString('pt-PT')}</td></tr>
-      </table>
-      <p style="color:#555;">Caso não reconheça este pedido, contacte-nos em <a href="mailto:${ADMIN_EMAIL}">${ADMIN_EMAIL}</a>.</p>
-      <hr style="border:none; border-top:1px solid #eee; margin-top:30px;"/>
-      <p style="font-size:11px; color:#888;">E-mail automático do sistema ISPC Fácil. Não responda a este e-mail.</p>
-    </div>
-  `;
-
-  const htmlAdmin = `
-    <div style="font-family: sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 8px;">
-      <h2 style="color: #f16c39; border-bottom: 2px solid #f16c39; padding-bottom: 10px;">Nova Subscrição Submetida</h2>
-      <table style="width:100%; border-collapse:collapse; margin:20px 0;">
-        <tr><td style="padding:8px; border-bottom:1px solid #eee; font-weight:bold; width:160px;">Cliente:</td><td style="padding:8px; border-bottom:1px solid #eee;">${opts.toEmail}</td></tr>
-        <tr><td style="padding:8px; border-bottom:1px solid #eee; font-weight:bold;">Plano:</td><td style="padding:8px; border-bottom:1px solid #eee;">${opts.planName}</td></tr>
-        <tr><td style="padding:8px; border-bottom:1px solid #eee; font-weight:bold;">Período:</td><td style="padding:8px; border-bottom:1px solid #eee;">${cycleLabel}</td></tr>
-        <tr><td style="padding:8px; border-bottom:1px solid #eee; font-weight:bold;">Valor:</td><td style="padding:8px; border-bottom:1px solid #eee;">${amountFormatted} ${opts.currency}</td></tr>
-        <tr><td style="padding:8px; border-bottom:1px solid #eee; font-weight:bold;">Método:</td><td style="padding:8px; border-bottom:1px solid #eee;">${methodLabel}</td></tr>
-        <tr><td style="padding:8px; border-bottom:1px solid #eee; font-weight:bold;">Telemóvel:</td><td style="padding:8px; border-bottom:1px solid #eee;">${opts.phoneNumber}</td></tr>
-        <tr><td style="padding:8px; font-weight:bold;">Referência:</td><td style="padding:8px; font-family:monospace;">${opts.referenceCode}</td></tr>
-      </table>
-      <hr style="border:none; border-top:1px solid #eee; margin-top:30px;"/>
-      <p style="font-size:11px; color:#888;">Sistema de notificações ISPC Fácil.</p>
-    </div>
-  `;
-
-  // Send to subscriber
-  await transporter.sendMail({
-    from:    FROM_ADDRESS,
-    to:      opts.toEmail,
-    subject: `[ISPC Fácil] Confirmação de Subscrição – Plano ${opts.planName}`,
-    html:    htmlUser,
-  });
-
-  // Send admin copy
-  await transporter.sendMail({
-    from:    FROM_ADDRESS,
-    to:      ADMIN_EMAIL,
-    subject: `[Notificação] Nova Subscrição – ${opts.planName} – ${opts.toEmail}`,
-    html:    htmlAdmin,
-  });
-}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {

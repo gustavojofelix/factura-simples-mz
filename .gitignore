@@ -1,8 +1,31 @@
-.angular
-dist
-node_modules
-.env
+# Dependencies
+node_modules/
 
-# Mobile App Exclusions
+# Build output
+dist/
+.angular/
+
+# Environment & Credentials
+.env
+*.env
+supabase/.env
+supabase/.temp/
+*.pem
+*.jks
+*.keystore
+upload_certificate.pem
+
+# Mobile
 android_backup/
 local.properties
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
