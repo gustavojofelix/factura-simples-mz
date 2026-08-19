@@ -187,28 +187,69 @@ serve(async (req) => {
       throw updateCompleteError;
     }
 
-    // 2. Activate the subscription
-    const nextBillingDate = new Date();
-    if (payment.billing_cycle === "yearly") {
-      nextBillingDate.setFullYear(nextBillingDate.getFullYear() + 1);
-    } else if (payment.billing_cycle === "semiannual") {
-      nextBillingDate.setMonth(nextBillingDate.getMonth() + 6);
-    } else if (payment.billing_cycle === "quarterly") {
-      nextBillingDate.setMonth(nextBillingDate.getMonth() + 3);
-    } else {
-      nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+    // 2. Activate or extend the subscription. A payment made while the
+    // subscription is active starts after its current end date, so paid days
+    // are never lost. Expired subscriptions start from today.
+    const monthsToAdd = payment.billing_cycle === "yearly"
+      ? 12
+      : payment.billing_cycle === "semiannual"
+        ? 6
+        : payment.billing_cycle === "quarterly"
+          ? 3
+          : 1;
+    const today = new Date();
+    const todayStr = today.toISOString().substring(0, 10);
+
+    const addMonthsToDate = (date: Date, months: number): Date => {
+      const result = new Date(date);
+      const originalDay = result.getUTCDate();
+      result.setUTCDate(1);
+      result.setUTCMonth(result.getUTCMonth() + months);
+      const lastDay = new Date(Date.UTC(result.getUTCFullYear(), result.getUTCMonth() + 1, 0)).getUTCDate();
+      result.setUTCDate(Math.min(originalDay, lastDay));
+      return result;
+    };
+
+    let existingSubscription: any = null;
+    if (payment.subscription_id) {
+      const { data } = await supabase
+        .from("subscriptions")
+        .select("id, start_date, end_date")
+        .eq("id", payment.subscription_id)
+        .maybeSingle();
+      existingSubscription = data;
     }
 
-    const startDateStr = new Date().toISOString().substring(0, 10);
-    const nextBillingDateStr = nextBillingDate.toISOString().substring(0, 10);
+    if (!existingSubscription) {
+      const { data, error } = await supabase
+        .from("subscriptions")
+        .select("id, start_date, end_date")
+        .eq("company_id", payment.company_id)
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      existingSubscription = data;
+    }
+
+    const currentEnd = existingSubscription?.end_date
+      ? new Date(`${existingSubscription.end_date}T00:00:00Z`)
+      : null;
+    const todayStart = new Date(`${todayStr}T00:00:00Z`);
+    const isActivePeriod = !!currentEnd && currentEnd.getTime() >= todayStart.getTime();
+    const periodStart = isActivePeriod
+      ? existingSubscription.start_date
+      : todayStr;
+    const newEnd = addMonthsToDate(isActivePeriod ? currentEnd! : todayStart, monthsToAdd);
+    const nextBillingDateStr = newEnd.toISOString().substring(0, 10);
+    const startDateStr = periodStart || todayStr;
 
     console.log(
       `[SislogWebhook] Activating subscription for company: ${payment.company_id}. Start date: ${startDateStr}, End/Next billing: ${nextBillingDateStr}`,
     );
 
-    if (payment.subscription_id) {
+    if (existingSubscription?.id) {
       console.log(
-        `[SislogWebhook] Updating existing subscription by ID: ${payment.subscription_id}`,
+        `[SislogWebhook] Updating existing subscription by ID: ${existingSubscription.id}`,
       );
       const { error: updateSubError } = await supabase
         .from("subscriptions")
@@ -223,7 +264,7 @@ serve(async (req) => {
           next_billing_date: nextBillingDateStr,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", payment.subscription_id);
+        .eq("id", existingSubscription.id);
 
       if (updateSubError) {
         console.error(
@@ -234,75 +275,29 @@ serve(async (req) => {
       }
     } else {
       console.log(
-        `[SislogWebhook] Checking for existing subscription for company: ${payment.company_id}`,
+        `[SislogWebhook] Inserting new subscription record for company: ${payment.company_id}`,
       );
-      const { data: existingSub, error: selectSubError } = await supabase
+      const { error: insertSubError } = await supabase
         .from("subscriptions")
-        .select("id")
-        .eq("company_id", payment.company_id)
-        .limit(1)
-        .maybeSingle();
+        .insert({
+          company_id: payment.company_id,
+          plan_name: payment.plan_name,
+          billing_cycle: payment.billing_cycle,
+          amount: payment.amount,
+          status: "active",
+          payment_method: payment.payment_method,
+          start_date: startDateStr,
+          end_date: nextBillingDateStr,
+          next_billing_date: nextBillingDateStr,
+          updated_at: new Date().toISOString(),
+        });
 
-      if (selectSubError) {
+      if (insertSubError) {
         console.error(
-          "[SislogWebhook] Error looking up existing subscription:",
-          selectSubError,
+          "[SislogWebhook] Error inserting new subscription:",
+          insertSubError,
         );
-        throw selectSubError;
-      }
-
-      if (existingSub?.id) {
-        console.log(
-          `[SislogWebhook] Updating existing subscription found by company_id: ${existingSub.id}`,
-        );
-        const { error: updateSubError } = await supabase
-          .from("subscriptions")
-          .update({
-            plan_name: payment.plan_name,
-            billing_cycle: payment.billing_cycle,
-            amount: payment.amount,
-            status: "active",
-            payment_method: payment.payment_method,
-            start_date: startDateStr,
-            end_date: nextBillingDateStr,
-            next_billing_date: nextBillingDateStr,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", existingSub.id);
-
-        if (updateSubError) {
-          console.error(
-            "[SislogWebhook] Error updating subscription:",
-            updateSubError,
-          );
-          throw updateSubError;
-        }
-      } else {
-        console.log(
-          `[SislogWebhook] Inserting new subscription record for company: ${payment.company_id}`,
-        );
-        const { error: insertSubError } = await supabase
-          .from("subscriptions")
-          .insert({
-            company_id: payment.company_id,
-            plan_name: payment.plan_name,
-            billing_cycle: payment.billing_cycle,
-            amount: payment.amount,
-            status: "active",
-            payment_method: payment.payment_method,
-            start_date: startDateStr,
-            end_date: nextBillingDateStr,
-            next_billing_date: nextBillingDateStr,
-            updated_at: new Date().toISOString(),
-          });
-
-        if (insertSubError) {
-          console.error(
-            "[SislogWebhook] Error inserting new subscription:",
-            insertSubError,
-          );
-          throw insertSubError;
-        }
+        throw insertSubError;
       }
     }
 

@@ -339,18 +339,25 @@ export class SubscriptionService {
     else if (cycle === 'semiannual') monthsToAdd = 6;
     else if (cycle === 'yearly') monthsToAdd = 12;
 
-    const startDate = updates.start_date || new Date().toISOString().substring(0, 10);
-    const endDateObj = new Date();
-    endDateObj.setMonth(endDateObj.getMonth() + monthsToAdd);
-    const endDateStr = endDateObj.toISOString().substring(0, 10);
-    const nextBillingDateStr = updates.next_billing_date ? updates.next_billing_date.substring(0, 10) : endDateStr;
-
     const { data: existing } = await this.supabase.client
       .from('subscriptions')
-      .select('id')
+      .select('id, start_date, end_date, next_billing_date')
       .eq('company_id', companyId)
       .limit(1)
       .maybeSingle();
+
+    const today = new Date();
+    const todayStr = today.toISOString().substring(0, 10);
+    const existingEnd = existing?.end_date ? new Date(`${existing.end_date}T00:00:00Z`) : null;
+    const isExistingPeriodActive = !!existingEnd && existingEnd.getTime() >= new Date(`${todayStr}T00:00:00Z`).getTime();
+    const periodStart = updates.start_date || (isExistingPeriodActive ? existing!.start_date : todayStr);
+    const endDateObj = isExistingPeriodActive ? existingEnd! : new Date(`${todayStr}T00:00:00Z`);
+    const originalDay = endDateObj.getUTCDate();
+    endDateObj.setUTCDate(1);
+    endDateObj.setUTCMonth(endDateObj.getUTCMonth() + monthsToAdd);
+    const lastDayOfTargetMonth = new Date(Date.UTC(endDateObj.getUTCFullYear(), endDateObj.getUTCMonth() + 1, 0)).getUTCDate();
+    endDateObj.setUTCDate(Math.min(originalDay, lastDayOfTargetMonth));
+    const endDateStr = endDateObj.toISOString().substring(0, 10);
 
     const payload = {
       company_id: companyId,
@@ -360,9 +367,9 @@ export class SubscriptionService {
       amount: updates.amount !== undefined ? updates.amount : 0,
       currency: updates.currency || 'MZN',
       payment_method: updates.payment_method || 'mpesa',
-      start_date: startDate,
-      end_date: updates.end_date || endDateStr,
-      next_billing_date: nextBillingDateStr,
+      start_date: periodStart,
+      end_date: endDateStr,
+      next_billing_date: endDateStr,
       auto_renew: updates.auto_renew ?? true,
       updated_at: new Date().toISOString()
     };
@@ -426,30 +433,22 @@ export class SubscriptionService {
     if (!plan) return false;
 
     let amount = plan.monthly_price;
-    let monthsToAdd = 1;
 
     switch (billingCycle) {
       case "quarterly":
         amount = plan.three_months_price || (plan.monthly_price * 3);
-        monthsToAdd = 3;
         break;
       case "semiannual":
         amount = plan.six_months_price || (plan.monthly_price * 6);
-        monthsToAdd = 6;
         break;
       case "yearly":
         amount = plan.yearly_price;
-        monthsToAdd = 12;
         break;
       case "monthly":
       default:
         amount = plan.monthly_price;
-        monthsToAdd = 1;
         break;
     }
-
-    const nextBillingDate = new Date();
-    nextBillingDate.setMonth(nextBillingDate.getMonth() + monthsToAdd);
 
     const targetCompanyId = companyId || this.subscriptionSignal()?.company_id;
 
@@ -459,7 +458,6 @@ export class SubscriptionService {
         billing_cycle: billingCycle,
         amount,
         status: "active",
-        next_billing_date: nextBillingDate.toISOString(),
       });
     }
 
@@ -469,7 +467,6 @@ export class SubscriptionService {
         billing_cycle: billingCycle,
         amount,
         status: "active",
-        next_billing_date: nextBillingDate.toISOString(),
       });
     }
 
