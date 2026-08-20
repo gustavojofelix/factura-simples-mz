@@ -13,6 +13,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { InvoiceDialogComponent } from '../../shared/components/invoice-dialog.component';
 import { InvoiceService, Invoice } from '../../core/services/invoice.service';
+import { TaxService } from '../../core/services/tax.service';
 
 interface DashboardMetrics {
   quarterSales: number;
@@ -64,6 +65,7 @@ export class DashboardComponent implements OnInit {
     public companyService: CompanyService,
     public subscriptionService: SubscriptionService,
     public invoiceService: InvoiceService,
+    public taxService: TaxService,
     private supabase: SupabaseService,
     private dialog: MatDialog
   ) {
@@ -140,6 +142,7 @@ export class DashboardComponent implements OnInit {
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonthIndex = now.getMonth();
+    const currentQuarter = Math.floor(currentMonthIndex / 3) + 1;
     const quarterStartMonth = Math.floor(currentMonthIndex / 3) * 3;
 
     const quarterInvoices = invoicesWithCalculatedStatus.filter(inv => {
@@ -154,10 +157,11 @@ export class DashboardComponent implements OnInit {
       inv.calculatedStatus === 'pendente'
     );
 
-    // ISPC is calculated quarterly based on annual volume, not per invoice
-    // We estimate 3% of quarterly sales as a placeholder
-    const totalQuarterSales = quarterInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
-    const estimatedIspc = totalQuarterSales * 0.03;
+    // Fetch precise ISPC calculation from TaxService to take into account cumulative sales and excesses
+    const taxCalc = await this.taxService.calculateTaxForPeriod(currentYear, currentQuarter);
+    
+    const totalQuarterSales = taxCalc ? taxCalc.totalSales : quarterInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
+    const estimatedIspc = taxCalc ? taxCalc.ispcAmount : totalQuarterSales * 0.03;
 
     this.metrics.set({
       quarterSales: totalQuarterSales,
