@@ -98,3 +98,13 @@
 .company-option strong, .company-option small { display: block; }
 .company-option strong { color: #1e293b; font-size: .85rem; }
 .company-option small { margin-top: .1rem; color: #94a3b8; font-size: .65rem; }
+.brand-header {
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(circle at 16% 10%, rgba(249, 115, 22, .24), transparent 38%), linear-gradient(135deg, #fff7ed 0%, #ffffff 52%, #ffedd5 100%);
+  box-shadow: 0 8px 24px rgba(249, 115, 22, .08);
+}
+.brand-header::after { position: absolute; right: -2rem; bottom: -3.5rem; width: 8rem; height: 8rem; border-radius: 9999px; background: rgba(251, 146, 60, .18); content: ''; filter: blur(18px); }
+.brand-header h1 { display: none; }
+.brand-logo-crop { position: relative; z-index: 1; width: 13rem; height: 4.5rem; overflow: hidden; }
+.brand-logo { position: absolute; top: -4.7rem; left: 50%; width: 13rem; height: 13rem; max-width: none; transform: translateX(-50%); object-fit: contain; }
