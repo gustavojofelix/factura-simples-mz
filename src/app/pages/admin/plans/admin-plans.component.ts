@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { SubscriptionPlan, SubscriptionService } from '../../../core/services/subscription.service';
+import { PlanEntitlement, SubscriptionFeature, SubscriptionPlan, SubscriptionService } from '../../../core/services/subscription.service';
 
 @Component({
   selector: 'app-admin-plans',
@@ -166,10 +166,17 @@ import { SubscriptionPlan, SubscriptionService } from '../../../core/services/su
               </label>
             </div>
 
-            <!-- Features Array Input -->
+            <!-- Structured features from the database catalog -->
             <div>
-              <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Funcionalidades (Linha a linha)</label>
-              <textarea [(ngModel)]="featuresRaw" name="featuresRaw" rows="5" placeholder="Digite uma funcionalidade por linha..." class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-sans"></textarea>
+              <label class="block text-xs font-bold text-gray-600 uppercase mb-2">Funcionalidades e limites</label>
+              <div *ngIf="features.length === 0" class="text-xs text-gray-500 bg-gray-50 rounded-lg p-3">Catálogo de funcionalidades indisponível.</div>
+              <div *ngFor="let feature of features" class="border-b border-gray-100 py-2">
+                <div class="flex items-center gap-2">
+                  <input type="checkbox" [checked]="isFeatureEnabled(feature.id)" (change)="toggleFeature(feature)" [name]="'feature_' + feature.code" class="rounded border-gray-300 text-blue-600">
+                  <span class="text-sm text-gray-700">{{ feature.name }}</span>
+                </div>
+                <input *ngIf="feature.value_type === 'limit' && isFeatureEnabled(feature.id)" type="number" min="0" [ngModel]="getFeatureLimit(feature.id)" (ngModelChange)="setFeatureLimit(feature.id, $event)" [name]="'limit_' + feature.code" placeholder="Vazio = ilimitado" class="mt-1 ml-6 w-40 px-2 py-1 bg-gray-50 border border-gray-200 rounded text-xs">
+              </div>
             </div>
 
             <div class="flex gap-2 pt-2">
@@ -215,11 +222,34 @@ export class AdminPlansComponent implements OnInit {
   };
 
   featuresRaw = '';
+  entitlements: PlanEntitlement[] = [];
 
   constructor(public subscriptionService: SubscriptionService) {}
 
   ngOnInit() {
     this.subscriptionService.loadPlans();
+    this.subscriptionService.loadFeatures();
+  }
+
+  get features(): SubscriptionFeature[] { return this.subscriptionService.features(); }
+
+  isFeatureEnabled(featureId: string): boolean {
+    return this.entitlements.find(e => e.feature_id === featureId)?.enabled ?? false;
+  }
+
+  getFeatureLimit(featureId: string): number | null {
+    return this.entitlements.find(e => e.feature_id === featureId)?.limit_value ?? null;
+  }
+
+  toggleFeature(feature: SubscriptionFeature) {
+    const current = this.entitlements.find(e => e.feature_id === feature.id);
+    if (current) current.enabled = !current.enabled;
+    else this.entitlements = [...this.entitlements, { feature_id: feature.id, feature, enabled: true, limit_value: null }];
+  }
+
+  setFeatureLimit(featureId: string, value: number | null) {
+    const current = this.entitlements.find(e => e.feature_id === featureId);
+    if (current) current.limit_value = value === null || value === undefined || value === ('' as any) ? null : Number(value);
   }
 
   get plans(): SubscriptionPlan[] {
@@ -244,6 +274,7 @@ export class AdminPlansComponent implements OnInit {
       sort_order: this.plans.length + 1
     };
     this.featuresRaw = '';
+    this.entitlements = [];
     this.message = '';
     this.error = '';
   }
@@ -253,6 +284,7 @@ export class AdminPlansComponent implements OnInit {
     this.isEditing = true;
     this.form = { ...plan };
     this.featuresRaw = (plan.features || []).join('\n');
+    this.entitlements = (plan.entitlements || []).map(e => ({ ...e }));
     this.message = '';
     this.error = '';
   }
@@ -291,6 +323,7 @@ export class AdminPlansComponent implements OnInit {
     const payload: Partial<SubscriptionPlan> = {
       ...this.form,
       features: featuresList,
+      entitlements: this.entitlements,
       monthly_price: Number(this.form.monthly_price || 0),
       three_months_price: Number(this.form.three_months_price || 0),
       six_months_price: Number(this.form.six_months_price || 0),

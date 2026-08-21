@@ -5,6 +5,7 @@ import { AuditLogService } from "./audit-log.service";
 export interface Subscription {
   id: string;
   company_id: string;
+  plan_id?: string;
   plan_name: string;
   status: "active" | "past_due" | "cancelled" | "trialing";
   billing_cycle: "monthly" | "quarterly" | "semiannual" | "yearly";
@@ -30,11 +31,31 @@ export interface SubscriptionPlan {
   yearly_price: number;
   currency?: string;
   features: string[];
+  entitlements?: PlanEntitlement[];
   is_active?: boolean;
   is_popular?: boolean;
   sort_order?: number;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface SubscriptionFeature {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  value_type: 'boolean' | 'limit';
+  scope: 'account' | 'company';
+  unit?: string;
+  is_active: boolean;
+  sort_order: number;
+}
+
+export interface PlanEntitlement {
+  feature_id: string;
+  feature: SubscriptionFeature;
+  enabled: boolean;
+  limit_value: number | null;
 }
 
 @Injectable({
@@ -47,6 +68,8 @@ export class SubscriptionService {
   private plansSignal = signal<SubscriptionPlan[]>([]);
   plans = this.plansSignal.asReadonly();
   loadingPlans = signal<boolean>(false);
+  private featuresSignal = signal<SubscriptionFeature[]>([]);
+  features = this.featuresSignal.asReadonly();
 
   private defaultPlans: SubscriptionPlan[] = [
     {
@@ -147,7 +170,7 @@ export class SubscriptionService {
     try {
       const { data, error } = await this.supabase.client
         .from("subscription_plans")
-        .select("*")
+        .select("*, plan_features:subscription_plan_features(feature_id, enabled, limit_value, feature:subscription_features(*))")
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: true });
 
@@ -169,6 +192,12 @@ export class SubscriptionService {
           three_months_price: p.three_months_price !== undefined && p.three_months_price !== null ? Number(p.three_months_price) : Number(p.monthly_price || 0) * 3,
           six_months_price: p.six_months_price !== undefined && p.six_months_price !== null ? Number(p.six_months_price) : Number(p.monthly_price || 0) * 6,
           yearly_price: Number(p.yearly_price || 0),
+          entitlements: (p.plan_features || []).map((pf: any) => ({
+            feature_id: pf.feature_id,
+            feature: pf.feature,
+            enabled: pf.enabled,
+            limit_value: pf.limit_value == null ? null : Number(pf.limit_value)
+          })),
         }));
         this.plansSignal.set(parsedPlans);
         return parsedPlans;
@@ -183,6 +212,35 @@ export class SubscriptionService {
     } finally {
       this.loadingPlans.set(false);
     }
+  }
+
+  async loadFeatures(): Promise<SubscriptionFeature[]> {
+    const { data, error } = await this.supabase.client
+      .from('subscription_features')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
+    if (error) {
+      console.error('Erro ao carregar catálogo de funcionalidades:', error);
+      return [];
+    }
+    this.featuresSignal.set((data || []) as SubscriptionFeature[]);
+    return (data || []) as SubscriptionFeature[];
+  }
+
+  async savePlanEntitlements(planId: string, entitlements: PlanEntitlement[]): Promise<boolean> {
+    const rows = entitlements.map(e => ({
+      plan_id: planId,
+      feature_id: e.feature_id,
+      enabled: !!e.enabled,
+      limit_value: e.limit_value == null || e.limit_value === ('' as any) ? null : Number(e.limit_value)
+    }));
+    const { error: deleteError } = await this.supabase.client
+      .from('subscription_plan_features').delete().eq('plan_id', planId);
+    if (deleteError) return false;
+    if (!rows.length) return true;
+    const { error } = await this.supabase.client.from('subscription_plan_features').insert(rows);
+    return !error;
   }
 
   async createPlan(plan: Partial<SubscriptionPlan>): Promise<boolean> {
@@ -205,14 +263,18 @@ export class SubscriptionService {
       sort_order: plan.sort_order ?? 0,
     };
 
-    const { error } = await this.supabase.client
+    const { data, error } = await this.supabase.client
       .from("subscription_plans")
-      .insert(payload);
+      .insert(payload)
+      .select('id')
+      .single();
 
     if (error) {
       console.error("Error creating subscription plan:", error);
       return false;
     }
+
+    if (data?.id && plan.entitlements && !(await this.savePlanEntitlements(data.id, plan.entitlements))) return false;
 
     await this.auditLogService.log(
       "Criou Plano de Subscrição",
@@ -227,10 +289,11 @@ export class SubscriptionService {
     id: string,
     updates: Partial<SubscriptionPlan>,
   ): Promise<boolean> {
+    const { entitlements, ...planUpdates } = updates;
     const { error } = await this.supabase.client
       .from("subscription_plans")
       .update({
-        ...updates,
+        ...planUpdates,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id);
@@ -239,6 +302,8 @@ export class SubscriptionService {
       console.error("Error updating subscription plan:", error);
       return false;
     }
+
+    if (entitlements && !(await this.savePlanEntitlements(id, entitlements))) return false;
 
     await this.auditLogService.log(
       "Atualizou Plano de Subscrição",
@@ -362,6 +427,7 @@ export class SubscriptionService {
     const payload = {
       company_id: companyId,
       plan_name: updates.plan_name || 'Trial',
+      plan_id: updates.plan_id,
       status: updates.status || 'active',
       billing_cycle: cycle,
       amount: updates.amount !== undefined ? updates.amount : 0,
@@ -455,6 +521,7 @@ export class SubscriptionService {
     if (targetCompanyId) {
       return await this.upsertSubscription(targetCompanyId, {
         plan_name: plan.name,
+        plan_id: plan.id,
         billing_cycle: billingCycle,
         amount,
         status: "active",
@@ -464,6 +531,7 @@ export class SubscriptionService {
     if (subscriptionId) {
       return await this.updateSubscription(subscriptionId, {
         plan_name: plan.name,
+        plan_id: plan.id,
         billing_cycle: billingCycle,
         amount,
         status: "active",
