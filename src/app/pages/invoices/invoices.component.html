@@ -57,7 +57,7 @@
     </button>
   </div>
 
-  <mat-card class="!shadow-sm overflow-hidden">
+  <mat-card class="!rounded-2xl !shadow-sm overflow-hidden">
     <mat-card-content class="!p-4 sm:!p-6">
       <!-- Search & Filters -->
       <div class="mb-6 flex flex-col md:flex-row items-stretch md:items-center gap-4">
@@ -177,8 +177,8 @@
             </ng-container>
 
             <ng-container matColumnDef="total">
-              <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-800">Total</th>
-              <td mat-cell *matCellDef="let invoice">
+              <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-800 numeric-cell">Total</th>
+              <td mat-cell *matCellDef="let invoice" class="numeric-cell">
                 <div>
                   <div class="font-bold text-slate-900">{{ formatCurrency(invoice.total) }}</div>
                   @if (invoice.amount_paid > 0) {
@@ -196,7 +196,7 @@
               <td mat-cell *matCellDef="let invoice">
                 <span 
                   [class]="getStatusColor(invoice.status)"
-                  class="px-2.5 py-1 rounded-full text-xs font-bold border whitespace-nowrap inline-flex items-center"
+                  class="status-badge whitespace-nowrap"
                 >
                   <mat-icon class="!text-xs mr-1" *ngIf="invoice.status === 'anulada'">block</mat-icon>
                   {{ getStatusLabel(invoice.status) }}

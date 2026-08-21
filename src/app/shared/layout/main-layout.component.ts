@@ -14,6 +14,12 @@ import { CompanyService } from '../../core/services/company.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { effect } from '@angular/core';
 
+interface MenuItem {
+  icon: string;
+  label: string;
+  route: string;
+}
+
 @Component({
   selector: 'app-main-layout',
   standalone: true,
@@ -36,7 +42,7 @@ import { effect } from '@angular/core';
 export class MainLayoutComponent {
   isMobileMenuOpen = signal(false);
 
-  menuItems = [
+  menuItems: MenuItem[] = [
     { icon: 'dashboard', label: 'Painel', route: '/painel' },
     { icon: 'receipt_long', label: 'Facturas', route: '/facturas' },
     { icon: 'people', label: 'Clientes', route: '/clientes' },
@@ -108,5 +114,31 @@ export class MainLayoutComponent {
     if (parts.length === 0) return '';
     if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  });
+
+  navGroups = computed(() => {
+    const groupNames: Record<string, string> = {
+      '/painel': 'Visão geral', '/facturas': 'Operações', '/clientes': 'Operações',
+      '/produtos': 'Operações', '/impostos': 'Fiscalidade', '/relatorios': 'Fiscalidade',
+      '/auditoria': 'Fiscalidade', '/configuracoes': 'Sistema'
+    };
+    const groups: { label: string; items: MenuItem[] }[] = [];
+    for (const item of this.filteredMenuItems()) {
+      const label = groupNames[item.route] || 'Menu';
+      let group = groups.find(candidate => candidate.label === label);
+      if (!group) { group = { label, items: [] }; groups.push(group); }
+      group.items.push(item);
+    }
+    return groups;
+  });
+
+  userDisplayName = computed(() => {
+    const user = this.authService.currentUser();
+    return user?.user_metadata?.['full_name'] || user?.email?.split('@')[0] || 'Utilizador';
+  });
+
+  userRoleLabel = computed(() => {
+    const role = this.companyService.activeRole();
+    return role === 'owner' ? 'Administrador' : role === 'manager' ? 'Gestor' : 'Vendedor';
   });
 }

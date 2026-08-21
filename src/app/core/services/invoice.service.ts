@@ -208,11 +208,11 @@ export class InvoiceService {
   getStatusColor(status: string): string {
     const s = (status || '').toLowerCase();
     const colors: { [key: string]: string } = {
-      'rascunho': 'bg-gray-100 text-gray-800 border-gray-300',
-      'pendente': 'bg-blue-100 text-blue-800 border-blue-200',
-      'paga': 'bg-green-100 text-green-800 border-green-200',
-      'vencida': 'bg-red-100 text-red-800 border-red-200',
-      'anulada': 'bg-red-600 text-white'
+        'rascunho': 'bg-slate-50 text-slate-600 border-slate-200',
+        'pendente': 'bg-amber-50 text-amber-700 border-amber-200',
+        'paga': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        'vencida': 'bg-rose-50 text-rose-700 border-rose-200',
+        'anulada': 'bg-rose-50 text-rose-700 border-rose-200'
     };
     return colors[s] || 'bg-gray-100 text-gray-800';
   }
@@ -536,11 +536,12 @@ export class InvoiceService {
   }
 
   formatCurrency(value: number): string {
+    const safeValue = Number.isFinite(Number(value)) ? Number(value) : 0;
     return new Intl.NumberFormat('pt-MZ', {
       style: 'decimal',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
-    }).format(value) + ' MZN';
+    }).format(safeValue) + ' MZN';
   }
 
   formatDate(dateString: string): string {

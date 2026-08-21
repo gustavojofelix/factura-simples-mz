@@ -49,6 +49,7 @@ interface RecentInvoice {
   styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit {
+  readonly currentDate = new Date();
   metrics = signal<DashboardMetrics>({
     quarterSales: 0,
     ispcToPay: 0,
@@ -230,11 +231,17 @@ export class DashboardComponent implements OnInit {
   }
 
   formatCurrency(value: number): string {
+    const safeValue = Number.isFinite(Number(value)) ? Number(value) : 0;
     return new Intl.NumberFormat('pt-MZ', {
       style: 'decimal',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
-    }).format(value) + ' MZN';
+    }).format(safeValue) + ' MZN';
+  }
+
+  formatAmount(value: number): string {
+    const safeValue = Number.isFinite(Number(value)) ? Number(value) : 0;
+    return new Intl.NumberFormat('pt-MZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(safeValue);
   }
 
   formatDate(dateString: string): string {

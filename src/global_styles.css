@@ -135,3 +135,44 @@ button, a, input, select, textarea, [role="button"], .mat-mdc-menu-item {
   max-height: 100vh !important;
   overflow: hidden;
 }
+/* ISPC Fácil product primitives */
+:root {
+  --ispc-orange: #f97316;
+  --ispc-orange-dark: #ea580c;
+  --ispc-canvas: #f8fafc;
+}
+
+body { background: var(--ispc-canvas); color: #0f172a; }
+
+.mat-mdc-card, mat-card {
+  border: 1px solid rgba(226, 232, 240, .8) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .04) !important;
+}
+
+.mat-mdc-card:hover, mat-card:hover { box-shadow: 0 8px 24px rgba(15, 23, 42, .07) !important; }
+
+table.mat-mdc-table th.mat-mdc-header-cell {
+  color: #64748b; font-size: .7rem; text-transform: uppercase;
+  letter-spacing: .06em; background: #f8fafc;
+}
+table.mat-mdc-table td.mat-mdc-cell, table.mat-mdc-table th.mat-mdc-header-cell {
+  border-bottom-color: #f1f5f9;
+}
+table.mat-mdc-table td.mat-mdc-cell { font-variant-numeric: tabular-nums; }
+
+.kpi-value { font-size: clamp(1.35rem, 2.4vw, 1.75rem); line-height: 1.15; letter-spacing: -.04em; white-space: nowrap; }
+.numeric-cell { text-align: right !important; font-variant-numeric: tabular-nums; }
+.status-badge { display: inline-flex; align-items: center; gap: .4rem; border: 1px solid; border-radius: 9999px; padding: .3rem .6rem; font-size: .7rem; font-weight: 700; }
+.status-badge::before { content: ''; width: .4rem; height: .4rem; border-radius: 9999px; background: currentColor; }
+
+/* Consistent top-aligned form labels where native inputs are used. */
+.field-label { display: block; margin-bottom: .375rem; color: #334155; font-size: .75rem; font-weight: 600; }
+.field-input { height: 2.5rem; width: 100%; border: 1px solid #cbd5e1; border-radius: .75rem; padding: 0 .75rem; outline: none; background: white; }
+.field-input:focus { border-color: var(--ispc-orange); box-shadow: 0 0 0 3px rgba(249,115,22,.12); }
+
+/* Material tab groups read as segmented controls in settings/tax workflows. */
+.segmented-tabs .mat-mdc-tab-header, .settings-tabs .mat-mdc-tab-header { margin: .75rem; padding: .25rem; border: 0; border-radius: .75rem; background: #f1f5f9; }
+.segmented-tabs .mat-mdc-tab, .settings-tabs .mat-mdc-tab { min-width: 8rem; border-radius: .6rem; }
+.segmented-tabs .mdc-tab--active, .settings-tabs .mdc-tab--active { background: white; box-shadow: 0 1px 3px rgba(15,23,42,.12); }
+.segmented-tabs .mdc-tab-indicator, .settings-tabs .mdc-tab-indicator { display: none; }
