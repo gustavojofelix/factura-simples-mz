@@ -22,6 +22,14 @@
   transition: background .2s ease, border-color .2s ease;
 }
 
+.profile-chip .mdc-button__label {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  flex-direction: row;
+  gap: .75rem;
+}
+
 .profile-chip:hover {
   border-color: #e2e8f0;
 }
@@ -64,7 +72,7 @@
   font-weight: 700;
 }
 
-.profile-chip p:last-child {
+.profile-chip p:last-child:not(:first-child) {
   display: inline-flex;
   margin-top: .15rem;
   padding: .1rem .4rem;
