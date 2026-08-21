@@ -113,7 +113,7 @@
   isolation: isolate;
   overflow-x: hidden;
   background:
-    linear-gradient(135deg, #e9eef5 0%, #f5f7fa 42%, #fff4e8 100%);
+    linear-gradient(118deg, #ffeedc 0%, #fbf4ec 25%, #f3f5f7 58%, #fff1df 100%);
 }
 
 .app-canvas::before,
