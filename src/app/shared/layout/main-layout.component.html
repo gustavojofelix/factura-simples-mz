@@ -51,14 +51,10 @@
 
       <!-- User Menu -->
       <div class="p-3 border-t border-slate-100 bg-slate-50/50">
-        <button mat-button [matMenuTriggerFor]="userMenu"
+        <button mat-button [matMenuTriggerFor]="userMenu" aria-label="Abrir perfil e opções da conta"
           class="profile-chip w-full !justify-start !text-right !items-center !flex !flex-row !h-14 !px-2 rounded-xl hover:!bg-white">
           <span class="profile-avatar mr-3 shrink-0">{{ userInitials() }}<span class="profile-online-dot"></span></span>
-          <div class="flex-1 min-w-0 !text-left">
-            <p class="text-sm font-semibold text-slate-800">Perfil</p>
             <p class="text-[10px] text-slate-500 font-medium">{{ userRoleLabel() }} · Ver perfil</p>
-          </div>
-          <mat-icon class="ml-auto shrink-0 text-slate-400">expand_less</mat-icon>
         </button>
 
         <mat-menu #userMenu="matMenu">
