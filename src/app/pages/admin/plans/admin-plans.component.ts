@@ -168,14 +168,25 @@ import { PlanEntitlement, SubscriptionFeature, SubscriptionPlan, SubscriptionSer
 
             <!-- Structured features from the database catalog -->
             <div>
-              <label class="block text-xs font-bold text-gray-600 uppercase mb-2">Funcionalidades e limites</label>
+              <div class="flex items-center justify-between mb-2">
+                <label class="block text-xs font-bold text-gray-600 uppercase">Funcionalidades e limites</label>
+                <span class="text-[10px] text-gray-400">Seleccione o que o plano inclui</span>
+              </div>
               <div *ngIf="features.length === 0" class="text-xs text-gray-500 bg-gray-50 rounded-lg p-3">Catálogo de funcionalidades indisponível.</div>
-              <div *ngFor="let feature of features" class="border-b border-gray-100 py-2">
-                <div class="flex items-center gap-2">
-                  <input type="checkbox" [checked]="isFeatureEnabled(feature.id)" (change)="toggleFeature(feature)" [name]="'feature_' + feature.code" class="rounded border-gray-300 text-blue-600">
-                  <span class="text-sm text-gray-700">{{ feature.name }}</span>
-                </div>
-                <input *ngIf="feature.value_type === 'limit' && isFeatureEnabled(feature.id)" type="number" min="0" [ngModel]="getFeatureLimit(feature.id)" (ngModelChange)="setFeatureLimit(feature.id, $event)" [name]="'limit_' + feature.code" placeholder="Vazio = ilimitado" class="mt-1 ml-6 w-40 px-2 py-1 bg-gray-50 border border-gray-200 rounded text-xs">
+              <div *ngIf="features.length > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-80 overflow-y-auto pr-1">
+                <label *ngFor="let feature of features"
+                  class="flex items-center justify-between gap-2 rounded-lg border px-2.5 py-2 cursor-pointer transition-colors"
+                  [class.border-blue-300]="isFeatureEnabled(feature.id)"
+                  [class.bg-blue-50]="isFeatureEnabled(feature.id)"
+                  [class.border-gray-200]="!isFeatureEnabled(feature.id)"
+                  [class.bg-gray-50]="!isFeatureEnabled(feature.id)">
+                  <span class="flex items-center gap-2 min-w-0">
+                    <input type="checkbox" [checked]="isFeatureEnabled(feature.id)" (change)="toggleFeature(feature)" [name]="'feature_' + feature.code" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                    <span class="text-xs font-medium text-gray-700 truncate" [title]="feature.description || feature.name">{{ feature.name }}</span>
+                  </span>
+                  <input *ngIf="feature.value_type === 'limit' && isFeatureEnabled(feature.id)" type="number" min="0" [ngModel]="getFeatureLimit(feature.id)" (ngModelChange)="setFeatureLimit(feature.id, $event)" [name]="'limit_' + feature.code" placeholder="∞" title="Vazio = ilimitado" class="w-16 shrink-0 px-1.5 py-1 bg-white border border-blue-200 rounded text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500">
+                  <span *ngIf="feature.value_type === 'limit' && !isFeatureEnabled(feature.id)" class="text-[10px] text-gray-400">Limite</span>
+                </label>
               </div>
             </div>
 
