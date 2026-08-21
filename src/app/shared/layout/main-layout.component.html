@@ -9,12 +9,20 @@
 
       <!-- Company Selector -->
       @if (companyService.companies().length > 0) {
-      <div class="p-4 border-b border-slate-200/60">
-        <mat-form-field appearance="outline" class="w-full !text-sm hide-subscript">
-          <mat-select [value]="companyService.activeCompany()?.id" (selectionChange)="onCompanyChange($event.value)">
+      <div class="workspace-wrap">
+        <p class="workspace-eyebrow">Workspace activo</p>
+        <mat-form-field appearance="outline" class="workspace-switcher w-full hide-subscript">
+          <mat-icon matPrefix class="workspace-icon">business</mat-icon>
+          <mat-select [value]="companyService.activeCompany()?.id" (selectionChange)="onCompanyChange($event.value)" panelClass="company-select-panel">
+            <mat-select-trigger>
+              <span class="workspace-trigger">
+                <span class="workspace-trigger-name">{{ companyService.activeCompany()?.name || 'Seleccionar empresa' }}</span>
+                <span class="workspace-trigger-caption">Empresa activa</span>
+              </span>
+            </mat-select-trigger>
             @for (company of companyService.companies(); track company.id) {
             <mat-option [value]="company.id">
-              <span class="truncate font-medium">{{ company.name }}</span>
+              <span class="company-option"><span class="company-option-mark">{{ company.name.charAt(0).toUpperCase() }}</span><span><strong>{{ company.name }}</strong><small>Empresa</small></span></span>
             </mat-option>
             }
           </mat-select>
@@ -44,12 +52,11 @@
           class="profile-chip w-full !justify-start !text-right !items-center !flex !flex-row !h-14 !px-2 rounded-xl hover:!bg-white">
           <span class="profile-avatar mr-3 shrink-0">{{ userInitials() }}<span class="profile-online-dot"></span></span>
           <div class="flex-1 min-w-0 !text-left">
-            <p class="text-xs font-semibold text-slate-800 truncate">
-              {{ userDisplayName() }}
-            </p>
+            <p class="text-sm font-semibold text-slate-800">Perfil</p>
+            <p class="text-[10px] text-slate-500 font-medium">Abrir menu</p>
             <p class="text-[10px] text-slate-500 font-medium">{{ userRoleLabel() }} · Ver perfil</p>
           </div>
-          <mat-icon class="ml-auto shrink-0 text-slate-400">more_vert</mat-icon>
+          <mat-icon class="ml-auto shrink-0 text-slate-400">expand_less</mat-icon>
         </button>
 
         <mat-menu #userMenu="matMenu">

@@ -74,3 +74,19 @@
   font-size: .6rem;
   font-weight: 700;
 }
+.profile-chip p:nth-of-type(3) { display: none; }
+
+.workspace-wrap { padding: 1rem; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
+.workspace-eyebrow { margin: 0 0 .5rem .2rem; color: #94a3b8; font-size: .62rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.workspace-switcher { margin: 0 !important; }
+.workspace-switcher .mat-mdc-text-field-wrapper { border-radius: .9rem !important; background: white; }
+.workspace-switcher .mat-mdc-form-field-infix { min-height: 3.25rem; padding-top: .35rem !important; padding-bottom: .35rem !important; }
+.workspace-icon { margin-right: .5rem; color: #f97316; }
+.workspace-trigger { display: flex; flex-direction: column; line-height: 1.15; }
+.workspace-trigger-name { overflow: hidden; max-width: 10rem; color: #1e293b; font-size: .88rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.workspace-trigger-caption { margin-top: .2rem; color: #94a3b8; font-size: .62rem; font-weight: 600; }
+.company-option { display: flex; align-items: center; gap: .7rem; padding: .25rem 0; }
+.company-option-mark { display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: .65rem; background: #fff7ed; color: #ea580c; font-weight: 800; }
+.company-option strong, .company-option small { display: block; }
+.company-option strong { color: #1e293b; font-size: .85rem; }
+.company-option small { margin-top: .1rem; color: #94a3b8; font-size: .65rem; }

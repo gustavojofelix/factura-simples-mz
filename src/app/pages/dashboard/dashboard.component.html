@@ -1,13 +1,29 @@
 <div class="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
   <!-- Header -->
-  <div class="mb-8">
-    <div>
+  <div class="mb-8 flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+    <div class="pt-1">
       <p class="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-orange-500">Visão geral</p>
       <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-2">{{ greeting() }}, veja o seu negócio</h1>
       <p class="text-sm sm:text-base text-slate-500 font-medium">
         Resumo de <span class="text-orange-600 font-semibold">{{ companyService.activeCompany()?.name }}</span> · tudo o que precisa num só lugar.
       </p>
     </div>
+    <aside class="dashboard-context-card">
+      <div class="dashboard-identity">
+        <span class="dashboard-identity-avatar">{{ userName().slice(0, 1).toUpperCase() }}</span>
+        <div class="min-w-0">
+          <p class="dashboard-context-label">Sessão actual</p>
+          <p class="dashboard-context-name">{{ userName() }}</p>
+          <span class="dashboard-role-badge">{{ userRole() }}</span>
+        </div>
+      </div>
+      <div class="dashboard-context-divider"></div>
+      <div class="dashboard-context-grid">
+        <div><span>Empresa</span><strong>{{ companyService.activeCompany()?.name || '—' }}</strong></div>
+        <div><span>Trimestre actual</span><strong>{{ quarterPeriod() }}</strong></div>
+        <div><span>Dados actualizados</span><strong>{{ formatLastUpdated() }}</strong></div>
+      </div>
+    </aside>
   </div>
 
   @if (isLoading()) {

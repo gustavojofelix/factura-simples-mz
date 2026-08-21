@@ -14,6 +14,7 @@ import { SubscriptionService } from '../../core/services/subscription.service';
 import { InvoiceDialogComponent } from '../../shared/components/invoice-dialog.component';
 import { InvoiceService, Invoice } from '../../core/services/invoice.service';
 import { TaxService } from '../../core/services/tax.service';
+import { AuthService } from '../../core/services/auth.service';
 
 interface DashboardMetrics {
   quarterSales: number;
@@ -49,11 +50,28 @@ interface RecentInvoice {
   styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit {
+  readonly lastUpdatedAt = signal<Date | null>(null);
   readonly greeting = computed(() => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Bom dia';
     if (hour < 18) return 'Boa tarde';
     return 'Boa noite';
+  });
+  readonly userName = computed(() => {
+    const user = this.authService.currentUser();
+    return user?.user_metadata?.['full_name'] || user?.email?.split('@')[0] || 'Utilizador';
+  });
+  readonly userRole = computed(() => {
+    const role = this.companyService.activeRole();
+    if (!role) return 'A carregar…';
+    return role === 'owner' ? 'Administrador' : role === 'manager' ? 'Gestor' : 'Vendedor';
+  });
+  readonly quarterPeriod = computed(() => {
+    const now = new Date();
+    const quarter = Math.floor(now.getMonth() / 3);
+    const start = new Date(now.getFullYear(), quarter * 3, 1);
+    const end = new Date(now.getFullYear(), quarter * 3 + 3, 0);
+    return `${this.formatShortDate(start)} — ${this.formatShortDate(end)}`;
   });
   metrics = signal<DashboardMetrics>({
     quarterSales: 0,
@@ -72,6 +90,7 @@ export class DashboardComponent implements OnInit {
     public subscriptionService: SubscriptionService,
     public invoiceService: InvoiceService,
     public taxService: TaxService,
+    public authService: AuthService,
     private supabase: SupabaseService,
     private dialog: MatDialog
   ) {
@@ -99,6 +118,7 @@ export class DashboardComponent implements OnInit {
         this.loadRecentInvoices(companyId),
         this.subscriptionService.loadSubscription(companyId)
       ]);
+      this.lastUpdatedAt.set(new Date());
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
     } finally {
@@ -247,6 +267,16 @@ export class DashboardComponent implements OnInit {
   formatAmount(value: number): string {
     const safeValue = Number.isFinite(Number(value)) ? Number(value) : 0;
     return new Intl.NumberFormat('pt-MZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(safeValue);
+  }
+
+  formatShortDate(date: Date): string {
+    return new Intl.DateTimeFormat('pt-MZ', { day: '2-digit', month: 'short' }).format(date).replace('.', '');
+  }
+
+  formatLastUpdated(): string {
+    const value = this.lastUpdatedAt();
+    if (!value) return 'A sincronizar';
+    return `Hoje, ${value.toLocaleTimeString('pt-MZ', { hour: '2-digit', minute: '2-digit' })}`;
   }
 
   formatDate(dateString: string): string {

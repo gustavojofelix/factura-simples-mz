@@ -2,6 +2,21 @@
   display: block;
 }
 
+.dashboard-context-card { width: min(100%, 34rem); padding: 1rem 1.1rem; border: 1px solid #fed7aa; border-radius: 1.25rem; background: linear-gradient(135deg, rgba(255,255,255,.96), rgba(255,247,237,.92)); box-shadow: 0 12px 28px rgba(234,88,12,.08); }
+.dashboard-identity { display: flex; align-items: center; gap: .75rem; }
+.dashboard-identity-avatar { display: inline-flex; align-items: center; justify-content: center; width: 2.75rem; height: 2.75rem; border-radius: .9rem; background: #0f172a; color: white; font-size: 1rem; font-weight: 800; }
+.dashboard-context-label { margin: 0; color: #f97316; font-size: .62rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.dashboard-context-name { margin: .12rem 0 .25rem; overflow: hidden; color: #0f172a; font-size: 1rem; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.dashboard-role-badge { display: inline-flex; padding: .16rem .45rem; border-radius: 9999px; background: #ffedd5; color: #c2410c; font-size: .62rem; font-weight: 800; }
+.dashboard-context-divider { height: 1px; margin: .9rem 0 .75rem; background: #fed7aa; }
+.dashboard-context-grid { display: grid; grid-template-columns: 1fr 1.35fr 1fr; gap: .8rem; }
+.dashboard-context-grid div { min-width: 0; }
+.dashboard-context-grid span, .dashboard-context-grid strong { display: block; }
+.dashboard-context-grid span { color: #9a3412; font-size: .6rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.dashboard-context-grid strong { margin-top: .22rem; overflow: hidden; color: #334155; font-size: .72rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 1279px) { .dashboard-context-card { width: 100%; } }
+@media (max-width: 640px) { .dashboard-context-grid { grid-template-columns: 1fr 1fr; } .dashboard-context-grid div:last-child { grid-column: 1 / -1; } }
+
 ::ng-deep .mat-mdc-card {
   border-radius: 12px;
 }
