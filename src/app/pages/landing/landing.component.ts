@@ -64,6 +64,9 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
   contactLoading = false;
   privacyOpen = false;
   termsOpen = false;
+  cookieConsentVisible = false;
+  cookiePreferencesOpen = false;
+  analyticsCookies = false;
   contactForm!: FormGroup;
   currentYear = new Date().getFullYear();
 
@@ -71,6 +74,7 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
   private scrollListener!: () => void;
   private visibleItems = new Set<string>();
   private previousBodyOverflow = '';
+  private readonly cookieConsentKey = 'ispc-facil-cookie-consent';
   private readonly sectionIds = [
     'hero',
     'funcionalidades',
@@ -165,6 +169,8 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
   ) {}
 
   async ngOnInit() {
+    this.loadCookieConsent();
+
     this.contactForm = this.fb.group({
       nome: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
@@ -329,10 +335,64 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
+  openCookiePreferences(event?: Event) {
+    event?.preventDefault();
+    this.cookiePreferencesOpen = true;
+    this.cdr.markForCheck();
+  }
+
+  acceptCookies() {
+    this.analyticsCookies = true;
+    this.saveCookieConsent();
+  }
+
+  rejectCookies() {
+    this.analyticsCookies = false;
+    this.saveCookieConsent();
+  }
+
+  saveCookiePreferences() {
+    this.saveCookieConsent();
+  }
+
+  private saveCookieConsent() {
+    try {
+      localStorage.setItem(this.cookieConsentKey, JSON.stringify({
+        necessary: true,
+        analytics: this.analyticsCookies,
+        updatedAt: new Date().toISOString()
+      }));
+    } catch {
+      // Consent still applies for the current session if storage is unavailable.
+    }
+
+    this.cookieConsentVisible = false;
+    this.cookiePreferencesOpen = false;
+    this.cdr.markForCheck();
+  }
+
+  private loadCookieConsent() {
+    try {
+      const storedConsent = localStorage.getItem(this.cookieConsentKey);
+      if (!storedConsent) {
+        this.cookieConsentVisible = true;
+        return;
+      }
+
+      this.analyticsCookies = JSON.parse(storedConsent).analytics === true;
+    } catch {
+      this.cookieConsentVisible = true;
+    }
+  }
+
   @HostListener('document:keydown.escape')
   onEscapeKey() {
     if (this.privacyOpen) this.closePrivacy();
     if (this.termsOpen) this.closeTerms();
+    if (this.cookiePreferencesOpen) {
+      this.cookiePreferencesOpen = false;
+      this.cdr.markForCheck();
+    }
   }
 
   toggleFaq(index: number) {

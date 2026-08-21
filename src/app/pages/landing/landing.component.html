@@ -569,7 +569,7 @@
           <ul>
             <li><a href="#termos-de-uso" (click)="openTerms($event)"><i class="fas fa-chevron-right"></i>Termos de uso</a></li>
             <li><a href="#politica-privacidade" (click)="openPrivacy($event)"><i class="fas fa-chevron-right"></i>Política de privacidade</a></li>
-            <li><a href="#contacto" (click)="scrollToSection('contacto', $event)"><i class="fas fa-chevron-right"></i>Cookies</a></li>
+            <li><a href="#cookies" (click)="openCookiePreferences($event)"><i class="fas fa-chevron-right"></i>Cookies</a></li>
           </ul>
         </div>
       </div>
@@ -651,6 +651,63 @@
         <h3>6. Contacto</h3>
         <p>Para quest&otilde;es sobre estes termos ou sobre a utiliza&ccedil;&atilde;o do servi&ccedil;o, utilize os canais de contacto disponibilizados na plataforma.</p>
         <p class="privacy-modal-updated">&Uacute;ltima actualiza&ccedil;&atilde;o: {{ currentYear }}</p>
+      </div>
+    </section>
+  </div>
+
+  <aside *ngIf="cookieConsentVisible && !cookiePreferencesOpen" class="cookie-consent" aria-label="Preferências de cookies">
+    <div class="cookie-consent-copy">
+      <span class="cookie-consent-icon" aria-hidden="true"><i class="fas fa-cookie-bite"></i></span>
+      <div>
+        <h2>Respeitamos a sua privacidade</h2>
+        <p>Utilizamos cookies necessários para o funcionamento do site e, com a sua autorização, cookies analíticos para melhorar a experiência. <a href="#cookies" (click)="openCookiePreferences($event)">Saiba mais</a></p>
+      </div>
+    </div>
+    <div class="cookie-consent-actions">
+      <button type="button" class="cookie-button cookie-button-ghost" (click)="rejectCookies()">Recusar</button>
+      <button type="button" class="cookie-button cookie-button-secondary" (click)="openCookiePreferences()">Personalizar</button>
+      <button type="button" class="cookie-button cookie-button-primary" (click)="acceptCookies()">Aceitar</button>
+    </div>
+  </aside>
+
+  <div
+    *ngIf="cookiePreferencesOpen"
+    class="cookie-preferences-backdrop"
+    role="presentation"
+    (click)="($event.target === $event.currentTarget) && (cookiePreferencesOpen = false)"
+  >
+    <section class="cookie-preferences" role="dialog" aria-modal="true" aria-labelledby="cookie-preferences-title">
+      <header class="cookie-preferences-header">
+        <div>
+          <span class="privacy-modal-eyebrow">Privacidade</span>
+          <h2 id="cookie-preferences-title">Personalizar cookies</h2>
+          <p>Escolha que tipos de cookies autoriza neste dispositivo.</p>
+        </div>
+        <button type="button" class="privacy-modal-close" (click)="cookiePreferencesOpen = false" aria-label="Fechar preferências de cookies">
+          <i class="fas fa-times" aria-hidden="true"></i>
+        </button>
+      </header>
+      <div class="cookie-preferences-content">
+        <div class="cookie-option">
+          <div>
+            <h3>Cookies necessários <span>Obrigatórios</span></h3>
+            <p>Essenciais para segurança, navegação e funcionamento básico da plataforma. Não podem ser desactivados.</p>
+          </div>
+          <span class="cookie-toggle cookie-toggle-locked" aria-label="Cookies necessários sempre activos"><i class="fas fa-check"></i></span>
+        </div>
+        <div class="cookie-option">
+          <div>
+            <h3>Cookies analíticos</h3>
+            <p>Ajudam-nos a compreender como o site é utilizado para podermos melhorar o desempenho e a experiência.</p>
+          </div>
+          <button type="button" class="cookie-toggle" [class.active]="analyticsCookies" (click)="analyticsCookies = !analyticsCookies" [attr.aria-pressed]="analyticsCookies" aria-label="Activar ou desactivar cookies analíticos">
+            <span></span>
+          </button>
+        </div>
+        <div class="cookie-preferences-footer">
+          <a href="#politica-privacidade" (click)="openPrivacy($event); cookiePreferencesOpen = false">Consultar política de privacidade</a>
+          <button type="button" class="cookie-button cookie-button-primary" (click)="saveCookiePreferences()">Guardar preferências</button>
+        </div>
       </div>
     </section>
   </div>
