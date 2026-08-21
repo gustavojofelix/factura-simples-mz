@@ -108,3 +108,57 @@
 .brand-header h1 { display: none; }
 .brand-logo-crop { position: relative; z-index: 1; width: 13rem; height: 5.25rem; overflow: hidden; }
 .brand-logo { position: absolute; top: -4.05rem; left: 50%; width: 13rem; height: 13rem; max-width: none; transform: translateX(-50%); object-fit: contain; }
+.app-canvas {
+  position: relative;
+  isolation: isolate;
+  overflow-x: hidden;
+  background:
+    linear-gradient(135deg, #e9eef5 0%, #f5f7fa 42%, #fff4e8 100%);
+}
+
+.app-canvas::before,
+.app-canvas::after {
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  content: '';
+  border-radius: 9999px;
+  filter: blur(2px);
+  opacity: .78;
+  transform: translate3d(0, 0, 0);
+}
+
+.app-canvas::before {
+  top: -18rem;
+  right: -12rem;
+  width: 42rem;
+  height: 42rem;
+  background: radial-gradient(circle, rgba(255, 196, 132, .52) 0%, rgba(255, 237, 213, .42) 34%, transparent 70%);
+  animation: ambient-orbit-one 30s ease-in-out infinite alternate;
+}
+
+.app-canvas::after {
+  bottom: -22rem;
+  left: -14rem;
+  width: 46rem;
+  height: 46rem;
+  background: radial-gradient(circle, rgba(148, 163, 184, .42) 0%, rgba(226, 232, 240, .44) 38%, transparent 72%);
+  animation: ambient-orbit-two 36s ease-in-out infinite alternate;
+}
+
+.app-canvas > * { position: relative; z-index: 1; }
+
+@keyframes ambient-orbit-one {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(-2rem, 1.5rem, 0) scale(1.04); }
+}
+
+@keyframes ambient-orbit-two {
+  from { transform: translate3d(0, 0, 0) scale(1.02); }
+  to { transform: translate3d(2rem, -1.5rem, 0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-canvas::before,
+  .app-canvas::after { animation: none; }
+}
