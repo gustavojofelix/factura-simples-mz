@@ -28,8 +28,8 @@
           <div class="pt-3 first:pt-0">
             <p class="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">{{ group.label }}</p>
             @for (item of group.items; track item.route) {
-          <a [routerLink]="item.route" routerLinkActive="bg-orange-50 text-orange-600 !font-semibold"
-          class="group flex items-center px-3 py-2.5 text-slate-600 rounded-xl hover:bg-slate-50 hover:text-slate-900 transition-all duration-200">
+          <a [routerLink]="item.route" routerLinkActive="nav-item-active" [routerLinkActiveOptions]="{ exact: true }"
+          class="nav-item group flex items-center px-3 py-2.5 text-slate-600 rounded-xl hover:bg-slate-50 hover:text-slate-900 transition-all duration-200">
           <mat-icon class="mr-3 text-slate-400 group-hover:text-orange-500 transition-colors">{{ item.icon }}</mat-icon>
           <span class="text-sm font-medium">{{ item.label }}</span>
         </a>
@@ -41,8 +41,8 @@
       <!-- User Menu -->
       <div class="p-3 border-t border-slate-100 bg-slate-50/50">
         <button mat-button [matMenuTriggerFor]="userMenu"
-          class="w-full !justify-start !text-right !items-center !flex !flex-row !h-12 !px-2 rounded-lg hover:!bg-slate-200/40">
-          <span class="mr-3 shrink-0 flex items-center justify-center w-9 h-9 rounded-full bg-slate-900 text-white text-xs font-bold">{{ userInitials() }}</span>
+          class="profile-chip w-full !justify-start !text-right !items-center !flex !flex-row !h-14 !px-2 rounded-xl hover:!bg-white">
+          <span class="profile-avatar mr-3 shrink-0">{{ userInitials() }}<span class="profile-online-dot"></span></span>
           <div class="flex-1 min-w-0 !text-left">
             <p class="text-xs font-semibold text-slate-800 truncate">
               {{ userDisplayName() }}
@@ -122,7 +122,8 @@
         <nav class="flex-1 px-1 py-2 space-y-1 overflow-y-auto custom-scrollbar">
           @for (item of filteredMenuItems(); track item.route) {
           <a [routerLink]="item.route" (click)="toggleMobileMenu()"
-            routerLinkActive="bg-ispc-orange/10 text-ispc-orange !font-semibold border-l-4 border-ispc-orange"
+            routerLinkActive="nav-item-active"
+            [routerLinkActiveOptions]="{ exact: true }"
             class="flex items-center px-4 py-3 text-slate-700 rounded-lg hover:bg-slate-100/50 transition-all duration-150">
             <mat-icon class="mr-3 text-slate-500">{{ item.icon }}</mat-icon>
             <span class="text-sm font-medium">{{ item.label }}</span>
@@ -134,7 +135,7 @@
     }
 
     <!-- Page Content Area -->
-    <main class="flex-1 overflow-y-auto custom-scrollbar bg-gradient-to-tr from-slate-50 via-slate-100/30 to-slate-50 pb-16 md:pb-6">
+    <main class="flex-1 overflow-y-auto custom-scrollbar bg-gradient-to-br from-slate-100/80 via-slate-50 to-orange-50/20 pb-16 md:pb-6">
       <!-- Subscription Notifications -->
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         @if (subscriptionService.isTrialing() && subscriptionService.getDaysRemainingInTrial() > 0) {

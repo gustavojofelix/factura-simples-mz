@@ -6,7 +6,71 @@
   font-size: 14px;
 }
 
-.router-link-active {
-  background-color: #fff7ed;
-  color: #ea580c;
+.nav-item-active {
+  background: #fff7ed !important;
+  color: #ea580c !important;
+  font-weight: 700 !important;
+  box-shadow: inset 3px 0 0 #f97316;
+}
+
+.nav-item-active mat-icon {
+  color: #f97316 !important;
+}
+
+.profile-chip {
+  border: 1px solid transparent;
+  transition: background .2s ease, border-color .2s ease;
+}
+
+.profile-chip:hover {
+  border-color: #e2e8f0;
+}
+
+.profile-avatar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: .8rem;
+  background: linear-gradient(135deg, #0f172a, #334155);
+  color: white;
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, .16);
+}
+
+.profile-online-dot {
+  position: absolute;
+  right: -.1rem;
+  bottom: -.1rem;
+  width: .55rem;
+  height: .55rem;
+  border: 2px solid #f8fafc;
+  border-radius: 9999px;
+  background: #10b981;
+}
+
+.profile-role {
+  display: inline-flex;
+  margin-top: .15rem;
+  padding: .1rem .4rem;
+  border-radius: 9999px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: .6rem;
+  font-weight: 700;
+}
+
+.profile-chip p:last-child {
+  display: inline-flex;
+  margin-top: .15rem;
+  padding: .1rem .4rem;
+  border-radius: 9999px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: .6rem;
+  font-weight: 700;
 }
