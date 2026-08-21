@@ -63,6 +63,7 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
   contactSuccess = false;
   contactLoading = false;
   privacyOpen = false;
+  termsOpen = false;
   contactForm!: FormGroup;
   currentYear = new Date().getFullYear();
 
@@ -314,9 +315,24 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
+  openTerms(event?: Event) {
+    event?.preventDefault();
+    this.previousBodyOverflow = document.body.style.overflow;
+    this.termsOpen = true;
+    document.body.style.overflow = 'hidden';
+    this.cdr.markForCheck();
+  }
+
+  closeTerms() {
+    this.termsOpen = false;
+    document.body.style.overflow = this.previousBodyOverflow;
+    this.cdr.markForCheck();
+  }
+
   @HostListener('document:keydown.escape')
   onEscapeKey() {
     if (this.privacyOpen) this.closePrivacy();
+    if (this.termsOpen) this.closeTerms();
   }
 
   toggleFaq(index: number) {

@@ -567,7 +567,7 @@
         <div class="footer-col">
           <h4>Legal</h4>
           <ul>
-            <li><a href="#contacto" (click)="scrollToSection('contacto', $event)"><i class="fas fa-chevron-right"></i>Termos de uso</a></li>
+            <li><a href="#termos-de-uso" (click)="openTerms($event)"><i class="fas fa-chevron-right"></i>Termos de uso</a></li>
             <li><a href="#politica-privacidade" (click)="openPrivacy($event)"><i class="fas fa-chevron-right"></i>Política de privacidade</a></li>
             <li><a href="#contacto" (click)="scrollToSection('contacto', $event)"><i class="fas fa-chevron-right"></i>Cookies</a></li>
           </ul>
@@ -613,6 +613,43 @@
         <p>N&atilde;o vendemos os seus dados pessoais. Apenas os partilhamos com prestadores essenciais ao funcionamento da plataforma ou quando tal for exigido por lei, incluindo pelas autoridades competentes.</p>
         <h3>5. Os seus direitos</h3>
         <p>Pode solicitar o acesso, a rectifica&ccedil;&atilde;o ou a elimina&ccedil;&atilde;o dos seus dados, bem como esclarecer d&uacute;vidas sobre esta pol&iacute;tica, atrav&eacute;s dos canais de contacto disponibilizados na plataforma.</p>
+        <p class="privacy-modal-updated">&Uacute;ltima actualiza&ccedil;&atilde;o: {{ currentYear }}</p>
+      </div>
+    </section>
+  </div>
+
+  <div
+    *ngIf="termsOpen"
+    class="privacy-modal-backdrop"
+    role="presentation"
+    (click)="($event.target === $event.currentTarget) && closeTerms()"
+  >
+    <section class="privacy-modal" role="dialog" aria-modal="true" aria-labelledby="terms-modal-title">
+      <header class="privacy-modal-header">
+        <div>
+          <span class="privacy-modal-eyebrow">Legal &amp; transpar&ecirc;ncia</span>
+          <h2 id="terms-modal-title">Termos de Uso</h2>
+          <p>As regras para utilizar o ISPC F&aacute;cil de forma segura e transparente.</p>
+        </div>
+        <button type="button" class="privacy-modal-close" (click)="closeTerms()" aria-label="Fechar termos de uso">
+          <i class="fas fa-times" aria-hidden="true"></i>
+        </button>
+      </header>
+
+      <div class="privacy-modal-content">
+        <p class="privacy-modal-intro">Ao criar uma conta ou utilizar o ISPC F&aacute;cil, confirma que leu e aceita estes termos de uso.</p>
+        <h3>1. Aceita&ccedil;&atilde;o dos termos</h3>
+        <p>Estes termos regulam o acesso e a utiliza&ccedil;&atilde;o da plataforma ISPC F&aacute;cil. Caso n&atilde;o concorde com alguma condi&ccedil;&atilde;o, n&atilde;o dever&aacute; utilizar o servi&ccedil;o.</p>
+        <h3>2. Descri&ccedil;&atilde;o do servi&ccedil;o</h3>
+        <p>O ISPC F&aacute;cil &eacute; uma ferramenta de apoio &agrave; factura&ccedil;&atilde;o, gest&atilde;o financeira e c&aacute;lculo do ISPC para empreendedores e empresas em Mo&ccedil;ambique.</p>
+        <h3>3. Responsabilidades do utilizador</h3>
+        <p>O utilizador compromete-se a fornecer informa&ccedil;&otilde;es verdadeiras e actualizadas, proteger as suas credenciais e utilizar a plataforma em conformidade com a legisla&ccedil;&atilde;o aplic&aacute;vel.</p>
+        <h3>4. Limita&ccedil;&atilde;o de responsabilidade</h3>
+        <p>A plataforma &eacute; uma ferramenta de apoio. A responsabilidade final pela exactid&atilde;o das informa&ccedil;&otilde;es, facturas, declara&ccedil;&otilde;es fiscais e pagamentos pertence ao utilizador.</p>
+        <h3>5. Disponibilidade e altera&ccedil;&otilde;es</h3>
+        <p>Podemos actualizar, melhorar ou alterar funcionalidades do servi&ccedil;o. Poderemos tamb&eacute;m actualizar estes termos, comunicando as altera&ccedil;&otilde;es relevantes atrav&eacute;s da plataforma.</p>
+        <h3>6. Contacto</h3>
+        <p>Para quest&otilde;es sobre estes termos ou sobre a utiliza&ccedil;&atilde;o do servi&ccedil;o, utilize os canais de contacto disponibilizados na plataforma.</p>
         <p class="privacy-modal-updated">&Uacute;ltima actualiza&ccedil;&atilde;o: {{ currentYear }}</p>
       </div>
     </section>
