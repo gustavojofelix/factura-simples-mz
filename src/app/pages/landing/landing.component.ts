@@ -7,7 +7,8 @@ import {
   OnDestroy,
   OnInit,
   QueryList,
-  ViewChildren
+  ViewChildren,
+  HostListener
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -61,12 +62,14 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
   openFaqIndex: number | null = null;
   contactSuccess = false;
   contactLoading = false;
+  privacyOpen = false;
   contactForm!: FormGroup;
   currentYear = new Date().getFullYear();
 
   private observer?: IntersectionObserver;
   private scrollListener!: () => void;
   private visibleItems = new Set<string>();
+  private previousBodyOverflow = '';
   private readonly sectionIds = [
     'hero',
     'funcionalidades',
@@ -294,6 +297,26 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.observer?.disconnect();
+    document.body.style.overflow = this.previousBodyOverflow;
+  }
+
+  openPrivacy(event?: Event) {
+    event?.preventDefault();
+    this.previousBodyOverflow = document.body.style.overflow;
+    this.privacyOpen = true;
+    document.body.style.overflow = 'hidden';
+    this.cdr.markForCheck();
+  }
+
+  closePrivacy() {
+    this.privacyOpen = false;
+    document.body.style.overflow = this.previousBodyOverflow;
+    this.cdr.markForCheck();
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapeKey() {
+    if (this.privacyOpen) this.closePrivacy();
   }
 
   toggleFaq(index: number) {

@@ -568,7 +568,7 @@
           <h4>Legal</h4>
           <ul>
             <li><a href="#contacto" (click)="scrollToSection('contacto', $event)"><i class="fas fa-chevron-right"></i>Termos de uso</a></li>
-            <li><a href="#contacto" (click)="scrollToSection('contacto', $event)"><i class="fas fa-chevron-right"></i>Política de privacidade</a></li>
+            <li><a href="#politica-privacidade" (click)="openPrivacy($event)"><i class="fas fa-chevron-right"></i>Política de privacidade</a></li>
             <li><a href="#contacto" (click)="scrollToSection('contacto', $event)"><i class="fas fa-chevron-right"></i>Cookies</a></li>
           </ul>
         </div>
@@ -582,4 +582,39 @@
       </div>
     </div>
   </footer>
+
+  <div
+    *ngIf="privacyOpen"
+    class="privacy-modal-backdrop"
+    role="presentation"
+    (click)="($event.target === $event.currentTarget) && closePrivacy()"
+  >
+    <section class="privacy-modal" role="dialog" aria-modal="true" aria-labelledby="privacy-modal-title">
+      <header class="privacy-modal-header">
+        <div>
+          <span class="privacy-modal-eyebrow">Legal &amp; transpar&ecirc;ncia</span>
+          <h2 id="privacy-modal-title">Pol&iacute;tica de Privacidade</h2>
+          <p>Como o ISPC F&aacute;cil recolhe, utiliza e protege os seus dados.</p>
+        </div>
+        <button type="button" class="privacy-modal-close" (click)="closePrivacy()" aria-label="Fechar pol&iacute;tica de privacidade">
+          <i class="fas fa-times" aria-hidden="true"></i>
+        </button>
+      </header>
+
+      <div class="privacy-modal-content">
+        <p class="privacy-modal-intro">A sua privacidade &eacute; importante para n&oacute;s. Esta pol&iacute;tica explica de forma clara que dados recolhemos e para que finalidades os utilizamos.</p>
+        <h3>1. Dados que recolhemos</h3>
+        <p>Podemos recolher o seu nome, endere&ccedil;o de email, telefone e informa&ccedil;&otilde;es da sua empresa quando cria uma conta, utiliza a plataforma ou entra em contacto connosco.</p>
+        <h3>2. Como utilizamos os seus dados</h3>
+        <p>Utilizamos estas informa&ccedil;&otilde;es para disponibilizar os servi&ccedil;os de factura&ccedil;&atilde;o, calcular o ISPC, gerir a sua conta, prestar suporte e comunicar informa&ccedil;&otilde;es importantes sobre o servi&ccedil;o.</p>
+        <h3>3. Protec&ccedil;&atilde;o e conserva&ccedil;&atilde;o</h3>
+        <p>Aplicamos medidas t&eacute;cnicas e organizativas para proteger os seus dados contra acesso, altera&ccedil;&atilde;o ou divulga&ccedil;&atilde;o n&atilde;o autorizados. Conservamos os dados apenas durante o tempo necess&aacute;rio para cumprir as finalidades descritas e as obriga&ccedil;&otilde;es legais aplic&aacute;veis.</p>
+        <h3>4. Partilha de informa&ccedil;&otilde;es</h3>
+        <p>N&atilde;o vendemos os seus dados pessoais. Apenas os partilhamos com prestadores essenciais ao funcionamento da plataforma ou quando tal for exigido por lei, incluindo pelas autoridades competentes.</p>
+        <h3>5. Os seus direitos</h3>
+        <p>Pode solicitar o acesso, a rectifica&ccedil;&atilde;o ou a elimina&ccedil;&atilde;o dos seus dados, bem como esclarecer d&uacute;vidas sobre esta pol&iacute;tica, atrav&eacute;s dos canais de contacto disponibilizados na plataforma.</p>
+        <p class="privacy-modal-updated">&Uacute;ltima actualiza&ccedil;&atilde;o: {{ currentYear }}</p>
+      </div>
+    </section>
+  </div>
 </div>
