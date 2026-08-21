@@ -29,15 +29,28 @@
   </div>
 
   <mat-card class="!rounded-2xl !shadow-sm">
-    <mat-card-content class="!p-6">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <mat-form-field appearance="outline" class="w-full">
+    <mat-card-content class="!p-4 sm:!p-5">
+      <div class="filter-toolbar-head">
+        <div>
+          <p class="filter-toolbar-title">Filtros</p>
+          <p class="filter-toolbar-caption">Encontre rapidamente um cliente</p>
+        </div>
+        @if (searchTerm() || industryFilter() || statusFilter() !== 'all' || sortField() !== 'id' || sortOrder() !== 'asc') {
+        <button mat-button class="!text-slate-500 hover:!text-orange-600 !rounded-lg" (click)="clearFilters()">
+          <mat-icon>restart_alt</mat-icon>
+          Limpar filtros
+        </button>
+        }
+      </div>
+
+      <div class="client-filter-toolbar">
+        <mat-form-field appearance="outline" class="client-filter-field client-filter-search hide-subscript">
           <mat-label>Pesquisar nome, NUIT ou email</mat-label>
           <input matInput [value]="searchTerm()" (input)="onSearchChange($event)" placeholder="Ex: João Silva">
           <mat-icon matPrefix class="text-gray-400">search</mat-icon>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="w-full">
+        <mat-form-field appearance="outline" class="client-filter-field hide-subscript">
           <mat-label>Indústria</mat-label>
           <mat-select [value]="industryFilter()" (selectionChange)="onIndustryChange($event.value)">
             <mat-option value="">Todas as Indústrias</mat-option>
@@ -47,7 +60,7 @@
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="w-full">
+        <mat-form-field appearance="outline" class="client-filter-field hide-subscript">
           <mat-label>Estado</mat-label>
           <mat-select [value]="statusFilter()" (selectionChange)="onStatusChange($event.value)">
             <mat-option value="all">Todos os Estados</mat-option>
@@ -56,7 +69,7 @@
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="w-full">
+        <mat-form-field appearance="outline" class="client-filter-field hide-subscript">
           <mat-label>Ordenar por</mat-label>
           <mat-select [value]="sortField()" (selectionChange)="onSortFieldChange($event.value)">
             <mat-option value="id">ID</mat-option>
@@ -64,7 +77,7 @@
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="w-full">
+        <mat-form-field appearance="outline" class="client-filter-field hide-subscript">
           <mat-label>Ordem</mat-label>
           <mat-select [value]="sortOrder()" (selectionChange)="onSortOrderChange($event.value)">
             <mat-option value="asc">Crescente</mat-option>
@@ -72,14 +85,6 @@
           </mat-select>
         </mat-form-field>
 
-        <div class="flex items-center">
-          @if (searchTerm() || industryFilter() || statusFilter() !== 'all') {
-          <button mat-button color="warn" (click)="clearFilters()">
-            <mat-icon>filter_list_off</mat-icon>
-            Limpar Filtros
-          </button>
-          }
-        </div>
       </div>
 
       @if (clientService.isLoading()) {
