@@ -269,6 +269,7 @@ export class SubscriptionService {
       .select('id')
       .single();
 
+
     if (error) {
       console.error("Error creating subscription plan:", error);
       return false;
@@ -290,12 +291,35 @@ export class SubscriptionService {
     updates: Partial<SubscriptionPlan>,
   ): Promise<boolean> {
     const { entitlements, ...planUpdates } = updates;
+    
+    // Only keep keys that exist as columns on subscription_plans table
+    const allowedKeys: (keyof SubscriptionPlan)[] = [
+      'code',
+      'name',
+      'description',
+      'monthly_price',
+      'three_months_price',
+      'six_months_price',
+      'yearly_price',
+      'currency',
+      'features',
+      'is_active',
+      'is_popular',
+      'sort_order'
+    ];
+
+    const payloadToUpdate: any = {};
+    const planUpdatesAny = planUpdates as any;
+    for (const key of allowedKeys) {
+      if (planUpdatesAny[key] !== undefined) {
+        payloadToUpdate[key] = planUpdatesAny[key];
+      }
+    }
+    payloadToUpdate.updated_at = new Date().toISOString();
+
     const { error } = await this.supabase.client
       .from("subscription_plans")
-      .update({
-        ...planUpdates,
-        updated_at: new Date().toISOString(),
-      })
+      .update(payloadToUpdate)
       .eq("id", id);
 
     if (error) {
