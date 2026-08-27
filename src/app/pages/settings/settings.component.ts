@@ -109,6 +109,12 @@ export class SettingsComponent implements OnInit {
       this.currentUserId.set(user.id);
     }
 
+    // Pre-select tab if navigated with a state (e.g. from the subscription-limit dialog)
+    const navState = history.state;
+    if (navState && typeof navState['tab'] === 'number') {
+      this.selectedTab.set(navState['tab']);
+    }
+
     this.initializeForms();
     await this.loadAllData();
   }
