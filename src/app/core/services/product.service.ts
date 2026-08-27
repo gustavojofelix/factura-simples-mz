@@ -57,35 +57,31 @@ export class ProductService {
     const company = this.companyService.activeCompany();
     if (!company) return null;
 
-    try {
-      const { data, error } = await this.supabase.db
-        .from('products')
-        .insert({
-          ...productData,
-          company_id: company.id,
-          is_active: true
-        })
-        .select()
-        .single();
+    const { data, error } = await this.supabase.db
+      .from('products')
+      .insert({
+        ...productData,
+        company_id: company.id,
+        is_active: true
+      })
+      .select()
+      .single();
 
-      if (error) throw error;
+    // Re-throw so callers can inspect the error code (e.g. SUBSCRIPTION_FEATURE_DISABLED)
+    if (error) throw error;
 
-      await this.auditLogService.log(
-        'Criou Produto/Serviço',
-        'products',
-        { name: data.name, code: data.code, price: data.price, type: data.type },
-        data.id,
-        data.name,
-        company.id
-      );
+    await this.auditLogService.log(
+      'Criou Produto/Serviço',
+      'products',
+      { name: data.name, code: data.code, price: data.price, type: data.type },
+      data.id,
+      data.name,
+      company.id
+    );
 
-      // Reload from server to get the trigger-assigned code and correct ordering
-      await this.loadProducts();
-      return data;
-    } catch (error) {
-      console.error('Erro ao criar produto:', error);
-      return null;
-    }
+    // Reload from server to get the trigger-assigned code and correct ordering
+    await this.loadProducts();
+    return data;
   }
 
   async updateProduct(id: string, updates: Partial<Product>): Promise<boolean> {

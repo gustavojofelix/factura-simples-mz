@@ -15,6 +15,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ProductService, Product } from '../../core/services/product.service';
 import { CompanyService } from '../../core/services/company.service';
+import { SubscriptionLimitDialogComponent } from '../../shared/components/subscription-limit-dialog.component';
 
 @Component({
   selector: 'app-product-dialog',
@@ -106,6 +107,7 @@ export class ProductDialogComponent implements OnInit {
     private fb: FormBuilder,
     private productService: ProductService,
     private snackBar: MatSnackBar,
+    private dialog: MatDialog,
     private dialogRef: MatDialogRef<ProductDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public product: Product | null
   ) {
@@ -160,18 +162,30 @@ export class ProductDialogComponent implements OnInit {
             { duration: 3000 }
           );
           this.dialogRef.close();
-        } else {
-          this.snackBar.open('Erro ao criar', 'Fechar', { duration: 3000 });
         }
       }
-    } catch (error) {
-      console.error('Erro ao guardar:', error);
-      this.snackBar.open('Erro ao guardar. Verifique os dados.', 'Fechar', { duration: 3000 });
+    } catch (error: any) {
+      // Handle subscription feature limit errors with a dedicated upgrade dialog
+      if (
+        error?.code === 'P0001' &&
+        error?.details === 'SUBSCRIPTION_FEATURE_DISABLED'
+      ) {
+        this.dialogRef.close();
+        this.dialog.open(SubscriptionLimitDialogComponent, {
+          width: '420px',
+          panelClass: 'subscription-limit-dialog',
+          data: { errorMessage: error?.message }
+        });
+      } else {
+        console.error('Erro ao guardar produto:', error);
+        this.snackBar.open('Erro ao guardar. Verifique os dados.', 'Fechar', { duration: 4000 });
+      }
     } finally {
       this.saving.set(false);
     }
   }
 }
+
 
 @Component({
   selector: 'app-products',
