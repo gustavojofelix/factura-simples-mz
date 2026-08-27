@@ -121,35 +121,31 @@ export class CompanyService {
     const user = this.authService.currentUser();
     if (!user) return null;
 
-    try {
-      const { data, error } = await this.supabase.db
-        .from('companies')
-        .insert({
-          ...companyData,
-          user_id: user.id
-        })
-        .select()
-        .single();
+    const { data, error } = await this.supabase.db
+      .from('companies')
+      .insert({
+        ...companyData,
+        user_id: user.id
+      })
+      .select()
+      .single();
 
-      if (error) throw error;
+    // Re-throw so callers can inspect the error code (e.g. SUBSCRIPTION_FEATURE_DISABLED)
+    if (error) throw error;
 
-      this.companies.update(companies => [...companies, data]);
-      await this.setActiveCompany(data);
+    this.companies.update(companies => [...companies, data]);
+    await this.setActiveCompany(data);
 
-      await this.auditLogService.log(
-        'Criou Empresa',
-        'settings',
-        { company_name: data.name, nuit: data.nuit },
-        data.id,
-        data.name,
-        data.id
-      );
+    await this.auditLogService.log(
+      'Criou Empresa',
+      'settings',
+      { company_name: data.name, nuit: data.nuit },
+      data.id,
+      data.name,
+      data.id
+    );
 
-      return data;
-    } catch (error) {
-      console.error('Erro ao criar empresa:', error);
-      return null;
-    }
+    return data;
   }
 
   async updateCompany(id: string, updates: Partial<Company>, skipAuditLog = false): Promise<boolean> {

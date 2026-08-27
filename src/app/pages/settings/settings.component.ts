@@ -23,6 +23,7 @@ import { CompanyDialogComponent } from '../../shared/components/company-dialog.c
 import { UserCompanyDialogComponent } from '../../shared/components/user-company-dialog.component';
 import { PaymentDialogComponent } from '../../shared/components/payment-dialog/payment-dialog.component';
 import { ActivityService } from '../../core/services/activity.service';
+import { SubscriptionLimitDialogComponent } from '../../shared/components/subscription-limit-dialog.component';
 
 @Component({
   selector: 'app-settings',
@@ -209,11 +210,27 @@ export class SettingsComponent implements OnInit {
             await this.companyService.loadCompanies();
           }
         } else {
-          const newCompany = await this.companyService.createCompany(companyData);
-          if (newCompany) {
-            await this.activityService.saveCompanyActivities(newCompany.id, companyActivities || []);
-            this.snackBar.open('Empresa criada com sucesso', 'Fechar', { duration: 3000 });
-            await this.companyService.loadCompanies();
+          try {
+            const newCompany = await this.companyService.createCompany(companyData);
+            if (newCompany) {
+              await this.activityService.saveCompanyActivities(newCompany.id, companyActivities || []);
+              this.snackBar.open('Empresa criada com sucesso', 'Fechar', { duration: 3000 });
+              await this.companyService.loadCompanies();
+            }
+          } catch (error: any) {
+            if (
+              error?.code === 'P0001' &&
+              error?.details === 'SUBSCRIPTION_FEATURE_DISABLED'
+            ) {
+              this.dialog.open(SubscriptionLimitDialogComponent, {
+                width: '420px',
+                panelClass: 'subscription-limit-dialog',
+                data: { errorMessage: error?.message }
+              });
+            } else {
+              console.error('Erro ao criar empresa:', error);
+              this.snackBar.open('Erro ao criar empresa. Verifique os dados.', 'Fechar', { duration: 4000 });
+            }
           }
         }
       }

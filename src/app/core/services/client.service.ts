@@ -59,35 +59,31 @@ export class ClientService {
     const company = this.companyService.activeCompany();
     if (!company) return null;
 
-    try {
-      const { data, error } = await this.supabase.db
-        .from('clients')
-        .insert({
-          ...clientData,
-          company_id: company.id,
-          is_active: true
-        })
-        .select()
-        .single();
+    const { data, error } = await this.supabase.db
+      .from('clients')
+      .insert({
+        ...clientData,
+        company_id: company.id,
+        is_active: true
+      })
+      .select()
+      .single();
 
-      if (error) throw error;
+    // Re-throw so callers can inspect the error code (e.g. SUBSCRIPTION_FEATURE_DISABLED)
+    if (error) throw error;
 
-      await this.auditLogService.log(
-        'Criou Cliente',
-        'clients',
-        { name: data.name, nuit: data.nuit },
-        data.id,
-        data.name,
-        company.id
-      );
+    await this.auditLogService.log(
+      'Criou Cliente',
+      'clients',
+      { name: data.name, nuit: data.nuit },
+      data.id,
+      data.name,
+      company.id
+    );
 
-      // Reload from server to get the trigger-assigned client_code and correct ordering
-      await this.loadClients();
-      return data;
-    } catch (error) {
-      console.error('Erro ao criar cliente:', error);
-      return null;
-    }
+    // Reload from server to get the trigger-assigned client_code and correct ordering
+    await this.loadClients();
+    return data;
   }
 
   async updateClient(id: string, updates: Partial<Client>): Promise<boolean> {

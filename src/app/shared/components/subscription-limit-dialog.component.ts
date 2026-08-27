@@ -91,10 +91,11 @@ export class SubscriptionLimitDialogComponent {
   ) {
     // Map known feature codes to friendly labels, or fall back to data.featureLabel
     const featureMap: Record<string, string> = {
-      max_products: 'produtos / serviços',
-      max_invoices: 'facturas',
-      max_clients: 'clientes',
-      max_users: 'utilizadores',
+      max_products:  'produtos / serviços',
+      max_invoices:  'facturas',
+      max_clients:   'clientes',
+      max_companies: 'empresas',
+      max_users:     'utilizadores',
     };
 
     // Try to extract feature code from errorMessage, e.g. "max_products"

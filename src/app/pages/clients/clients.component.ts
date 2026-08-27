@@ -17,6 +17,7 @@ import { ClientService, Client } from '../../core/services/client.service';
 import { CompanyService } from '../../core/services/company.service';
 import { ExportService } from '../../core/services/export.service';
 import { nuitValidator } from '../../core/validators/nuit.validator';
+import { SubscriptionLimitDialogComponent } from '../../shared/components/subscription-limit-dialog.component';
 
 @Component({
   selector: 'app-client-dialog',
@@ -278,9 +279,23 @@ export class ClientDialogComponent {
         if (client) {
           this.snackBar.open('Cliente criado com sucesso!', 'Fechar', { duration: 3000 });
           this.dialog.closeAll();
-        } else {
-          this.snackBar.open('Erro ao criar cliente', 'Fechar', { duration: 3000 });
         }
+      }
+    } catch (error: any) {
+      // Handle subscription feature limit errors with a dedicated upgrade dialog
+      if (
+        error?.code === 'P0001' &&
+        error?.details === 'SUBSCRIPTION_FEATURE_DISABLED'
+      ) {
+        this.dialog.closeAll();
+        this.dialog.open(SubscriptionLimitDialogComponent, {
+          width: '420px',
+          panelClass: 'subscription-limit-dialog',
+          data: { errorMessage: error?.message }
+        });
+      } else {
+        console.error('Erro ao guardar cliente:', error);
+        this.snackBar.open('Erro ao guardar. Verifique os dados.', 'Fechar', { duration: 4000 });
       }
     } finally {
       this.saving.set(false);
