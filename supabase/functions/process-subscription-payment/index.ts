@@ -6,9 +6,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const SISLOG_URL     = "https://lin4.sislog.com/mobile/reference/request";
-const SISLOG_USER    = "ISPCF";
-const SISLOG_API_KEY = "8525efc3fc7843a2fa32e94fd656d1dd";
+// TESTE — credenciais anteriores (manter comentadas para referência)
+// const SISLOG_URL     = "https://lin4.sislog.com/mobile/reference/request";
+// const SISLOG_USER    = "ISPCF";
+// const SISLOG_API_KEY = "8525efc3fc7843a2fa32e94fd656d1dd";
+
+// PRODUÇÃO — LTS Moz / SMS2Q
+const SISLOG_URL     = "https://sms2q.com/mobile/reference/request";
+const SISLOG_USER    = "LTSMOZ";
+const SISLOG_API_KEY = "ZLYMYJcEOmuVdiZkWKzLvPPd4LMVTKUs";
 
 const SMTP_HOST    = "mail.ispcfacil.co.mz";
 const SMTP_PORT    = 465;
