@@ -23,6 +23,9 @@ interface PaymentTransaction {
   reference_code: string;
   status: PaymentStatus;
   sislog_response: Record<string, unknown> | null;
+  officegest_document_id?: string | null;
+  officegest_document_number?: string | null;
+  officegest_synced_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -127,6 +130,22 @@ interface Subscription { status: string; amount: number; billing_cycle: string; 
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                 </svg>
               </button>
+              <!-- Sync OfficeGest -->
+              <button
+                (click)="syncWithOfficeGest()"
+                [disabled]="isSyncingOfficeGest()"
+                class="og-sync-button"
+                title="Emitir faturas pendentes no OfficeGest">
+                @if (isSyncingOfficeGest()) {
+                  <div class="spinner spinner--xs"></div>
+                  <span>A emitir…</span>
+                } @else {
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                  </svg>
+                  <span>Emitir no OfficeGest</span>
+                }
+              </button>
               <!-- Export -->
               <button (click)="exportToCSV()" [disabled]="filteredPayments().length === 0" class="export-button">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -136,6 +155,13 @@ interface Subscription { status: string; amount: number; billing_cycle: string; 
               </button>
             </div>
           </header>
+
+          @if (ogSyncFeedback()) {
+            <div class="og-feedback-banner" [class.og-feedback-banner--error]="ogSyncFeedback()!.isError">
+              <span>{{ ogSyncFeedback()!.message }}</span>
+              <button (click)="ogSyncFeedback.set(null)" class="og-feedback-close">✕</button>
+            </div>
+          }
 
           <!-- ─── FASE 1: Filtros expandidos ─── -->
           <div class="filter-toolbar">
@@ -230,7 +256,19 @@ interface Subscription { status: string; amount: number; billing_cycle: string; 
                         <span>{{ payment.reference_code }}</span>
                       </div>
                     </td>
-                    <td><span [class]="getStatusClass(payment.status)" class="status-badge"><i></i>{{ statusLabel(payment.status) }}</span></td>
+                    <td>
+                      <div class="status-col">
+                        <span [class]="getStatusClass(payment.status)" class="status-badge"><i></i>{{ statusLabel(payment.status) }}</span>
+                        @if (payment.officegest_document_number) {
+                          <span class="og-badge" title="Fatura emitida no OfficeGest">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            {{ payment.officegest_document_number }}
+                          </span>
+                        }
+                      </div>
+                    </td>
                     <td class="amount-cell"><strong>{{ payment.amount | currency:payment.currency:'symbol':'1.2-2':'pt-MZ' }}</strong></td>
                   </tr>
                 } @empty {
@@ -307,6 +345,23 @@ interface Subscription { status: string; amount: number; billing_cycle: string; 
 
                 <dt>Actualizado em</dt>
                 <dd>{{ selectedPayment()!.updated_at | date:'dd/MM/yyyy, HH:mm:ss' }}</dd>
+
+                <dt>Fatura OfficeGest</dt>
+                <dd>
+                  @if (selectedPayment()!.officegest_document_number) {
+                    <span class="og-badge og-badge--drawer">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                      </svg>
+                      {{ selectedPayment()!.officegest_document_number }}
+                    </span>
+                    @if (selectedPayment()!.officegest_synced_at) {
+                      <small class="og-sync-time">Emitida em {{ selectedPayment()!.officegest_synced_at | date:'dd/MM/yyyy, HH:mm' }}</small>
+                    }
+                  } @else {
+                    <span class="text-gray-400 font-medium">Ainda não emitida</span>
+                  }
+                </dd>
               </dl>
 
               <!-- Resposta Sislog -->
@@ -316,7 +371,7 @@ interface Subscription { status: string; amount: number; billing_cycle: string; 
               </div>
 
               <!-- ─── FASE 4: Acções ─── -->
-              @if (selectedPayment()!.status === 'pending' || selectedPayment()!.status === 'failed') {
+              @if (selectedPayment()!.status === 'pending' || selectedPayment()!.status === 'failed' || (selectedPayment()!.status === 'completed' && !selectedPayment()!.officegest_document_id)) {
                 <div class="drawer-actions">
                   @if (actionLoading()) {
                     <div class="action-loading">
@@ -332,12 +387,22 @@ interface Subscription { status: string; amount: number; billing_cycle: string; 
                         Confirmar pagamento
                       </button>
                     }
-                    <button class="action-btn action-btn--cancel" (click)="cancelPayment(selectedPayment()!)">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                      </svg>
-                      Cancelar transação
-                    </button>
+                    @if (selectedPayment()!.status === 'completed' && !selectedPayment()!.officegest_document_id) {
+                      <button class="action-btn action-btn--og" (click)="syncSingleWithOfficeGest(selectedPayment()!)">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                        </svg>
+                        Emitir fatura no OfficeGest
+                      </button>
+                    }
+                    @if (selectedPayment()!.status === 'pending' || selectedPayment()!.status === 'failed') {
+                      <button class="action-btn action-btn--cancel" (click)="cancelPayment(selectedPayment()!)">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                        Cancelar transação
+                      </button>
+                    }
                   }
 
                   @if (actionError()) {
@@ -411,6 +476,22 @@ interface Subscription { status: string; amount: number; billing_cycle: string; 
     .refresh-button:hover:not(:disabled){background:#f0f6ff;border-color:#c3d9f5}
     .refresh-button:disabled{opacity:.45;cursor:not-allowed}
     .refresh-button svg{width:16px;height:16px}
+    .og-sync-button{display:flex;align-items:center;gap:7px;border:1px solid #c7d9f8;border-radius:9px;padding:9px 13px;background:#f0f6ff;color:#1e5bb8;font-size:12px;font-weight:750;transition:.15s;cursor:pointer}
+    .og-sync-button:hover:not(:disabled){background:#e1eeff;border-color:#9ebbfa;color:#124494}
+    .og-sync-button:disabled{cursor:not-allowed;opacity:.55}
+    .og-sync-button svg{width:15px;height:15px}
+    .spinner--xs{width:14px;height:14px;border-width:2px}
+    .og-feedback-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 24px;background:#ecfdf5;border-bottom:1px solid #a7f3d0;color:#065f46;font-size:12px;font-weight:600}
+    .og-feedback-banner--error{background:#fef2f2;border-bottom-color:#fecaca;color:#991b1b}
+    .og-feedback-close{border:none;background:transparent;color:inherit;font-size:13px;cursor:pointer;opacity:.6}
+    .og-feedback-close:hover{opacity:1}
+    .status-col{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+    .og-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;color:#1e40af;background:#eff6ff;border:1px solid #bfdbfe;border-radius:5px;padding:1px 6px;white-space:nowrap}
+    .og-badge svg{width:11px;height:11px;color:#2563eb}
+    .og-badge--drawer{font-size:11px;padding:3px 8px}
+    .og-sync-time{display:block;color:#94a3b8;font-size:10px;margin-top:2px}
+    .action-btn--og{background:#1e5bb8;color:#fff}
+    .action-btn--og:hover{background:#154796}
 
     /* ── Filter Toolbar ── */
     .filter-toolbar{display:flex;align-items:end;gap:19px;padding:15px 24px 18px;border-top:1px solid #edf0f4;border-bottom:1px solid #edf0f4;background:#fbfcfe}
@@ -549,6 +630,10 @@ export class AdminRevenueComponent implements OnInit {
   actionLoading = signal(false);
   actionError = signal('');
   actionSuccess = signal('');
+
+  // ── OfficeGest Sync state ──
+  isSyncingOfficeGest = signal(false);
+  ogSyncFeedback = signal<{ message: string; isError: boolean } | null>(null);
 
   // ── Filter form (Fase 1: added search + plan) ──
   filterForm: FormGroup = this.fb.group({
@@ -696,6 +781,9 @@ export class AdminRevenueComponent implements OnInit {
           company_name: p.companies?.name ?? 'Empresa não disponível',
           phone_number: p.phone_number ?? '',
           sislog_response: p.sislog_response ?? null,
+          officegest_document_id: p.officegest_document_id ?? null,
+          officegest_document_number: p.officegest_document_number ?? null,
+          officegest_synced_at: p.officegest_synced_at ?? null,
           updated_at: p.updated_at ?? p.created_at
         }))
       );
@@ -753,12 +841,13 @@ export class AdminRevenueComponent implements OnInit {
     if (!rows.length) return;
     const escape = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
     const content = '\uFEFF'
-      + ['Data', 'Empresa', 'Plano', 'Ciclo', 'Estado', 'Método', 'Telefone', 'Referência', 'Valor', 'Moeda'].join(';')
+      + ['Data', 'Empresa', 'Plano', 'Ciclo', 'Estado', 'Fatura OfficeGest', 'Método', 'Telefone', 'Referência', 'Valor', 'Moeda'].join(';')
       + '\n'
       + rows.map(p => [
           new Date(p.created_at).toLocaleString('pt-MZ'),
           p.company_name, p.plan_name, p.billing_cycle,
           this.statusLabel(p.status),
+          p.officegest_document_number || 'Não emitida',
           this.paymentMethodLabel(p.payment_method),
           p.phone_number, p.reference_code, p.amount, p.currency
         ].map(escape).join(';')).join('\n');
@@ -866,6 +955,77 @@ export class AdminRevenueComponent implements OnInit {
     } catch (err: any) {
       console.error('Erro ao cancelar pagamento:', err);
       this.actionError.set(err?.message || 'Erro ao cancelar pagamento. Tente novamente.');
+    } finally {
+      this.actionLoading.set(false);
+    }
+  }
+
+  // ── Sincronização com OfficeGest ──
+  async syncWithOfficeGest() {
+    this.isSyncingOfficeGest.set(true);
+    this.ogSyncFeedback.set(null);
+    try {
+      const res = await this.supabase.client.functions.invoke('sync-officegest', {
+        body: {}
+      });
+
+      if (res.error) throw res.error;
+
+      const data = res.data;
+      if (data?.synced > 0) {
+        this.ogSyncFeedback.set({
+          message: `Sucesso! ${data.synced} fatura(s) emitida(s) no OfficeGest.${data.failed > 0 ? ` (${data.failed} falha(s))` : ''}`,
+          isError: false
+        });
+        await this.loadFinancialData();
+      } else if (data?.failed > 0) {
+        this.ogSyncFeedback.set({
+          message: `Falha ao sincronizar: ${data.errors?.join('; ') || 'Erro desconhecido'}`,
+          isError: true
+        });
+      } else {
+        this.ogSyncFeedback.set({
+          message: data?.message || 'Não há pagamentos pendentes de emissão no OfficeGest.',
+          isError: false
+        });
+      }
+    } catch (err: any) {
+      console.error('Erro ao sincronizar com OfficeGest:', err);
+      this.ogSyncFeedback.set({
+        message: err?.message || 'Erro ao comunicar com o serviço de sincronização do OfficeGest.',
+        isError: true
+      });
+    } finally {
+      this.isSyncingOfficeGest.set(false);
+    }
+  }
+
+  async syncSingleWithOfficeGest(payment: PaymentTransaction) {
+    this.actionLoading.set(true);
+    this.actionError.set('');
+    this.actionSuccess.set('');
+    try {
+      const res = await this.supabase.client.functions.invoke('sync-officegest', {
+        body: { payment_ids: [payment.id] }
+      });
+
+      if (res.error) throw res.error;
+
+      const data = res.data;
+      if (data?.synced > 0) {
+        const docNumber = data.documents?.[0]?.document_number || 'emitida';
+        this.actionSuccess.set(`Fatura ${docNumber} emitida no OfficeGest com sucesso.`);
+        // Recarregar dados para actualizar tabelas e drawer
+        await this.loadFinancialData();
+        const updated = this.allPayments().find(p => p.id === payment.id);
+        if (updated) this.selectedPayment.set(updated);
+      } else {
+        const errMsg = data?.errors?.[0] || data?.message || 'Falha ao emitir fatura no OfficeGest.';
+        this.actionError.set(errMsg);
+      }
+    } catch (err: any) {
+      console.error('Erro ao emitir fatura no OfficeGest:', err);
+      this.actionError.set(err?.message || 'Erro ao emitir fatura no OfficeGest.');
     } finally {
       this.actionLoading.set(false);
     }
