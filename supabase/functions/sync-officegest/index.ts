@@ -20,10 +20,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.8";
 
 const OFFICEGEST_BASE = Deno.env.get("OFFICEGEST_BASE_URL") || "https://lawtec.officegest.com";
 const OFFICEGEST_USER = Deno.env.get("OFFICEGEST_USER") || "admin";
-const OFFICEGEST_PASS = Deno.env.get("OFFICEGEST_PASS") || "vu3cPksfyR91";
+const OFFICEGEST_HASH = Deno.env.get("OFFICEGEST_HASH") || "f9b7aa18f67ca92aa3f615c64222b2ff0f77b148";
 const OFFICEGEST_DOCTYPE = Deno.env.get("OFFICEGEST_DOCTYPE") || "FT";
-// Código do artigo de subscrição no OfficeGest (criado automaticamente se não existir)
-const OFFICEGEST_ARTICLE_CODE = Deno.env.get("OFFICEGEST_ARTICLE_CODE") || "SUB-ISPCFACIL";
+// Artigo criado no OfficeGest para representar as subscrições
+const OFFICEGEST_ARTICLE_ID = Deno.env.get("OFFICEGEST_ARTICLE_ID") || "LFSUXT";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -33,120 +33,125 @@ const corsHeaders = {
 // ── OfficeGest API helpers ────────────────────────────────────────────────────
 
 function ogAuthHeader(): string {
-  const credentials = btoa(`${OFFICEGEST_USER}:${OFFICEGEST_PASS}`);
+  const credentials = btoa(`${OFFICEGEST_USER}:${OFFICEGEST_HASH}`);
   return `Basic ${credentials}`;
 }
 
-async function ogFetch(path: string, method = "GET", body?: unknown): Promise<Response> {
-  const url = `${OFFICEGEST_BASE}/api/v1${path}`;
+async function ogFormFetch(path: string, method = "GET", formParams?: Record<string, string>): Promise<Response> {
+  const url = `${OFFICEGEST_BASE}/api${path}`;
   const headers: Record<string, string> = {
     "Authorization": ogAuthHeader(),
-    "Content-Type": "application/json",
     "Accept": "application/json",
   };
+
   const options: RequestInit = { method, headers };
-  if (body !== undefined) {
-    options.body = JSON.stringify(body);
+  if (formParams && (method === "POST" || method === "PUT" || method === "PATCH")) {
+    headers["Content-Type"] = "application/x-www-form-urlencoded";
+    options.body = new URLSearchParams(formParams).toString();
   }
+
   const res = await fetch(url, options);
   return res;
 }
 
 /**
- * Pesquisa cliente no OfficeGest por NUIT.
- * Devolve o ID do cliente se encontrado, null caso contrário.
+ * Pesquisa cliente no OfficeGest por NUIT ou nome.
+ * A API do OfficeGest lista os clientes em /entities/customers.
  */
-async function findCustomerByNuit(nuit: string): Promise<string | null> {
+async function findCustomerByNuit(nuit: string): Promise<{ customerId: string | null; error?: string }> {
+  if (!nuit || nuit.trim() === "" || nuit === "000000000") return { customerId: null };
   try {
-    const res = await ogFetch(`/entities/customers/search`, "POST", {
-      field: "nif",
-      value: nuit,
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    // A API retorna array de resultados
-    const customers = Array.isArray(data) ? data : (data?.data ?? []);
-    if (customers.length > 0) {
-      return String(customers[0].idcliente ?? customers[0].id ?? "");
-    }
-    return null;
-  } catch (e) {
-    console.error("[OfficeGest] Erro ao pesquisar cliente por NUIT:", e);
-    return null;
-  }
-}
-
-/**
- * Cria cliente no OfficeGest.
- * Devolve o ID do cliente criado ou null em caso de erro.
- */
-async function createCustomer(name: string, nuit: string, address: string, email: string): Promise<string | null> {
-  try {
-    const payload = {
-      nome: name,
-      nif: nuit || "000000000",
-      morada: address || "Moçambique",
-      email: email || "",
-      pais: "MZ",
-      moeda: "MZN",
-    };
-    const res = await ogFetch("/entities/customers", "POST", payload);
+    const cleanNuit = nuit.trim();
+    const res = await ogFormFetch("/entities/customers", "GET");
     if (!res.ok) {
       const errText = await res.text();
-      console.error(`[OfficeGest] Erro ao criar cliente (${res.status}): ${errText}`);
-      return null;
+      return { customerId: null, error: `Listagem clientes (${res.status}): ${errText}` };
     }
     const data = await res.json();
-    return String(data?.idcliente ?? data?.id ?? data?.data?.idcliente ?? "");
-  } catch (e) {
-    console.error("[OfficeGest] Exceção ao criar cliente:", e);
-    return null;
+    const customersMap = data?.customers ?? {};
+    for (const id in customersMap) {
+      const cust = customersMap[id];
+      if (cust && String(cust.customertaxid).trim() === cleanNuit) {
+        return { customerId: String(cust.id || id) };
+      }
+    }
+    return { customerId: null };
+  } catch (e: any) {
+    console.error("[OfficeGest] Erro ao pesquisar cliente por NUIT:", e);
+    return { customerId: null, error: e?.message ?? String(e) };
   }
 }
 
 /**
- * Garante que o artigo de subscrição existe no OfficeGest.
- * Cria-o se não existir.
+ * Cria cliente no OfficeGest via form-urlencoded.
+ * Devolve { customerId, error }.
  */
-async function ensureArticleExists(): Promise<boolean> {
+async function createCustomer(
+  name: string,
+  nuit: string,
+  address: string,
+  email: string
+): Promise<{ customerId: string | null; error?: string }> {
   try {
-    // Verificar se artigo existe
-    const res = await ogFetch(`/stocks/articles/${OFFICEGEST_ARTICLE_CODE}`, "GET");
-    if (res.ok) {
-      console.log(`[OfficeGest] Artigo ${OFFICEGEST_ARTICLE_CODE} já existe.`);
-      return true;
+    const cleanNuit = (nuit || "").trim();
+    const cleanName = (name || "Cliente ISPC Fácil").trim();
+    const cleanAddress = (address || "Maputo, Moçambique").trim();
+    const cleanEmail = (email || "").trim();
+
+    const formParams: Record<string, string> = {
+      name: cleanName,
+      address: cleanAddress,
+      city: "Maputo",
+      zipcode: "1100",
+      country: "MOZ",
+      customertaxid: cleanNuit || "999999999",
+    };
+
+    if (cleanEmail) {
+      formParams.email = cleanEmail;
     }
 
-    // Criar artigo
-    console.log(`[OfficeGest] A criar artigo de subscrição ${OFFICEGEST_ARTICLE_CODE}...`);
-    const createRes = await ogFetch("/stocks/articles", "POST", {
-      codartigo: OFFICEGEST_ARTICLE_CODE,
-      nome: "Subscrição ISPC Fácil",
-      descricao: "Subscrição da plataforma de facturação ISPC Fácil",
-      preco1: 0,        // preço base (será substituído pela linha da factura)
-      iva: 0,           // sem IVA
-      familia: "SERV",
-      unidade: "MES",
-      tipoproduto: "S", // Serviço
-    });
+    const res = await ogFormFetch("/entities/customers", "POST", formParams);
+    const resText = await res.text();
 
-    if (!createRes.ok) {
-      const errText = await createRes.text();
-      console.error(`[OfficeGest] Erro ao criar artigo (${createRes.status}): ${errText}`);
-      return false;
+    if (!res.ok) {
+      console.error(`[OfficeGest] Erro ao criar cliente (${res.status}): ${resText}`);
+      let parsedErr = "";
+      try {
+        const jsonErr = JSON.parse(resText);
+        parsedErr = jsonErr.code_desc || jsonErr.message || resText;
+      } catch {
+        parsedErr = resText;
+      }
+      return { customerId: null, error: `HTTP ${res.status}: ${parsedErr}` };
     }
 
-    console.log(`[OfficeGest] Artigo ${OFFICEGEST_ARTICLE_CODE} criado com sucesso.`);
-    return true;
-  } catch (e) {
-    console.error("[OfficeGest] Exceção ao verificar/criar artigo:", e);
-    return false;
+    let data: any = {};
+    try {
+      data = JSON.parse(resText);
+    } catch {
+      data = {};
+    }
+
+    if (data.result === "error") {
+      return { customerId: null, error: `${data.code_desc || "Erro ao criar cliente"} (${data.arg_missing || data.invalid_value || ""})` };
+    }
+
+    const customerId = String(data?.customer_id ?? data?.customer?.id ?? data?.id ?? "");
+    if (!customerId) {
+      return { customerId: null, error: `Cliente criado mas sem ID retornado: ${resText}` };
+    }
+
+    return { customerId };
+  } catch (e: any) {
+    console.error("[OfficeGest] Exceção ao criar cliente:", e);
+    return { customerId: null, error: e?.message ?? String(e) };
   }
 }
 
 /**
  * Cria um documento de venda (FT) no OfficeGest.
- * Devolve { documentId, documentNumber } ou null em caso de erro.
+ * Devolve { documentId, documentNumber, error }
  */
 async function createSalesDocument(
   customerId: string,
@@ -157,7 +162,7 @@ async function createSalesDocument(
   paymentMethod: string,
   paymentDate: string,
   referenceCode: string,
-): Promise<{ documentId: string; documentNumber: string } | null> {
+): Promise<{ documentId: string; documentNumber: string } | { error: string }> {
   try {
     const cycleLabel = billingCycle === "yearly" ? "Anual (12 meses)"
       : billingCycle === "semiannual" ? "Semestral (6 meses)"
@@ -166,51 +171,64 @@ async function createSalesDocument(
 
     const methodLabel = paymentMethod === "mpesa" ? "M-Pesa"
       : paymentMethod === "emola" ? "e-Mola"
-      : paymentMethod;
+      : paymentMethod || "Pagamento Electrónico";
 
-    const docDate = paymentDate
-      ? new Date(paymentDate).toISOString().substring(0, 10)
-      : new Date().toISOString().substring(0, 10);
+    // Regra fiscal (OfficeGest / AT Moçambique): A data do documento não pode ser anterior
+    // ao último documento emitido na série. Usamos a data de hoje para emissão fiscal
+    // e incluímos a data real do pagamento nas observações.
+    const today = new Date().toISOString().substring(0, 10);
+    const paidAtFormatted = paymentDate ? new Date(paymentDate).toLocaleDateString("pt-MZ") : today;
 
-    const payload = {
-      idcliente: customerId,
-      data: docDate,
-      moeda: "MZN",
-      cambio: 1,
-      observacoes: `Referência: ${referenceCode} | Método: ${methodLabel}`,
-      linhas: [
-        {
-          codartigo: OFFICEGEST_ARTICLE_CODE,
-          descricao: `Subscrição ISPC Fácil — Plano ${planName} (${cycleLabel})`,
-          quantidade: 1,
-          preco: amount,
-          desconto: 0,
-          iva: 0,
-        },
-      ],
+    const formParams: Record<string, string> = {
+      idcustomer: customerId,
+      date: today,
+      currency: "MT",
+      observations: `Ref: ${referenceCode} | Pago em: ${paidAtFormatted} | Plano: ${planName} (${cycleLabel}) | Método: ${methodLabel}`,
+      "lines[1][idarticle]": OFFICEGEST_ARTICLE_ID,
+      "lines[1][description]": `Subscrição ISPC Fácil — Plano ${planName} (${cycleLabel})`,
+      "lines[1][quantity]": "1",
+      "lines[1][sellingprice]": String(amount),
+      "lines[1][vat]": "0",
     };
 
-    const res = await ogFetch(`/sales/documents/${OFFICEGEST_DOCTYPE}`, "POST", payload);
+    const res = await ogFormFetch(`/sales/documents/${OFFICEGEST_DOCTYPE}`, "POST", formParams);
+    const resText = await res.text();
 
     if (!res.ok) {
-      const errText = await res.text();
-      console.error(`[OfficeGest] Erro ao criar documento (${res.status}): ${errText}`);
-      return null;
+      console.error(`[OfficeGest] Erro ao criar documento (${res.status}): ${resText}`);
+      let parsedErr = "";
+      try {
+        const jsonErr = JSON.parse(resText);
+        parsedErr = jsonErr.code_desc || jsonErr.message || resText;
+      } catch {
+        parsedErr = resText;
+      }
+      return { error: `Documento FT (${res.status}): ${parsedErr}` };
     }
 
-    const data = await res.json();
-    const documentId = String(data?.id ?? data?.iddocumento ?? data?.data?.id ?? "");
-    const documentNumber = String(data?.numerodoc ?? data?.numero ?? data?.data?.numerodoc ?? documentId);
-
-    if (!documentId) {
-      console.error("[OfficeGest] Documento criado mas sem ID na resposta:", JSON.stringify(data));
-      return null;
+    let data: any = {};
+    try {
+      data = JSON.parse(resText);
+    } catch {
+      data = {};
     }
 
-    return { documentId, documentNumber };
-  } catch (e) {
-    console.error("[OfficeGest] Exceção ao criar documento:", e);
-    return null;
+    if (data.result === "error") {
+      const detail = data.codeerror || data.arg_missing || data.invalid_value || "";
+      return { error: `${data.code_desc || "Erro ao emitir documento"} ${detail ? `(${detail})` : ""}` };
+    }
+
+    const documentNumber = String(data?.document?.documentnumber ?? data?.document_number ?? "");
+    const documentId = String(data?.document?.number ?? data?.document_number ?? "");
+
+    if (!documentNumber && !documentId) {
+      return { error: `Documento criado mas sem número retornado: ${resText}` };
+    }
+
+    return { documentId: documentId || documentNumber, documentNumber: documentNumber || documentId };
+  } catch (e: any) {
+    console.error("[OfficeGest] Exceção ao criar documento de venda:", e);
+    return { error: e?.message ?? String(e) };
   }
 }
 
@@ -239,13 +257,10 @@ serve(async (req) => {
       // sem body é válido
     }
 
-    // ── Garantir artigo de subscrição ────────────────────────────────────────
-    await ensureArticleExists();
-
     // ── Buscar pagamentos a sincronizar ──────────────────────────────────────
     let query = supabase
       .from("subscription_payments")
-      .select("*, companies(name, nuit, address, email:user_id(email))")
+      .select("*, companies(name, nuit, address)")
       .eq("status", "completed")
       .is("officegest_document_id", null);
 
@@ -279,7 +294,7 @@ serve(async (req) => {
       const companyName = company?.name ?? "Cliente ISPC Fácil";
       const companyNuit = company?.nuit ?? "";
       const companyAddress = company?.address ?? "Moçambique";
-      const companyEmail = company?.email ?? "";
+      const companyEmail = "";
 
       try {
         console.log(`[SyncOfficeGest] A processar payment ${payment.id} — ${companyName}`);
@@ -288,19 +303,25 @@ serve(async (req) => {
         let customerId = payment.officegest_customer_id || null;
 
         if (!customerId && companyNuit) {
-          customerId = await findCustomerByNuit(companyNuit);
-          if (customerId) {
+          const searchRes = await findCustomerByNuit(companyNuit);
+          if (searchRes.customerId) {
+            customerId = searchRes.customerId;
             console.log(`[SyncOfficeGest] Cliente encontrado no OfficeGest: ${customerId}`);
           }
         }
 
         if (!customerId) {
           console.log(`[SyncOfficeGest] A criar cliente no OfficeGest: ${companyName}`);
-          customerId = await createCustomer(companyName, companyNuit, companyAddress, companyEmail);
+          const createRes = await createCustomer(companyName, companyNuit, companyAddress, companyEmail);
+          if (createRes.customerId) {
+            customerId = createRes.customerId;
+          } else {
+            throw new Error(`Não foi possível criar cliente no OfficeGest: ${createRes.error || "Erro desconhecido"}`);
+          }
         }
 
         if (!customerId) {
-          throw new Error(`Não foi possível encontrar ou criar o cliente "${companyName}" no OfficeGest`);
+          throw new Error(`Não foi possível obter ou criar o cliente "${companyName}" no OfficeGest`);
         }
 
         // 2. Criar documento de venda
@@ -315,8 +336,9 @@ serve(async (req) => {
           payment.reference_code ?? payment.id,
         );
 
-        if (!docResult) {
-          throw new Error(`Falha ao criar documento no OfficeGest para o pagamento ${payment.id}`);
+        if ("error" in docResult || !docResult.documentId) {
+          const errorMsg = ("error" in docResult) ? docResult.error : "ID de documento em falta";
+          throw new Error(`Falha ao criar FT no OfficeGest: ${errorMsg}`);
         }
 
         // 3. Actualizar subscription_payments com ID do documento
