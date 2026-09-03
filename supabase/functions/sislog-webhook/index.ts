@@ -301,7 +301,30 @@ serve(async (req) => {
       }
     }
 
-    // 3. Send confirmation email
+
+    // 3. Emit invoice in OfficeGest (fire-and-forget — non-blocking)
+    // This call does not affect Sislog retries; errors are logged only.
+    try {
+      const syncUrl = `${supabaseUrl}/functions/v1/sync-officegest`;
+      fetch(syncUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${supabaseServiceKey}`,
+        },
+        body: JSON.stringify({ payment_ids: [payment.id] }),
+      }).then(async (r) => {
+        const txt = await r.text().catch(() => "");
+        console.log(`[SislogWebhook] OfficeGest sync result (${r.status}): ${txt}`);
+      }).catch((e) => {
+        console.warn("[SislogWebhook] OfficeGest sync call failed (non-critical):", e);
+      });
+    } catch (syncErr) {
+      console.warn("[SislogWebhook] OfficeGest sync setup failed (non-critical):", syncErr);
+    }
+
+    // 4. Send confirmation email
+
     try {
       console.log(
         `[SislogWebhook] Querying company owner email for company: ${payment.company_id}`,
