@@ -73,6 +73,10 @@ export class MainLayoutComponent {
     });
   });
 
+  nonSuspendedCompanies = computed(() => {
+    return this.companyService.companies().filter(c => c.status !== 'suspended');
+  });
+
   constructor(
     public authService: AuthService,
     public companyService: CompanyService,

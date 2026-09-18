@@ -31,6 +31,7 @@ export interface Company {
     district?: string;
     administrativePost?: string;
   };
+  status?: 'active' | 'suspended' | 'trial';
   created_at: string;
   updated_at: string;
 }
@@ -43,6 +44,8 @@ export class CompanyService {
   activeCompany = signal<Company | null>(null);
   activeRole = signal<string | null>(null);
   isLoading = signal(false);
+
+  isCompanySuspended = computed(() => this.activeCompany()?.status === 'suspended');
 
   constructor(
     private supabase: SupabaseService,

@@ -1,7 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -27,7 +27,7 @@ import { AuthService } from '../../../core/services/auth.service';
   templateUrl: './login-form.component.html',
   styleUrls: ['./login-form.component.css']
 })
-export class LoginFormComponent {
+export class LoginFormComponent implements OnInit {
   loginForm: FormGroup;
   forgotForm: FormGroup;
   mode = signal<'login' | 'forgot' | 'forgot_sent'>('login');
@@ -43,6 +43,7 @@ export class LoginFormComponent {
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
+    private route: ActivatedRoute,
     private snackBar: MatSnackBar
   ) {
     this.loginForm = this.fb.group({
@@ -52,6 +53,17 @@ export class LoginFormComponent {
 
     this.forgotForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]]
+    });
+  }
+
+  ngOnInit() {
+    this.route.queryParams.subscribe(params => {
+      if (params['error'] === 'suspended') {
+        this.snackBar.open('A sua conta foi suspensa pela administração. Por favor, contacte o suporte.', 'Fechar', {
+          duration: 8000,
+          panelClass: ['error-snackbar']
+        });
+      }
     });
   }
 

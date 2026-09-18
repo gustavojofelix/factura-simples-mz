@@ -20,12 +20,20 @@
             <mat-select-trigger>
               <span class="workspace-trigger">
                 <span class="workspace-trigger-name">{{ companyService.activeCompany()?.name || 'Seleccionar empresa' }}</span>
-                <span class="workspace-trigger-caption">Empresa activa</span>
+                <span class="workspace-trigger-caption">
+                  {{ companyService.isCompanySuspended() ? 'Empresa Suspensa' : 'Empresa activa' }}
+                </span>
               </span>
             </mat-select-trigger>
             @for (company of companyService.companies(); track company.id) {
             <mat-option [value]="company.id">
-              <span class="company-option"><span class="company-option-mark">{{ company.name.charAt(0).toUpperCase() }}</span><span><strong>{{ company.name }}</strong><small>Empresa</small></span></span>
+              <span class="company-option">
+                <span class="company-option-mark" [class.!bg-red-500]="company.status === 'suspended'">{{ company.name.charAt(0).toUpperCase() }}</span>
+                <span>
+                  <strong>{{ company.name }}</strong>
+                  <small [class.!text-red-500]="company.status === 'suspended'">{{ company.status === 'suspended' ? 'Suspenso' : 'Empresa' }}</small>
+                </span>
+              </span>
             </mat-option>
             }
           </mat-select>
@@ -54,7 +62,7 @@
         <button mat-button [matMenuTriggerFor]="userMenu" aria-label="Abrir perfil e opções da conta"
           class="profile-chip w-full !justify-start !text-right !items-center !flex !flex-row !h-14 !px-2 rounded-xl hover:!bg-white">
           <span class="profile-avatar mr-3 shrink-0">{{ userInitials() }}<span class="profile-online-dot"></span></span>
-            <p class="text-[10px] text-slate-500 font-medium">{{ userRoleLabel() }} · Ver perfil</p>
+          <p class="text-[10px] text-slate-500 font-medium">{{ userRoleLabel() }} · Ver perfil</p>
         </button>
 
         <mat-menu #userMenu="matMenu">
@@ -116,7 +124,9 @@
             <mat-select [value]="companyService.activeCompany()?.id" (selectionChange)="onCompanyChange($event.value)">
               @for (company of companyService.companies(); track company.id) {
               <mat-option [value]="company.id">
-                <span class="truncate font-medium">{{ company.name }}</span>
+                <span class="truncate font-medium" [class.!text-red-600]="company.status === 'suspended'">
+                  {{ company.name }} {{ company.status === 'suspended' ? '(Suspenso)' : '' }}
+                </span>
               </mat-option>
               }
             </mat-select>
@@ -141,56 +151,114 @@
 
     <!-- Page Content Area -->
     <main class="app-canvas flex-1 overflow-y-auto custom-scrollbar pb-16 md:pb-6">
-      <!-- Subscription Notifications -->
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-        @if (subscriptionService.isTrialing() && subscriptionService.getDaysRemainingInTrial() > 0) {
-        <mat-card class="!shadow-sm mb-6 !rounded-2xl !border !border-orange-200 !bg-orange-50/70">
-          <mat-card-content class="p-4">
-            <div class="flex items-start">
-              <mat-icon class="mr-3 !text-2xl text-orange-600">
-                schedule
-              </mat-icon>
-              <div class="flex-1">
-                <h3 class="font-bold text-slate-900 mb-1 text-base">
-                  Período de Teste - {{ subscriptionService.getDaysRemainingInTrial() }}
-                  {{ subscriptionService.getDaysRemainingInTrial() === 1 ? 'dia restante' : 'dias restantes' }}
-                </h3>
-                <p class="text-sm text-slate-600 mb-3 leading-relaxed">
-                  O seu período de teste termina em breve. Escolha um plano para continuar a utilizar todas as
-                  funcionalidades.
-                </p>
-                <button mat-raised-button routerLink="/configuracoes" class="!bg-ispc-orange !text-white !h-10">
-                  Ver Planos
-                </button>
-              </div>
+      @if (companyService.isCompanySuspended()) {
+        <!-- Suspended Company Notice -->
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-12">
+          <div class="bg-white border-2 border-red-200 rounded-3xl p-8 sm:p-10 shadow-xl shadow-red-50/50 text-center relative overflow-hidden">
+            <div class="absolute -top-12 -right-12 w-36 h-36 bg-red-50 rounded-full pointer-events-none"></div>
+            
+            <div class="w-20 h-20 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+              <mat-icon class="!w-10 !h-10 !text-4xl">block</mat-icon>
             </div>
-          </mat-card-content>
-        </mat-card>
-        }
+            
+            <span class="inline-block px-3 py-1 bg-red-100 text-red-700 text-xs font-extrabold uppercase tracking-widest rounded-full mb-3">
+              Acesso Bloqueado
+            </span>
 
-        @if (subscriptionService.isTrialExpired()) {
-        <mat-card class="!shadow-sm mb-6 !rounded-2xl !border !border-rose-200 !bg-rose-50/70">
-          <mat-card-content class="p-4">
-            <div class="flex items-start">
-              <mat-icon class="mr-3 !text-2xl text-red-600">error</mat-icon>
-              <div class="flex-1">
-                <h3 class="font-bold text-red-900 mb-1 text-base">
-                  Período de Teste Expirado
-                </h3>
-                <p class="text-sm text-red-700 mb-3 leading-relaxed">
-                  O seu período de teste terminou. Por favor, escolha um plano para continuar a utilizar o ISPC Fácil.
+            <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 font-serif">
+              Contribuinte Suspenso
+            </h2>
+
+            <p class="text-gray-600 text-sm sm:text-base max-w-xl mx-auto mb-8 leading-relaxed">
+              O acesso às operações da empresa <strong>{{ companyService.activeCompany()?.name }}</strong> (NUIT: {{ companyService.activeCompany()?.nuit || '—' }}) 
+              foi suspenso pela administração. A emissão de facturas, gestão de clientes e outras funcionalidades estão temporariamente indisponíveis.
+            </p>
+
+            @if (nonSuspendedCompanies().length > 0) {
+              <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200/80 max-w-md mx-auto mb-8 text-left">
+                <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center">
+                  <mat-icon class="!w-4 !h-4 !text-base mr-1.5 text-gray-400">sync_alt</mat-icon>
+                  Mudar para outro contribuinte activo:
                 </p>
-                <button mat-raised-button routerLink="/configuracoes" color="warn" class="!h-10">
-                  Escolher Plano
-                </button>
+                <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  @for (c of nonSuspendedCompanies(); track c.id) {
+                    <button (click)="onCompanyChange(c.id)" class="w-full flex items-center justify-between p-3 bg-white rounded-xl border border-gray-200 hover:border-orange-500 hover:bg-orange-50/50 transition-all text-left group">
+                      <div>
+                        <p class="font-bold text-gray-900 text-sm group-hover:text-orange-600">{{ c.name }}</p>
+                        <p class="text-xs text-gray-400">NUIT: {{ c.nuit }}</p>
+                      </div>
+                      <span class="text-xs text-orange-600 font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center">
+                        Aceder &rarr;
+                      </span>
+                    </button>
+                  }
+                </div>
               </div>
-            </div>
-          </mat-card-content>
-        </mat-card>
-        }
-      </div>
+            }
 
-      <router-outlet></router-outlet>
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <a href="mailto:suporte@ispc.co.mz" class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 shadow-lg shadow-red-200 transition-all text-sm">
+                <mat-icon class="mr-2 !text-lg">support_agent</mat-icon>
+                Contactar Apoio ao Cliente
+              </a>
+              <button mat-button (click)="logout()" class="w-full sm:w-auto !text-gray-500 hover:!text-gray-800 !text-sm">
+                Terminar Sessão
+              </button>
+            </div>
+          </div>
+        </div>
+      } @else {
+        <!-- Subscription Notifications -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+          @if (subscriptionService.isTrialing() && subscriptionService.getDaysRemainingInTrial() > 0) {
+          <mat-card class="!shadow-sm mb-6 !rounded-2xl !border !border-orange-200 !bg-orange-50/70">
+            <mat-card-content class="p-4">
+              <div class="flex items-start">
+                <mat-icon class="mr-3 !text-2xl text-orange-600">
+                  schedule
+                </mat-icon>
+                <div class="flex-1">
+                  <h3 class="font-bold text-slate-900 mb-1 text-base">
+                    Período de Teste - {{ subscriptionService.getDaysRemainingInTrial() }}
+                    {{ subscriptionService.getDaysRemainingInTrial() === 1 ? 'dia restante' : 'dias restantes' }}
+                  </h3>
+                  <p class="text-sm text-slate-600 mb-3 leading-relaxed">
+                    O seu período de teste termina em breve. Escolha um plano para continuar a utilizar todas as
+                    funcionalidades.
+                  </p>
+                  <button mat-raised-button routerLink="/configuracoes" class="!bg-ispc-orange !text-white !h-10">
+                    Ver Planos
+                  </button>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+          }
+
+          @if (subscriptionService.isTrialExpired()) {
+          <mat-card class="!shadow-sm mb-6 !rounded-2xl !border !border-rose-200 !bg-rose-50/70">
+            <mat-card-content class="p-4">
+              <div class="flex items-start">
+                <mat-icon class="mr-3 !text-2xl text-red-600">error</mat-icon>
+                <div class="flex-1">
+                  <h3 class="font-bold text-red-900 mb-1 text-base">
+                    Período de Teste Expirado
+                  </h3>
+                  <p class="text-sm text-red-700 mb-3 leading-relaxed">
+                    O seu período de teste terminou. Por favor, escolha um plano para continuar a utilizar o ISPC Fácil.
+                  </p>
+                  <button mat-raised-button routerLink="/configuracoes" color="warn" class="!h-10">
+                    Escolher Plano
+                  </button>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+          }
+        </div>
+
+        <router-outlet></router-outlet>
+      }
     </main>
   </div>
 </div>

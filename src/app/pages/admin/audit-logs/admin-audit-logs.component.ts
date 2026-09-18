@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { PaginationComponent, PageChangeEvent } from '../../../shared/components/pagination.component';
+import { formatAuditDetails, FormattedAuditItem } from '../../../core/utils/audit-formatter.util';
 
 @Component({
   selector: 'app-admin-audit-logs',
@@ -193,9 +194,32 @@ import { PaginationComponent, PageChangeEvent } from '../../../shared/components
               </div>
             </div>
 
-            <div class="space-y-2">
-              <span class="text-[10px] font-bold text-gray-400 uppercase">Metadados da Atividade (JSON)</span>
-              <pre class="bg-slate-900 text-green-400 p-4 rounded-xl text-xs font-mono overflow-x-auto whitespace-pre-wrap">{{ selectedLog.details | json }}</pre>
+            <div class="space-y-3">
+              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Detalhes da Atividade</span>
+
+              <div *ngIf="getFormattedDetails(selectedLog.details).length === 0" class="text-xs text-gray-500 italic bg-gray-50 p-4 rounded-xl border border-gray-100">
+                Nenhum detalhe adicional registado para esta ação.
+              </div>
+
+              <div *ngIf="getFormattedDetails(selectedLog.details).length > 0" class="bg-gray-50 rounded-xl border border-gray-100 divide-y divide-gray-100 overflow-hidden text-sm">
+                <div *ngFor="let item of getFormattedDetails(selectedLog.details)" class="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-1 hover:bg-white transition-colors">
+                  <span class="text-xs font-semibold text-gray-500">{{ item.label }}</span>
+                  <div *ngIf="item.isChange" class="flex items-center space-x-2 text-xs font-medium">
+                    <span class="px-2 py-0.5 rounded bg-red-50 text-red-600 border border-red-100 line-through">{{ item.oldValue }}</span>
+                    <span class="text-gray-400">&rarr;</span>
+                    <span class="px-2 py-0.5 rounded bg-green-50 text-green-700 border border-green-200 font-semibold">{{ item.newValue }}</span>
+                  </div>
+                  <span *ngIf="!item.isChange" class="text-xs font-bold text-gray-800">{{ item.value }}</span>
+                </div>
+              </div>
+
+              <!-- Collapsible JSON for technical diagnostics -->
+              <details *ngIf="selectedLog.details" class="mt-3 group">
+                <summary class="text-[11px] font-medium text-gray-400 hover:text-gray-600 cursor-pointer select-none transition-colors">
+                  Ver dados técnicos brutos (JSON)
+                </summary>
+                <pre class="mt-2 bg-slate-900 text-green-400 p-3 rounded-xl text-[11px] font-mono overflow-x-auto whitespace-pre-wrap">{{ selectedLog.details | json }}</pre>
+              </details>
             </div>
           </div>
         </div>
@@ -418,5 +442,9 @@ export class AdminAuditLogsComponent implements OnInit {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  }
+
+  getFormattedDetails(details: any): FormattedAuditItem[] {
+    return formatAuditDetails(details);
   }
 }

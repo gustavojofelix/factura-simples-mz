@@ -16,6 +16,7 @@ export interface UserProfile {
   phone?: string;
   email: string;
   role: 'user' | 'admin';
+  status?: 'active' | 'suspended' | 'trial';
 }
 
 @Injectable({
@@ -116,6 +117,27 @@ export class AuthService {
       }
 
       if (data.user) {
+        // Verificar se a conta do utilizador/subscritor foi suspensa
+        const { data: profile } = await this.supabase.db
+          .from('profiles')
+          .select('status')
+          .eq('id', data.user.id)
+          .maybeSingle();
+
+        if (profile?.status === 'suspended') {
+          await this.supabase.auth.signOut();
+          this.currentUser.set(null);
+          await this.auditLogService.log(
+            'Tentativa de Login em Conta Suspensa',
+            'auth',
+            { email: data.user.email }
+          );
+          return {
+            success: false,
+            error: 'A sua conta foi suspensa pela administração. Contacte o suporte para mais informações.'
+          };
+        }
+
         this.currentUser.set(data.user);
         this._isAdminCache = null; // Clear cache on new login
         await this.auditLogService.log(
@@ -211,7 +233,7 @@ export class AuthService {
     try {
       const { data, error } = await this.supabase.db
         .from('profiles')
-        .select('id, full_name, phone, email, role')
+        .select('id, full_name, phone, email, role, status')
         .eq('id', user.id)
         .limit(1)
         .maybeSingle();
@@ -223,7 +245,8 @@ export class AuthService {
           full_name: user.user_metadata?.['full_name'] || user.email?.split('@')[0] || 'Utilizador',
           phone: user.user_metadata?.['phone'] || '',
           email: user.email!,
-          role: 'user'
+          role: 'user',
+          status: 'active'
         };
       }
 
@@ -233,7 +256,8 @@ export class AuthService {
           full_name: data.full_name,
           phone: data.phone,
           email: user.email!,
-          role: data.role === 'admin' ? 'admin' : 'user'
+          role: data.role === 'admin' ? 'admin' : 'user',
+          status: data.status || 'active'
         };
       }
 
@@ -245,7 +269,8 @@ export class AuthService {
         full_name: user.user_metadata?.['full_name'] || user.email?.split('@')[0] || 'Utilizador',
         phone: user.user_metadata?.['phone'] || '',
         email: user.email!,
-        role: 'user'
+        role: 'user',
+        status: 'active'
       };
     }
   }
