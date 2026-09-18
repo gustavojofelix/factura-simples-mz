@@ -3,10 +3,12 @@ import { CommonModule } from '@angular/common';
 import { SupabaseService } from '../../../core/services/supabase.service';
 
 interface DashboardStats {
-  totalSubscribers: number;
-  totalCompanies: number;
   totalUsers: number;
-  mrr: number;
+  newRegistrations: number;
+  activeSubscriptions: number;
+  trialSubscriptions: number;
+  expiredSubscriptions: number;
+  totalRevenue: number;
 }
 
 interface AlertItem {
@@ -30,37 +32,67 @@ interface RecentUser {
   template: `
     <div class="space-y-6">
 
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Total de utilizadores -->
         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <p class="text-sm font-medium text-gray-500">MRR Estimado</p>
-          @if (isLoading()) {
-            <div class="h-9 w-32 bg-gray-200 rounded animate-pulse mt-2"></div>
-          } @else {
-            <p class="text-3xl font-bold text-blue-600 mt-2">{{ stats().mrr | currency:'MZN':'symbol':'1.2-2':'pt-MZ' }}</p>
-          }
-        </div>
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <p class="text-sm font-medium text-gray-500 uppercase tracking-tight">Total de Subscritores</p>
-          @if (isLoading()) {
-            <div class="h-9 w-16 bg-gray-200 rounded animate-pulse mt-2"></div>
-          } @else {
-            <p class="text-3xl font-bold text-gray-900 mt-2">{{ stats().totalSubscribers }}</p>
-          }
-        </div>
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <p class="text-sm font-medium text-gray-500 uppercase tracking-tight">Contribuintes Activos</p>
-          @if (isLoading()) {
-            <div class="h-9 w-16 bg-gray-200 rounded animate-pulse mt-2"></div>
-          } @else {
-            <p class="text-3xl font-bold text-gray-900 mt-2">{{ stats().totalCompanies }}</p>
-          }
-        </div>
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <p class="text-sm font-medium text-gray-500 uppercase tracking-tight">Utilizadores Totais</p>
+          <p class="text-sm font-medium text-gray-500 uppercase tracking-tight">Total de utilizadores</p>
           @if (isLoading()) {
             <div class="h-9 w-16 bg-gray-200 rounded animate-pulse mt-2"></div>
           } @else {
             <p class="text-3xl font-bold text-gray-900 mt-2">{{ stats().totalUsers }}</p>
+          }
+        </div>
+
+        <!-- Novos registos -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <div class="flex items-center justify-between">
+            <p class="text-sm font-medium text-gray-500 uppercase tracking-tight">Novos registos</p>
+            <span class="text-[10px] font-semibold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">30 dias</span>
+          </div>
+          @if (isLoading()) {
+            <div class="h-9 w-16 bg-gray-200 rounded animate-pulse mt-2"></div>
+          } @else {
+            <p class="text-3xl font-bold text-gray-900 mt-2">{{ stats().newRegistrations }}</p>
+          }
+        </div>
+
+        <!-- Subscrições Activas -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <p class="text-sm font-medium text-gray-500 uppercase tracking-tight">Subscrições Activas</p>
+          @if (isLoading()) {
+            <div class="h-9 w-16 bg-gray-200 rounded animate-pulse mt-2"></div>
+          } @else {
+            <p class="text-3xl font-bold text-emerald-600 mt-2">{{ stats().activeSubscriptions }}</p>
+          }
+        </div>
+
+        <!-- Subscrições Trial -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <p class="text-sm font-medium text-gray-500 uppercase tracking-tight">Subscrições Trial</p>
+          @if (isLoading()) {
+            <div class="h-9 w-16 bg-gray-200 rounded animate-pulse mt-2"></div>
+          } @else {
+            <p class="text-3xl font-bold text-blue-600 mt-2">{{ stats().trialSubscriptions }}</p>
+          }
+        </div>
+
+        <!-- Subscrições Expiradas -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <p class="text-sm font-medium text-gray-500 uppercase tracking-tight">Subscrições Expiradas</p>
+          @if (isLoading()) {
+            <div class="h-9 w-16 bg-gray-200 rounded animate-pulse mt-2"></div>
+          } @else {
+            <p class="text-3xl font-bold text-rose-600 mt-2">{{ stats().expiredSubscriptions }}</p>
+          }
+        </div>
+
+        <!-- Receita Total -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <p class="text-sm font-medium text-gray-500 uppercase tracking-tight">Receita Total</p>
+          @if (isLoading()) {
+            <div class="h-9 w-32 bg-gray-200 rounded animate-pulse mt-2"></div>
+          } @else {
+            <p class="text-3xl font-bold text-gray-900 mt-2">{{ stats().totalRevenue | currency:'MZN':'symbol':'1.2-2':'pt-MZ' }}</p>
           }
         </div>
       </div>
@@ -171,10 +203,12 @@ interface RecentUser {
 })
 export class AdminDashboardComponent implements OnInit {
   stats = signal<DashboardStats>({
-    totalSubscribers: 0,
-    totalCompanies: 0,
     totalUsers: 0,
-    mrr: 0
+    newRegistrations: 0,
+    activeSubscriptions: 0,
+    trialSubscriptions: 0,
+    expiredSubscriptions: 0,
+    totalRevenue: 0
   });
 
   recentUsers = signal<RecentUser[]>([]);
@@ -191,44 +225,102 @@ export class AdminDashboardComponent implements OnInit {
   async loadDashboard() {
     this.isLoading.set(true);
     try {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
       // All queries run in parallel — no sequential awaits
       const [
         { count: profilesCount },
-        { count: companiesCount },
-        { data: activeSubs },
-        { count: pastDueCount },
+        { count: newProfilesCount },
+        { data: subscriptionsData },
+        { data: paymentsData },
         { data: recentProfiles }
       ] = await Promise.all([
         this.supabase.db.from('profiles').select('*', { count: 'exact', head: true }),
-        this.supabase.db.from('companies').select('*', { count: 'exact', head: true }),
-        this.supabase.db.from('subscriptions').select('amount, billing_cycle').eq('status', 'active'),
-        this.supabase.db.from('subscriptions').select('*', { count: 'exact', head: true }).eq('status', 'past_due'),
+        this.supabase.db.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', thirtyDaysAgo.toISOString()),
+        this.supabase.db.from('subscriptions').select('id, status, plan_name, start_date, end_date, next_billing_date, created_at'),
+        this.supabase.db.from('subscription_payments').select('amount').eq('status', 'completed'),
         this.supabase.db.from('profiles').select('id, full_name, email, status, created_at').order('created_at', { ascending: false }).limit(6)
       ]);
 
-      // Calculate MRR
-      const mrr = (activeSubs || []).reduce((acc, s) => {
-        const amount = Number(s.amount) || 0;
-        const divisors: Record<string, number> = { yearly: 12, semiannual: 6, quarterly: 3 };
-        return acc + amount / (divisors[s.billing_cycle] ?? 1);
-      }, 0);
+      const now = new Date();
+      let activeCount = 0;
+      let trialCount = 0;
+      let expiredCount = 0;
+
+      (subscriptionsData || []).forEach((s: any) => {
+        const isTrialExpired = () => {
+          let endDate: Date;
+          if (s.end_date) {
+            endDate = new Date(s.end_date);
+          } else {
+            const start = s.start_date ? new Date(s.start_date) : new Date(s.created_at || now);
+            endDate = new Date(start.getTime() + 14 * 24 * 60 * 60 * 1000);
+          }
+          return now > endDate;
+        };
+
+        const isPeriodExpired = () => {
+          const expiryDate = s.end_date || s.next_billing_date;
+          if (!expiryDate) return false;
+          return now > new Date(expiryDate);
+        };
+
+        if (s.status === 'active') {
+          if (isPeriodExpired()) {
+            expiredCount++;
+          } else {
+            activeCount++;
+          }
+        } else if (s.status === 'trialing') {
+          if (isTrialExpired()) {
+            expiredCount++;
+          } else {
+            trialCount++;
+          }
+        } else if (s.status === 'past_due' || s.status === 'cancelled') {
+          expiredCount++;
+        } else {
+          expiredCount++;
+        }
+      });
+
+      const totalRevenue = (paymentsData || []).reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
 
       this.stats.set({
-        totalSubscribers: profilesCount || 0,
-        totalCompanies: companiesCount || 0,
-        totalUsers: profilesCount || 0, // Same source — no duplicate query
-        mrr
+        totalUsers: profilesCount || 0,
+        newRegistrations: newProfilesCount || 0,
+        activeSubscriptions: activeCount,
+        trialSubscriptions: trialCount,
+        expiredSubscriptions: expiredCount,
+        totalRevenue
       });
 
       this.recentUsers.set((recentProfiles || []) as RecentUser[]);
 
       // Build alert list
       const alertList: AlertItem[] = [];
-      if (mrr < 1000) {
-        alertList.push({ type: 'info', title: 'Novos Passos', message: 'MRR abaixo da meta inicial de 1k MT.' });
+      const pastDueCount = (subscriptionsData || []).filter((s: any) => s.status === 'past_due').length;
+      if (pastDueCount > 0) {
+        alertList.push({
+          type: 'error',
+          title: 'Cobranças Pendentes',
+          message: `${pastDueCount} subscrição(ões) com pagamento em atraso.`
+        });
       }
-      if ((pastDueCount || 0) > 0) {
-        alertList.push({ type: 'error', title: 'Cobranças Pendentes', message: `${pastDueCount} subscrições com pagamento em atraso.` });
+      if (expiredCount > 0) {
+        alertList.push({
+          type: 'error',
+          title: 'Subscrições Expiradas',
+          message: `${expiredCount} subscrição(ões) expirada(s) que necessitam de atenção.`
+        });
+      }
+      if (trialCount > 0) {
+        alertList.push({
+          type: 'info',
+          title: 'Períodos Experimentais',
+          message: `${trialCount} utilizador(es) actualmente a usufruir do período experimental.`
+        });
       }
       this.alerts.set(alertList);
     } catch (error) {
