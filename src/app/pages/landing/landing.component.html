@@ -593,8 +593,8 @@
       <header class="privacy-modal-header">
         <div>
           <span class="privacy-modal-eyebrow">Legal &amp; transpar&ecirc;ncia</span>
-          <h2 id="privacy-modal-title">Pol&iacute;tica de Privacidade</h2>
-          <p>Como o ISPC F&aacute;cil recolhe, utiliza e protege os seus dados.</p>
+          <h2 id="privacy-modal-title">{{ privacyContent.title }}</h2>
+          <p>{{ privacyContent.subtitle }}</p>
         </div>
         <button type="button" class="privacy-modal-close" (click)="closePrivacy()" aria-label="Fechar pol&iacute;tica de privacidade">
           <i class="fas fa-times" aria-hidden="true"></i>
@@ -602,18 +602,12 @@
       </header>
 
       <div class="privacy-modal-content">
-        <p class="privacy-modal-intro">A sua privacidade &eacute; importante para n&oacute;s. Esta pol&iacute;tica explica de forma clara que dados recolhemos e para que finalidades os utilizamos.</p>
-        <h3>1. Dados que recolhemos</h3>
-        <p>Podemos recolher o seu nome, endere&ccedil;o de email, telefone e informa&ccedil;&otilde;es da sua empresa quando cria uma conta, utiliza a plataforma ou entra em contacto connosco.</p>
-        <h3>2. Como utilizamos os seus dados</h3>
-        <p>Utilizamos estas informa&ccedil;&otilde;es para disponibilizar os servi&ccedil;os de factura&ccedil;&atilde;o, calcular o ISPC, gerir a sua conta, prestar suporte e comunicar informa&ccedil;&otilde;es importantes sobre o servi&ccedil;o.</p>
-        <h3>3. Protec&ccedil;&atilde;o e conserva&ccedil;&atilde;o</h3>
-        <p>Aplicamos medidas t&eacute;cnicas e organizativas para proteger os seus dados contra acesso, altera&ccedil;&atilde;o ou divulga&ccedil;&atilde;o n&atilde;o autorizados. Conservamos os dados apenas durante o tempo necess&aacute;rio para cumprir as finalidades descritas e as obriga&ccedil;&otilde;es legais aplic&aacute;veis.</p>
-        <h3>4. Partilha de informa&ccedil;&otilde;es</h3>
-        <p>N&atilde;o vendemos os seus dados pessoais. Apenas os partilhamos com prestadores essenciais ao funcionamento da plataforma ou quando tal for exigido por lei, incluindo pelas autoridades competentes.</p>
-        <h3>5. Os seus direitos</h3>
-        <p>Pode solicitar o acesso, a rectifica&ccedil;&atilde;o ou a elimina&ccedil;&atilde;o dos seus dados, bem como esclarecer d&uacute;vidas sobre esta pol&iacute;tica, atrav&eacute;s dos canais de contacto disponibilizados na plataforma.</p>
-        <p class="privacy-modal-updated">&Uacute;ltima actualiza&ccedil;&atilde;o: {{ currentYear }}</p>
+        <p *ngIf="privacyContent.intro" class="privacy-modal-intro">{{ privacyContent.intro }}</p>
+        <ng-container *ngFor="let sec of privacyContent.sections">
+          <h3>{{ sec.title }}</h3>
+          <p class="whitespace-pre-line">{{ sec.content }}</p>
+        </ng-container>
+        <p class="privacy-modal-updated">{{ privacyContent.lastUpdatedText || ('Última actualização: ' + currentYear) }}</p>
       </div>
     </section>
   </div>
@@ -628,8 +622,8 @@
       <header class="privacy-modal-header">
         <div>
           <span class="privacy-modal-eyebrow">Legal &amp; transpar&ecirc;ncia</span>
-          <h2 id="terms-modal-title">Termos de Uso</h2>
-          <p>As regras para utilizar o ISPC F&aacute;cil de forma segura e transparente.</p>
+          <h2 id="terms-modal-title">{{ termsContent.title }}</h2>
+          <p>{{ termsContent.subtitle }}</p>
         </div>
         <button type="button" class="privacy-modal-close" (click)="closeTerms()" aria-label="Fechar termos de uso">
           <i class="fas fa-times" aria-hidden="true"></i>
@@ -637,20 +631,12 @@
       </header>
 
       <div class="privacy-modal-content">
-        <p class="privacy-modal-intro">Ao criar uma conta ou utilizar o ISPC F&aacute;cil, confirma que leu e aceita estes termos de uso.</p>
-        <h3>1. Aceita&ccedil;&atilde;o dos termos</h3>
-        <p>Estes termos regulam o acesso e a utiliza&ccedil;&atilde;o da plataforma ISPC F&aacute;cil. Caso n&atilde;o concorde com alguma condi&ccedil;&atilde;o, n&atilde;o dever&aacute; utilizar o servi&ccedil;o.</p>
-        <h3>2. Descri&ccedil;&atilde;o do servi&ccedil;o</h3>
-        <p>O ISPC F&aacute;cil &eacute; uma ferramenta de apoio &agrave; factura&ccedil;&atilde;o, gest&atilde;o financeira e c&aacute;lculo do ISPC para empreendedores e empresas em Mo&ccedil;ambique.</p>
-        <h3>3. Responsabilidades do utilizador</h3>
-        <p>O utilizador compromete-se a fornecer informa&ccedil;&otilde;es verdadeiras e actualizadas, proteger as suas credenciais e utilizar a plataforma em conformidade com a legisla&ccedil;&atilde;o aplic&aacute;vel.</p>
-        <h3>4. Limita&ccedil;&atilde;o de responsabilidade</h3>
-        <p>A plataforma &eacute; uma ferramenta de apoio. A responsabilidade final pela exactid&atilde;o das informa&ccedil;&otilde;es, facturas, declara&ccedil;&otilde;es fiscais e pagamentos pertence ao utilizador.</p>
-        <h3>5. Disponibilidade e altera&ccedil;&otilde;es</h3>
-        <p>Podemos actualizar, melhorar ou alterar funcionalidades do servi&ccedil;o. Poderemos tamb&eacute;m actualizar estes termos, comunicando as altera&ccedil;&otilde;es relevantes atrav&eacute;s da plataforma.</p>
-        <h3>6. Contacto</h3>
-        <p>Para quest&otilde;es sobre estes termos ou sobre a utiliza&ccedil;&atilde;o do servi&ccedil;o, utilize os canais de contacto disponibilizados na plataforma.</p>
-        <p class="privacy-modal-updated">&Uacute;ltima actualiza&ccedil;&atilde;o: {{ currentYear }}</p>
+        <p *ngIf="termsContent.intro" class="privacy-modal-intro">{{ termsContent.intro }}</p>
+        <ng-container *ngFor="let sec of termsContent.sections">
+          <h3>{{ sec.title }}</h3>
+          <p class="whitespace-pre-line">{{ sec.content }}</p>
+        </ng-container>
+        <p class="privacy-modal-updated">{{ termsContent.lastUpdatedText || ('Última actualização: ' + currentYear) }}</p>
       </div>
     </section>
   </div>

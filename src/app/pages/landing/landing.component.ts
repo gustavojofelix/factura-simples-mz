@@ -121,6 +121,14 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.cmsService.contact();
   }
 
+  get termsContent() {
+    return this.cmsService.terms();
+  }
+
+  get privacyContent() {
+    return this.cmsService.privacy();
+  }
+
   plans = [
     {
       name: 'Essencial',

@@ -7,6 +7,8 @@ import {
   FeatureContent,
   HeroContent,
   LandingCmsService,
+  LegalDocumentContent,
+  PolicySection,
   StatContent,
   ValueContent
 } from '../../../core/services/landing-cms.service';
@@ -28,7 +30,7 @@ import {
           </div>
           <h2 class="text-3xl font-extrabold tracking-tight">Gestão de Conteúdo da Landing Page</h2>
           <p class="text-slate-300 text-sm mt-1 max-w-2xl">
-            Edite textos, funcionalidades, métricas e FAQs. As alterações guardadas aqui são refletidas instantaneamente na página principal do site.
+            Edite textos, funcionalidades, métricas, FAQs, termos de uso e privacidade. As alterações guardadas aqui são refletidas instantaneamente no site.
           </p>
         </div>
 
@@ -92,6 +94,14 @@ import {
 
         <button (click)="activeTab = 'contact'" [class.bg-blue-600]="activeTab === 'contact'" [class.text-white]="activeTab === 'contact'" [class.text-gray-600]="activeTab !== 'contact'" [class.hover:bg-gray-100]="activeTab !== 'contact'" class="flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm transition-all whitespace-nowrap">
           <span>📞 Contactos</span>
+        </button>
+
+        <button (click)="activeTab = 'terms'" [class.bg-blue-600]="activeTab === 'terms'" [class.text-white]="activeTab === 'terms'" [class.text-gray-600]="activeTab !== 'terms'" [class.hover:bg-gray-100]="activeTab !== 'terms'" class="flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm transition-all whitespace-nowrap">
+          <span>📜 Termos de Uso</span>
+        </button>
+
+        <button (click)="activeTab = 'privacy'" [class.bg-blue-600]="activeTab === 'privacy'" [class.text-white]="activeTab === 'privacy'" [class.text-gray-600]="activeTab !== 'privacy'" [class.hover:bg-gray-100]="activeTab !== 'privacy'" class="flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm transition-all whitespace-nowrap">
+          <span>🔒 Política de Privacidade</span>
         </button>
       </div>
 
@@ -389,12 +399,178 @@ import {
           </div>
         </div>
       </div>
+
+      <!-- TAB 7: TERMOS DE USO -->
+      <div *ngIf="activeTab === 'terms'" class="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 pb-4 gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xl">📜</span>
+              <h3 class="text-xl font-bold text-gray-900">Termos de Uso</h3>
+            </div>
+            <p class="text-sm text-gray-500 mt-1">Defina as regras, responsabilidades e condições legais de utilização da plataforma.</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <button (click)="addTermsSection()" type="button" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold px-4 py-2.5 rounded-xl text-sm transition-all flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+              </svg>
+              <span>Adicionar Cláusula</span>
+            </button>
+            <button (click)="saveTerms()" [disabled]="saving" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-xl text-sm transition-all shadow-sm disabled:opacity-50 flex items-center gap-2">
+              <span>{{ saving ? 'A guardar...' : 'Guardar Termos' }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Metadata -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-5 bg-gray-50/70 border border-gray-100 rounded-2xl">
+          <div>
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Título do Documento</label>
+            <input type="text" [(ngModel)]="termsForm.title" placeholder="ex: Termos de Uso" class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nota de Actualização (Rodapé)</label>
+            <input type="text" [(ngModel)]="termsForm.lastUpdatedText" placeholder="ex: Última actualização: 2026" class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Subtítulo / Resumo</label>
+            <input type="text" [(ngModel)]="termsForm.subtitle" placeholder="ex: As regras para utilizar o ISPC Fácil de forma segura e transparente." class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Texto Introdutório</label>
+            <textarea [(ngModel)]="termsForm.intro" rows="2" placeholder="Texto introdutório antes das cláusulas..." class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
+          </div>
+        </div>
+
+        <!-- Clauses List -->
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h4 class="text-sm font-bold text-gray-800 uppercase tracking-wider">Cláusulas do Contrato ({{ termsForm.sections.length }})</h4>
+            <span class="text-xs text-gray-400">Reordene ou edite cada cláusula conforme necessário</span>
+          </div>
+
+          <div *ngIf="termsForm.sections.length === 0" class="p-8 text-center bg-gray-50 border border-gray-200 border-dashed rounded-2xl text-gray-400 text-sm">
+            Nenhuma cláusula adicionada. Clique em "Adicionar Cláusula" acima.
+          </div>
+
+          <div *ngFor="let sec of termsForm.sections; let i = index" class="p-5 bg-white border border-gray-200 rounded-2xl relative shadow-sm hover:border-blue-200 transition-all space-y-3">
+            <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+              <span class="text-xs font-bold text-blue-600 uppercase tracking-wider bg-blue-50 px-2.5 py-1 rounded-lg">Cláusula #{{ i + 1 }}</span>
+              <div class="flex items-center gap-1">
+                <button (click)="moveTermsSectionUp(i)" [disabled]="i === 0" class="p-1.5 hover:bg-gray-100 disabled:opacity-30 rounded-lg text-gray-600 text-xs font-bold" title="Mover para cima">
+                  ↑
+                </button>
+                <button (click)="moveTermsSectionDown(i)" [disabled]="i === termsForm.sections.length - 1" class="p-1.5 hover:bg-gray-100 disabled:opacity-30 rounded-lg text-gray-600 text-xs font-bold" title="Mover para baixo">
+                  ↓
+                </button>
+                <button (click)="removeTermsSection(i)" class="text-red-500 hover:bg-red-50 p-1.5 rounded-lg text-xs font-bold ml-2">
+                  Remover
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Título da Cláusula</label>
+              <input type="text" [(ngModel)]="sec.title" placeholder="ex: 1. Aceitação dos termos" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-800 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Conteúdo da Cláusula</label>
+              <textarea [(ngModel)]="sec.content" rows="4" placeholder="Descreva os termos desta cláusula..." class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 leading-relaxed"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 8: POLÍTICA DE PRIVACIDADE -->
+      <div *ngIf="activeTab === 'privacy'" class="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 pb-4 gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xl">🔒</span>
+              <h3 class="text-xl font-bold text-gray-900">Política de Privacidade</h3>
+            </div>
+            <p class="text-sm text-gray-500 mt-1">Configure o tratamento, retenção e proteção de dados pessoais e empresariais dos utilizadores.</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <button (click)="addPrivacySection()" type="button" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold px-4 py-2.5 rounded-xl text-sm transition-all flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+              </svg>
+              <span>Adicionar Secção</span>
+            </button>
+            <button (click)="savePrivacy()" [disabled]="saving" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-xl text-sm transition-all shadow-sm disabled:opacity-50 flex items-center gap-2">
+              <span>{{ saving ? 'A guardar...' : 'Guardar Política' }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Metadata -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-5 bg-gray-50/70 border border-gray-100 rounded-2xl">
+          <div>
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Título do Documento</label>
+            <input type="text" [(ngModel)]="privacyForm.title" placeholder="ex: Política de Privacidade" class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nota de Actualização (Rodapé)</label>
+            <input type="text" [(ngModel)]="privacyForm.lastUpdatedText" placeholder="ex: Última actualização: 2026" class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Subtítulo / Resumo</label>
+            <input type="text" [(ngModel)]="privacyForm.subtitle" placeholder="ex: Como o ISPC Fácil recolhe, utiliza e protege os seus dados." class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Texto Introdutório</label>
+            <textarea [(ngModel)]="privacyForm.intro" rows="2" placeholder="Texto introdutório sobre o compromisso de privacidade..." class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
+          </div>
+        </div>
+
+        <!-- Sections List -->
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h4 class="text-sm font-bold text-gray-800 uppercase tracking-wider">Secções da Política ({{ privacyForm.sections.length }})</h4>
+            <span class="text-xs text-gray-400">Edite os pontos relativos a recolha, proteção e direitos</span>
+          </div>
+
+          <div *ngIf="privacyForm.sections.length === 0" class="p-8 text-center bg-gray-50 border border-gray-200 border-dashed rounded-2xl text-gray-400 text-sm">
+            Nenhuma secção adicionada. Clique em "Adicionar Secção" acima.
+          </div>
+
+          <div *ngFor="let sec of privacyForm.sections; let i = index" class="p-5 bg-white border border-gray-200 rounded-2xl relative shadow-sm hover:border-blue-200 transition-all space-y-3">
+            <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+              <span class="text-xs font-bold text-blue-600 uppercase tracking-wider bg-blue-50 px-2.5 py-1 rounded-lg">Secção #{{ i + 1 }}</span>
+              <div class="flex items-center gap-1">
+                <button (click)="movePrivacySectionUp(i)" [disabled]="i === 0" class="p-1.5 hover:bg-gray-100 disabled:opacity-30 rounded-lg text-gray-600 text-xs font-bold" title="Mover para cima">
+                  ↑
+                </button>
+                <button (click)="movePrivacySectionDown(i)" [disabled]="i === privacyForm.sections.length - 1" class="p-1.5 hover:bg-gray-100 disabled:opacity-30 rounded-lg text-gray-600 text-xs font-bold" title="Mover para baixo">
+                  ↓
+                </button>
+                <button (click)="removePrivacySection(i)" class="text-red-500 hover:bg-red-50 p-1.5 rounded-lg text-xs font-bold ml-2">
+                  Remover
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Título da Secção</label>
+              <input type="text" [(ngModel)]="sec.title" placeholder="ex: 1. Dados que recolhemos" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-800 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Conteúdo da Secção</label>
+              <textarea [(ngModel)]="sec.content" rows="4" placeholder="Descreva os procedimentos desta secção..." class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 leading-relaxed"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
       </ng-container>
     </div>
   `
 })
 export class AdminLandingCmsComponent implements OnInit {
-  activeTab: 'hero' | 'stats' | 'features' | 'values' | 'faqs' | 'contact' = 'hero';
+  activeTab: 'hero' | 'stats' | 'features' | 'values' | 'faqs' | 'contact' | 'terms' | 'privacy' = 'hero';
   message = '';
   error = '';
   saving = false;
@@ -406,6 +582,8 @@ export class AdminLandingCmsComponent implements OnInit {
   valuesForm: ValueContent[] = [];
   faqsForm: FaqContent[] = [];
   contactForm!: ContactContent;
+  termsForm!: LegalDocumentContent;
+  privacyForm!: LegalDocumentContent;
 
   constructor(public cmsService: LandingCmsService) {}
 
@@ -451,6 +629,34 @@ export class AdminLandingCmsComponent implements OnInit {
       workHours: ''
     };
     this.contactForm = { ...contactDefaults, ...(this.cmsService.contact() || {}) };
+
+    const termsDefaults: LegalDocumentContent = {
+      title: 'Termos de Uso',
+      subtitle: '',
+      intro: '',
+      lastUpdatedText: '',
+      sections: []
+    };
+    const currentTerms = this.cmsService.terms();
+    this.termsForm = {
+      ...termsDefaults,
+      ...(currentTerms || {}),
+      sections: (currentTerms?.sections || []).map(s => ({ ...s }))
+    };
+
+    const privacyDefaults: LegalDocumentContent = {
+      title: 'Política de Privacidade',
+      subtitle: '',
+      intro: '',
+      lastUpdatedText: '',
+      sections: []
+    };
+    const currentPrivacy = this.cmsService.privacy();
+    this.privacyForm = {
+      ...privacyDefaults,
+      ...(currentPrivacy || {}),
+      sections: (currentPrivacy?.sections || []).map(s => ({ ...s }))
+    };
   }
 
   // --- Hero Section ---
@@ -588,6 +794,78 @@ export class AdminLandingCmsComponent implements OnInit {
     this.saving = false;
     if (ok) this.showSuccess('Contactos atualizados com sucesso!');
     else this.showError('Erro ao guardar contactos.');
+  }
+
+  // --- Terms of Use Section ---
+  addTermsSection() {
+    this.termsForm.sections.push({
+      title: `${this.termsForm.sections.length + 1}. Nova Cláusula`,
+      content: ''
+    });
+  }
+
+  removeTermsSection(index: number) {
+    this.termsForm.sections.splice(index, 1);
+  }
+
+  moveTermsSectionUp(index: number) {
+    if (index > 0) {
+      const temp = this.termsForm.sections[index];
+      this.termsForm.sections[index] = this.termsForm.sections[index - 1];
+      this.termsForm.sections[index - 1] = temp;
+    }
+  }
+
+  moveTermsSectionDown(index: number) {
+    if (index < this.termsForm.sections.length - 1) {
+      const temp = this.termsForm.sections[index];
+      this.termsForm.sections[index] = this.termsForm.sections[index + 1];
+      this.termsForm.sections[index + 1] = temp;
+    }
+  }
+
+  async saveTerms() {
+    this.saving = true;
+    const ok = await this.cmsService.updateSectionContent('terms', this.termsForm);
+    this.saving = false;
+    if (ok) this.showSuccess('Termos de Uso atualizados com sucesso!');
+    else this.showError('Erro ao guardar Termos de Uso.');
+  }
+
+  // --- Privacy Policy Section ---
+  addPrivacySection() {
+    this.privacyForm.sections.push({
+      title: `${this.privacyForm.sections.length + 1}. Nova Secção`,
+      content: ''
+    });
+  }
+
+  removePrivacySection(index: number) {
+    this.privacyForm.sections.splice(index, 1);
+  }
+
+  movePrivacySectionUp(index: number) {
+    if (index > 0) {
+      const temp = this.privacyForm.sections[index];
+      this.privacyForm.sections[index] = this.privacyForm.sections[index - 1];
+      this.privacyForm.sections[index - 1] = temp;
+    }
+  }
+
+  movePrivacySectionDown(index: number) {
+    if (index < this.privacyForm.sections.length - 1) {
+      const temp = this.privacyForm.sections[index];
+      this.privacyForm.sections[index] = this.privacyForm.sections[index + 1];
+      this.privacyForm.sections[index + 1] = temp;
+    }
+  }
+
+  async savePrivacy() {
+    this.saving = true;
+    const ok = await this.cmsService.updateSectionContent('privacy', this.privacyForm);
+    this.saving = false;
+    if (ok) this.showSuccess('Política de Privacidade atualizada com sucesso!');
+    else this.showError('Erro ao guardar Política de Privacidade.');
   }
 
   private showSuccess(msg: string) {
