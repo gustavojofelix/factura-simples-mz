@@ -371,7 +371,7 @@ interface Subscription { status: string; amount: number; billing_cycle: string; 
               </div>
 
               <!-- ─── FASE 4: Acções ─── -->
-              @if (selectedPayment()!.status === 'pending' || selectedPayment()!.status === 'failed' || (selectedPayment()!.status === 'completed' && !selectedPayment()!.officegest_document_id)) {
+              @if (selectedPayment()!.status === 'pending' || selectedPayment()!.status === 'failed' || selectedPayment()!.status === 'completed') {
                 <div class="drawer-actions">
                   @if (actionLoading()) {
                     <div class="action-loading">
@@ -387,13 +387,22 @@ interface Subscription { status: string; amount: number; billing_cycle: string; 
                         Confirmar pagamento
                       </button>
                     }
-                    @if (selectedPayment()!.status === 'completed' && !selectedPayment()!.officegest_document_id) {
-                      <button class="action-btn action-btn--og" (click)="syncSingleWithOfficeGest(selectedPayment()!)">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-                        </svg>
-                        Emitir fatura no OfficeGest
-                      </button>
+                    @if (selectedPayment()!.status === 'completed') {
+                      @if (!selectedPayment()!.officegest_document_id) {
+                        <button class="action-btn action-btn--og" (click)="syncSingleWithOfficeGest(selectedPayment()!)">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                          </svg>
+                          Emitir fatura no OfficeGest
+                        </button>
+                      } @else {
+                        <button class="action-btn action-btn--og-reemit" (click)="syncSingleWithOfficeGest(selectedPayment()!)" title="Reemitir com dados do cliente actualizados">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                          </svg>
+                          Reemitir / Actualizar no OfficeGest
+                        </button>
+                      }
                     }
                     @if (selectedPayment()!.status === 'pending' || selectedPayment()!.status === 'failed') {
                       <button class="action-btn action-btn--cancel" (click)="cancelPayment(selectedPayment()!)">
@@ -575,6 +584,10 @@ interface Subscription { status: string; amount: number; billing_cycle: string; 
     .action-btn--confirm:hover{background:#d0f4e3}
     .action-btn--cancel{background:#fff0f0;color:#b83c3c}
     .action-btn--cancel:hover{background:#ffe0e0}
+    .action-btn--og{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
+    .action-btn--og:hover{background:#dbeafe}
+    .action-btn--og-reemit{background:#fffbeb;color:#b45309;border:1px solid #fde68a}
+    .action-btn--og-reemit:hover{background:#fef3c7}
     .action-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:11px;color:#63728a;font-size:13px}
     .action-error{margin:0;padding:10px;border-radius:8px;background:#fff0f0;color:#b83c3c;font-size:12px}
     .action-success{margin:0;padding:10px;border-radius:8px;background:#e8f8f0;color:#14795a;font-size:12px;font-weight:600}
@@ -966,7 +979,7 @@ export class AdminRevenueComponent implements OnInit {
     this.ogSyncFeedback.set(null);
     try {
       const res = await this.supabase.client.functions.invoke('sync-officegest', {
-        body: {}
+        body: { reemit_demo: true }
       });
 
       if (res.error) throw res.error;
@@ -974,7 +987,7 @@ export class AdminRevenueComponent implements OnInit {
       const data = res.data;
       if (data?.synced > 0) {
         this.ogSyncFeedback.set({
-          message: `Sucesso! ${data.synced} fatura(s) emitida(s) no OfficeGest.${data.failed > 0 ? ` (${data.failed} falha(s))` : ''}`,
+          message: `Sucesso! ${data.synced} fatura(s) emitida(s)/actualizada(s) no OfficeGest.${data.failed > 0 ? ` (${data.failed} falha(s))` : ''}`,
           isError: false
         });
         await this.loadFinancialData();
@@ -985,7 +998,7 @@ export class AdminRevenueComponent implements OnInit {
         });
       } else {
         this.ogSyncFeedback.set({
-          message: data?.message || 'Não há pagamentos pendentes de emissão no OfficeGest.',
+          message: data?.message || 'Não há pagamentos pendentes de emissão ou actualização no OfficeGest.',
           isError: false
         });
       }
@@ -1006,7 +1019,7 @@ export class AdminRevenueComponent implements OnInit {
     this.actionSuccess.set('');
     try {
       const res = await this.supabase.client.functions.invoke('sync-officegest', {
-        body: { payment_ids: [payment.id] }
+        body: { payment_ids: [payment.id], force: true }
       });
 
       if (res.error) throw res.error;
@@ -1014,7 +1027,7 @@ export class AdminRevenueComponent implements OnInit {
       const data = res.data;
       if (data?.synced > 0) {
         const docNumber = data.documents?.[0]?.document_number || 'emitida';
-        this.actionSuccess.set(`Fatura ${docNumber} emitida no OfficeGest com sucesso.`);
+        this.actionSuccess.set(`Fatura ${docNumber} emitida/actualizada no OfficeGest com sucesso.`);
         // Recarregar dados para actualizar tabelas e drawer
         await this.loadFinancialData();
         const updated = this.allPayments().find(p => p.id === payment.id);

@@ -54,24 +54,64 @@ async function ogFormFetch(path: string, method = "GET", formParams?: Record<str
   return res;
 }
 
+// NUITs de demonstração ou genéricos que nunca devem ser usados como chave única de cliente
+const DUMMY_TAX_IDS = new Set([
+  "123456789",
+  "999999999",
+  "999999990",
+  "000000000",
+  "111111111",
+  "121212121",
+  "123321123",
+  "232333444",
+]);
+
+// IDs de clientes demo que NUNCA devem ser associados a empresas reais
+const DEMO_CUSTOMER_IDS = new Set(["73", "82"]);
+
+function normalizeString(str: string): string {
+  return (str || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "")
+    .trim();
+}
+
+function isDemoCustomer(cust: any, id?: string): boolean {
+  if (id && DEMO_CUSTOMER_IDS.has(String(id))) return true;
+  if (cust?.id && DEMO_CUSTOMER_IDS.has(String(cust.id))) return true;
+  const nameNorm = normalizeString(cust?.name || "");
+  if (nameNorm.includes("demomobilelegis") || nameNorm.includes("mobidemo")) return true;
+  return false;
+}
+
 /**
- * Pesquisa cliente no OfficeGest por NUIT ou nome.
- * A API do OfficeGest lista os clientes em /entities/customers.
+ * Pesquisa cliente no OfficeGest por NUIT real (ignora NUITs fictícios e contas demo).
  */
-async function findCustomerByNuit(nuit: string): Promise<{ customerId: string | null; error?: string }> {
-  if (!nuit || nuit.trim() === "" || nuit === "000000000") return { customerId: null };
+async function findCustomerByNuit(nuit: string, customersMap?: Record<string, any>): Promise<{ customerId: string | null; error?: string }> {
+  if (!nuit || nuit.trim() === "") return { customerId: null };
+  const cleanNuit = nuit.trim();
+  if (DUMMY_TAX_IDS.has(cleanNuit) || cleanNuit.length < 9) {
+    return { customerId: null };
+  }
+
   try {
-    const cleanNuit = nuit.trim();
-    const res = await ogFormFetch("/entities/customers", "GET");
-    if (!res.ok) {
-      const errText = await res.text();
-      return { customerId: null, error: `Listagem clientes (${res.status}): ${errText}` };
+    let map = customersMap;
+    if (!map) {
+      const res = await ogFormFetch("/entities/customers", "GET");
+      if (!res.ok) {
+        const errText = await res.text();
+        return { customerId: null, error: `Listagem clientes (${res.status}): ${errText}` };
+      }
+      const data = await res.json();
+      map = data?.customers ?? {};
     }
-    const data = await res.json();
-    const customersMap = data?.customers ?? {};
-    for (const id in customersMap) {
-      const cust = customersMap[id];
-      if (cust && String(cust.customertaxid).trim() === cleanNuit) {
+
+    for (const id in map) {
+      const cust = map[id];
+      if (!cust || isDemoCustomer(cust, id)) continue;
+      if (String(cust.customertaxid).trim() === cleanNuit) {
         return { customerId: String(cust.id || id) };
       }
     }
@@ -83,20 +123,47 @@ async function findCustomerByNuit(nuit: string): Promise<{ customerId: string | 
 }
 
 /**
- * Cria cliente no OfficeGest via form-urlencoded.
+ * Pesquisa cliente no OfficeGest por Nome exato / normalizado (ignora contas demo).
+ */
+function findCustomerByName(name: string, customersMap: Record<string, any>): string | null {
+  const normName = normalizeString(name);
+  if (!normName || normName === "clienteispcfacil" || normName === "consumidorfinal") {
+    return null;
+  }
+
+  for (const id in customersMap) {
+    const cust = customersMap[id];
+    if (!cust || isDemoCustomer(cust, id)) continue;
+    const custNorm = normalizeString(cust.name || "");
+    if (custNorm === normName) {
+      return String(cust.id || id);
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Cria cliente no OfficeGest via form-urlencoded com os dados reais da empresa.
  * Devolve { customerId, error }.
  */
 async function createCustomer(
   name: string,
   nuit: string,
   address: string,
-  email: string
+  email: string,
+  phone?: string,
 ): Promise<{ customerId: string | null; error?: string }> {
   try {
     const cleanNuit = (nuit || "").trim();
     const cleanName = (name || "Cliente ISPC Fácil").trim();
     const cleanAddress = (address || "Maputo, Moçambique").trim();
     const cleanEmail = (email || "").trim();
+    const cleanPhone = (phone || "").trim();
+
+    // Se o NUIT for fictício ou vazio, usar 999999990 (Consumidor Final Moçambique)
+    const isValidNuit = cleanNuit.length >= 9 && !DUMMY_TAX_IDS.has(cleanNuit);
+    const taxIdToUse = isValidNuit ? cleanNuit : "999999990";
 
     const formParams: Record<string, string> = {
       name: cleanName,
@@ -104,11 +171,14 @@ async function createCustomer(
       city: "Maputo",
       zipcode: "1100",
       country: "MOZ",
-      customertaxid: cleanNuit || "999999999",
+      customertaxid: taxIdToUse,
     };
 
     if (cleanEmail) {
       formParams.email = cleanEmail;
+    }
+    if (cleanPhone) {
+      formParams.mobilephone = cleanPhone;
     }
 
     const res = await ogFormFetch("/entities/customers", "POST", formParams);
@@ -147,6 +217,68 @@ async function createCustomer(
     console.error("[OfficeGest] Exceção ao criar cliente:", e);
     return { customerId: null, error: e?.message ?? String(e) };
   }
+}
+
+/**
+ * Resolve ou cria cliente no OfficeGest:
+ * 1. Descartar cached ID se for demo ([73]).
+ * 2. Buscar por NUIT real válido (se aplicável).
+ * 3. Buscar por Nome real da empresa.
+ * 4. Se não existir, criar novo cliente com nome e dados reais da empresa.
+ */
+async function resolveOrCreateCustomer(
+  name: string,
+  nuit: string,
+  address: string,
+  email: string,
+  phone: string,
+  cachedCustomerId?: string | null,
+): Promise<{ customerId: string | null; error?: string }> {
+  // Descartar ID se for cliente de teste Demo
+  let validCachedId = cachedCustomerId;
+  if (validCachedId && DEMO_CUSTOMER_IDS.has(String(validCachedId))) {
+    validCachedId = null;
+  }
+
+  // Buscar lista actual de clientes no OfficeGest
+  let customersMap: Record<string, any> = {};
+  try {
+    const listRes = await ogFormFetch("/entities/customers", "GET");
+    if (listRes.ok) {
+      const listData = await listRes.json();
+      customersMap = listData?.customers ?? {};
+    }
+  } catch (e) {
+    console.warn("[OfficeGest] Aviso ao carregar lista de clientes:", e);
+  }
+
+  // Se temos um ID em cache, verificar se é válido e não demo
+  if (validCachedId && customersMap[validCachedId]) {
+    const cachedCust = customersMap[validCachedId];
+    if (!isDemoCustomer(cachedCust, validCachedId)) {
+      console.log(`[OfficeGest] Usando cliente em cache: [${validCachedId}] ${cachedCust.name}`);
+      return { customerId: String(validCachedId) };
+    }
+  }
+
+  // 1. Pesquisar por NUIT real válido
+  const nuitSearch = await findCustomerByNuit(nuit, customersMap);
+  if (nuitSearch.customerId) {
+    console.log(`[OfficeGest] Cliente encontrado por NUIT (${nuit}): [${nuitSearch.customerId}]`);
+    return { customerId: nuitSearch.customerId };
+  }
+
+  // 2. Pesquisar por Nome da Empresa
+  const nameSearchId = findCustomerByName(name, customersMap);
+  if (nameSearchId) {
+    console.log(`[OfficeGest] Cliente encontrado por Nome (${name}): [${nameSearchId}]`);
+    return { customerId: nameSearchId };
+  }
+
+  // 3. Criar novo cliente no OfficeGest com os dados reais
+  console.log(`[OfficeGest] Cliente não encontrado. A criar novo cliente: "${name}"`);
+  const createRes = await createCustomer(name, nuit, address, email, phone);
+  return createRes;
 }
 
 /**
@@ -248,10 +380,16 @@ serve(async (req) => {
   try {
     // Ler body opcional
     let paymentIds: string[] | undefined;
+    let force = false;
+    let reemitDemo = true;
     try {
       if (req.method === "POST") {
         const body = await req.json().catch(() => ({}));
         paymentIds = body?.payment_ids;
+        force = !!body?.force;
+        if (body?.reemit_demo !== undefined) {
+          reemitDemo = !!body?.reemit_demo;
+        }
       }
     } catch {
       // sem body é válido
@@ -260,12 +398,21 @@ serve(async (req) => {
     // ── Buscar pagamentos a sincronizar ──────────────────────────────────────
     let query = supabase
       .from("subscription_payments")
-      .select("*, companies(name, nuit, address)")
-      .eq("status", "completed")
-      .is("officegest_document_id", null);
+      .select("*, companies(name, nuit, address, email, phone)")
+      .eq("status", "completed");
 
     if (paymentIds && paymentIds.length > 0) {
       query = query.in("id", paymentIds);
+      if (!force) {
+        query = query.or("officegest_document_id.is.null,officegest_customer_id.eq.73");
+      }
+    } else {
+      // Sincronização geral: pendentes de emissão OU faturas que foram geradas com o cliente demo 73
+      if (reemitDemo) {
+        query = query.or("officegest_document_id.is.null,officegest_customer_id.eq.73");
+      } else {
+        query = query.is("officegest_document_id", null);
+      }
     }
 
     const { data: payments, error: fetchError } = await query;
@@ -280,7 +427,7 @@ serve(async (req) => {
 
     if (!payments || payments.length === 0) {
       return new Response(
-        JSON.stringify({ synced: 0, failed: 0, errors: [], documents: [], message: "Sem pagamentos para sincronizar." }),
+        JSON.stringify({ synced: 0, failed: 0, errors: [], documents: [], message: "Sem pagamentos pendentes de emissão ou actualização no OfficeGest." }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -294,35 +441,31 @@ serve(async (req) => {
       const companyName = company?.name ?? "Cliente ISPC Fácil";
       const companyNuit = company?.nuit ?? "";
       const companyAddress = company?.address ?? "Moçambique";
-      const companyEmail = "";
+      const companyEmail = company?.email ?? "";
+      const companyPhone = company?.phone ?? payment.phone_number ?? "";
 
       try {
         console.log(`[SyncOfficeGest] A processar payment ${payment.id} — ${companyName}`);
 
-        // 1. Encontrar ou criar cliente no OfficeGest
-        let customerId = payment.officegest_customer_id || null;
+        // 1. Resolver ou criar cliente no OfficeGest (garante que 73 nunca é usado)
+        const previousCustomerId = (payment.officegest_customer_id === "73" || payment.officegest_customer_id === "82")
+          ? null
+          : payment.officegest_customer_id;
 
-        if (!customerId && companyNuit) {
-          const searchRes = await findCustomerByNuit(companyNuit);
-          if (searchRes.customerId) {
-            customerId = searchRes.customerId;
-            console.log(`[SyncOfficeGest] Cliente encontrado no OfficeGest: ${customerId}`);
-          }
+        const custResult = await resolveOrCreateCustomer(
+          companyName,
+          companyNuit,
+          companyAddress,
+          companyEmail,
+          companyPhone,
+          previousCustomerId,
+        );
+
+        if (!custResult.customerId) {
+          throw new Error(`Não foi possível obter ou criar o cliente "${companyName}" no OfficeGest: ${custResult.error || "Erro desconhecido"}`);
         }
 
-        if (!customerId) {
-          console.log(`[SyncOfficeGest] A criar cliente no OfficeGest: ${companyName}`);
-          const createRes = await createCustomer(companyName, companyNuit, companyAddress, companyEmail);
-          if (createRes.customerId) {
-            customerId = createRes.customerId;
-          } else {
-            throw new Error(`Não foi possível criar cliente no OfficeGest: ${createRes.error || "Erro desconhecido"}`);
-          }
-        }
-
-        if (!customerId) {
-          throw new Error(`Não foi possível obter ou criar o cliente "${companyName}" no OfficeGest`);
-        }
+        const customerId = custResult.customerId;
 
         // 2. Criar documento de venda
         const docResult = await createSalesDocument(
@@ -341,7 +484,7 @@ serve(async (req) => {
           throw new Error(`Falha ao criar FT no OfficeGest: ${errorMsg}`);
         }
 
-        // 3. Actualizar subscription_payments com ID do documento
+        // 3. Actualizar subscription_payments com ID do documento e cliente real
         const { error: updateError } = await supabase
           .from("subscription_payments")
           .update({
@@ -357,7 +500,7 @@ serve(async (req) => {
           throw updateError;
         }
 
-        console.log(`[SyncOfficeGest] ✅ Payment ${payment.id} → Documento ${docResult.documentNumber}`);
+        console.log(`[SyncOfficeGest] ✅ Payment ${payment.id} → Documento ${docResult.documentNumber} (Cliente [${customerId}])`);
         results.synced++;
         results.documents.push({ payment_id: payment.id, document_number: docResult.documentNumber });
 
