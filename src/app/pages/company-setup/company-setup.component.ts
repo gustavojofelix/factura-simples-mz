@@ -20,6 +20,7 @@ import { DocumentProcessingService } from '../../core/services/document-processi
 import { SupabaseService } from '../../core/services/supabase.service';
 import { CompanyDocument } from '../../core/services/document-processing.service';
 import { ActivityService, ActivityType } from '../../core/services/activity.service';
+import { CompanyService } from '../../core/services/company.service';
 
 
 @Component({
@@ -71,6 +72,11 @@ export class CompanySetupComponent {
     'Zambézia', 'Nampula', 'Niassa', 'Cabo Delgado'
   ];
 
+  countries = [
+    'Moçambique', 'África do Sul', 'Angola', 'Brasil', 'Eswatini', 'Malawi',
+    'Portugal', 'Tanzânia', 'Zâmbia', 'Zimbabué'
+  ];
+
   activityTypes = signal<ActivityType[]>([]);
   isLoadingActivities = signal(false);
 
@@ -81,18 +87,18 @@ export class CompanySetupComponent {
     private router: Router,
     private snackBar: MatSnackBar,
     private documentService: DocumentProcessingService,
-    private activityService: ActivityService
+    private activityService: ActivityService,
+    private companyService: CompanyService
   ) {
     this.companyInfoForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
       entityType: ['', Validators.required],
       email: ['', [Validators.email]],
-      phone: [''],
       nuit: ['', [Validators.required, nuitValidator()]],
       address: ['', Validators.required],
+      country: ['Moçambique', Validators.required],
+      postalCode: [''],
       province: [''],
-      district: [''],
-      administrativePost: [''],
       category1: [''],
       category2: [''],
       category3: [''],
@@ -241,12 +247,6 @@ export class CompanySetupComponent {
         if (result.extractedData.province) {
           this.companyInfoForm.patchValue({ province: result.extractedData.province });
         }
-        if (result.extractedData.district) {
-          this.companyInfoForm.patchValue({ district: result.extractedData.district });
-        }
-        if (result.extractedData.administrativePost) {
-          this.companyInfoForm.patchValue({ administrativePost: result.extractedData.administrativePost });
-        }
 
         this.snackBar.open('Dados extraídos do documento!', 'Fechar', { duration: 3000 });
       } else {
@@ -281,9 +281,6 @@ export class CompanySetupComponent {
         }
         if (result.extractedData.province && !this.companyInfoForm.get('province')?.value) {
           this.companyInfoForm.patchValue({ province: result.extractedData.province });
-        }
-        if (result.extractedData.district && !this.companyInfoForm.get('district')?.value) {
-          this.companyInfoForm.patchValue({ district: result.extractedData.district });
         }
 
         this.snackBar.open('Dados extraídos do documento!', 'Fechar', { duration: 3000 });
@@ -418,14 +415,24 @@ export class CompanySetupComponent {
       return;
     }
 
+    // O RLS impede o cliente de ver empresas de outros subscritores, pelo que
+    // um NUIT já usado noutra conta só se detecta através de uma RPC. O trigger
+    // `enforce_company_nuit_unique` continua a ser a garantia final.
+    if (!(await this.companyService.isNuitAvailable(this.companyInfoForm.value.nuit))) {
+      this.flagDuplicateNuit();
+      this.isLoading.set(false);
+      return;
+    }
+
     const companyData = {
       user_id: user.id,
       name: this.companyInfoForm.value.name,
       entity_type: this.companyInfoForm.value.entityType,
       email: this.companyInfoForm.value.email,
-      phone: this.companyInfoForm.value.phone,
       nuit: this.companyInfoForm.value.nuit,
       address: this.companyInfoForm.value.address,
+      country: this.companyInfoForm.value.country,
+      postal_code: this.companyInfoForm.value.postalCode || null,
       currency: this.settingsForm.value.currency,
       invoice_prefix: this.settingsForm.value.invoicePrefix,
       invoice_number: 1,
@@ -436,9 +443,7 @@ export class CompanySetupComponent {
       category3: this.companyInfoForm.value.category3,
       business_volume: this.companyInfoForm.value.business_volume,
       documents_metadata: {
-        province: this.companyInfoForm.value.province,
-        district: this.companyInfoForm.value.district,
-        administrativePost: this.companyInfoForm.value.administrativePost
+        province: this.companyInfoForm.value.province
       }
     };
 
@@ -480,13 +485,31 @@ export class CompanySetupComponent {
       this.router.navigate(['/painel']);
     } catch (error: any) {
       console.error('Erro ao criar empresa:', error);
-      this.snackBar.open(error.message || 'Erro ao configurar empresa', 'Fechar', {
-        duration: 5000,
-        panelClass: ['error-snackbar']
-      });
+      if (CompanyService.isDuplicateNuitError(error)) {
+        this.flagDuplicateNuit();
+      } else {
+        this.snackBar.open(error.message || 'Erro ao configurar empresa', 'Fechar', {
+          duration: 5000,
+          panelClass: ['error-snackbar']
+        });
+      }
     } finally {
       this.isLoading.set(false);
     }
+  }
+
+  /**
+   * Assinala o NUIT como já registado. A notificação desaparece, o erro no
+   * campo fica — e o formulário passa a inválido até o utilizador o corrigir.
+   */
+  private flagDuplicateNuit() {
+    const control = this.companyInfoForm.get('nuit');
+    control?.setErrors({ duplicateNuit: true });
+    control?.markAsTouched();
+    this.snackBar.open('Já existe uma entidade registada com este NUIT.', 'Fechar', {
+      duration: 5000,
+      panelClass: ['error-snackbar']
+    });
   }
 
   getErrorMessage(form: FormGroup, field: string): string {
@@ -509,6 +532,9 @@ export class CompanySetupComponent {
     }
     if (control.hasError('pattern') && field === 'nuit') {
       return 'NUIT deve ter 9 dígitos';
+    }
+    if (control.hasError('duplicateNuit')) {
+      return 'Já existe uma entidade registada com este NUIT';
     }
     return '';
   }

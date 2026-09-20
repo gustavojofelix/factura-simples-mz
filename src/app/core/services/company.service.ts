@@ -10,6 +10,8 @@ export interface Company {
   nuit: string;
   entity_type?: 'singular' | 'collective';
   address: string;
+  country?: string;
+  postal_code?: string;
   phone?: string;
   email: string;
   currency: string;
@@ -267,6 +269,36 @@ export class CompanyService {
 
     if (error || !data) return null;
     return data.role;
+  }
+
+  /**
+   * Verifica se um NUIT já está registado por qualquer entidade da plataforma.
+   * O RLS impede o cliente de consultar empresas de outros subscritores, pelo
+   * que a verificação é delegada numa RPC que devolve apenas sim/não.
+   *
+   * Em caso de falha de rede devolve `true` (disponível) — o trigger
+   * `enforce_company_nuit_unique` é a garantia final no servidor.
+   */
+  async isNuitAvailable(nuit: string, excludeCompanyId?: string): Promise<boolean> {
+    const clean = (nuit || '').replace(/\D/g, '');
+    if (clean.length !== 9) return true;
+
+    const { data, error } = await this.supabase.db.rpc('is_company_nuit_available', {
+      p_nuit: clean,
+      p_exclude_company_id: excludeCompanyId ?? null
+    });
+
+    if (error) {
+      console.warn('Não foi possível verificar o NUIT antecipadamente:', error.message);
+      return true;
+    }
+
+    return data !== false;
+  }
+
+  /** Mensagem legível para o erro de NUIT duplicado devolvido pelo servidor. */
+  static isDuplicateNuitError(error: any): boolean {
+    return error?.details === 'DUPLICATE_COMPANY_NUIT';
   }
 
   isOwner(companyId: string): boolean {
