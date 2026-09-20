@@ -12,6 +12,9 @@ import { MatCardModule } from '@angular/material/card';
 import { AuthService } from '../../core/services/auth.service';
 import { CompanyService } from '../../core/services/company.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
+import { AiSearchComponent } from '../components/ai-search/ai-search.component';
+import { AiAlertsComponent } from '../components/ai-alerts/ai-alerts.component';
+import { AiAssistantWidgetComponent } from '../components/ai-chat/ai-assistant-widget.component';
 import { effect } from '@angular/core';
 
 interface MenuItem {
@@ -35,7 +38,10 @@ interface MenuItem {
     MatButtonModule,
     MatMenuModule,
     MatSelectModule,
-    MatCardModule
+    MatCardModule,
+    AiSearchComponent,
+    AiAlertsComponent,
+    AiAssistantWidgetComponent
   ],
   templateUrl: './main-layout.component.html',
   styleUrls: ['./main-layout.component.css']
@@ -45,6 +51,7 @@ export class MainLayoutComponent {
 
   menuItems: MenuItem[] = [
     { icon: 'dashboard', label: 'Painel', route: '/painel' },
+    { icon: 'auto_awesome', label: 'Assistente', route: '/assistente' },
     { icon: 'receipt_long', label: 'Facturas', route: '/facturas' },
     { icon: 'people', label: 'Clientes', route: '/clientes' },
     { icon: 'inventory_2', label: 'Produtos e Serviços', route: '/produtos' },
@@ -58,9 +65,9 @@ export class MainLayoutComponent {
     const role = this.companyService.activeRole();
     
     return this.menuItems.filter(item => {
-      // Vendedor (user) only gets Invoices, Clients, Products
+      // Vendedor (user) only gets Invoices, Clients, Products and the assistant
       if (role === 'user') {
-        return ['receipt_long', 'people', 'inventory_2'].includes(item.icon);
+        return ['receipt_long', 'people', 'inventory_2', 'auto_awesome'].includes(item.icon);
       }
       
       // Gestor (manager) gets everything except Settings and Auditoria
@@ -123,7 +130,8 @@ export class MainLayoutComponent {
 
   navGroups = computed(() => {
     const groupNames: Record<string, string> = {
-      '/painel': 'Visão geral', '/facturas': 'Operações', '/clientes': 'Operações',
+      '/painel': 'Visão geral', '/assistente': 'Visão geral',
+      '/facturas': 'Operações', '/clientes': 'Operações',
       '/produtos': 'Operações', '/impostos': 'Fiscalidade', '/relatorios': 'Fiscalidade',
       '/auditoria': 'Fiscalidade', '/configuracoes': 'Sistema'
     };

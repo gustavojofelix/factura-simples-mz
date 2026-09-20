@@ -40,3 +40,18 @@ enabled = true
 verify_jwt = true
 entrypoint = "./functions/process-subscription-payment/index.ts"
 
+
+[functions.ai-assistant]
+enabled = true
+verify_jwt = true
+import_map = "./functions/ai-assistant/deno.json"
+entrypoint = "./functions/ai-assistant/index.ts"
+
+# verify_jwt = false porque esta função tem dois modos: o agendado, que se
+# autentica por x-cron-secret e não traz JWT, e o por empresa, cujo JWT é
+# validado dentro da própria função.
+[functions.ai-alerts]
+enabled = true
+verify_jwt = false
+import_map = "./functions/ai-alerts/deno.json"
+entrypoint = "./functions/ai-alerts/index.ts"

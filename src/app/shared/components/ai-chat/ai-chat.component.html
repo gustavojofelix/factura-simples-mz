@@ -1,0 +1,210 @@
+<div class="ai-chat" [class.ai-chat--page]="variant() === 'page'">
+
+  <!-- Cabeçalho -->
+  <header class="ai-chat__header">
+    <div class="flex items-center gap-2.5 min-w-0">
+      <span class="ai-chat__avatar">
+        <mat-icon class="!text-[20px] !w-5 !h-5">auto_awesome</mat-icon>
+      </span>
+      <div class="min-w-0">
+        <p class="text-sm font-bold text-slate-900 leading-tight truncate">Assistente Virtual</p>
+        <p class="text-[11px] text-slate-500 leading-tight truncate">
+          {{ companyService.activeCompany()?.name || 'Sem empresa activa' }}
+        </p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-0.5">
+      <button mat-icon-button class="!w-9 !h-9" matTooltip="Conversas anteriores"
+              (click)="mostrarHistorico.set(!mostrarHistorico())">
+        <mat-icon class="!text-[20px] !w-5 !h-5 text-slate-500">history</mat-icon>
+      </button>
+      <button mat-icon-button class="!w-9 !h-9" matTooltip="Nova conversa" (click)="novaConversa()">
+        <mat-icon class="!text-[20px] !w-5 !h-5 text-slate-500">add_comment</mat-icon>
+      </button>
+    </div>
+  </header>
+
+  <!-- Histórico de conversas -->
+  @if (mostrarHistorico()) {
+    <div class="ai-chat__history">
+      @if (ai.conversations().length === 0) {
+        <p class="px-4 py-3 text-xs text-slate-400">Ainda não tem conversas guardadas.</p>
+      }
+      @for (c of ai.conversations(); track c.id) {
+        <button class="ai-chat__history-item" (click)="abrirConversa(c.id)">
+          <mat-icon class="!text-[16px] !w-4 !h-4 text-slate-400 shrink-0">chat_bubble_outline</mat-icon>
+          <span class="truncate flex-1 text-left">{{ c.title }}</span>
+          <span class="text-[10px] text-slate-400 shrink-0">
+            {{ c.last_message_at | date:'dd/MM' }}
+          </span>
+        </button>
+      }
+    </div>
+  }
+
+  <!-- Indisponível no plano -->
+  @if (ai.quota() && !ai.isAvailable()) {
+    <div class="ai-chat__locked">
+      <div class="w-14 h-14 rounded-2xl bg-gold/10 text-gold flex items-center justify-center mb-4">
+        <mat-icon class="!text-[28px] !w-7 !h-7">lock</mat-icon>
+      </div>
+      <h3 class="text-base font-bold text-slate-900 mb-1.5">Assistente não incluído no seu plano</h3>
+      <p class="text-sm text-slate-500 leading-relaxed mb-5 max-w-xs">
+        Faça perguntas sobre o seu negócio em linguagem natural e tire dúvidas sobre o ISPC
+        e o Modelo 30.
+      </p>
+      <a routerLink="/configuracoes" mat-raised-button class="!bg-ispc-orange !text-white !h-10 !px-5 !rounded-xl">
+        Ver planos
+      </a>
+    </div>
+  } @else {
+
+    <!-- Mensagens -->
+    <div class="ai-chat__scroll custom-scrollbar" #scroller>
+
+      @if (conversaVazia()) {
+        <div class="ai-chat__welcome">
+          <p class="text-sm text-slate-600 leading-relaxed mb-4">
+            Pergunte o que quiser sobre as suas facturas, clientes e impostos.
+            Respondo com os números reais da sua empresa.
+          </p>
+          <div class="grid gap-2">
+            @for (s of sugestoes; track s.texto) {
+              <button class="ai-chat__suggestion" (click)="enviarSugestao(s.texto)"
+                      [disabled]="ai.isStreaming() || quotaEsgotada()">
+                <mat-icon class="!text-[17px] !w-[17px] !h-[17px] text-ispc-orange shrink-0">{{ s.icon }}</mat-icon>
+                <span>{{ s.texto }}</span>
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      @for (m of ai.messages(); track $index) {
+        @if (m.role === 'user') {
+          <div class="ai-msg ai-msg--user">
+            <div class="ai-msg__bubble">{{ m.content }}</div>
+          </div>
+        } @else {
+          <div class="ai-msg ai-msg--bot">
+            <span class="ai-msg__avatar">
+              <mat-icon class="!text-[15px] !w-[15px] !h-[15px]">auto_awesome</mat-icon>
+            </span>
+
+            <div class="ai-msg__body">
+              @if (m.content) {
+                <div class="ai-prose" [innerHTML]="m.content | aiMarkdown"></div>
+              }
+
+              <!-- Sinal de vida enquanto o modelo consulta os dados -->
+              @if (m.streaming && !m.content) {
+                <div class="ai-msg__thinking">
+                  <span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span>
+                  <span class="text-xs text-slate-500 ml-1.5">
+                    {{ ai.currentTool() ? toolLabel(ai.currentTool()!) + '…' : 'A pensar…' }}
+                  </span>
+                </div>
+              }
+
+              <!-- Anexos exportáveis -->
+              @for (anexo of m.attachments || []; track $index; let ai_i = $index) {
+                @if (anexo.linhas.length) {
+                  <div class="ai-attachment">
+                    <div class="ai-attachment__bar">
+                      <span class="ai-attachment__title">{{ rotularColuna(anexo.titulo) }}</span>
+                      <span class="flex items-center gap-0.5">
+                        <button mat-icon-button class="!w-8 !h-8" matTooltip="Exportar para Excel"
+                                (click)="exportarExcel(anexo)">
+                          <mat-icon class="!text-[16px] !w-4 !h-4 text-emerald-600">table_view</mat-icon>
+                        </button>
+                        <button mat-icon-button class="!w-8 !h-8" matTooltip="Exportar para PDF"
+                                (click)="exportarPdf(anexo, ai_i)">
+                          <mat-icon class="!text-[16px] !w-4 !h-4 text-red-500">picture_as_pdf</mat-icon>
+                        </button>
+                      </span>
+                    </div>
+
+                    <div class="ai-attachment__scroll custom-scrollbar" [id]="'ai-anexo-' + ai_i">
+                      <table class="ai-table">
+                        <thead>
+                          <tr>
+                            @for (col of anexo.colunas; track col) {
+                              <th>{{ rotularColuna(col) }}</th>
+                            }
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (linha of anexo.linhas.slice(0, 25); track $index) {
+                            <tr>
+                              @for (col of anexo.colunas; track col) {
+                                <td>{{ formatarCelula(linha[col]) }}</td>
+                              }
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                      @if (anexo.linhas.length > 25) {
+                        <p class="px-3 py-2 text-[11px] text-slate-400">
+                          A mostrar 25 de {{ anexo.linhas.length }} linhas. Exporte para ver tudo.
+                        </p>
+                      }
+                    </div>
+                  </div>
+                }
+              }
+
+              <!-- Proveniência: que consultas sustentam esta resposta -->
+              @if (!m.streaming && m.tools?.length) {
+                <p class="ai-msg__sources">
+                  <mat-icon class="!text-[13px] !w-[13px] !h-[13px]">database</mat-icon>
+                  {{ m.tools!.length }} consulta(s) aos seus dados
+                </p>
+              }
+            </div>
+          </div>
+        }
+      }
+    </div>
+
+    <!-- Composição -->
+    <footer class="ai-chat__composer">
+      @if (quotaEsgotada()) {
+        <div class="ai-chat__quota-block">
+          <mat-icon class="!text-[18px] !w-[18px] !h-[18px] text-amber-600 shrink-0">info</mat-icon>
+          <span class="flex-1">Atingiu o limite de perguntas deste mês.</span>
+          <a routerLink="/configuracoes" class="font-bold text-ispc-orange whitespace-nowrap">Ver planos</a>
+        </div>
+      } @else {
+        <div class="ai-chat__input-row">
+          <textarea
+            rows="1"
+            class="ai-chat__input"
+            placeholder="Pergunte sobre facturas, clientes ou impostos…"
+            [ngModel]="rascunho()"
+            (ngModelChange)="rascunho.set($event)"
+            (keydown)="aoTeclar($event)"
+            [disabled]="ai.isStreaming()"></textarea>
+
+          @if (ai.isStreaming()) {
+            <button mat-icon-button class="ai-chat__send ai-chat__send--stop"
+                    matTooltip="Parar" (click)="ai.stop()">
+              <mat-icon class="!text-[18px] !w-[18px] !h-[18px]">stop</mat-icon>
+            </button>
+          } @else {
+            <button mat-icon-button class="ai-chat__send" [disabled]="!podeEnviar()" (click)="enviar()">
+              <mat-icon class="!text-[18px] !w-[18px] !h-[18px]">arrow_upward</mat-icon>
+            </button>
+          }
+        </div>
+
+        <p class="ai-chat__footnote">
+          @if (ai.quotaRemaining() !== null) {
+            {{ ai.quotaRemaining() }} pergunta(s) restante(s) este mês ·
+          }
+          Apoio à interpretação, não substitui aconselhamento fiscal.
+        </p>
+      }
+    </footer>
+  }
+</div>
