@@ -4,7 +4,27 @@
       <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-2">Facturas</h1>
       <p class="text-sm text-slate-500 font-medium">Gestão de facturas de {{ companyService.activeCompany()?.name }}</p>
     </div>
-    <button
+    <div class="flex items-center gap-2">
+      <button
+        mat-stroked-button
+        [matMenuTriggerFor]="exportMenu"
+        class="!h-12 !px-4 !rounded-xl !border-slate-200 !text-slate-700 font-medium hover:!bg-slate-50"
+      >
+        <mat-icon class="mr-2 text-slate-500">file_download</mat-icon>
+        Exportar
+      </button>
+      <mat-menu #exportMenu="matMenu">
+        <button mat-menu-item (click)="exportExcel()">
+          <mat-icon class="!text-emerald-600">table_chart</mat-icon>
+          <span>Exportar para Excel (.xlsx)</span>
+        </button>
+        <button mat-menu-item (click)="exportCsv()">
+          <mat-icon class="!text-blue-600">description</mat-icon>
+          <span>Exportar para CSV (.csv)</span>
+        </button>
+      </mat-menu>
+
+      <button
       mat-raised-button
       class="!bg-ispc-orange !text-white !h-12 !px-5 !rounded-xl !shadow-sm hover:!shadow-md"
       (click)="openNewInvoiceDialog()"
@@ -12,6 +32,7 @@
       <mat-icon class="mr-2">add</mat-icon>
       Nova Factura
     </button>
+    </div>
   </div>
 
   <!-- Stats Grid -->
@@ -160,9 +181,9 @@
 
             <!-- Date Column (hidden on mobile) -->
             <ng-container matColumnDef="date">
-              <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-800 !hidden md:!table-cell">Data Emissão</th>
+              <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-800 !hidden md:!table-cell">Data/Hora Emissão</th>
               <td mat-cell *matCellDef="let invoice" class="!hidden md:!table-cell text-slate-500">
-                {{ formatDate(invoice.date) }}
+                {{ formatDateTime(invoice.created_at || invoice.date) }}
               </td>
             </ng-container>
 

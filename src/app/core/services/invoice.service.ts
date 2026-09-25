@@ -38,6 +38,7 @@ export interface Invoice {
     address?: string;
     document_type?: string;
   };
+  print_count?: number;
   items?: InvoiceItem[];
 }
 
@@ -545,12 +546,54 @@ export class InvoiceService {
   }
 
   formatDate(dateString: string): string {
+    if (!dateString) return '-';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
     return date.toLocaleDateString('pt-MZ', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
     });
+  }
+
+
+
+  formatDateTime(dateString?: string): string {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    const formattedDate = date.toLocaleDateString('pt-MZ', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+    const formattedTime = date.toLocaleTimeString('pt-MZ', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    return `${formattedDate} às ${formattedTime}`;
+  }
+
+  async incrementPrintCount(invoiceId: string): Promise<number> {
+    try {
+      const { data: inv } = await this.supabase.db
+        .from('invoices')
+        .select('print_count')
+        .eq('id', invoiceId)
+        .single();
+      
+      const newCount = (inv?.print_count || 0) + 1;
+
+      await this.supabase.db
+        .from('invoices')
+        .update({ print_count: newCount })
+        .eq('id', invoiceId);
+
+      return newCount;
+    } catch (error) {
+      console.error('Erro ao actualizar contagem de impressões:', error);
+      return 1;
+    }
   }
 
   async getDetailedInvoices(startDate?: string, endDate?: string): Promise<Invoice[]> {

@@ -42,6 +42,8 @@ import { SupabaseService } from '../../core/services/supabase.service';
         <div id="invoice-card" class="bg-white rounded-lg shadow-sm relative">
           @if (invoice()!.status === 'anulada') {
             <div class="watermark">ANULADO</div>
+          } @else if ((invoice()!.print_count || 0) > 1) {
+            <div class="watermark-subsequent">2ª VIA</div>
           }
           @if (isGeneratingPdf()) {
             <div class="absolute inset-0 bg-white/80 z-50 flex flex-col items-center justify-center rounded-lg no-print">
@@ -52,9 +54,20 @@ import { SupabaseService } from '../../core/services/supabase.service';
           <div class="p-4 sm:p-6 border-b border-gray-200/60">
             <div class="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-4">
               <div>
-                <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Factura {{ invoice()!.invoice_number }}</h1>
+                <div class="flex items-center gap-3">
+                  <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Factura {{ invoice()!.invoice_number }}</h1>
+                  @if ((invoice()!.print_count || 0) > 1) {
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-amber-100 text-amber-900 border border-amber-300 shadow-xs">
+                      2ª VIA
+                    </span>
+                  } @else {
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                      ORIGINAL
+                    </span>
+                  }
+                </div>
                 <div class="flex flex-col gap-0.5 mt-1">
-                  <p class="text-sm text-gray-500">{{ formatDate(invoice()!.date) }}</p>
+                  <p class="text-sm font-medium text-slate-700">Data e Hora de Emissão: {{ formatDateTime(invoice()!.created_at || invoice()!.date) }}</p>
                   <p class="text-xs text-slate-400 flex items-center">
                     <mat-icon class="!text-[12px] !w-3 !h-3 !mr-1">person</mat-icon>
                     Emitido por: {{ invoice()!.issuer_name || '-' }}
@@ -412,9 +425,25 @@ import { SupabaseService } from '../../core/services/supabase.service';
         white-space: nowrap;
         user-select: none;
       }
+      .watermark-subsequent {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-45deg);
+        font-size: 10vw;
+        font-weight: 800;
+        color: rgba(217, 119, 6, 0.12);
+        z-index: 10;
+        pointer-events: none;
+        white-space: nowrap;
+        user-select: none;
+      }
       @media (min-width: 768px) {
         .watermark {
           font-size: 120px;
+        }
+        .watermark-subsequent {
+          font-size: 100px;
         }
       }
 
@@ -537,19 +566,25 @@ export class InvoiceDetailComponent {
     });
   }
 
+  async trackPrint() {
+    const currentInvoice = this.invoice();
+    if (!currentInvoice) return;
+    const newCount = await this.invoiceService.incrementPrintCount(currentInvoice.id);
+    this.invoice.update(inv => inv ? { ...inv, print_count: newCount } : null);
+  }
+
   async printInvoice() {
     try {
       this.isGeneratingPdf.set(true);
+      await this.trackPrint();
       const blob = await this.pdfService.generatePdf('invoice-card', this.invoice()!.invoice_number);
       const url = window.URL.createObjectURL(blob);
       const printWindow = window.open(url);
       if (printWindow) {
         printWindow.onload = () => {
           printWindow.print();
-          // Optionally revoke URL after some time
         };
       } else {
-        // Fallback to direct print if popup blocked
         window.print();
       }
     } catch (error) {
@@ -566,6 +601,7 @@ export class InvoiceDetailComponent {
 
     try {
       this.isGeneratingPdf.set(true);
+      await this.trackPrint();
       const blob = await this.pdfService.generatePdf('invoice-card', invoice.invoice_number);
       this.pdfService.downloadPdf(blob, `Factura_${invoice.invoice_number}`);
     } catch (error) {
@@ -660,5 +696,9 @@ export class InvoiceDetailComponent {
 
   formatDate(date: string): string {
     return this.invoiceService.formatDate(date);
+  }
+
+  formatDateTime(date?: string): string {
+    return this.invoiceService.formatDateTime(date);
   }
 }

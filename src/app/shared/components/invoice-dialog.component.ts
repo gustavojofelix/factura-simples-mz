@@ -273,16 +273,49 @@ export class InvoiceDialogComponent implements OnInit {
 
   addProduct() {
     const product = this.selectedProduct();
-    const qty = this.step2Form.get('quantity')?.value;
+    const qty = Number(this.step2Form.get('quantity')?.value || 1);
 
-    if (!product || !qty) return;
+    if (!product || !qty || qty <= 0) return;
 
-    const subtotal = this.roundMoney(product.price * Number(qty));
+    // Req #4: Prevent duplicate product addition
+    const existingIndex = this.invoiceItems().findIndex(item => item.product_id === product.id);
+    if (existingIndex !== -1) {
+      this.snackBar.open(
+        `O produto "${product.name}" já foi adicionado à factura. Pode alterar a quantidade na lista abaixo.`,
+        'Fechar',
+        { duration: 4000 }
+      );
+      return;
+    }
+
+    // Req #5 & #6: Stock validation for products
+    if (product.type === 'produto') {
+      const availableStock = product.stock ?? 0;
+      if (availableStock <= 0) {
+        this.snackBar.open(
+          `Sem stock disponível para o produto "${product.name}".`,
+          'Fechar',
+          { duration: 4000 }
+        );
+        return;
+      }
+
+      if (qty > availableStock) {
+        this.snackBar.open(
+          `A quantidade solicitada (${qty}) é superior ao stock disponível (${availableStock}) para o produto "${product.name}".`,
+          'Fechar',
+          { duration: 4000 }
+        );
+        return;
+      }
+    }
+
+    const subtotal = this.roundMoney(product.price * qty);
 
     const item: InvoiceItem = {
       product_id: product.id,
       product_name: product.name,
-      quantity: Number(qty),
+      quantity: qty,
       unit_price: product.price,
       subtotal: subtotal,
       total: subtotal
@@ -299,29 +332,90 @@ export class InvoiceDialogComponent implements OnInit {
 
     this.snackBar.open('Produto adicionado!', '', { duration: 1000 });
   }
-
   removeItem(index: number) {
     this.invoiceItems.update(items => items.filter((_, i) => i !== index));
   }
 
   updateItemQuantity(index: number, change: number) {
-    this.invoiceItems.update(items => {
-      const newItems = [...items];
-      const item = { ...newItems[index] };
-      item.quantity += change;
+    const items = this.invoiceItems();
+    if (index < 0 || index >= items.length) return;
+    const currentItem = items[index];
+    const newQty = currentItem.quantity + change;
 
-      if (item.quantity <= 0) {
-        return newItems.filter((_, i) => i !== index);
+    if (newQty <= 0) {
+      this.invoiceItems.update(prev => prev.filter((_, i) => i !== index));
+      return;
+    }
+
+    if (change > 0) {
+      const product = this.productService.getProductById(currentItem.product_id);
+      if (product && product.type === 'produto') {
+        const availableStock = product.stock ?? 0;
+        if (newQty > availableStock) {
+          this.snackBar.open(
+            `A quantidade (${newQty}) ultrapassa o stock disponível (${availableStock}) para o produto "${currentItem.product_name}".`,
+            'Fechar',
+            { duration: 4000 }
+          );
+          return;
+        }
       }
+    }
 
+    this.invoiceItems.update(prev => {
+      const updated = [...prev];
+      const item = { ...updated[index] };
+      item.quantity = newQty;
       item.subtotal = this.roundMoney(item.unit_price * item.quantity);
       item.total = item.subtotal;
-      newItems[index] = item;
-      return newItems;
+      updated[index] = item;
+      return updated;
     });
   }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   async save(status: string = 'pendente') {
+
+
+    // Req #5 & #6: Stock validation for all items
+    if (status !== 'rascunho') {
+      for (const item of this.invoiceItems()) {
+        const prod = this.productService.getProductById(item.product_id);
+        if (prod && prod.type === 'produto') {
+          const availableStock = prod.stock ?? 0;
+          if (availableStock <= 0) {
+            this.snackBar.open(
+              `Não é possível emitir. Sem stock para o produto "${item.product_name}".`,
+              'Fechar',
+              { duration: 4000 }
+            );
+            return;
+          }
+          if (item.quantity > availableStock) {
+            this.snackBar.open(
+              `Não é possível emitir. O item "${item.product_name}" tem quantidade (${item.quantity}) superior ao stock disponível (${availableStock}).`,
+              'Fechar',
+              { duration: 4000 }
+            );
+            return;
+          }
+        }
+      }
+    }
     if (this.step1Form.invalid || this.invoiceItems().length === 0) {
       this.snackBar.open('Selecione cliente e adicione produtos', 'Fechar', { duration: 3000 });
       return;

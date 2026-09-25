@@ -15,6 +15,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { InvoiceService, Invoice } from '../../core/services/invoice.service';
 import { CompanyService } from '../../core/services/company.service';
+import { ExportService } from '../../core/services/export.service';
 import { InvoiceDialogComponent } from '../../shared/components/invoice-dialog.component';
 import { PaymentDialogComponent } from '../../shared/components/payment-dialog.component';
 
@@ -118,6 +119,7 @@ export class InvoicesComponent implements OnInit {
   constructor(
     public invoiceService: InvoiceService,
     public companyService: CompanyService,
+    private exportService: ExportService,
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
     private router: Router
@@ -203,6 +205,46 @@ export class InvoicesComponent implements OnInit {
 
   formatDate(dateString: string): string {
     return this.invoiceService.formatDate(dateString);
+  }
+
+  formatDateTime(dateString?: string): string {
+    return this.invoiceService.formatDateTime(dateString);
+  }
+
+  exportExcel() {
+    const data = this.filteredInvoices().map(inv => ({
+      'Nº Factura': inv.invoice_number,
+      'Cliente': inv.client?.name || '-',
+      'NUIT Cliente': inv.client?.nuit || '-',
+      'Emitido Por': inv.issuer_name || '-',
+      'Data e Hora de Emissão': this.invoiceService.formatDateTime(inv.created_at || inv.date),
+      'Vencimento': inv.due_date ? this.invoiceService.formatDate(inv.due_date) : 'Imediato',
+      'Subtotal (MZN)': inv.subtotal,
+      'Total (MZN)': inv.total,
+      'Pago (MZN)': inv.amount_paid,
+      'Pendente (MZN)': inv.amount_pending,
+      'Estado': this.invoiceService.getStatusLabel(inv.status)
+    }));
+    const dateStr = new Date().toISOString().split('T')[0];
+    this.exportService.exportToExcel(data, `Facturas_${dateStr}`);
+  }
+
+  exportCsv() {
+    const data = this.filteredInvoices().map(inv => ({
+      'Nº Factura': inv.invoice_number,
+      'Cliente': inv.client?.name || '-',
+      'NUIT Cliente': inv.client?.nuit || '-',
+      'Emitido Por': inv.issuer_name || '-',
+      'Data e Hora de Emissão': this.invoiceService.formatDateTime(inv.created_at || inv.date),
+      'Vencimento': inv.due_date ? this.invoiceService.formatDate(inv.due_date) : 'Imediato',
+      'Subtotal (MZN)': inv.subtotal,
+      'Total (MZN)': inv.total,
+      'Pago (MZN)': inv.amount_paid,
+      'Pendente (MZN)': inv.amount_pending,
+      'Estado': this.invoiceService.getStatusLabel(inv.status)
+    }));
+    const dateStr = new Date().toISOString().split('T')[0];
+    this.exportService.exportToCsv(data, `Facturas_${dateStr}`);
   }
 
   getStatusColor(status: string): string {

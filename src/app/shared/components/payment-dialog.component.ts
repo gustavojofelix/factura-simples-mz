@@ -71,14 +71,17 @@ export interface PaymentDialogData {
 
         <mat-form-field>
           <mat-label>Data do Pagamento</mat-label>
-          <input matInput [matDatepicker]="picker" formControlName="payment_date" [min]="minDate">
+          <input matInput [matDatepicker]="picker" formControlName="payment_date" [min]="minDate" [max]="maxDate">
           <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
           <mat-datepicker #picker></mat-datepicker>
           @if (paymentForm.get('payment_date')?.hasError('required')) {
             <mat-error>Campo obrigatório</mat-error>
           }
           @if (paymentForm.get('payment_date')?.hasError('matDatepickerMin')) {
-            <mat-error>A data não pode ser anterior à da fatura ({{ getMinDateFormatted() }})</mat-error>
+            <mat-error>A data não pode ser anterior à data da factura ({{ getMinDateFormatted() }})</mat-error>
+          }
+          @if (paymentForm.get('payment_date')?.hasError('matDatepickerMax')) {
+            <mat-error>A data não pode ser posterior à data actual ({{ getMaxDateFormatted() }})</mat-error>
           }
         </mat-form-field>
 
@@ -133,6 +136,7 @@ export class PaymentDialogComponent {
   isSaving = signal(false);
   errorMessage = signal('');
   minDate: Date | null = null;
+  maxDate: Date = new Date();
 
   paymentForm = this.fb.group({
     amount: [0, [Validators.required, Validators.min(0.01), Validators.max(this.data.amountPending)]],
@@ -168,6 +172,10 @@ export class PaymentDialogComponent {
     return this.minDate.toLocaleDateString('pt-MZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
   }
 
+  getMaxDateFormatted(): string {
+    return this.maxDate.toLocaleDateString('pt-MZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+
   setPartialPayment() {
     const halfAmount = this.data.amountPending / 2;
     this.paymentForm.patchValue({ amount: halfAmount });
@@ -180,17 +188,35 @@ export class PaymentDialogComponent {
   async save() {
     if (this.paymentForm.invalid) return;
 
+    const formValue = this.paymentForm.value;
+    const paymentDate = new Date(formValue.payment_date as Date);
+    paymentDate.setHours(0, 0, 0, 0);
+
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+
+    if (this.minDate) {
+      const min = new Date(this.minDate);
+      min.setHours(0, 0, 0, 0);
+      if (paymentDate < min) {
+        this.errorMessage.set(`A data do pagamento não pode ser anterior à data da factura (${this.getMinDateFormatted()}).`);
+        return;
+      }
+    }
+
+    if (paymentDate > today) {
+      this.errorMessage.set(`A data do pagamento não pode ser posterior à data actual (${this.getMaxDateFormatted()}).`);
+      return;
+    }
+
     this.isSaving.set(true);
     this.errorMessage.set('');
 
     try {
-      const formValue = this.paymentForm.value;
-      const paymentDate = formValue.payment_date as Date;
-
       const payment = await this.paymentService.createPayment({
         invoice_id: this.data.invoiceId,
         amount: formValue.amount!,
-        payment_date: paymentDate.toISOString().split('T')[0],
+        payment_date: (formValue.payment_date as Date).toISOString().split('T')[0],
         payment_method: formValue.payment_method!,
         reference: formValue.reference || undefined,
         notes: formValue.notes || undefined
