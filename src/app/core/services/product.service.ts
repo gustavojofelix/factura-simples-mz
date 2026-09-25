@@ -17,6 +17,16 @@ export interface Product {
   created_at: string;
 }
 
+export interface ProductImportData {
+  name: string;
+  type: 'produto' | 'servico';
+  description?: string;
+  price: number;
+  unit?: string;
+  stock?: number | null;
+  is_active?: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -57,6 +67,10 @@ export class ProductService {
     const company = this.companyService.activeCompany();
     if (!company) return null;
 
+    if (await this.isProductDuplicate(productData.name, productData.type)) {
+      throw new Error('Já existe um produto ou serviço com este nome.');
+    }
+
     const { data, error } = await this.supabase.db
       .from('products')
       .insert({
@@ -87,6 +101,9 @@ export class ProductService {
   async updateProduct(id: string, updates: Partial<Product>): Promise<boolean> {
     try {
       const prod = this.getProductById(id);
+      if (updates.name && await this.isProductDuplicate(updates.name, updates.type || prod?.type, id)) {
+        return false;
+      }
       const { error } = await this.supabase.db
         .from('products')
         .update(updates)
@@ -171,6 +188,51 @@ export class ProductService {
 
   async toggleProductActiveStatus(id: string, currentStatus: boolean): Promise<boolean> {
     return this.updateProduct(id, { is_active: !currentStatus });
+  }
+
+  async isProductDuplicate(name: string, type?: Product['type'], excludeProductId?: string): Promise<boolean> {
+    const company = this.companyService.activeCompany();
+    if (!company || !name.trim()) return false;
+
+    let query = this.supabase.db
+      .from('products')
+      .select('id', { count: 'exact', head: true })
+      .eq('company_id', company.id)
+      .ilike('name', name.trim());
+
+    if (type) query = query.eq('type', type);
+    if (excludeProductId) query = query.not('id', 'eq', excludeProductId);
+
+    const { count, error } = await query;
+    if (error) throw error;
+    return (count || 0) > 0;
+  }
+
+  async importProducts(products: ProductImportData[]): Promise<{ imported: number; error?: string }> {
+    const company = this.companyService.activeCompany();
+    if (!company) return { imported: 0, error: 'Nenhuma empresa activa seleccionada.' };
+
+    try {
+      const { data, error } = await this.supabase.db
+        .from('products')
+        .insert(products.map(product => ({
+          ...product,
+          stock: product.type === 'produto' ? product.stock ?? 0 : null,
+          is_active: product.is_active ?? true,
+          company_id: company.id
+        })))
+        .select('id, name, code, price, type');
+      if (error) throw error;
+
+      await Promise.all((data || []).map(product => this.auditLogService.log(
+        'Importou Produto/Serviço', 'products', product, product.id, product.name, company.id
+      )));
+      await this.loadProducts();
+      return { imported: data?.length || 0 };
+    } catch (error: any) {
+      console.error('Erro ao importar produtos:', error);
+      return { imported: 0, error: error?.message || 'Não foi possível importar os produtos.' };
+    }
   }
 
   getProductById(id: string): Product | undefined {

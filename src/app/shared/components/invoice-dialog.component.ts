@@ -273,9 +273,19 @@ export class InvoiceDialogComponent implements OnInit {
 
   addProduct() {
     const product = this.selectedProduct();
-    const qty = Number(this.step2Form.get('quantity')?.value || 1);
+    const qty = Number(this.step2Form.get('quantity')?.value);
 
-    if (!product || !qty || qty <= 0) return;
+    if (!product) return;
+    if (!Number.isFinite(qty) || qty <= 0) {
+      this.snackBar.open(
+        qty === 0
+          ? `O produto "${product.name}" não tem quantidade seleccionada. Indique pelo menos uma unidade.`
+          : 'Indique uma quantidade válida.',
+        'Fechar',
+        { duration: 4000 }
+      );
+      return;
+    }
 
     // Req #4: Prevent duplicate product addition
     const existingIndex = this.invoiceItems().findIndex(item => item.product_id === product.id);

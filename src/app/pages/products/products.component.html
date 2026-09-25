@@ -5,10 +5,25 @@
       <p class="text-gray-600">Catálogo de {{ companyService.activeCompany()?.name }}</p>
     </div>
     @if (companyService.activeRole() !== 'user') {
-      <button mat-raised-button class="!bg-ispc-orange !text-white" (click)="openDialog()">
-        <mat-icon>add</mat-icon>
-        <span>Novo Produto</span>
-      </button>
+      <div class="flex flex-wrap gap-2 justify-end">
+        <input #productImportInput type="file" accept=".csv,.xlsx,.xls" class="hidden" (change)="onImportFileSelected($event)">
+        <button mat-stroked-button class="!border-ispc-orange !text-ispc-orange" (click)="productImportInput.click()">
+          <mat-icon>upload_file</mat-icon>
+          <span>Importar</span>
+        </button>
+        <button mat-stroked-button class="!border-ispc-orange !text-ispc-orange" [matMenuTriggerFor]="exportMenu" [disabled]="filteredProducts().length === 0">
+          <mat-icon>file_download</mat-icon>
+          <span>Exportar</span>
+        </button>
+        <mat-menu #exportMenu="matMenu">
+          <button mat-menu-item (click)="exportProducts('xlsx')"><mat-icon>table_view</mat-icon><span>Excel (.xlsx)</span></button>
+          <button mat-menu-item (click)="exportProducts('csv')"><mat-icon>text_format</mat-icon><span>CSV (.csv)</span></button>
+        </mat-menu>
+        <button mat-raised-button class="!bg-ispc-orange !text-white" (click)="openDialog()">
+          <mat-icon>add</mat-icon>
+          <span>Novo Produto</span>
+        </button>
+      </div>
     }
   </div>
 
@@ -36,6 +51,24 @@
         <div class="hidden md:block w-[1px] bg-gray-200 self-stretch my-1"></div>
 
         <div class="flex flex-wrap items-center gap-4">
+          <mat-form-field appearance="outline" class="w-40" subscriptSizing="dynamic">
+            <mat-label>Tipo</mat-label>
+            <mat-select [value]="typeFilter()" (selectionChange)="onTypeChange($event.value)">
+              <mat-option value="all">Todos</mat-option>
+              <mat-option value="produto">Produtos</mat-option>
+              <mat-option value="servico">Serviços</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-40" subscriptSizing="dynamic">
+            <mat-label>Estado</mat-label>
+            <mat-select [value]="statusFilter()" (selectionChange)="onStatusChange($event.value)">
+              <mat-option value="all">Todos</mat-option>
+              <mat-option value="active">Activados</mat-option>
+              <mat-option value="inactive">Desactivados</mat-option>
+            </mat-select>
+          </mat-form-field>
+
           <!-- Sort Group -->
           <div class="flex items-center">
             <mat-form-field appearance="outline" class="w-48" subscriptSizing="dynamic">
@@ -73,7 +106,7 @@
           </div>
 
           <!-- Clear Button -->
-          @if (searchTerm() !== '' || sortField() !== 'code' || sortDirection() !== 'asc' || minPriceFilter() !== null || maxPriceFilter() !== null) {
+          @if (searchTerm() !== '' || sortField() !== 'code' || sortDirection() !== 'asc' || minPriceFilter() !== null || maxPriceFilter() !== null || typeFilter() !== 'all' || statusFilter() !== 'all') {
             <button mat-button color="warn" (click)="clearFilters()" class="!h-[56px] rounded-lg">
               <mat-icon>filter_list_off</mat-icon>
               <span>Limpar</span>
@@ -116,6 +149,7 @@
                 <td mat-cell *matCellDef="let product">
                   <div>
                     <div class="font-medium">{{ product.name }}</div>
+                    <div class="text-xs text-gray-500">{{ product.type === 'produto' ? 'Produto' : 'Serviço' }}</div>
                     @if (product.description) {
                       <div class="text-sm text-gray-600">{{ product.description }}</div>
                     }

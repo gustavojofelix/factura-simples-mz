@@ -13,9 +13,12 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatMenuModule } from '@angular/material/menu';
 import { ProductService, Product } from '../../core/services/product.service';
 import { CompanyService } from '../../core/services/company.service';
 import { SubscriptionLimitDialogComponent } from '../../shared/components/subscription-limit-dialog.component';
+import { ExportService } from '../../core/services/export.service';
+import * as XLSX from 'xlsx';
 
 @Component({
   selector: 'app-product-dialog',
@@ -117,7 +120,7 @@ export class ProductDialogComponent implements OnInit {
       description: [''],
       price: ['', [Validators.required, Validators.min(0)]],
       unit: ['un'],
-      stock: [null]
+      stock: [null, Validators.min(0)]
     });
   }
 
@@ -139,6 +142,15 @@ export class ProductDialogComponent implements OnInit {
 
       if (formData.type === 'servico') {
         formData.stock = null;
+      } else if (formData.stock === null || formData.stock === '' || Number(formData.stock) < 0) {
+        this.snackBar.open('O stock deve ser zero ou um número positivo.', 'Fechar', { duration: 3000 });
+        return;
+      }
+
+      const isDuplicate = await this.productService.isProductDuplicate(formData.name, formData.type, this.product?.id);
+      if (isDuplicate) {
+        this.snackBar.open('Já existe um produto ou serviço com este nome.', 'Fechar', { duration: 4000 });
+        return;
       }
 
       if (this.product) {
@@ -202,7 +214,8 @@ export class ProductDialogComponent implements OnInit {
     MatSelectModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatMenuModule
   ],
   templateUrl: './products.component.html',
   styleUrls: ['./products.component.css']
@@ -220,6 +233,8 @@ export class ProductsComponent implements OnInit {
   sortDirection = signal<'asc' | 'desc'>('asc');
   minPriceFilter = signal<number | null>(null);
   maxPriceFilter = signal<number | null>(null);
+  typeFilter = signal<'all' | Product['type']>('all');
+  statusFilter = signal<'all' | 'active' | 'inactive'>('all');
 
   filteredProducts = computed(() => {
     const term = this.searchTerm().toLowerCase();
@@ -228,6 +243,8 @@ export class ProductsComponent implements OnInit {
     const direction = this.sortDirection();
     const minPrice = this.minPriceFilter();
     const maxPrice = this.maxPriceFilter();
+    const type = this.typeFilter();
+    const status = this.statusFilter();
 
     // 1. Filtering
     let filtered = products;
@@ -246,6 +263,8 @@ export class ProductsComponent implements OnInit {
     if (maxPrice !== null) {
       filtered = filtered.filter(product => product.price <= maxPrice);
     }
+    if (type !== 'all') filtered = filtered.filter(product => product.type === type);
+    if (status !== 'all') filtered = filtered.filter(product => status === 'active' ? product.is_active : !product.is_active);
 
     // 2. Sorting
     filtered.sort((a, b) => {
@@ -290,7 +309,8 @@ export class ProductsComponent implements OnInit {
     public productService: ProductService,
     public companyService: CompanyService,
     private dialog: MatDialog,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private exportService: ExportService
   ) {}
 
   ngOnInit() {
@@ -320,12 +340,18 @@ export class ProductsComponent implements OnInit {
     this.maxPriceFilter.set(value ? Number(value) : null);
   }
 
+  onTypeChange(value: 'all' | Product['type']) { this.typeFilter.set(value); }
+
+  onStatusChange(value: 'all' | 'active' | 'inactive') { this.statusFilter.set(value); }
+
   clearFilters() {
     this.searchTerm.set('');
     this.sortField.set('code');
     this.sortDirection.set('asc');
     this.minPriceFilter.set(null);
     this.maxPriceFilter.set(null);
+    this.typeFilter.set('all');
+    this.statusFilter.set('all');
   }
 
   openDialog(product?: Product) {
@@ -363,6 +389,91 @@ export class ProductsComponent implements OnInit {
       this.snackBar.open('Produto eliminado com sucesso!', 'Fechar', { duration: 3000 });
     } else {
       this.snackBar.open(result.error || 'Erro ao eliminar produto', 'Fechar', { duration: 5000 });
+    }
+  }
+
+  exportProducts(format: 'csv' | 'xlsx') {
+    const data = this.filteredProducts().map(product => ({
+      'Código': product.code || '',
+      'Nome': product.name,
+      'Tipo': product.type === 'produto' ? 'Produto' : 'Serviço',
+      'Descrição': product.description || '',
+      'Preço': product.price,
+      'Unidade': product.unit || '',
+      'Stock': product.stock ?? '',
+      'Estado': product.is_active ? 'Activo' : 'Inactivo'
+    }));
+    const fileName = `produtos_servicos_${new Date().toISOString().split('T')[0]}`;
+    if (format === 'csv') this.exportService.exportToCsv(data, fileName);
+    else this.exportService.exportToExcel(data, fileName, 'Produtos e Serviços');
+  }
+
+  async onImportFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+
+    try {
+      const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
+      const existing = new Set(this.productService.products().map(p => `${p.type}:${p.name.trim().toLowerCase()}`));
+      const seen = new Set<string>();
+      const products: Array<{ name: string; type: 'produto' | 'servico'; description?: string; price: number; unit?: string; stock?: number; is_active: boolean }> = [];
+      const invalidRows: string[] = [];
+
+      rows.forEach((row, index) => {
+        const get = (...names: string[]) => {
+          const found = Object.entries(row).find(([key]) => names.includes(key.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()));
+          return String(found?.[1] ?? '').trim();
+        };
+        const name = get('nome', 'name');
+        const typeValue = get('tipo', 'type').toLowerCase();
+        const type = ['produto', 'product'].includes(typeValue) ? 'produto' : ['servico', 'service'].includes(typeValue) ? 'servico' : null;
+        const price = Number(get('preco', 'price').replace(',', '.'));
+        const stockText = get('stock', 'quantidade');
+        const stock = stockText === '' ? 0 : Number(stockText.replace(',', '.'));
+        const key = type ? `${type}:${name.toLowerCase()}` : '';
+        const rowNumber = index + 2;
+
+        if (!name || !type || !Number.isFinite(price) || price < 0) {
+          invalidRows.push(`linha ${rowNumber}: Nome, Tipo e Preço válido são obrigatórios`);
+          return;
+        }
+        if (type === 'produto' && (!Number.isFinite(stock) || stock < 0)) {
+          invalidRows.push(`linha ${rowNumber}: Stock não pode ser negativo`);
+          return;
+        }
+        if (existing.has(key) || seen.has(key)) {
+          invalidRows.push(`linha ${rowNumber}: produto ou serviço duplicado`);
+          return;
+        }
+
+        seen.add(key);
+        const status = get('estado', 'status').toLowerCase();
+        products.push({
+          name, type, price, stock: type === 'produto' ? stock : undefined,
+          description: get('descricao', 'description') || undefined,
+          unit: get('unidade', 'unit') || undefined,
+          is_active: !['inactivo', 'inativo', 'false', '0'].includes(status)
+        });
+      });
+
+      if (!products.length) {
+        this.snackBar.open(`Nenhum item válido encontrado. ${invalidRows.slice(0, 2).join('; ')}`, 'Fechar', { duration: 7000 });
+        return;
+      }
+      const result = await this.productService.importProducts(products);
+      if (result.error) {
+        this.snackBar.open(`Erro ao importar: ${result.error}`, 'Fechar', { duration: 6000 });
+        return;
+      }
+      const skipped = invalidRows.length ? ` ${invalidRows.length} linha(s) inválida(s) ignorada(s).` : '';
+      this.snackBar.open(`${result.imported} item(ns) importado(s) com sucesso.${skipped}`, 'Fechar', { duration: 6000 });
+    } catch (error) {
+      console.error('Erro ao ler ficheiro de produtos:', error);
+      this.snackBar.open('Não foi possível ler o ficheiro. Use um CSV ou Excel válido.', 'Fechar', { duration: 5000 });
     }
   }
 
