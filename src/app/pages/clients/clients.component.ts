@@ -524,6 +524,33 @@ export class ClientsComponent implements OnInit {
     }
   }
 
+  downloadImportTemplate(format: 'xlsx' | 'xls' | 'csv') {
+    const example = [{
+      'Nome': 'Empresa Exemplo, Lda',
+      'NUIT': '400123456',
+      'Email': 'geral@exemplo.co.mz',
+      'Telefone': '841234567',
+      'Endereço': 'Av. 25 de Setembro, Maputo',
+      'Indústria': 'Comércio',
+      'Estado': 'Activo'
+    }];
+    const fileName = 'modelo_importacao_clientes';
+
+    if (format === 'csv') {
+      this.exportService.exportToCsv(example, fileName);
+      return;
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet(example);
+    worksheet['!cols'] = [
+      { wch: 30 }, { wch: 14 }, { wch: 28 }, { wch: 14 },
+      { wch: 38 }, { wch: 18 }, { wch: 12 }
+    ];
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Clientes');
+    XLSX.writeFile(workbook, `${fileName}.${format}`, format === 'xls' ? { bookType: 'biff8' } : undefined);
+  }
+
   async toggleStatus(client: Client) {
     const success = await this.clientService.toggleClientActiveStatus(client.id, client.is_active);
     if (success) {
