@@ -18,6 +18,7 @@ import { CompanyService } from '../../core/services/company.service';
 import { ExportService } from '../../core/services/export.service';
 import { nuitValidator } from '../../core/validators/nuit.validator';
 import { SubscriptionLimitDialogComponent } from '../../shared/components/subscription-limit-dialog.component';
+import * as XLSX from 'xlsx';
 
 @Component({
   selector: 'app-client-dialog',
@@ -119,7 +120,10 @@ import { SubscriptionLimitDialogComponent } from '../../shared/components/subscr
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Telefone</mat-label>
-            <input matInput formControlName="phone" placeholder="+258 XX XXX XXXX">
+            <input matInput type="tel" inputmode="numeric" maxlength="9" formControlName="phone" placeholder="Ex: 841234567" (input)="onPhoneInput($event)">
+            @if (form.get('phone')?.hasError('pattern') && form.get('phone')?.touched) {
+              <mat-error>O telefone deve ter exactamente 9 dígitos</mat-error>
+            }
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="w-full">
@@ -182,7 +186,7 @@ export class ClientDialogComponent {
       name: ['', Validators.required],
       nuit: ['', [Validators.required, nuitValidator()]],
       email: ['', [Validators.required, Validators.email]],
-      phone: [''],
+      phone: ['', Validators.pattern(/^\d{9}$/)],
       industry: [''],
       address: ['', Validators.required],
       document_url: [''],
@@ -199,6 +203,12 @@ export class ClientDialogComponent {
         this.documentUrl.set(this.data.document_url);
       }
     }
+  }
+
+  onPhoneInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const phone = input.value.replace(/\D/g, '').slice(0, 9);
+    this.form.get('phone')?.setValue(phone, { emitEvent: false });
   }
 
   async onFileSelected(event: Event) {
@@ -429,6 +439,89 @@ export class ClientsComponent implements OnInit {
     dialogRef.afterClosed().subscribe(() => {
       this.clientService.loadClients();
     });
+  }
+
+  async onImportFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+
+    try {
+      const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(firstSheet, { defval: '' });
+      const existingNuits = new Set(this.clientService.clients().map(client => client.nuit?.trim()).filter(Boolean));
+      const importedNuits = new Set<string>();
+      const clients: Array<{ name: string; nuit: string; email: string; phone?: string; address: string; industry?: string; is_active: boolean }> = [];
+      const invalidRows: string[] = [];
+
+      rows.forEach((row, index) => {
+        const getValue = (...names: string[]) => {
+          const entry = Object.entries(row).find(([key]) =>
+            names.includes(key.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim())
+          );
+          return String(entry?.[1] ?? '').trim();
+        };
+        const name = getValue('nome', 'name');
+        const nuit = getValue('nuit');
+        const email = getValue('email', 'e-mail');
+        const phone = getValue('telefone', 'phone', 'telemovel');
+        const address = getValue('endereco', 'morada', 'address');
+        const industry = getValue('industria', 'sector', 'setor', 'industry');
+        const status = getValue('estado', 'status').toLowerCase();
+        const rowNumber = index + 2;
+
+        if (!name || !nuit || !email || !address) {
+          invalidRows.push(`linha ${rowNumber}: Nome, NUIT, Email e Endereço são obrigatórios`);
+          return;
+        }
+        if (!/^\d{9}$/.test(nuit)) {
+          invalidRows.push(`linha ${rowNumber}: NUIT deve ter 9 dígitos`);
+          return;
+        }
+        if (!Validators.email({ value: email } as any)) {
+          invalidRows.push(`linha ${rowNumber}: Email inválido`);
+          return;
+        }
+        if (phone && !/^\d{9}$/.test(phone)) {
+          invalidRows.push(`linha ${rowNumber}: Telefone deve ter exactamente 9 dígitos`);
+          return;
+        }
+        if (existingNuits.has(nuit) || importedNuits.has(nuit)) {
+          invalidRows.push(`linha ${rowNumber}: NUIT duplicado`);
+          return;
+        }
+
+        importedNuits.add(nuit);
+        clients.push({
+          name,
+          nuit,
+          email,
+          phone: phone || undefined,
+          address,
+          industry: industry || undefined,
+          is_active: !['inactivo', 'inativo', 'false', '0'].includes(status)
+        });
+      });
+
+      if (!clients.length) {
+        this.snackBar.open(`Nenhum cliente válido encontrado. ${invalidRows.slice(0, 2).join('; ')}`, 'Fechar', { duration: 7000 });
+        return;
+      }
+
+      const result = await this.clientService.importClients(clients);
+      if (result.error) {
+        this.snackBar.open(`Erro ao importar clientes: ${result.error}`, 'Fechar', { duration: 6000 });
+        return;
+      }
+
+      const detail = invalidRows.length ? ` ${invalidRows.length} linha(s) inválida(s) ignorada(s).` : '';
+      this.snackBar.open(`${result.imported} cliente(s) importado(s) com sucesso.${detail}`, 'Fechar', { duration: 6000 });
+    } catch (error) {
+      console.error('Erro ao ler ficheiro de clientes:', error);
+      this.snackBar.open('Não foi possível ler o ficheiro. Use um CSV ou Excel válido.', 'Fechar', { duration: 5000 });
+    }
   }
 
   async toggleStatus(client: Client) {

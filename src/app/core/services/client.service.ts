@@ -19,6 +19,16 @@ export interface Client {
   created_at: string;
 }
 
+export interface ClientImportData {
+  name: string;
+  nuit: string;
+  email: string;
+  phone?: string;
+  address: string;
+  industry?: string;
+  is_active?: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -84,6 +94,42 @@ export class ClientService {
     // Reload from server to get the trigger-assigned client_code and correct ordering
     await this.loadClients();
     return data;
+  }
+
+  async importClients(clients: ClientImportData[]): Promise<{ imported: number; error?: string }> {
+    const company = this.companyService.activeCompany();
+    if (!company) return { imported: 0, error: 'Nenhuma empresa activa seleccionada.' };
+    if (!clients.length) return { imported: 0 };
+
+    try {
+      const { data, error } = await this.supabase.db
+        .from('clients')
+        .insert(clients.map(client => ({
+          ...client,
+          company_id: company.id,
+          is_active: client.is_active ?? true
+        })))
+        .select('id, name, nuit');
+
+      if (error) throw error;
+
+      await Promise.all((data || []).map(client =>
+        this.auditLogService.log(
+          'Importou Cliente',
+          'clients',
+          { name: client.name, nuit: client.nuit },
+          client.id,
+          client.name,
+          company.id
+        )
+      ));
+
+      await this.loadClients();
+      return { imported: data?.length || 0 };
+    } catch (error: any) {
+      console.error('Erro ao importar clientes:', error);
+      return { imported: 0, error: error?.message || 'Não foi possível importar os clientes.' };
+    }
   }
 
   async updateClient(id: string, updates: Partial<Client>): Promise<boolean> {

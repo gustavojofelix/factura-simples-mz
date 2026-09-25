@@ -5,6 +5,11 @@
       <p class="text-sm text-slate-500">Gerir clientes de {{ companyService.activeCompany()?.name }}</p>
     </div>
     <div class="flex gap-2">
+      <input #clientImportInput type="file" accept=".csv,.xlsx,.xls" class="hidden" (change)="onImportFileSelected($event)">
+      <button mat-stroked-button class="!border-ispc-orange !text-ispc-orange" (click)="clientImportInput.click()">
+        <mat-icon class="mr-2">upload_file</mat-icon>
+        Importar Clientes
+      </button>
       <button mat-stroked-button class="!border-ispc-orange !text-ispc-orange" [matMenuTriggerFor]="exportMenu"
         [disabled]="clientService.clients().length === 0">
         <mat-icon class="mr-2">file_download</mat-icon>
