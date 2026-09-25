@@ -26,7 +26,7 @@ import { ConfirmDialogService } from '../../../core/services/confirm-dialog.serv
 
             <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
               <div class="space-y-1">
-                <label class="text-[10px] font-bold text-gray-500 uppercase">Nome da Empresa</label>
+                <label class="text-[10px] font-bold text-gray-500 uppercase">Nome da Entidade</label>
                 <input [(ngModel)]="editingCompany.name" type="text" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
               </div>
 
@@ -49,10 +49,6 @@ import { ConfirmDialogService } from '../../../core/services/confirm-dialog.serv
                 <div class="space-y-1">
                   <label class="text-[10px] font-bold text-gray-500 uppercase">E-mail da Empresa</label>
                   <input [(ngModel)]="editingCompany.email" type="email" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-                </div>
-                <div class="space-y-1">
-                  <label class="text-[10px] font-bold text-gray-500 uppercase">Telefone</label>
-                  <input [(ngModel)]="editingCompany.phone" type="tel" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                 </div>
               </div>
 
@@ -120,6 +116,12 @@ import { ConfirmDialogService } from '../../../core/services/confirm-dialog.serv
 
               <div class="grid grid-cols-3 gap-4 border-t border-gray-100 pt-4 mt-2">
                 <div class="space-y-1">
+                  <label class="text-[10px] font-bold text-gray-500 uppercase">País</label>
+                  <select [(ngModel)]="editingCompany.country" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                    <option *ngFor="let c of countries" [value]="c">{{ c }}</option>
+                  </select>
+                </div>
+                <div class="space-y-1">
                   <label class="text-[10px] font-bold text-gray-500 uppercase">Província</label>
                   <select [(ngModel)]="editingCompany.province" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                     <option value="">Selecionar...</option>
@@ -127,12 +129,8 @@ import { ConfirmDialogService } from '../../../core/services/confirm-dialog.serv
                   </select>
                 </div>
                 <div class="space-y-1">
-                  <label class="text-[10px] font-bold text-gray-500 uppercase">Distrito</label>
-                  <input [(ngModel)]="editingCompany.district" type="text" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-                </div>
-                <div class="space-y-1">
-                  <label class="text-[10px] font-bold text-gray-500 uppercase">P. Administrativo</label>
-                  <input [(ngModel)]="editingCompany.administrativePost" type="text" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                  <label class="text-[10px] font-bold text-gray-500 uppercase">Código Postal</label>
+                  <input [(ngModel)]="editingCompany.postal_code" type="text" placeholder="Ex: 1100" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                 </div>
               </div>
 
@@ -167,7 +165,7 @@ import { ConfirmDialogService } from '../../../core/services/confirm-dialog.serv
 
               <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                 <div class="space-y-1">
-                  <label class="text-[10px] font-bold text-gray-500 uppercase">Nome da Empresa *</label>
+                  <label class="text-[10px] font-bold text-gray-500 uppercase">Nome da Entidade *</label>
                   <input [(ngModel)]="newCompany.name" type="text" placeholder="Ex: Empresa XYZ, Lda"
                     class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                 </div>
@@ -193,11 +191,6 @@ import { ConfirmDialogService } from '../../../core/services/confirm-dialog.serv
                   <div class="space-y-1">
                     <label class="text-[10px] font-bold text-gray-500 uppercase">E-mail da Empresa *</label>
                     <input [(ngModel)]="newCompany.email" type="email" placeholder="Ex: geral@empresa.co.mz"
-                      class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-                  </div>
-                  <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-gray-500 uppercase">Telefone</label>
-                    <input [(ngModel)]="newCompany.phone" type="tel" placeholder="Ex: +258 84 123 4567"
                       class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                   </div>
                 </div>
@@ -265,22 +258,19 @@ import { ConfirmDialogService } from '../../../core/services/confirm-dialog.serv
 
                 <div class="grid grid-cols-3 gap-4 border-t border-gray-100 pt-4 mt-2">
                   <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">País</label>
+                    <select [(ngModel)]="newCompany.country"
+                      class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                      <option *ngFor="let c of countries" [value]="c">{{ c }}</option>
+                    </select>
+                  </div>
+                  <div class="space-y-1">
                     <label class="text-[10px] font-bold text-gray-500 uppercase">Província</label>
                     <select [(ngModel)]="newCompany.province"
                       class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                       <option value="">Selecionar...</option>
                       <option *ngFor="let p of provinces" [value]="p">{{ p }}</option>
                     </select>
-                  </div>
-                  <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-gray-500 uppercase">Distrito</label>
-                    <input [(ngModel)]="newCompany.district" type="text" placeholder="Ex: Maputo"
-                      class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-                  </div>
-                  <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-gray-500 uppercase">P. Administrativo</label>
-                    <input [(ngModel)]="newCompany.administrativePost" type="text" placeholder="Ex: KaMpfumo"
-                      class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                   </div>
                 </div>
 
@@ -605,6 +595,7 @@ export class AdminCompaniesComponent implements OnInit {
 
 
   provinces = ['Maputo', 'Gaza', 'Inhambane', 'Sofala', 'Manica', 'Tete', 'Zambézia', 'Nampula', 'Cabo Delgado', 'Niassa'];
+  countries = ['Moçambique', 'África do Sul', 'Angola', 'Brasil', 'Eswatini', 'Malawi', 'Portugal', 'Tanzânia', 'Zâmbia', 'Zimbabué'];
 
   activityTypes = signal<ActivityType[]>([]);
   isLoadingActivities = signal(false);
@@ -891,7 +882,8 @@ export class AdminCompaniesComponent implements OnInit {
   async openEditModal(company: any) {
     this.editingCompany = {
       ...company,
-      administrativePost: company.documents_metadata?.administrativePost || ''
+      country: company.country || 'Moçambique',
+      postal_code: company.postal_code || ''
     };
     const activities = await this.activityService.getCompanyActivities(company.id);
     const principal = activities.find(a => a.activity_role === 'principal')?.activity_type;
@@ -989,20 +981,18 @@ export class AdminCompaniesComponent implements OnInit {
         name: this.editingCompany.name,
         nuit: this.editingCompany.nuit,
         status: this.editingCompany.status,
-        province: this.editingCompany.province,
-        district: this.editingCompany.district,
+        country: this.editingCompany.country || 'Moçambique',
+        province: this.editingCompany.province || null,
+        postal_code: this.editingCompany.postal_code || null,
         address: this.editingCompany.address,
         email: this.editingCompany.email,
-        phone: this.editingCompany.phone || null,
         entity_type: this.editingCompany.entity_type,
         category1: this.editingCompany.category1 || null,
         category2: this.editingCompany.category2 || null,
         category3: this.editingCompany.category3 || null,
         business_volume: this.editingCompany.business_volume || '3',
         documents_metadata: {
-          province: this.editingCompany.province || null,
-          district: this.editingCompany.district || null,
-          administrativePost: this.editingCompany.administrativePost || null
+          province: this.editingCompany.province || null
         }
       })
       .eq('id', this.editingCompany.id);
@@ -1065,6 +1055,7 @@ export class AdminCompaniesComponent implements OnInit {
 
   openCreateModal() {
     this.newCompany = {
+      country: 'Moçambique',
       business_volume: '3'
     };
     this.createError = '';

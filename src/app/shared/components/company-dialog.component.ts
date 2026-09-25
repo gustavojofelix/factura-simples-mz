@@ -90,7 +90,7 @@ import { ActivityService, ActivityType, CompanyActivity } from '../../core/servi
 
          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Nome da Empresa</mat-label>
+                <mat-label>Nome da Entidade</mat-label>
                 <input matInput formControlName="name" placeholder="Ex: Comercial Silva Lda">
                 <mat-icon matPrefix class="text-gray-400">business</mat-icon>
                 @if (form.get('name')?.hasError('required')) {
@@ -157,9 +157,19 @@ import { ActivityService, ActivityType, CompanyActivity } from '../../core/servi
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Telefone</mat-label>
-              <input matInput formControlName="phone" placeholder="Ex: +258 84 123 4567">
-              <mat-icon matPrefix class="text-gray-400">phone</mat-icon>
+              <mat-label>País</mat-label>
+              <mat-select formControlName="country">
+                @for (country of countries; track country) {
+                  <mat-option [value]="country">{{ country }}</mat-option>
+                }
+              </mat-select>
+              <mat-icon matPrefix class="text-gray-400">public</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Código Postal</mat-label>
+              <input matInput formControlName="postal_code" placeholder="Ex: 1100">
+              <mat-icon matPrefix class="text-gray-400">markunread_mailbox</mat-icon>
             </mat-form-field>
           </div>
 
@@ -255,21 +265,10 @@ import { ActivityService, ActivityType, CompanyActivity } from '../../core/servi
                   <mat-icon matPrefix class="text-gray-400">map</mat-icon>
                 </mat-form-field>
 
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Distrito</mat-label>
-                  <input matInput formControlName="district" placeholder="Ex: Maputo" />
-                  <mat-icon matPrefix class="text-gray-400">location_city</mat-icon>
-                </mat-form-field>
               </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Posto Administrativo</mat-label>
-              <input matInput formControlName="administrativePost" placeholder="Ex: KaMpfumo" />
-              <mat-icon matPrefix class="text-gray-400">apartment</mat-icon>
-            </mat-form-field>
-          </div>
+
 
           <div class="border-t border-gray-100 pt-6 mt-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -497,6 +496,11 @@ export class CompanyDialogComponent {
     'Zambézia', 'Nampula', 'Niassa', 'Cabo Delgado'
   ];
 
+  countries = [
+    'Moçambique', 'África do Sul', 'Angola', 'Brasil', 'Eswatini', 'Malawi',
+    'Portugal', 'Tanzânia', 'Zâmbia', 'Zimbabué'
+  ];
+
   activityTypes = signal<ActivityType[]>([]);
   isLoadingActivities = signal(false);
   companyActivities = signal<CompanyActivity[]>([]);
@@ -524,14 +528,13 @@ export class CompanyDialogComponent {
       entity_type: [data.company?.entity_type || '', Validators.required],
       nuit: [data.company?.nuit || '', [Validators.required]],
       address: [data.company?.address || '', Validators.required],
-      phone: [data.company?.phone || ''],
       email: [data.company?.email || '', [Validators.required, Validators.email]],
+      country: [data.company?.country || 'Moçambique'],
+      postal_code: [(data.company as any)?.postal_code || ''],
       business_volume: [(data.company as any)?.business_volume || '3', Validators.required],
       currency: [data.company?.currency || 'MZN'],
       invoice_prefix: [data.company?.invoice_prefix || 'FAC'],
       province: [data.company?.documents_metadata?.province || ''],
-      district: [data.company?.documents_metadata?.district || ''],
-      administrativePost: [data.company?.documents_metadata?.administrativePost || ''],
       bank_name: [data.company?.bank_name || ''],
       bank_account: [data.company?.bank_account || ''],
       bank_iban: [data.company?.bank_iban || ''],
@@ -886,17 +889,16 @@ export class CompanyDialogComponent {
         nuit: formValue.nuit,
         entity_type: formValue.entity_type,
         address: formValue.address,
-        phone: formValue.phone,
         email: formValue.email,
+        country: formValue.country,
+        postal_code: formValue.postal_code,
         currency: formValue.currency,
         invoice_prefix: formValue.invoice_prefix,
         logo_url: this.logoUrl() || undefined,
         nuit_document_url: this.nuitDocumentUrl() || undefined,
         commercial_activity_document_url: this.commercialActivityUrl() || undefined,
         documents_metadata: {
-          province: formValue.province,
-          district: formValue.district,
-          administrativePost: formValue.administrativePost
+          province: formValue.province
         },
         bank_name: formValue.bank_name,
         bank_account: formValue.bank_account,
