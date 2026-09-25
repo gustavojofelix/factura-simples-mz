@@ -19,6 +19,15 @@
           <button mat-menu-item (click)="exportProducts('xlsx')"><mat-icon>table_view</mat-icon><span>Excel (.xlsx)</span></button>
           <button mat-menu-item (click)="exportProducts('csv')"><mat-icon>text_format</mat-icon><span>CSV (.csv)</span></button>
         </mat-menu>
+        <button mat-stroked-button class="!border-ispc-orange !text-ispc-orange" [matMenuTriggerFor]="templateMenu">
+          <mat-icon>description</mat-icon>
+          <span>Baixar Template</span>
+        </button>
+        <mat-menu #templateMenu="matMenu">
+          <button mat-menu-item (click)="downloadImportTemplate('xlsx')"><mat-icon>table_view</mat-icon><span>Excel (.xlsx)</span></button>
+          <button mat-menu-item (click)="downloadImportTemplate('xls')"><mat-icon>table_view</mat-icon><span>Excel 97-2003 (.xls)</span></button>
+          <button mat-menu-item (click)="downloadImportTemplate('csv')"><mat-icon>text_format</mat-icon><span>CSV (.csv)</span></button>
+        </mat-menu>
         <button mat-raised-button class="!bg-ispc-orange !text-white" (click)="openDialog()">
           <mat-icon>add</mat-icon>
           <span>Novo Produto</span>

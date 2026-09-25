@@ -408,6 +408,33 @@ export class ProductsComponent implements OnInit {
     else this.exportService.exportToExcel(data, fileName, 'Produtos e Serviços');
   }
 
+  downloadImportTemplate(format: 'xlsx' | 'xls' | 'csv') {
+    const example = [{
+      'Nome': 'Caneta Azul',
+      'Tipo': 'Produto',
+      'Descrição': 'Caneta esferográfica azul',
+      'Preço': 25,
+      'Unidade': 'un',
+      'Stock': 100,
+      'Estado': 'Activo'
+    }];
+    const fileName = 'modelo_importacao_produtos_servicos';
+
+    if (format === 'csv') {
+      this.exportService.exportToCsv(example, fileName);
+      return;
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet(example);
+    worksheet['!cols'] = [
+      { wch: 28 }, { wch: 14 }, { wch: 34 }, { wch: 12 },
+      { wch: 12 }, { wch: 12 }, { wch: 12 }
+    ];
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Produtos e Serviços');
+    XLSX.writeFile(workbook, `${fileName}.${format}`, format === 'xls' ? { bookType: 'biff8' } : undefined);
+  }
+
   async onImportFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
