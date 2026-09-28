@@ -51,6 +51,19 @@ const KEY_LABELS: Record<string, string> = {
   document_number: 'Número do Documento',
   due_date: 'Data de Vencimento',
   issue_date: 'Data de Emissão',
+  start_date: 'Data Inicial',
+  end_date: 'Data Final',
+  payment_date: 'Data de Pagamento',
+  next_billing_date: 'Próxima Data de Cobrança',
+  created_at: 'Data de Criação',
+  updated_at: 'Data de Actualização',
+  old_total: 'Total Anterior',
+  new_total: 'Novo Total',
+  old_role: 'Função Anterior',
+  target_user_id: 'ID do Utilizador',
+  payment_id: 'ID do Pagamento',
+  reference: 'Referência',
+  reference_code: 'Código de Referência',
   items_count: 'Total de Itens',
   user_email: 'E-mail do Utilizador',
   period: 'Período',
@@ -86,29 +99,35 @@ const VALUE_TRANSLATIONS: Record<string, string> = {
   'password_reset_recovery': 'Recuperação por E-mail'
 };
 
+function normalizeAuditKey(key: string): string {
+  return key.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
+}
+
 export function formatAuditValue(key: string, val: any): string {
   if (val === null || val === undefined || val === '') {
     return '—';
   }
 
+  const normalizedKey = normalizeAuditKey(key);
+
   if (typeof val === 'boolean') {
-    if (key === 'is_active') {
+    if (normalizedKey === 'is_active') {
       return val ? 'Activo' : 'Desactivado';
     }
     return val ? 'Sim' : 'Não';
   }
 
   if (typeof val === 'number') {
-    if (['price', 'amount', 'total', 'subtotal', 'tax_amount'].includes(key)) {
+    if (['price', 'amount', 'total', 'subtotal', 'tax_amount', 'old_total', 'new_total'].includes(normalizedKey)) {
       return new Intl.NumberFormat('pt-MZ', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       }).format(val) + ' MZN';
     }
-    if (['tax_rate', 'discount_percent'].includes(key)) {
+    if (['tax_rate', 'discount_percent'].includes(normalizedKey)) {
       return `${val}%`;
     }
-    if (key === 'records_count') {
+    if (normalizedKey === 'records_count') {
       return val === 1 ? '1 registo' : `${val} registos`;
     }
     return val.toString();
@@ -133,7 +152,8 @@ export function formatAuditValue(key: string, val: any): string {
 }
 
 export function formatAuditLabel(key: string): string {
-  return KEY_LABELS[key] || key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  const normalizedKey = normalizeAuditKey(key);
+  return KEY_LABELS[key] || KEY_LABELS[normalizedKey] || normalizedKey.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
 export function formatAuditDetails(rawDetails: any): FormattedAuditItem[] {

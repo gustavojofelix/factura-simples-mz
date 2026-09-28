@@ -70,7 +70,7 @@ interface SalesReport {
       <mat-card class="mb-6">
         <mat-card-content class="!pt-6">
           <form [formGroup]="filterForm" class="space-y-4">
-             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <!-- <mat-form-field appearance="outline">
                   <mat-label>Periodo</mat-label>
                   <mat-select formControlName="period" (selectionChange)="onPeriodChange()">
@@ -99,6 +99,22 @@ interface SalesReport {
                   <input matInput [matDatepicker]="endPicker" formControlName="endDate">
                   <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
                   <mat-datepicker #endPicker></mat-datepicker>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Trimestre</mat-label>
+                  <mat-select formControlName="quarter" (selectionChange)="onQuarterChange()">
+                    <mat-option value="all">Todos os trimestres</mat-option>
+                    <mat-option value="1">1º Trimestre (Jan–Mar)</mat-option>
+                    <mat-option value="2">2º Trimestre (Abr–Jun)</mat-option>
+                    <mat-option value="3">3º Trimestre (Jul–Set)</mat-option>
+                    <mat-option value="4">4º Trimestre (Out–Dez)</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Ano</mat-label>
+                  <input matInput type="number" min="2000" formControlName="year" (change)="onQuarterChange()">
                 </mat-form-field>
 
               <mat-form-field appearance="outline">
@@ -368,7 +384,9 @@ export class ReportsComponent implements OnInit {
       period: ['this_month'],
       startDate: [firstDayOfMonth, Validators.required],
       endDate: [today, Validators.required],
-      clientId: ['all']
+      clientId: ['all'],
+      quarter: ['all'],
+      year: [today.getFullYear(), [Validators.required, Validators.min(2000)]]
     });
   }
 
@@ -384,6 +402,19 @@ export class ReportsComponent implements OnInit {
 
     const { startDate, endDate } = this.calculatePeriodDates(period);
     this.filterForm.patchValue({ startDate, endDate }, { emitEvent: false });
+  }
+
+  onQuarterChange() {
+    const quarter = Number(this.filterForm.get('quarter')?.value);
+    const year = Number(this.filterForm.get('year')?.value);
+
+    if (!Number.isInteger(quarter) || quarter < 1 || quarter > 4 || !Number.isInteger(year)) return;
+
+    const firstMonth = (quarter - 1) * 3;
+    this.filterForm.patchValue({
+      startDate: new Date(year, firstMonth, 1),
+      endDate: new Date(year, firstMonth + 3, 0)
+    }, { emitEvent: false });
   }
 
   calculatePeriodDates(period: string): { startDate: Date; endDate: Date } {
@@ -640,20 +671,13 @@ export class ReportsComponent implements OnInit {
         return;
       }
 
-      // Flatten data for Excel: one row per invoice item to show product details
-  const exportData = detailedInvoices.map(inv => {
-        const produtos = inv.items?.map(i => i.product_name).join(' | ') || '-';
-        const quantidades = inv.items?.map(i => i.quantity).join(' | ') || '-';
-        const precosUnitarios = inv.items?.map(i => this.formatCurrency(i.unit_price)).join(' | ') || '-';
-        
+      const exportData = detailedInvoices.map(inv => {
         return {
           'Nº Factura': inv.invoice_number,
           'Data': this.formatDate(inv.date),
           'Cliente': inv.client?.name || '-',
-          'Status': inv.status.toUpperCase(),
-          'Produtos': produtos,
-          'Qtd': quantidades,
-          'Preço Unit.': precosUnitarios,
+          'NUIT': inv.client?.nuit || '-',
+          'Tipo': this.getInvoiceType(inv),
           'Total Factura': this.formatCurrency(inv.total)
         };
       });
@@ -683,6 +707,14 @@ export class ReportsComponent implements OnInit {
     } finally {
       this.isLoading.set(false);
     }
+  }
+
+  private getInvoiceType(invoice: { items?: Array<{ product?: { type?: string } }> }): string {
+    const types = new Set(invoice.items?.map(item => item.product?.type).filter(Boolean));
+    const labels: string[] = [];
+    if (types.has('produto')) labels.push('Produto');
+    if (types.has('servico')) labels.push('Serviço');
+    return labels.join(' / ') || '-';
   }
 
   printReport() {

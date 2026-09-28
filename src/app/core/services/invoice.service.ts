@@ -12,6 +12,9 @@ export interface InvoiceItem {
   unit_price: number;
   subtotal: number;
   total: number;
+  product?: {
+    type?: 'produto' | 'servico';
+  };
 }
 
 export interface Invoice {
@@ -605,7 +608,7 @@ export class InvoiceService {
       .select(`
         *,
         client:clients (*),
-        items:invoice_items (*),
+        items:invoice_items (*, product:products (type)),
         issuer:profiles (full_name)
       `)
       .eq('company_id', company.id)
