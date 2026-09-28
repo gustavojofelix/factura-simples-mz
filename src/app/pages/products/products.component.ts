@@ -58,6 +58,19 @@ import * as XLSX from 'xlsx';
           }
         </mat-form-field>
 
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Código</mat-label>
+            <input matInput formControlName="code" placeholder="Gerado automaticamente se vazio">
+            <mat-hint>Opcional: use o seu código interno</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Código de barras</mat-label>
+            <input matInput formControlName="barcode" placeholder="Ex.: 7891234567890">
+          </mat-form-field>
+        </div>
+
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Descrição</mat-label>
           <textarea matInput formControlName="description" rows="3" placeholder="Descrição"></textarea>
@@ -117,6 +130,8 @@ export class ProductDialogComponent implements OnInit {
     this.form = this.fb.group({
       type: ['servico', Validators.required],
       name: ['', Validators.required],
+      code: [''],
+      barcode: [''],
       description: [''],
       price: ['', [Validators.required, Validators.min(0)]],
       unit: ['un'],
@@ -137,7 +152,9 @@ export class ProductDialogComponent implements OnInit {
 
     try {
       const formData = {
-        ...this.form.value
+        ...this.form.value,
+        code: this.form.value.code?.trim() || null,
+        barcode: this.form.value.barcode?.trim() || null
       };
 
       if (formData.type === 'servico') {
@@ -150,6 +167,16 @@ export class ProductDialogComponent implements OnInit {
       const isDuplicate = await this.productService.isProductDuplicate(formData.name, formData.type, this.product?.id);
       if (isDuplicate) {
         this.snackBar.open('Já existe um produto ou serviço com este nome.', 'Fechar', { duration: 4000 });
+        return;
+      }
+
+      if (await this.productService.isProductIdentifierDuplicate('code', formData.code, this.product?.id)) {
+        this.snackBar.open('Já existe um produto ou serviço com este código.', 'Fechar', { duration: 4000 });
+        return;
+      }
+
+      if (await this.productService.isProductIdentifierDuplicate('barcode', formData.barcode, this.product?.id)) {
+        this.snackBar.open('Já existe um produto ou serviço com este código de barras.', 'Fechar', { duration: 4000 });
         return;
       }
 
@@ -252,7 +279,8 @@ export class ProductsComponent implements OnInit {
       filtered = products.filter(product =>
         product.name.toLowerCase().includes(term) ||
         product.description?.toLowerCase().includes(term) ||
-        product.code?.toLowerCase().includes(term)
+        product.code?.toLowerCase().includes(term) ||
+        product.barcode?.toLowerCase().includes(term)
       );
     }
 
@@ -395,6 +423,7 @@ export class ProductsComponent implements OnInit {
   exportProducts(format: 'csv' | 'xlsx') {
     const data = this.filteredProducts().map(product => ({
       'Código': product.code || '',
+      'Código de Barras': product.barcode || '',
       'Nome': product.name,
       'Tipo': product.type === 'produto' ? 'Produto' : 'Serviço',
       'Descrição': product.description || '',
@@ -410,6 +439,8 @@ export class ProductsComponent implements OnInit {
 
   downloadImportTemplate(format: 'xlsx' | 'xls' | 'csv') {
     const example = [{
+      'Código': 'CAN-AZ-001',
+      'Código de Barras': '7891234567890',
       'Nome': 'Caneta Azul',
       'Tipo': 'Produto',
       'Descrição': 'Caneta esferográfica azul',
@@ -427,8 +458,8 @@ export class ProductsComponent implements OnInit {
 
     const worksheet = XLSX.utils.json_to_sheet(example);
     worksheet['!cols'] = [
-      { wch: 28 }, { wch: 14 }, { wch: 34 }, { wch: 12 },
-      { wch: 12 }, { wch: 12 }, { wch: 12 }
+      { wch: 18 }, { wch: 20 }, { wch: 28 }, { wch: 14 }, { wch: 34 },
+      { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }
     ];
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Produtos e Serviços');
@@ -447,7 +478,7 @@ export class ProductsComponent implements OnInit {
       const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
       const existing = new Set(this.productService.products().map(p => `${p.type}:${p.name.trim().toLowerCase()}`));
       const seen = new Set<string>();
-      const products: Array<{ name: string; type: 'produto' | 'servico'; description?: string; price: number; unit?: string; stock?: number; is_active: boolean }> = [];
+      const products: Array<{ name: string; type: 'produto' | 'servico'; code?: string; barcode?: string; description?: string; price: number; unit?: string; stock?: number; is_active: boolean }> = [];
       const invalidRows: string[] = [];
 
       rows.forEach((row, index) => {
@@ -456,6 +487,8 @@ export class ProductsComponent implements OnInit {
           return String(found?.[1] ?? '').trim();
         };
         const name = get('nome', 'name');
+        const code = get('codigo', 'code');
+        const barcode = get('codigo de barras', 'codigodebarras', 'barcode', 'bar_code');
         const typeValue = get('tipo', 'type').toLowerCase();
         const type = ['produto', 'product'].includes(typeValue) ? 'produto' : ['servico', 'service'].includes(typeValue) ? 'servico' : null;
         const price = Number(get('preco', 'price').replace(',', '.'));
@@ -480,7 +513,7 @@ export class ProductsComponent implements OnInit {
         seen.add(key);
         const status = get('estado', 'status').toLowerCase();
         products.push({
-          name, type, price, stock: type === 'produto' ? stock : undefined,
+          name, type, code: code || undefined, barcode: barcode || undefined, price, stock: type === 'produto' ? stock : undefined,
           description: get('descricao', 'description') || undefined,
           unit: get('unidade', 'unit') || undefined,
           is_active: !['inactivo', 'inativo', 'false', '0'].includes(status)

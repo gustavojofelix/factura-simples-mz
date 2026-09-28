@@ -138,7 +138,8 @@ export class InvoiceDialogComponent implements OnInit {
       filtered = filtered.filter(product =>
         product.name.toLowerCase().includes(term) ||
         product.description?.toLowerCase().includes(term) ||
-        product.code?.toLowerCase().includes(term)
+        product.code?.toLowerCase().includes(term) ||
+        product.barcode?.toLowerCase().includes(term)
       );
     }
 

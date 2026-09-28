@@ -6,6 +6,7 @@ import { AuditLogService } from './audit-log.service';
 export interface Product {
   id: string;
   code: string;
+  barcode?: string;
   company_id: string;
   name: string;
   description?: string;
@@ -20,6 +21,8 @@ export interface Product {
 export interface ProductImportData {
   name: string;
   type: 'produto' | 'servico';
+  code?: string;
+  barcode?: string;
   description?: string;
   price: number;
   unit?: string;
@@ -63,7 +66,7 @@ export class ProductService {
     }
   }
 
-  async createProduct(productData: Omit<Product, 'id' | 'company_id' | 'created_at'>): Promise<Product | null> {
+  async createProduct(productData: Omit<Product, 'id' | 'company_id' | 'created_at' | 'code'> & { code?: string }): Promise<Product | null> {
     const company = this.companyService.activeCompany();
     if (!company) return null;
 
@@ -201,6 +204,28 @@ export class ProductService {
       .ilike('name', name.trim());
 
     if (type) query = query.eq('type', type);
+    if (excludeProductId) query = query.not('id', 'eq', excludeProductId);
+
+    const { count, error } = await query;
+    if (error) throw error;
+    return (count || 0) > 0;
+  }
+
+  async isProductIdentifierDuplicate(
+    field: 'code' | 'barcode',
+    value: string | null | undefined,
+    excludeProductId?: string
+  ): Promise<boolean> {
+    const company = this.companyService.activeCompany();
+    const identifier = value?.trim();
+    if (!company || !identifier) return false;
+
+    let query = this.supabase.db
+      .from('products')
+      .select('id', { count: 'exact', head: true })
+      .eq('company_id', company.id)
+      .eq(field, identifier);
+
     if (excludeProductId) query = query.not('id', 'eq', excludeProductId);
 
     const { count, error } = await query;
