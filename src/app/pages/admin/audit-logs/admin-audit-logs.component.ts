@@ -68,7 +68,7 @@ import { formatAuditDetails, FormattedAuditItem } from '../../../core/utils/audi
         <div class="flex items-center gap-4">
           <!-- Text Search -->
           <div class="flex-1">
-            <input type="text" [(ngModel)]="searchTerm" (input)="onSearchInput()" placeholder="Pesquise por ação, IP ou detalhes específicos..."
+            <input type="text" [ngModel]="searchTerm()" (ngModelChange)="onSearchInput($event)" placeholder="Pesquise por acção, utilizador ou detalhes específicos..."
               class="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
           </div>
           <button (click)="clearFilters()" class="text-xs font-semibold text-gray-500 hover:text-blue-600 transition-colors uppercase tracking-wider">
@@ -92,9 +92,8 @@ import { formatAuditDetails, FormattedAuditItem } from '../../../core/utils/audi
                 <th class="px-6 py-4 w-44">Data/Hora</th>
                 <th class="px-6 py-4 w-48">Utilizador</th>
                 <th class="px-6 py-4 w-44">Empresa</th>
-                <th class="px-6 py-4">Ação</th>
+                <th class="px-6 py-4">Acção</th>
                 <th class="px-6 py-4 w-44">Categoria</th>
-                <th class="px-6 py-4 w-32">IP</th>
                 <th class="px-6 py-4 w-20 text-center">Detalhes</th>
               </tr>
             </thead>
@@ -103,8 +102,8 @@ import { formatAuditDetails, FormattedAuditItem } from '../../../core/utils/audi
                 <td class="px-6 py-4 text-xs text-gray-500 font-medium">
                   {{ log.created_at | date:'dd/MM/yyyy HH:mm:ss' }}
                 </td>
-                <td class="px-6 py-4 truncate max-w-[180px]" [title]="log.user_email">
-                  {{ log.user_email || 'Sistema' }}
+                <td class="px-6 py-4 truncate max-w-[180px]" [title]="log.user_email || ''">
+                  {{ getUserName(log) }}
                 </td>
                 <td class="px-6 py-4 truncate max-w-[160px]" [title]="log.company?.name || 'Sem Empresa'">
                   {{ log.company?.name || '—' }}
@@ -117,9 +116,6 @@ import { formatAuditDetails, FormattedAuditItem } from '../../../core/utils/audi
                     {{ getCategoryLabel(log.category) }}
                   </span>
                 </td>
-                <td class="px-6 py-4 text-xs text-gray-500">
-                  {{ log.ip_address || '—' }}
-                </td>
                 <td class="px-6 py-4 text-center">
                   <button (click)="viewDetails(log)" class="text-blue-600 hover:text-blue-800 font-bold transition-all text-xs">
                     Ver
@@ -127,7 +123,7 @@ import { formatAuditDetails, FormattedAuditItem } from '../../../core/utils/audi
                 </td>
               </tr>
               <tr *ngIf="filteredLogs().length === 0">
-                <td colspan="7" class="px-6 py-12 text-center text-gray-400">
+                <td colspan="6" class="px-6 py-12 text-center text-gray-400">
                   Nenhum registo de auditoria encontrado.
                 </td>
               </tr>
@@ -168,10 +164,14 @@ import { formatAuditDetails, FormattedAuditItem } from '../../../core/utils/audi
             <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-3">
               <div>
                 <span class="text-[10px] font-bold text-gray-400 uppercase">Utilizador</span>
-                <p class="font-semibold text-gray-800 truncate text-sm">{{ selectedLog.user_email || 'Sistema' }}</p>
+                <p class="font-semibold text-gray-800 truncate text-sm">{{ getUserName(selectedLog) }}</p>
               </div>
               <div>
-                <span class="text-[10px] font-bold text-gray-400 uppercase">Ação</span>
+                <span class="text-[10px] font-bold text-gray-400 uppercase">E-mail</span>
+                <p class="font-semibold text-gray-800 truncate text-sm" [title]="selectedLog.user_email || ''">{{ selectedLog.user_email || '—' }}</p>
+              </div>
+              <div>
+                <span class="text-[10px] font-bold text-gray-400 uppercase">Acção</span>
                 <p class="font-bold text-blue-600 text-sm">{{ selectedLog.action }}</p>
               </div>
               <div>
@@ -198,7 +198,7 @@ import { formatAuditDetails, FormattedAuditItem } from '../../../core/utils/audi
               <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Detalhes da Atividade</span>
 
               <div *ngIf="getFormattedDetails(selectedLog.details).length === 0" class="text-xs text-gray-500 italic bg-gray-50 p-4 rounded-xl border border-gray-100">
-                Nenhum detalhe adicional registado para esta ação.
+                Nenhum detalhe adicional registado para esta acção.
               </div>
 
               <div *ngIf="getFormattedDetails(selectedLog.details).length > 0" class="bg-gray-50 rounded-xl border border-gray-100 divide-y divide-gray-100 overflow-hidden text-sm">
@@ -239,12 +239,17 @@ export class AdminAuditLogsComponent implements OnInit {
   companies: any[] = [];
   isLoading = signal(false);
 
-  // Filters state
+  // Map of user_id -> profile (full_name, email) built from the loaded profiles
+  userProfiles = signal<Record<string, { full_name?: string; email?: string }>>({});
+
+  // Filters state (server-side)
   selectedUserEmail = 'all';
   selectedCompanyId = 'all';
   selectedCategory = 'all';
   startDate = '';
-  searchTerm = '';
+
+  // Client-side text search (signal so the computed list reacts to it)
+  searchTerm = signal('');
 
   // Pagination state
   currentPage = signal(1);
@@ -269,12 +274,14 @@ export class AdminAuditLogsComponent implements OnInit {
   filteredLogs = computed(() => {
     // Only client-side text search remains — category/user/company/date are server-side
     let list = this.logs();
+    const term = this.searchTerm().trim().toLowerCase();
+    const profiles = this.userProfiles();
 
-    if (this.searchTerm) {
-      const term = this.searchTerm.toLowerCase();
+    if (term) {
       list = list.filter(l =>
         (l.action || '').toLowerCase().includes(term) ||
         (l.user_email || '').toLowerCase().includes(term) ||
+        (profiles[l.user_id]?.full_name || '').toLowerCase().includes(term) ||
         (l.ip_address || '').toLowerCase().includes(term) ||
         (l.company?.name || '').toLowerCase().includes(term) ||
         JSON.stringify(l.details || {}).toLowerCase().includes(term)
@@ -301,9 +308,15 @@ export class AdminAuditLogsComponent implements OnInit {
       // Load all subscribers/profiles
       const { data: profs } = await this.supabase.db
         .from('profiles')
-        .select('email, full_name')
+        .select('id, email, full_name')
         .order('full_name', { ascending: true });
       this.profiles = profs || [];
+
+      const map: Record<string, { full_name?: string; email?: string }> = {};
+      for (const p of this.profiles) {
+        if (p.id) map[p.id] = { full_name: p.full_name, email: p.email };
+      }
+      this.userProfiles.set(map);
 
       // Load all companies
       const { data: comps } = await this.supabase.db
@@ -360,8 +373,15 @@ export class AdminAuditLogsComponent implements OnInit {
     }
   }
 
-  onSearchInput() {
+  onSearchInput(term: string) {
+    this.searchTerm.set(term ?? '');
     this.currentPage.set(1);
+  }
+
+  getUserName(log: any): string {
+    if (!log) return 'Sistema';
+    const profile = log.user_id ? this.userProfiles()[log.user_id] : undefined;
+    return profile?.full_name || log.user_email || 'Sistema';
   }
 
   onPageChange(event: PageChangeEvent) {
@@ -375,7 +395,7 @@ export class AdminAuditLogsComponent implements OnInit {
     this.selectedCompanyId = 'all';
     this.selectedCategory = 'all';
     this.startDate = '';
-    this.searchTerm = '';
+    this.searchTerm.set('');
     this.loadLogs();
   }
 
@@ -413,11 +433,12 @@ export class AdminAuditLogsComponent implements OnInit {
     const data = this.filteredLogs();
     if (data.length === 0) return;
 
-    const headers = ['Data/Hora', 'Utilizador', 'Empresa', 'NUIT', 'Ação', 'Categoria', 'IP', 'Detalhes'];
+    const headers = ['Data/Hora', 'Utilizador', 'E-mail', 'Empresa', 'NUIT', 'Acção', 'Categoria', 'IP', 'Detalhes'];
 
     const rows = data.map(l => [
       `"${new Date(l.created_at).toLocaleString('pt-MZ')}"`,
-      `"${l.user_email || 'Sistema'}"`,
+      `"${this.getUserName(l).replace(/"/g, '""')}"`,
+      `"${l.user_email || ''}"`,
       `"${(l.company?.name || '').replace(/"/g, '""')}"`,
       `"${l.company?.nuit || ''}"`,
       `"${l.action.replace(/"/g, '""')}"`,

@@ -542,10 +542,15 @@ export class TaxService {
       if (error) throw error;
 
       const declaration = this.declarations().find(d => d.id === declarationId);
+      const paidAmount = Number(amount) || 0;
+      let totalPaid = paidAmount;
+      let newStatus: string | undefined;
+
       if (declaration) {
-        const totalPaid = (declaration.payments || []).reduce((sum, p) => sum + p.amount, 0) + amount;
+        totalPaid = (declaration.payments || []).reduce((sum, p) => sum + (Number(p.amount) || 0), 0) + paidAmount;
 
         if (totalPaid >= declaration.ispc_amount) {
+          newStatus = 'paga';
           await this.updateDeclarationStatus(declarationId, 'paga', {
             payment_date: paymentDate
           });
@@ -555,7 +560,19 @@ export class TaxService {
       await this.auditLogService.log(
         'Registou Pagamento de Imposto',
         'payments',
-        { amount, paymentDate, reference, paymentMethod },
+        {
+          amount: paidAmount,
+          payment_date: paymentDate,
+          payment_method: paymentMethod,
+          reference,
+          ...(declaration ? {
+            period: `${declaration.period}º Trimestre ${declaration.year}`,
+            ispc_amount: Number(declaration.ispc_amount) || 0,
+            amount_paid: totalPaid,
+            amount_pending: Math.max((Number(declaration.ispc_amount) || 0) - totalPaid, 0),
+            status: newStatus || declaration.status
+          } : {})
+        },
         declarationId,
         declaration ? `${declaration.period}º Trim ${declaration.year}` : undefined,
         declaration?.company_id

@@ -68,7 +68,12 @@ const KEY_LABELS: Record<string, string> = {
   user_email: 'E-mail do Utilizador',
   period: 'Período',
   category: 'Categoria',
-  ip_address: 'Endereço IP'
+  ip_address: 'Endereço IP',
+  invoice_total: 'Total da Factura',
+  amount_paid: 'Total Pago',
+  amount_pending: 'Valor Pendente',
+  ispc_amount: 'Valor do Imposto (ISPC)',
+  user_name: 'Nome do Utilizador'
 };
 
 const VALUE_TRANSLATIONS: Record<string, string> = {
@@ -96,8 +101,27 @@ const VALUE_TRANSLATIONS: Record<string, string> = {
   'issued': 'Emitida',
   'paid': 'Paga',
   'cancelled': 'Cancelada',
-  'password_reset_recovery': 'Recuperação por E-mail'
+  'password_reset_recovery': 'Recuperação por E-mail',
+  // Invoice / declaration statuses
+  'rascunho': 'Rascunho',
+  'pendente': 'Pendente',
+  'paga': 'Paga',
+  'vencida': 'Vencida',
+  'anulada': 'Anulada',
+  'submetida': 'Submetida',
+  'atrasada': 'Atrasada',
+  // Invoice payment methods
+  'dinheiro': 'Dinheiro',
+  'transferencia': 'Transferência Bancária',
+  'cheque': 'Cheque',
+  'carteira_movel': 'Carteira Móvel',
+  'outro': 'Outro'
 };
+
+const CURRENCY_KEYS = [
+  'price', 'amount', 'total', 'subtotal', 'tax_amount', 'old_total', 'new_total',
+  'invoice_total', 'amount_paid', 'amount_pending', 'ispc_amount'
+];
 
 function normalizeAuditKey(key: string): string {
   return key.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
@@ -117,8 +141,13 @@ export function formatAuditValue(key: string, val: any): string {
     return val ? 'Sim' : 'Não';
   }
 
+  // Monetary values may arrive as numeric strings (e.g. "1500.00" from older entries)
+  if (CURRENCY_KEYS.includes(normalizedKey) && typeof val === 'string' && /^-?\d+(\.\d+)?$/.test(val.trim())) {
+    val = Number(val);
+  }
+
   if (typeof val === 'number') {
-    if (['price', 'amount', 'total', 'subtotal', 'tax_amount', 'old_total', 'new_total'].includes(normalizedKey)) {
+    if (CURRENCY_KEYS.includes(normalizedKey)) {
       return new Intl.NumberFormat('pt-MZ', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2

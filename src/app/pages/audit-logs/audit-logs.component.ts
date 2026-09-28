@@ -42,7 +42,7 @@ import { formatAuditDetails, FormattedAuditItem } from '../../core/utils/audit-f
           <!-- Category Filter -->
           <div class="flex flex-col space-y-1">
             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Categoria</label>
-            <select [(ngModel)]="selectedCategory" (change)="loadLogs()"
+            <select [ngModel]="selectedCategory()" (ngModelChange)="onCategoryChange($event)"
               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-orange-500 outline-none">
               <option value="all">Todas as Categorias</option>
               <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.label }}</option>
@@ -67,7 +67,7 @@ import { formatAuditDetails, FormattedAuditItem } from '../../core/utils/audit-f
         <div class="flex items-center gap-4">
           <!-- Text Search -->
           <div class="flex-1">
-            <input type="text" [(ngModel)]="searchTerm" (input)="onSearchInput()" placeholder="Pesquisar por ação, utilizador ou detalhes..."
+            <input type="text" [ngModel]="searchTerm()" (ngModelChange)="onSearchInput($event)" placeholder="Pesquisar por acção, utilizador ou detalhes..."
               class="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
           </div>
           <button (click)="clearFilters()" class="text-xs font-semibold text-slate-500 hover:text-orange-500 transition-colors uppercase tracking-wider">
@@ -90,10 +90,9 @@ import { formatAuditDetails, FormattedAuditItem } from '../../core/utils/audit-f
               <tr class="bg-slate-50 text-slate-400 text-[10px] font-bold uppercase tracking-wider border-b border-slate-100">
                 <th class="px-6 py-4 w-44">Data/Hora</th>
                 <th class="px-6 py-4 w-52">Utilizador</th>
-                <th class="px-6 py-4">Ação</th>
+                <th class="px-6 py-4">Acção</th>
                 <th class="px-6 py-4 w-44">Categoria</th>
                 <th class="px-6 py-4 w-40">Entidade</th>
-                <th class="px-6 py-4 w-36">IP</th>
                 <th class="px-6 py-4 w-20 text-center">Detalhes</th>
               </tr>
             </thead>
@@ -102,8 +101,8 @@ import { formatAuditDetails, FormattedAuditItem } from '../../core/utils/audit-f
                 <td class="px-6 py-4 font-medium text-slate-500 text-xs">
                   {{ log.created_at | date:'dd/MM/yyyy HH:mm:ss' }}
                 </td>
-                <td class="px-6 py-4 truncate max-w-[200px]" [title]="log.user_email">
-                  {{ log.user_email || 'Sistema' }}
+                <td class="px-6 py-4 truncate max-w-[200px]" [title]="log.user_email || ''">
+                  {{ getUserName(log) }}
                 </td>
                 <td class="px-6 py-4 font-semibold text-slate-800">
                   {{ log.action }}
@@ -116,9 +115,6 @@ import { formatAuditDetails, FormattedAuditItem } from '../../core/utils/audit-f
                 <td class="px-6 py-4 text-xs font-mono text-slate-500 truncate max-w-[150px]" [title]="log.entity_name || '—'">
                   {{ log.entity_name || '—' }}
                 </td>
-                <td class="px-6 py-4 text-xs text-slate-500">
-                  {{ log.ip_address || '—' }}
-                </td>
                 <td class="px-6 py-4 text-center">
                   <button (click)="viewDetails(log)" class="text-orange-500 hover:text-orange-700 font-bold transition-all text-xs focus:outline-none">
                     Ver
@@ -126,7 +122,7 @@ import { formatAuditDetails, FormattedAuditItem } from '../../core/utils/audit-f
                 </td>
               </tr>
               <tr *ngIf="filteredLogs().length === 0">
-                <td colspan="7" class="px-6 py-12 text-center text-slate-400">
+                <td colspan="6" class="px-6 py-12 text-center text-slate-400">
                   Nenhum registo de auditoria encontrado.
                 </td>
               </tr>
@@ -165,7 +161,11 @@ import { formatAuditDetails, FormattedAuditItem } from '../../core/utils/audit-f
           <div class="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span class="text-[10px] font-bold text-slate-400 uppercase">Utilizador</span>
-              <p class="font-semibold text-slate-800 mt-0.5 truncate">{{ selectedLog.user_email || 'Sistema' }}</p>
+              <p class="font-semibold text-slate-800 mt-0.5 truncate">{{ getUserName(selectedLog) }}</p>
+            </div>
+            <div>
+              <span class="text-[10px] font-bold text-slate-400 uppercase">E-mail</span>
+              <p class="font-semibold text-slate-800 mt-0.5 truncate" [title]="selectedLog.user_email || ''">{{ selectedLog.user_email || '—' }}</p>
             </div>
             <div>
               <span class="text-[10px] font-bold text-slate-400 uppercase">Endereço IP</span>
@@ -180,7 +180,7 @@ import { formatAuditDetails, FormattedAuditItem } from '../../core/utils/audit-f
               </p>
             </div>
             <div>
-              <span class="text-[10px] font-bold text-slate-400 uppercase">Ação Realizada</span>
+              <span class="text-[10px] font-bold text-slate-400 uppercase">Acção Realizada</span>
               <p class="font-semibold text-slate-800 mt-0.5">{{ selectedLog.action }}</p>
             </div>
             <div *ngIf="selectedLog.entity_name">
@@ -197,7 +197,7 @@ import { formatAuditDetails, FormattedAuditItem } from '../../core/utils/audit-f
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Dados da Atividade</span>
 
             <div *ngIf="getFormattedDetails(selectedLog.details).length === 0" class="text-xs text-slate-500 italic bg-slate-50 p-4 rounded-xl border border-slate-100">
-              Nenhum detalhe adicional registado para esta ação.
+              Nenhum detalhe adicional registado para esta acção.
             </div>
 
             <div *ngIf="getFormattedDetails(selectedLog.details).length > 0" class="bg-slate-50 rounded-xl border border-slate-100 divide-y divide-slate-100 overflow-hidden text-sm">
@@ -235,12 +235,17 @@ export class AuditLogsComponent implements OnInit {
   logs = signal<any[]>([]);
   isLoading = signal(false);
 
-  // Filters state
+  // Map of user_id -> profile (full_name, email) for the users present in the loaded logs
+  userProfiles = signal<Record<string, { full_name?: string; email?: string }>>({});
+
+  // Filters state (server-side)
   selectedCompanyId = 'all';
-  selectedCategory = 'all';
   startDate = '';
   endDate = '';
-  searchTerm = '';
+
+  // Filters state (client-side, signals so the computed list reacts to them)
+  selectedCategory = signal('all');
+  searchTerm = signal('');
 
   // Pagination state
   currentPage = signal(1);
@@ -265,16 +270,19 @@ export class AuditLogsComponent implements OnInit {
 
   filteredLogs = computed(() => {
     let list = this.logs();
+    const category = this.selectedCategory();
+    const term = this.searchTerm().trim().toLowerCase();
+    const profiles = this.userProfiles();
 
-    if (this.selectedCategory !== 'all') {
-      list = list.filter(l => l.category === this.selectedCategory);
+    if (category !== 'all') {
+      list = list.filter(l => l.category === category);
     }
 
-    if (this.searchTerm) {
-      const term = this.searchTerm.toLowerCase();
+    if (term) {
       list = list.filter(l =>
         (l.action || '').toLowerCase().includes(term) ||
         (l.user_email || '').toLowerCase().includes(term) ||
+        (profiles[l.user_id]?.full_name || '').toLowerCase().includes(term) ||
         (l.entity_name || '').toLowerCase().includes(term) ||
         (l.ip_address || '').toLowerCase().includes(term) ||
         JSON.stringify(l.details || {}).toLowerCase().includes(term)
@@ -341,6 +349,7 @@ export class AuditLogsComponent implements OnInit {
 
       this.logs.set(data || []);
       this.currentPage.set(1); // Reset to first page when data loads/filters
+      await this.loadUserProfiles(data || []);
     } catch (error) {
       console.error('Erro ao carregar registos de auditoria:', error);
     } finally {
@@ -348,7 +357,49 @@ export class AuditLogsComponent implements OnInit {
     }
   }
 
-  onSearchInput() {
+  /**
+   * Resolves the display name of the users referenced by the loaded logs.
+   * Names are read from `profiles`, so a renamed user is reflected on old entries too.
+   */
+  private async loadUserProfiles(logs: any[]) {
+    const ids = Array.from(new Set(logs.map(l => l.user_id).filter((id): id is string => !!id)));
+    if (ids.length === 0) {
+      this.userProfiles.set({});
+      return;
+    }
+
+    try {
+      const { data, error } = await this.supabase.db
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', ids);
+
+      if (error) throw error;
+
+      const map: Record<string, { full_name?: string; email?: string }> = {};
+      for (const p of data || []) {
+        map[p.id] = { full_name: p.full_name, email: p.email };
+      }
+      this.userProfiles.set(map);
+    } catch (error) {
+      console.warn('Não foi possível carregar os nomes dos utilizadores:', error);
+      this.userProfiles.set({});
+    }
+  }
+
+  getUserName(log: any): string {
+    if (!log) return 'Sistema';
+    const profile = log.user_id ? this.userProfiles()[log.user_id] : undefined;
+    return profile?.full_name || log.user_email || 'Sistema';
+  }
+
+  onCategoryChange(category: string) {
+    this.selectedCategory.set(category);
+    this.currentPage.set(1);
+  }
+
+  onSearchInput(term: string) {
+    this.searchTerm.set(term ?? '');
     this.currentPage.set(1);
   }
 
@@ -359,10 +410,10 @@ export class AuditLogsComponent implements OnInit {
 
   clearFilters() {
     this.selectedCompanyId = 'all';
-    this.selectedCategory = 'all';
+    this.selectedCategory.set('all');
     this.startDate = '';
     this.endDate = '';
-    this.searchTerm = '';
+    this.searchTerm.set('');
     this.loadLogs();
   }
 
@@ -399,11 +450,12 @@ export class AuditLogsComponent implements OnInit {
     const data = this.filteredLogs();
     if (data.length === 0) return;
 
-    const headers = ['Data/Hora', 'Utilizador', 'Ação', 'Categoria', 'Entidade', 'ID Entidade', 'IP', 'Detalhes'];
+    const headers = ['Data/Hora', 'Utilizador', 'E-mail', 'Acção', 'Categoria', 'Entidade', 'ID Entidade', 'IP', 'Detalhes'];
 
     const rows = data.map(l => [
       `"${new Date(l.created_at).toLocaleString('pt-MZ')}"`,
-      `"${l.user_email || 'Sistema'}"`,
+      `"${this.getUserName(l).replace(/"/g, '""')}"`,
+      `"${l.user_email || ''}"`,
       `"${l.action.replace(/"/g, '""')}"`,
       `"${this.getCategoryLabel(l.category)}"`,
       `"${(l.entity_name || '').replace(/"/g, '""')}"`,
