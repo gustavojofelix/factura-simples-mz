@@ -10,7 +10,13 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { InvoiceService, Invoice } from '../../core/services/invoice.service';
 import { PaymentService, Payment } from '../../core/services/payment.service';
-import { CompanyService } from '../../core/services/company.service';
+import { CompanyService, Company } from '../../core/services/company.service';
+import {
+  DocumentSettingsService,
+  DocumentBranding,
+  DEFAULT_DOCUMENT_BRANDING
+} from '../../core/services/document-settings.service';
+import { InvoiceDocumentComponent } from './documents/invoice-document.component';
 import { PaymentDialogComponent } from './payment-dialog.component';
 import { ReceiptDetailComponent } from './receipt-detail.component';
 import { InvoiceDialogComponent } from './invoice-dialog.component';
@@ -29,7 +35,8 @@ import { SupabaseService } from '../../core/services/supabase.service';
     MatChipsModule,
     MatTableModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    InvoiceDocumentComponent
   ],
   template: `
     <div class="max-w-5xl mx-auto p-6 printable-content">
@@ -39,20 +46,10 @@ import { SupabaseService } from '../../core/services/supabase.service';
           <p class="text-gray-500">A carregar...</p>
         </div>
       } @else if (invoice()) {
-        <div id="invoice-card" class="bg-white rounded-lg shadow-sm relative">
-          @if (invoice()!.status === 'anulada') {
-            <div class="watermark">ANULADO</div>
-          } @else if ((invoice()!.print_count || 0) > 1) {
-            <div class="watermark-subsequent">2ª VIA</div>
-          }
-          @if (isGeneratingPdf()) {
-            <div class="absolute inset-0 bg-white/80 z-50 flex flex-col items-center justify-center rounded-lg no-print">
-              <mat-spinner diameter="40" class="mb-2"></mat-spinner>
-              <p class="text-sm font-medium text-gray-600">A gerar PDF...</p>
-            </div>
-          }
-          <div class="p-4 sm:p-6 border-b border-gray-200/60">
-            <div class="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-4">
+        <!-- Barra de acções e estado. É interface da aplicação e fica de fora
+             do documento, para não aparecer no PDF enviado ao cliente. -->
+        <div class="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-4 no-print">
+          <div class="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-4">
               <div>
                 <div class="flex items-center gap-3">
                   <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Factura {{ invoice()!.invoice_number }}</h1>
@@ -68,13 +65,10 @@ import { SupabaseService } from '../../core/services/supabase.service';
                 </div>
                 <div class="flex flex-col gap-0.5 mt-1">
                   <p class="text-sm font-medium text-slate-700">Data e Hora de Emissão: {{ formatDateTime(invoice()!.created_at || invoice()!.date) }}</p>
-                  <p class="text-xs text-slate-400 flex items-center">
-                    <mat-icon class="!text-[12px] !w-3 !h-3 !mr-1">person</mat-icon>
-                    Emitido por: {{ invoice()!.issuer_name || '-' }}
-                  </p>
+                  <p class="text-xs text-slate-400">Emitido por: {{ invoice()!.issuer_name || '-' }}</p>
                 </div>
               </div>
-              <div class="grid grid-cols-2 lg:flex lg:flex-wrap lg:flex-row gap-2 w-full lg:w-auto no-print">
+              <div class="grid grid-cols-2 lg:flex lg:flex-wrap lg:flex-row gap-2 w-full lg:w-auto">
                 @if (invoice()!.status === 'rascunho') {
                   <button mat-raised-button class="!bg-ispc-orange !text-white col-span-2 lg:col-span-1 w-full lg:w-auto !text-xs sm:!text-sm" (click)="emitDraft()">
                     <mat-icon class="!text-xs mr-1">check_circle</mat-icon>
@@ -127,137 +121,26 @@ import { SupabaseService } from '../../core/services/supabase.service';
             </div>
           </div>
 
-          <div class="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-            <div class="flex items-start gap-4">
-              @if (company()?.logo_url) {
-                <div class="w-16 h-16 sm:w-24 sm:h-24 bg-gray-50 rounded border border-gray-100 p-2 shrink-0">
-                  <img [src]="company()!.logo_url" alt="Logo" class="w-full h-full object-contain">
-                </div>
-              }
-              <div>
-                <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">EMPRESA</h3>
-                @if (company()) {
-                  <p class="font-bold text-slate-800 text-sm sm:text-base">{{ company()!.name }}</p>
-                  @if (company()!.nuit) {
-                    <p class="text-xs sm:text-sm text-gray-500 mt-1">NUIT: {{ company()!.nuit }}</p>
-                  }
-                  @if (company()!.address) {
-                    <p class="text-xs sm:text-sm text-gray-500">{{ company()!.address }}</p>
-                  }
-                }
+          <!-- Documento fiscal. É exactamente isto que sai em PDF e segue
+               anexo ao e-mail do cliente. Nada de interface da aplicação
+               daqui para dentro. -->
+          <div id="invoice-document" class="bg-white rounded-lg shadow-sm relative overflow-hidden">
+            @if (isGeneratingPdf()) {
+              <div class="absolute inset-0 bg-white/80 z-50 flex flex-col items-center justify-center no-print">
+                <mat-spinner diameter="40" class="mb-2"></mat-spinner>
+                <p class="text-sm font-medium text-gray-600">A gerar PDF...</p>
               </div>
-            </div>
-
-            <div>
-              <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">CLIENTE</h3>
-              @if (invoice()!.client) {
-                <p class="font-bold text-slate-800 text-sm sm:text-base">{{ invoice()!.client!.name }}</p>
-                @if (invoice()!.client!.document_type || invoice()!.client!.nuit) {
-                  <p class="text-xs sm:text-sm text-gray-500 mt-1">{{ invoice()!.client!.document_type || 'NUIT: ' + invoice()!.client!.nuit }}</p>
-                }
-                @if (invoice()!.client!.address) {
-                  <p class="text-xs sm:text-sm text-gray-500">{{ invoice()!.client!.address }}</p>
-                }
-                @if (invoice()!.client!.phone) {
-                  <p class="text-xs sm:text-sm text-gray-500">Tel: {{ invoice()!.client!.phone }}</p>
-                }
-                @if (invoice()!.client!.email) {
-                  <p class="text-xs sm:text-sm text-gray-500">{{ invoice()!.client!.email }}</p>
-                }
-              }
-            </div>
+            }
+            <app-invoice-document
+              [invoice]="invoice()!"
+              [company]="documentCompany()"
+              [branding]="branding()">
+            </app-invoice-document>
           </div>
 
-          <div class="p-4 sm:p-6 border-t border-gray-200">
-            <h3 class="text-base sm:text-lg font-semibold mb-4">Itens da Factura</h3>
-            <div class="overflow-x-auto custom-scrollbar border border-slate-100 rounded-xl">
-              <table class="w-full text-sm">
-                <thead class="bg-gray-50">
-                  <tr class="text-xs sm:text-sm">
-                    <th class="text-left p-3 font-semibold text-gray-700 whitespace-nowrap">Produto/Serviço</th>
-                    <th class="text-center p-3 font-semibold text-gray-700 whitespace-nowrap">Quantidade</th>
-                    <th class="text-right p-3 font-semibold text-gray-700 whitespace-nowrap">Preço Unit.</th>
-                    <th class="text-right p-3 font-semibold text-gray-700 whitespace-nowrap">Subtotal</th>
-                    <th class="text-right p-3 font-semibold text-gray-700 whitespace-nowrap">Total</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                  @for (item of invoice()!.items || []; track item.id) {
-                    <tr class="text-xs sm:text-sm">
-                      <td class="p-3 whitespace-nowrap">{{ item.product_name }}</td>
-                      <td class="p-3 text-center whitespace-nowrap">{{ item.quantity }}</td>
-                      <td class="p-3 text-right whitespace-nowrap">{{ formatCurrency(item.unit_price) }}</td>
-                      <td class="p-3 text-right whitespace-nowrap">{{ formatCurrency(item.subtotal) }}</td>
-                      <td class="p-3 text-right font-medium whitespace-nowrap">{{ formatCurrency(item.total) }}</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div class="p-4 sm:p-6 border-t border-gray-200 bg-gray-50">
-            <div class="max-w-md ml-auto space-y-2">
-              <div class="flex justify-between text-base sm:text-lg font-semibold">
-                <span>Total:</span>
-                <span>{{ formatCurrency(invoice()!.total) }}</span>
-              </div>
-              @if (invoice()!.amount_paid > 0) {
-                <div class="flex justify-between text-xs sm:text-sm text-green-600 font-semibold">
-                  <span>Pago:</span>
-                  <span>{{ formatCurrency(invoice()!.amount_paid) }}</span>
-                </div>
-                <div class="flex justify-between text-xs sm:text-sm font-semibold" [class.text-red-600]="invoice()!.amount_pending > 0">
-                  <span>Pendente:</span>
-                  <span>{{ formatCurrency(invoice()!.amount_pending) }}</span>
-                </div>
-              }
-            </div>
-          </div>
-
-          @if (invoice()!.notes) {
-            <div class="p-4 sm:p-6 border-t border-gray-200">
-              <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">OBSERVAÇÕES</h3>
-              <p class="text-sm text-gray-600">{{ invoice()!.notes }}</p>
-            </div>
-          }
-
-          @if (company()?.bank_name) {
-            <div class="p-4 sm:p-6 border-t border-gray-200 bg-blue-50/20">
-              <h3 class="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-3 flex items-center">
-                <span class="mr-2">🏛️</span>
-                COORDENADAS BANCÁRIAS
-              </h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                @if (company()?.bank_name) {
-                  <div>
-                    <span class="text-gray-400 block text-xs uppercase mb-1">Banco</span>
-                    <span class="font-medium text-gray-800">{{ company()?.bank_name }}</span>
-                  </div>
-                }
-                @if (company()?.bank_account) {
-                  <div>
-                    <span class="text-gray-400 block text-xs uppercase mb-1">Conta</span>
-                    <span class="font-medium text-gray-800">{{ company()?.bank_account }}</span>
-                  </div>
-                }
-                @if (company()?.bank_iban) {
-                  <div class="col-span-1 md:col-span-2">
-                    <span class="text-gray-400 block text-xs uppercase mb-1">IBAN</span>
-                    <span class="font-medium text-gray-800 break-all">{{ company()?.bank_iban }}</span>
-                  </div>
-                }
-                @if (company()?.bank_swift) {
-                  <div>
-                    <span class="text-gray-400 block text-xs uppercase mb-1">SWIFT/BIC</span>
-                    <span class="font-medium text-gray-800">{{ company()?.bank_swift }}</span>
-                  </div>
-                }
-              </div>
-            </div>
-          }
-
-          <div class="p-4 sm:p-6 border-t border-gray-200">
+          <!-- Histórico de pagamentos. Interface da aplicação, fora do documento. -->
+          <div class="bg-white rounded-lg shadow-sm mt-4 no-print">
+            <div class="p-4 sm:p-6">
             <div class="flex justify-between items-center mb-4">
               <h3 class="text-base sm:text-lg font-semibold">Pagamentos</h3>
               @if (invoice()!.status !== 'rascunho' && invoiceService.canManagePayments(invoice()!)) {
@@ -393,63 +276,10 @@ import { SupabaseService } from '../../core/services/supabase.service';
         print-color-adjust: exact !important;
       }
 
-      .watermark-print {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) rotate(-45deg);
-    font-size: 190px;
-    font-weight: 800;
-    color: rgba(220, 38, 38, 0.5);
-    z-index: 100;
-    pointer-events: none;
-    white-space: nowrap;
-  }
-
-
-      .only-print {
-        display: block !important;
-      }
     }
 
-      .watermark {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%) rotate(-45deg);
-        font-size: 12vw;
-        font-weight: 800;
-        color: rgba(220, 38, 38, 0.12);
-        z-index: 10;
-        pointer-events: none;
-        white-space: nowrap;
-        user-select: none;
-      }
-      .watermark-subsequent {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%) rotate(-45deg);
-        font-size: 10vw;
-        font-weight: 800;
-        color: rgba(217, 119, 6, 0.12);
-        z-index: 10;
-        pointer-events: none;
-        white-space: nowrap;
-        user-select: none;
-      }
-      @media (min-width: 768px) {
-        .watermark {
-          font-size: 120px;
-        }
-        .watermark-subsequent {
-          font-size: 100px;
-        }
-      }
-
-    .only-print {
-      display: none;
-    }
+    /* As marcas de água vivem agora no componente do documento, que é o que
+       sai em PDF. Ver documents/document-skins.css. */
   `]
 })
 export class InvoiceDetailComponent {
@@ -463,10 +293,21 @@ export class InvoiceDetailComponent {
   private companyService = inject(CompanyService);
   private pdfService = inject(PdfService);
   private supabase = inject(SupabaseService);
+  private documentSettings = inject(DocumentSettingsService);
 
   invoice = signal<Invoice | null>(null);
   payments = signal<Payment[]>([]);
-  company = this.companyService.activeCompany;
+
+  /**
+   * A empresa que emitiu esta factura, que não é necessariamente a empresa
+   * activa. Quem tem mais do que uma empresa e abre uma factura de outra via
+   * pesquisa ou ligação directa veria, de outro modo, a marca e o NUIT errados
+   * num documento fiscal.
+   */
+  documentCompany = signal<Company | null>(null);
+
+  /** Personalização da empresa emissora. */
+  branding = signal<DocumentBranding>(DEFAULT_DOCUMENT_BRANDING);
   isLoading = signal(true);
   isGeneratingPdf = signal(false);
 
@@ -489,6 +330,8 @@ export class InvoiceDetailComponent {
       const payments = await this.paymentService.loadPaymentsByInvoice(invoiceId);
       this.payments.set(payments);
 
+      await this.loadIssuingCompany(invoice);
+
       // Check for print parameter
       const print = this.route.snapshot.queryParamMap.get('print');
       if (print) {
@@ -497,6 +340,36 @@ export class InvoiceDetailComponent {
     }
 
     this.isLoading.set(false);
+  }
+
+  /**
+   * Carrega a empresa emissora e a respectiva personalização. Usa a empresa
+   * que já está em memória quando possível e só vai à base de dados se a
+   * factura for de uma empresa que não esteja na lista carregada.
+   */
+  private async loadIssuingCompany(invoice: Invoice) {
+    const knownCompany = this.companyService.companies().find(c => c.id === invoice.company_id)
+      ?? (this.companyService.activeCompany()?.id === invoice.company_id
+        ? this.companyService.activeCompany()
+        : null);
+
+    if (knownCompany) {
+      this.documentCompany.set(knownCompany);
+    } else {
+      try {
+        const { data } = await this.supabase.db
+          .from('companies')
+          .select('*')
+          .eq('id', invoice.company_id)
+          .maybeSingle();
+        this.documentCompany.set((data as Company) ?? null);
+      } catch (error) {
+        console.error('Erro ao carregar a empresa emissora:', error);
+        this.documentCompany.set(null);
+      }
+    }
+
+    this.branding.set(await this.documentSettings.resolve(invoice.company_id));
   }
 
   openPaymentDialog() {
@@ -573,11 +446,37 @@ export class InvoiceDetailComponent {
     this.invoice.update(inv => inv ? { ...inv, print_count: newCount } : null);
   }
 
+  /**
+   * Opções de geração do PDF para impressão e descarregamento.
+   *
+   * As vias e o contador de reimpressões são coisas diferentes e ambas têm de
+   * continuar legíveis. As vias dizem quantas cópias saem numa emissão. O
+   * contador diz quantas vezes a factura já foi materializada, e é o que faz
+   * aparecer a marca de água de segunda via. Emitir em triplicado conta como
+   * uma impressão, não três.
+   */
+  private pdfOptionsForPrinting() {
+    const copies = Math.min(3, Math.max(1, this.branding().invoice_copies || 1));
+    const isReprint = (this.invoice()?.print_count || 0) > 1;
+    const base = ['ORIGINAL', 'DUPLICADO', 'TRIPLICADO'];
+
+    return {
+      copies,
+      copyLabels: copies > 1 || isReprint
+        ? base.slice(0, copies).map(label => isReprint ? `2ª VIA — ${label}` : label)
+        : undefined
+    };
+  }
+
   async printInvoice() {
     try {
       this.isGeneratingPdf.set(true);
       await this.trackPrint();
-      const blob = await this.pdfService.generatePdf('invoice-card', this.invoice()!.invoice_number);
+      const blob = await this.pdfService.generatePdf(
+        'invoice-document',
+        this.invoice()!.invoice_number,
+        this.pdfOptionsForPrinting()
+      );
       const url = window.URL.createObjectURL(blob);
       const printWindow = window.open(url);
       if (printWindow) {
@@ -585,11 +484,18 @@ export class InvoiceDetailComponent {
           printWindow.print();
         };
       } else {
-        window.print();
+        this.snackBar.open(
+          'Não foi possível abrir a janela de impressão. Verifique se o navegador está a bloquear janelas.',
+          'Fechar',
+          { duration: 5000 }
+        );
       }
     } catch (error) {
       console.error('Erro ao preparar impressão:', error);
-      window.print();
+      // Mandar imprimir a página inteira deixou de ser um recurso válido: as
+      // regras de impressão já não alcançam o documento, que passou a ser um
+      // componente próprio, e sairia deformado.
+      this.snackBar.open('Não foi possível preparar a impressão.', 'Fechar', { duration: 4000 });
     } finally {
       this.isGeneratingPdf.set(false);
     }
@@ -602,7 +508,11 @@ export class InvoiceDetailComponent {
     try {
       this.isGeneratingPdf.set(true);
       await this.trackPrint();
-      const blob = await this.pdfService.generatePdf('invoice-card', invoice.invoice_number);
+      const blob = await this.pdfService.generatePdf(
+        'invoice-document',
+        invoice.invoice_number,
+        this.pdfOptionsForPrinting()
+      );
       this.pdfService.downloadPdf(blob, `Factura_${invoice.invoice_number}`);
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
@@ -657,7 +567,7 @@ export class InvoiceDetailComponent {
 
     try {
       this.isGeneratingPdf.set(true);
-      const blob = await this.pdfService.generatePdf('invoice-card', invoice.invoice_number);
+      const blob = await this.pdfService.generatePdf('invoice-document', invoice.invoice_number);
       
       const base64pdf = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -666,24 +576,53 @@ export class InvoiceDetailComponent {
         reader.onerror = reject;
       });
 
+      // O destinatário e os dados apresentados no e-mail são resolvidos no
+      // servidor a partir da própria factura. Aqui só se identifica o documento.
       const { data, error } = await this.supabase.client.functions.invoke('send-invoice-email', {
-        body: { 
-          to_email: invoice.client.email,
-          client_name: invoice.client.name,
-          invoice_number: invoice.invoice_number,
-          pdf_base64: base64pdf 
+        body: {
+          invoice_id: invoice.id,
+          pdf_base64: base64pdf
         }
       });
 
-      if (error) throw error;
-      
+      if (error) {
+        throw new Error(await this.extrairMensagemDeErro(error));
+      }
+      if (data && data.success === false) {
+        throw new Error(data.error || 'O envio foi recusado.');
+      }
+
       this.snackBar.open(`E-mail com a factura ${invoice.invoice_number} enviado com sucesso para ${invoice.client.email}!`, 'Fechar', { duration: 5000 });
     } catch (error) {
       console.error('Erro ao processar e-mail:', error);
-      this.snackBar.open('Ocorreu um erro ao comunicar com os nossos serviços de e-mail.', 'Fechar', { duration: 4000 });
+      const mensagem = error instanceof Error && error.message
+        ? error.message
+        : 'Ocorreu um erro ao enviar o e-mail.';
+      this.snackBar.open(mensagem, 'Fechar', { duration: 6000 });
     } finally {
       this.isGeneratingPdf.set(false);
     }
+  }
+
+  /**
+   * Quando a função recusa o pedido, o supabase-js devolve um erro genérico e
+   * guarda a resposta real em `context`. Sem isto, o utilizador via sempre a
+   * mesma mensagem, independentemente do motivo.
+   */
+  private async extrairMensagemDeErro(error: unknown): Promise<string> {
+    const contexto = (error as { context?: unknown })?.context;
+
+    if (contexto instanceof Response) {
+      try {
+        const corpo = await contexto.clone().json();
+        if (corpo?.error) return corpo.error;
+      } catch {
+        // Resposta sem corpo JSON: fica a mensagem genérica.
+      }
+    }
+
+    if (error instanceof Error && error.message) return error.message;
+    return 'Ocorreu um erro ao enviar o e-mail.';
   }
 
   goBack() {

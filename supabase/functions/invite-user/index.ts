@@ -67,14 +67,24 @@ serve(async (req) => {
       }
     }
 
-    // Send email notification/invite using Nodemailer
+    // Send email notification/invite using Nodemailer.
+    // As credenciais vêm da configuração da função, nunca do código.
+    const smtpHost = Deno.env.get("SMTP_HOST")
+    const smtpUser = Deno.env.get("SMTP_USER")
+    const smtpPass = Deno.env.get("SMTP_PASS")
+    const smtpPort = Number(Deno.env.get("SMTP_PORT") ?? "465")
+
+    if (!smtpHost || !smtpUser || !smtpPass) {
+      throw new Error("O serviço de e-mail não está configurado (SMTP_HOST, SMTP_USER, SMTP_PASS).")
+    }
+
     const transporter = nodemailer.createTransport({
-      host: "mail.ispcfacil.co.mz",
-      port: 465,
-      secure: true,
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465,
       auth: {
-        user: "notifications@ispcfacil.co.mz",
-        pass: "&fF1;s*QJ$dJ",
+        user: smtpUser,
+        pass: smtpPass,
       },
     })
 
@@ -128,7 +138,7 @@ serve(async (req) => {
     `
 
     const mailOptions = {
-      from: '"ISPC Fácil" <notifications@ispcfacil.co.mz>',
+      from: `"ISPC Fácil" <${Deno.env.get("SMTP_FROM_EMAIL") ?? smtpUser}>`,
       to: cleanEmail,
       subject: `[ISPC Fácil] ${titleText}`,
       html: htmlContent,

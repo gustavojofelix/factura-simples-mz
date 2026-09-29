@@ -16,12 +16,8 @@ const SISLOG_URL     = "https://sms2q.com/mobile/reference/request";
 const SISLOG_USER    = "LTSMOZ";
 const SISLOG_API_KEY = "ZLYMYJcEOmuVdiZkWKzLvPPd4LMVTKUs";
 
-const SMTP_HOST    = "mail.ispcfacil.co.mz";
-const SMTP_PORT    = 465;
-const SMTP_USER    = "notifications@ispcfacil.co.mz";
-const SMTP_PASS    = "&fF1;s*QJ$dJ";
-const FROM_ADDRESS = '"ISPC Fácil" <notifications@ispcfacil.co.mz>';
-const ADMIN_EMAIL  = "info@ispcfacil.com";
+// Esta função não envia e-mail. As constantes SMTP que aqui existiam eram
+// código morto e apenas repetiam a palavra-passe do servidor de correio.
 
 
 serve(async (req) => {

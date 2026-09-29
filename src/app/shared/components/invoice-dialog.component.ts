@@ -14,6 +14,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ClientService, Client } from '../../core/services/client.service';
 import { ProductService, Product } from '../../core/services/product.service';
 import { InvoiceService, InvoiceItem, Invoice } from '../../core/services/invoice.service';
+import { CompanyService } from '../../core/services/company.service';
+import { DocumentSettingsService } from '../../core/services/document-settings.service';
 import { nuitValidator } from '../../core/validators/nuit.validator';
 
 @Component({
@@ -183,6 +185,8 @@ export class InvoiceDialogComponent implements OnInit {
     private invoiceService: InvoiceService,
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
+    private companyService: CompanyService,
+    private documentSettings: DocumentSettingsService,
     @Inject(MAT_DIALOG_DATA) public data: { invoice?: Invoice }
   ) {
     this.step1Form = this.fb.group({
@@ -201,6 +205,18 @@ export class InvoiceDialogComponent implements OnInit {
     }
   }
 
+  private async aplicarObservacoesPorOmissao() {
+    const companyId = this.companyService.activeCompany()?.id;
+    if (!companyId) return;
+
+    const branding = await this.documentSettings.resolve(companyId);
+    const texto = branding.default_observations?.trim();
+
+    if (texto && !this.step2Form.value.notes) {
+      this.step2Form.patchValue({ notes: texto });
+    }
+  }
+
   ngOnInit() {
     this.clientService.loadClients().then(() => {
       // Patch client if editing
@@ -212,6 +228,13 @@ export class InvoiceDialogComponent implements OnInit {
     });
 
     this.productService.loadProducts();
+
+    // Numa factura nova, as observações por omissão da empresa pré-preenchem o
+    // campo. Ficam gravadas no documento e continuam editáveis, por isso mudar
+    // a definição mais tarde não altera facturas já emitidas.
+    if (!this.data?.invoice) {
+      void this.aplicarObservacoesPorOmissao();
+    }
 
     if (this.data?.invoice) {
       // Load items

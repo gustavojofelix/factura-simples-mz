@@ -1,0 +1,483 @@
+/*
+  Folhas de estilo dos modelos de documento.
+
+  Regras que não podem ser quebradas:
+
+  1. Nenhuma função de cor moderna. Nada de color-mix, oklch, lab ou
+     transparências percentuais em variáveis. O html2canvas 1.4.1 rebenta a
+     analisá-las e a limpeza feita no serviço de PDF removeria a declaração.
+     As misturas e os contrastes são calculados em TypeScript, em document-theme.ts.
+
+  2. Nenhuma unidade relativa à janela. Nada de vw nem vh. O documento é
+     capturado para uma folha A4 e não para o ecrã.
+
+  3. Cada variável de marca tem valor de recurso. Se o atributo de estilo se
+     perder, o documento cai no laranja actual em vez de ficar sem cor.
+*/
+
+.doc {
+  position: relative;
+  background: #ffffff;
+  color: #1f2937;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ---------------------------------------------------------------- Marcas de água */
+
+.doc-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  font-weight: 800;
+  z-index: 10;
+  pointer-events: none;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.doc-watermark--annulled {
+  font-size: 120px;
+  color: rgba(220, 38, 38, 0.12);
+}
+
+.doc-watermark--reprint {
+  font-size: 100px;
+  color: rgba(217, 119, 6, 0.12);
+}
+
+/* ---------------------------------------------------------------- Estrutura comum */
+
+.doc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 24px;
+  border-bottom: 1px solid rgba(229, 231, 235, 0.6);
+}
+
+.doc-caption {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--doc-brand, #f16c39);
+}
+
+.doc-number {
+  margin: 2px 0 6px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.doc-issued {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #334155;
+}
+
+.doc-issuer {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.doc-logo {
+  flex-shrink: 0;
+  width: 96px;
+  height: 96px;
+  padding: 8px;
+  background: #f9fafb;
+  border: 1px solid #f3f4f6;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.doc-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.doc-parties {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  padding: 24px;
+}
+
+.doc-section-title {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9ca3af;
+}
+
+.doc-party__name {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.doc-party__line {
+  margin: 2px 0 0;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.doc-items {
+  padding: 24px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.doc-block-title {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.doc-table-wrap {
+  border: 1px solid #f1f5f9;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.doc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.doc-table th {
+  padding: 12px;
+  font-weight: 600;
+  color: #374151;
+  background: #f9fafb;
+  white-space: nowrap;
+}
+
+.doc-table td {
+  padding: 12px;
+  white-space: nowrap;
+}
+
+.doc-table tbody tr {
+  border-top: 1px solid #f3f4f6;
+}
+
+.doc-table tbody tr:first-child {
+  border-top: none;
+}
+
+.doc-table .is-left { text-align: left; }
+.doc-table .is-center { text-align: center; }
+.doc-table .is-right { text-align: right; }
+.doc-table .is-strong { font-weight: 500; }
+
+.doc-totals {
+  padding: 24px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.doc-totals__inner {
+  max-width: 320px;
+  margin-left: auto;
+}
+
+.doc-total-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.doc-total-line--main {
+  margin-top: 0;
+  font-size: 18px;
+}
+
+.doc-total-line--main .doc-total-value {
+  color: var(--doc-brand, #f16c39);
+}
+
+.doc-total-line--paid {
+  color: #16a34a;
+}
+
+.doc-total-line--due {
+  color: #dc2626;
+}
+
+.doc-notes {
+  padding: 24px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.doc-notes__text {
+  margin: 0;
+  font-size: 14px;
+  color: #4b5563;
+  white-space: pre-line;
+}
+
+.doc-bank {
+  padding: 24px;
+  border-top: 1px solid #e5e7eb;
+  background: var(--doc-brand-soft, #fef5f1);
+}
+
+.doc-bank .doc-section-title {
+  color: var(--doc-brand, #f16c39);
+}
+
+.doc-bank__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  font-size: 14px;
+}
+
+.doc-bank__wide {
+  grid-column: span 2;
+}
+
+.doc-bank__label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #9ca3af;
+}
+
+.doc-bank__value {
+  font-weight: 500;
+  color: #1f2937;
+  word-break: break-all;
+}
+
+.doc-footer {
+  padding: 24px;
+  border-top: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.doc-footer__thanks {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--doc-accent, #332d2a);
+}
+
+.doc-footer__text {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+/* ================================================================ CLÁSSICO
+   Reproduz o aspecto que as facturas sempre tiveram. A cor da marca entra
+   apenas na legenda do documento e no valor total.
+   ================================================================ */
+
+.doc--classico .doc-number {
+  color: #111827;
+}
+
+/* ================================================================ MODERNO
+   Faixa superior na cor da marca, logótipo à direita sobre a faixa, títulos
+   na cor da marca e tabela às riscas.
+   ================================================================ */
+
+.doc--moderno .doc-header {
+  background: var(--doc-brand, #f16c39);
+  color: var(--doc-on-brand, #ffffff);
+  border-bottom: none;
+  padding: 28px 24px;
+}
+
+.doc--moderno .doc-caption,
+.doc--moderno .doc-number,
+.doc--moderno .doc-issued,
+.doc--moderno .doc-issuer {
+  color: var(--doc-on-brand, #ffffff);
+}
+
+.doc--moderno .doc-issuer {
+  opacity: 0.85;
+}
+
+.doc--moderno .doc-logo {
+  background: #ffffff;
+  border: none;
+  border-radius: 8px;
+}
+
+.doc--moderno .doc-section-title {
+  color: var(--doc-brand, #f16c39);
+  border-bottom: 2px solid var(--doc-brand-tint, #f8c0a6);
+  padding-bottom: 4px;
+}
+
+.doc--moderno .doc-parties,
+.doc--moderno .doc-items,
+.doc--moderno .doc-totals,
+.doc--moderno .doc-notes,
+.doc--moderno .doc-bank,
+.doc--moderno .doc-footer {
+  border-top: none;
+}
+
+.doc--moderno .doc-totals {
+  background: transparent;
+}
+
+.doc--moderno .doc-totals__inner {
+  background: var(--doc-brand-soft, #fef5f1);
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+
+.doc--moderno .doc-table th {
+  background: var(--doc-brand, #f16c39);
+  color: var(--doc-on-brand, #ffffff);
+}
+
+.doc--moderno .doc-table tbody tr:nth-child(even) {
+  background: #fafafa;
+}
+
+.doc--moderno .doc-footer {
+  background: var(--doc-accent, #332d2a);
+}
+
+.doc--moderno .doc-footer__thanks {
+  color: var(--doc-on-accent, #ffffff);
+}
+
+.doc--moderno .doc-footer__text {
+  color: #c9c2be;
+}
+
+/* ================================================================ MINIMALISTA
+   Sem fundos nem faixas. Filetes finos, números alinhados e o mínimo de tinta.
+   ================================================================ */
+
+.doc--minimalista {
+  color: #111111;
+}
+
+.doc--minimalista .doc-header {
+  border-bottom: 2px solid var(--doc-brand, #f16c39);
+  padding-bottom: 16px;
+}
+
+.doc--minimalista .doc-logo {
+  width: 72px;
+  height: 72px;
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+.doc--minimalista .doc-number {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.doc--minimalista .doc-section-title {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: #6b7280;
+}
+
+.doc--minimalista .doc-table-wrap {
+  border: none;
+  border-radius: 0;
+}
+
+.doc--minimalista .doc-table th {
+  background: transparent;
+  border-bottom: 1px solid #111111;
+  padding: 8px 12px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #111111;
+}
+
+.doc--minimalista .doc-table td {
+  padding: 8px 12px;
+}
+
+.doc--minimalista .doc-table tbody tr {
+  border-top: none;
+  border-bottom: 1px solid #ececec;
+}
+
+.doc--minimalista .doc-table .is-right,
+.doc--minimalista .doc-table .is-center {
+  font-variant-numeric: tabular-nums;
+}
+
+.doc--minimalista .doc-totals {
+  background: transparent;
+  border-top: none;
+  padding-top: 16px;
+}
+
+.doc--minimalista .doc-totals__inner {
+  border-top: 1px solid #111111;
+  padding-top: 12px;
+}
+
+.doc--minimalista .doc-bank {
+  background: transparent;
+}
+
+.doc--minimalista .doc-parties,
+.doc--minimalista .doc-items,
+.doc--minimalista .doc-notes,
+.doc--minimalista .doc-bank,
+.doc--minimalista .doc-footer {
+  border-top: 1px solid #ececec;
+}
+
+.doc--minimalista .doc-footer__thanks {
+  font-weight: 500;
+}
+
+/* ---------------------------------------------------------------- Ecrãs estreitos
+   A captura para PDF usa sempre a disposição larga. Estas regras servem apenas
+   a leitura no telemóvel.
+*/
+
+@media (max-width: 640px) {
+  .doc-parties,
+  .doc-bank__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .doc-bank__wide {
+    grid-column: span 1;
+  }
+
+  .doc-header {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+  }
+
+  .doc-watermark--annulled { font-size: 72px; }
+  .doc-watermark--reprint { font-size: 60px; }
+}

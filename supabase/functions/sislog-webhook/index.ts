@@ -354,11 +354,23 @@ serve(async (req) => {
           `[SislogWebhook] Sending active subscription email to owner: ${userEmail}`,
         );
 
+        // As credenciais vêm da configuração da função, nunca do código.
+        const smtpHost = Deno.env.get("SMTP_HOST");
+        const smtpUser = Deno.env.get("SMTP_USER");
+        const smtpPass = Deno.env.get("SMTP_PASS");
+        const smtpPort = Number(Deno.env.get("SMTP_PORT") ?? "465");
+
+        if (!smtpHost || !smtpUser || !smtpPass) {
+          throw new Error(
+            "O serviço de e-mail não está configurado (SMTP_HOST, SMTP_USER, SMTP_PASS).",
+          );
+        }
+
         const transporter = nodemailer.createTransport({
-          host: "mail.ispcfacil.co.mz",
-          port: 465,
-          secure: true,
-          auth: { user: "notifications@ispcfacil.co.mz", pass: "&fF1;s*QJ$dJ" },
+          host: smtpHost,
+          port: smtpPort,
+          secure: smtpPort === 465,
+          auth: { user: smtpUser, pass: smtpPass },
         });
 
         const amountMZN = Number(payment.amount).toLocaleString("pt-MZ", {
@@ -400,9 +412,11 @@ serve(async (req) => {
           </div>`;
 
         await transporter.sendMail({
-          from: '"ISPC Fácil" <notifications@ispcfacil.co.mz>',
+          from: `"ISPC Fácil" <${
+            Deno.env.get("SMTP_FROM_EMAIL") ?? smtpUser
+          }>`,
           to: userEmail,
-          cc: "info@ispcfacil.com",
+          cc: Deno.env.get("ADMIN_NOTIFICATION_EMAIL") ?? "info@ispcfacil.com",
           subject:
             "✅ [ISPC Fácil] Subscrição Activada – Confirmação de Pagamento",
           html: htmlContent,

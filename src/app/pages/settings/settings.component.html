@@ -443,6 +443,30 @@
           </mat-card>
         </div>
       </mat-tab>
+
+      <mat-tab label="Documentos">
+        <div class="p-6">
+          <h2 class="text-xl font-semibold mb-1">Personalização de Documentos</h2>
+          <p class="text-gray-600 text-sm mb-4">
+            Defina o aspecto das facturas e recibos e o texto das mensagens enviadas aos seus clientes.
+            As definições aplicam-se a todos os documentos da empresa escolhida.
+          </p>
+
+          <div class="mb-4">
+            <mat-form-field appearance="outline" class="w-full md:w-1/2">
+              <mat-label>Selecione uma Empresa</mat-label>
+              <mat-select [(value)]="selectedCompanyId" (selectionChange)="loadCompanySettings($event.value)">
+                @for (company of companies(); track company.id) {
+                  <mat-option [value]="company.id">{{ company.name }}</mat-option>
+                }
+              </mat-select>
+              <mat-hint>Selecione a empresa a personalizar</mat-hint>
+            </mat-form-field>
+          </div>
+
+          <app-document-settings-tab [companyId]="selectedCompanyId()"></app-document-settings-tab>
+        </div>
+      </mat-tab>
     </mat-tab-group>
   </div>
 </div>

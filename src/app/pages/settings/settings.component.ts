@@ -24,6 +24,7 @@ import { UserCompanyDialogComponent } from '../../shared/components/user-company
 import { PaymentDialogComponent } from '../../shared/components/payment-dialog/payment-dialog.component';
 import { ActivityService } from '../../core/services/activity.service';
 import { SubscriptionLimitDialogComponent } from '../../shared/components/subscription-limit-dialog.component';
+import { DocumentSettingsTabComponent } from './document-settings-tab/document-settings-tab.component';
 
 @Component({
   selector: 'app-settings',
@@ -44,7 +45,8 @@ import { SubscriptionLimitDialogComponent } from '../../shared/components/subscr
     MatDialogModule,
     MatSnackBarModule,
     MatTooltipModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    DocumentSettingsTabComponent
   ],
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.css']
