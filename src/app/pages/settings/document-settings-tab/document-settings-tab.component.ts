@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal, viewChildren } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -26,6 +26,7 @@ import {
 import { InvoiceDocumentComponent } from '../../../shared/components/documents/invoice-document.component';
 import { ReceiptDocumentComponent } from '../../../shared/components/documents/receipt-document.component';
 import { ClientStatementDocumentComponent } from '../../../shared/components/documents/client-statement-document.component';
+import { RichTextEditorComponent } from '../../../shared/components/rich-text-editor.component';
 import {
   SAMPLE_INVOICE,
   SAMPLE_PAYMENT,
@@ -53,6 +54,9 @@ const EMAIL_TOKENS = [
 
 const MAX_LOGO_BYTES = 2 * 1024 * 1024;
 
+/** Tecto do corpo das mensagens, já com as etiquetas de formatação. */
+const MAX_EMAIL_BODY_LENGTH = 5000;
+
 @Component({
   selector: 'app-document-settings-tab',
   standalone: true,
@@ -71,7 +75,8 @@ const MAX_LOGO_BYTES = 2 * 1024 * 1024;
     MatProgressSpinnerModule,
     InvoiceDocumentComponent,
     ReceiptDocumentComponent,
-    ClientStatementDocumentComponent
+    ClientStatementDocumentComponent,
+    RichTextEditorComponent
   ],
   styles: [`
     /* A pré-visualização é desenhada à largura de uma folha A4 e depois
@@ -290,11 +295,15 @@ const MAX_LOGO_BYTES = 2 * 1024 * 1024;
                   (focus)="lastFocused.set('email_greeting')">
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Corpo da mensagem</mat-label>
-                <textarea matInput formControlName="email_body" rows="4" maxlength="2000"
-                  (focus)="lastFocused.set('email_body')"></textarea>
-              </mat-form-field>
+              <div>
+                <app-rich-text-editor name="email_body" formControlName="email_body"
+                  label="Corpo da mensagem" [minHeight]="110"
+                  (focusIn)="lastFocused.set('email_body')">
+                </app-rich-text-editor>
+                @if (form.get('email_body')?.hasError('maxlength')) {
+                  <p class="text-xs text-red-600 mt-1 px-3">Texto demasiado longo.</p>
+                }
+              </div>
 
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Despedida</mat-label>
@@ -302,11 +311,15 @@ const MAX_LOGO_BYTES = 2 * 1024 * 1024;
                   (focus)="lastFocused.set('email_signature')">
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Corpo da mensagem do recibo</mat-label>
-                <textarea matInput formControlName="receipt_email_body" rows="3" maxlength="2000"
-                  (focus)="lastFocused.set('receipt_email_body')"></textarea>
-              </mat-form-field>
+              <div>
+                <app-rich-text-editor name="receipt_email_body" formControlName="receipt_email_body"
+                  label="Corpo da mensagem do recibo" [minHeight]="80"
+                  (focusIn)="lastFocused.set('receipt_email_body')">
+                </app-rich-text-editor>
+                @if (form.get('receipt_email_body')?.hasError('maxlength')) {
+                  <p class="text-xs text-red-600 mt-1 px-3">Texto demasiado longo.</p>
+                }
+              </div>
 
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Assunto do extracto de conta</mat-label>
@@ -314,12 +327,17 @@ const MAX_LOGO_BYTES = 2 * 1024 * 1024;
                   (focus)="lastFocused.set('statement_email_subject')">
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Corpo da mensagem do extracto de conta</mat-label>
-                <textarea matInput formControlName="statement_email_body" rows="3" maxlength="2000"
-                  (focus)="lastFocused.set('statement_email_body')"></textarea>
-                <mat-hint>Use os marcadores de extracto, como período e saldo.</mat-hint>
-              </mat-form-field>
+              <div>
+                <app-rich-text-editor name="statement_email_body" formControlName="statement_email_body"
+                  label="Corpo da mensagem do extracto de conta" [minHeight]="80"
+                  (focusIn)="lastFocused.set('statement_email_body')">
+                </app-rich-text-editor>
+                @if (form.get('statement_email_body')?.hasError('maxlength')) {
+                  <p class="text-xs text-red-600 mt-1 px-3">Texto demasiado longo.</p>
+                } @else {
+                  <p class="text-xs text-gray-500 mt-1 px-3">Use os marcadores de extracto, como período e saldo.</p>
+                }
+              </div>
 
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Responder para (opcional)</mat-label>
@@ -439,6 +457,7 @@ export class DocumentSettingsTabComponent {
   isSaving = this.settings.isSaving;
   isUploadingLogo = signal(false);
   lastFocused = signal<string | null>(null);
+  private richEditors = viewChildren(RichTextEditorComponent);
   logoUrl = signal<string | null>(null);
 
   sampleInvoice = SAMPLE_INVOICE;
@@ -467,11 +486,11 @@ export class DocumentSettingsTabComponent {
     receipt_copies: [1],
     email_subject: [''],
     email_greeting: [''],
-    email_body: [''],
+    email_body: ['', [Validators.maxLength(MAX_EMAIL_BODY_LENGTH)]],
     email_signature: [''],
-    receipt_email_body: [''],
+    receipt_email_body: ['', [Validators.maxLength(MAX_EMAIL_BODY_LENGTH)]],
     statement_email_subject: [''],
-    statement_email_body: [''],
+    statement_email_body: ['', [Validators.maxLength(MAX_EMAIL_BODY_LENGTH)]],
     email_reply_to: ['', [Validators.email]]
   });
 
@@ -536,13 +555,21 @@ export class DocumentSettingsTabComponent {
   }
 
   /**
-   * Insere o marcador no fim do campo em que o utilizador estava a escrever.
+   * Insere o marcador no campo em que o utilizador estava a escrever. Nos
+   * corpos com formatação entra onde estava o cursor; nos restantes, no fim.
    * Sem campo escolhido, vai para o corpo da mensagem, que é o caso comum.
    */
   insertToken(token: string) {
     if (!this.canEdit()) return;
 
     const field = this.lastFocused() ?? 'email_body';
+
+    const editor = this.richEditors().find(e => e.name() === field);
+    if (editor) {
+      editor.insertText(token);
+      return;
+    }
+
     const control = this.form.get(field);
     if (!control) return;
 

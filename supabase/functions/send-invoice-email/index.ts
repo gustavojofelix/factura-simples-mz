@@ -96,6 +96,119 @@ function sanitizeHeader(value: string): string {
   return value.replace(/[\r\n]+/g, " ").trim();
 }
 
+/** Etiquetas de formatação aceites no corpo da mensagem. */
+const ALLOWED_BODY_TAGS = new Set([
+  "p", "br", "b", "strong", "i", "em", "u", "ul", "ol", "li", "a", "div",
+]);
+
+const BODY_TAG_STYLES: Record<string, string> = {
+  p: "margin:0 0 12px 0;",
+  div: "margin:0 0 12px 0;",
+  ul: "margin:0 0 12px 0;padding-left:22px;",
+  ol: "margin:0 0 12px 0;padding-left:22px;",
+  li: "margin:0 0 4px 0;",
+};
+
+function looksLikeHtml(value: string): boolean {
+  return /<\/?(p|br|b|strong|i|em|u|ul|ol|li|a|div)\b/i.test(String(value ?? ""));
+}
+
+/**
+ * Limpa o corpo com formatação escrito no editor.
+ *
+ * Funciona por lista branca: qualquer etiqueta fora da lista desaparece (o
+ * texto dentro fica), todos os atributos são descartados, e as ligações só
+ * mantêm um href http, https ou mailto. O conteúdo de scripts e estilos é
+ * removido por inteiro. Etiquetas que ficam abertas são fechadas no fim.
+ */
+function sanitizeBodyHtml(html: string, linkColor: string): string {
+  const source = String(html ?? "")
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/<(script|style|head|title|iframe|object|template)\b[\s\S]*?<\/\1\s*>/gi, "");
+
+  const escapeText = (text: string) =>
+    text
+      .replace(/&(?!#?[a-zA-Z0-9]+;)/g, "&amp;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+
+  const open: string[] = [];
+  let out = "";
+
+  const pattern = /<(\/?)([a-zA-Z][a-zA-Z0-9]*)([^>]*)>|([^<]+)|(<)/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(source)) !== null) {
+    const [, closing, rawName, attrs, text, strayLt] = match;
+
+    if (text !== undefined) {
+      out += escapeText(text);
+      continue;
+    }
+    if (strayLt !== undefined) {
+      out += "&lt;";
+      continue;
+    }
+
+    const name = rawName.toLowerCase();
+    if (!ALLOWED_BODY_TAGS.has(name)) continue;
+
+    if (name === "br") {
+      out += "<br>";
+      continue;
+    }
+
+    if (closing) {
+      const index = open.lastIndexOf(name);
+      if (index === -1) continue;
+      while (open.length > index) out += `</${open.pop()}>`;
+      continue;
+    }
+
+    if (name === "a") {
+      const hrefMatch = attrs.match(/href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+      const href = (hrefMatch?.[1] ?? hrefMatch?.[2] ?? hrefMatch?.[3] ?? "")
+        .replace(/&amp;/gi, "&")
+        .trim();
+      // Sem endereço seguro, a ligação cai mas o texto fica.
+      if (!/^(https?:|mailto:)/i.test(href)) continue;
+      out += `<a href="${escapeHtml(href)}" target="_blank" rel="noopener" style="color:${linkColor};text-decoration:underline;">`;
+      open.push("a");
+      continue;
+    }
+
+    // Um <li> ou <p> novo fecha o anterior que tenha ficado aberto.
+    if ((name === "li" || name === "p") && open[open.length - 1] === name) {
+      out += `</${open.pop()}>`;
+    }
+
+    const style = BODY_TAG_STYLES[name];
+    out += style ? `<${name} style="${style}">` : `<${name}>`;
+    open.push(name);
+  }
+
+  while (open.length) out += `</${open.pop()}>`;
+  return out;
+}
+
+/** Versão em texto simples do corpo, para a parte text/plain da mensagem. */
+function htmlToPlainText(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<li\b[^>]*>/gi, "- ")
+    .replace(/<\/(p|div|li|ul|ol)>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&amp;/gi, "&")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 /**
  * Substitui os marcadores escritos pela empresa.
  *
@@ -269,7 +382,7 @@ function buildHtml(options: {
           <tr>
             <td style="padding:40px;color:#332d2a;line-height:1.6;">
               <h1 style="margin:0 0 20px 0;font-size:20px;font-weight:700;color:#332d2a;">${greeting}</h1>
-              <p style="margin:0 0 24px 0;font-size:15px;color:#5a524e;">${body}</p>
+              <div style="margin:0 0 24px 0;font-size:15px;color:#5a524e;">${body}</div>
 
               <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#fcfbfa;border:1px dashed #e5e0dd;border-radius:8px;margin-bottom:28px;">
                 <tr>
@@ -349,9 +462,19 @@ async function sendDocumentEmail(options: {
 
   const subject = sanitizeHeader(renderTemplate(options.subjectTemplate, tokens, false));
   const greeting = renderTemplate(branding.email_greeting, tokens, true);
-  const bodyHtml = renderTemplate(options.bodyTemplate, tokens, true)
-    .replace(/\n/g, "<br>");
-  const bodyText = renderTemplate(options.bodyTemplate, tokens, false);
+  const brand = normalizeHex(branding.primary_color, "#f16c39");
+  const accent = normalizeHex(branding.accent_color, "#332d2a");
+
+  // O corpo pode vir do editor com formatação ou ser texto antigo, sem
+  // etiquetas. No primeiro caso é limpo antes de receber os marcadores, cujos
+  // valores entram sempre escapados.
+  const isRichBody = looksLikeHtml(options.bodyTemplate);
+  const bodyHtml = isRichBody
+    ? renderTemplate(sanitizeBodyHtml(options.bodyTemplate, brand), tokens, true)
+    : renderTemplate(options.bodyTemplate, tokens, true).replace(/\n/g, "<br>");
+  const bodyText = isRichBody
+    ? htmlToPlainText(bodyHtml)
+    : renderTemplate(options.bodyTemplate, tokens, false);
   const thanks = renderTemplate(branding.thank_you_message, tokens, true);
   const signature = renderTemplate(branding.email_signature, tokens, true);
   const footerText = renderTemplate(branding.footer_text, tokens, true);
@@ -366,8 +489,6 @@ async function sendDocumentEmail(options: {
       "",
     );
 
-    const brand = normalizeHex(branding.primary_color, "#f16c39");
-    const accent = normalizeHex(branding.accent_color, "#332d2a");
     const logo = buildLogoAttachment(options.logoUrl);
 
     const attachmentName = `${options.attachmentBaseName.replace(/[\/\\]/g, "-")}.pdf`;
