@@ -6,6 +6,9 @@ import { AuditLogService } from './audit-log.service';
 export interface Payment {
   id: string;
   invoice_id: string;
+  /** Atribuídos pela base de dados ao inserir (série sequencial por empresa). */
+  company_id?: string;
+  receipt_number?: string;
   amount: number;
   payment_date: string;
   payment_method: string;
@@ -88,6 +91,7 @@ export class PaymentService {
     const company = this.companyService.activeCompany();
 
     const details: Record<string, any> = {
+      receipt_number: payment.receipt_number || undefined,
       amount,
       payment_method: payment.payment_method,
       payment_date: payment.payment_date,
@@ -202,6 +206,16 @@ export class PaymentService {
       console.error('Erro ao eliminar pagamento:', error);
       return false;
     }
+  }
+
+  /**
+   * Número do recibo atribuído pela base de dados (ex.: REC00031).
+   * O formato antigo, derivado do identificador, só serve de recurso para
+   * pagamentos ainda sem número.
+   */
+  getReceiptNumber(payment: Pick<Payment, 'id' | 'receipt_number'>): string {
+    return payment.receipt_number
+      || `REC-${(payment.id || '').substring(0, 8).toUpperCase()}`;
   }
 
   getPaymentMethodLabel(method: string): string {

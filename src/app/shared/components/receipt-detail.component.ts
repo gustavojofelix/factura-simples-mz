@@ -197,7 +197,8 @@ export class ReceiptDetailComponent implements OnInit {
   }
 
   private receiptFileName(): string {
-    const numero = (this.payment()?.id || '').substring(0, 8).toUpperCase();
+    const payment = this.payment();
+    const numero = payment ? this.paymentService.getReceiptNumber(payment) : '';
     return `Recibo_${numero}`;
   }
 

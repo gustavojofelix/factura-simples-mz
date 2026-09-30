@@ -69,6 +69,7 @@ export const SAMPLE_INVOICE: Invoice = {
 export const SAMPLE_PAYMENT: Payment = {
   id: 'a1b2c3d4-0000-0000-0000-000000000000',
   invoice_id: 'pre-visualizacao',
+  receipt_number: 'REC00031',
   amount: 6750,
   payment_date: '2026-09-22',
   payment_method: 'transferencia',

@@ -412,12 +412,17 @@ Deno.serve(async (req) => {
   }
 
   // --- Pagamento, quando se trata de um recibo ------------------------------
-  let payment: { id: string; amount: number; payment_date: string } | null = null;
+  let payment: {
+    id: string;
+    amount: number;
+    payment_date: string;
+    receipt_number: string | null;
+  } | null = null;
 
   if (documentKind === "recibo") {
     const { data: paymentRow, error: paymentError } = await userClient
       .from("payments")
-      .select("id, amount, payment_date, invoice_id")
+      .select("id, amount, payment_date, invoice_id, receipt_number")
       .eq("id", payment_id!)
       .maybeSingle();
 
@@ -458,7 +463,8 @@ Deno.serve(async (req) => {
   const clientName = client?.name?.trim() || "Cliente";
   const invoiceNumber = invoice.invoice_number ?? "ND";
   const receiptNumber = payment
-    ? `REC-${payment.id.substring(0, 8).toUpperCase()}`
+    ? payment.receipt_number ||
+      `REC-${payment.id.substring(0, 8).toUpperCase()}`
     : "";
 
   const tokens: Record<string, string> = {

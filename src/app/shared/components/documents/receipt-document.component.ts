@@ -162,14 +162,7 @@ export class ReceiptDocumentComponent {
 
   themeVars = computed(() => documentThemeVars(this.branding()));
 
-  /**
-   * O número do recibo continua a ser derivado do identificador do pagamento.
-   * Não é uma série sequencial, o que é uma lacuna conhecida e independente
-   * desta funcionalidade.
-   */
-  receiptNumber = computed(() =>
-    `REC-${(this.payment().id || '').substring(0, 8).toUpperCase()}`
-  );
+  receiptNumber = computed(() => this.paymentService.getReceiptNumber(this.payment()));
 
   paymentMethodLabel = computed(() =>
     this.paymentService.getPaymentMethodLabel(this.payment().payment_method)

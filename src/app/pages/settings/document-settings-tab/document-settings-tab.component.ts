@@ -36,6 +36,7 @@ const EMAIL_TOKENS = [
   { token: '{{cliente}}', hint: 'Nome do cliente' },
   { token: '{{empresa}}', hint: 'Nome da sua empresa' },
   { token: '{{numero_factura}}', hint: 'Número da factura' },
+  { token: '{{numero_recibo}}', hint: 'Número do recibo' },
   { token: '{{total}}', hint: 'Valor total do documento' },
   { token: '{{valor_pago}}', hint: 'Valor já pago' },
   { token: '{{valor_pendente}}', hint: 'Valor por pagar' },

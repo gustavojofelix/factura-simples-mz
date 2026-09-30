@@ -156,6 +156,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
                 <table class="w-full text-sm">
                   <thead class="bg-gray-50">
                     <tr class="text-xs sm:text-sm">
+                      <th class="text-left p-3 font-semibold text-gray-700 whitespace-nowrap">Recibo</th>
                       <th class="text-left p-3 font-semibold text-gray-700 whitespace-nowrap">Data</th>
                       <th class="text-left p-3 font-semibold text-gray-700 whitespace-nowrap">Método</th>
                       <th class="text-left p-3 font-semibold text-gray-700 whitespace-nowrap">Referência</th>
@@ -166,6 +167,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
                   <tbody class="divide-y divide-gray-100">
                     @for (payment of payments(); track payment.id) {
                       <tr class="text-xs sm:text-sm">
+                        <td class="p-3 whitespace-nowrap font-medium">{{ paymentService.getReceiptNumber(payment) }}</td>
                         <td class="p-3 whitespace-nowrap">{{ formatDate(payment.payment_date) }}</td>
                         <td class="p-3 whitespace-nowrap">{{ paymentService.getPaymentMethodLabel(payment.payment_method) }}</td>
                         <td class="p-3 whitespace-nowrap">{{ payment.reference || '-' }}</td>
