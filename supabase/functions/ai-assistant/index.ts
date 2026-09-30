@@ -1,5 +1,5 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
-import Anthropic from "npm:@anthropic-ai/sdk";
+import Anthropic from "npm:@anthropic-ai/sdk@0.129.0";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 import { SYSTEM_PROMPT, buildContextBlock } from "./prompt.ts";
@@ -28,6 +28,8 @@ const HISTORY_LIMIT = 20;
 const PRICE_INPUT = 5.0;
 const PRICE_OUTPUT = 25.0;
 const PRICE_CACHE_READ = 0.5;
+// A escrita em cache custa 1,25× o preço de entrada.
+const PRICE_CACHE_WRITE = 6.25;
 
 /**
  * Fallback do lado do servidor: se o modelo recusar por política, a API repete
@@ -36,6 +38,36 @@ const PRICE_CACHE_READ = 0.5;
  * de deixar a funcionalidade em baixo.
  */
 let fallbacksSupported = true;
+
+/**
+ * Traduz um erro da API da Anthropic numa mensagem para o subscritor. Falta de
+ * saldo e chave inválida são problemas da plataforma, não do utilizador: a
+ * mensagem não expõe o detalhe, que fica gravado em `ai_messages.error`.
+ */
+function mensagemDeErro(err: unknown): string {
+  if (err instanceof Anthropic.RateLimitError) {
+    return "O assistente está com muitos pedidos neste momento. Tente dentro de alguns segundos.";
+  }
+
+  // A falta de saldo chega como 400 invalid_request_error, sem classe própria
+  // no SDK; só o texto a distingue de um pedido mal formado.
+  const semSaldo = err instanceof Anthropic.BadRequestError &&
+    /credit balance/i.test(err.message);
+
+  if (
+    semSaldo ||
+    err instanceof Anthropic.AuthenticationError ||
+    err instanceof Anthropic.PermissionDeniedError
+  ) {
+    return "O assistente está temporariamente indisponível. Se o problema persistir, contacte o apoio ao cliente.";
+  }
+
+  if (err instanceof Anthropic.InternalServerError) {
+    return "O serviço de IA está sobrecarregado. Tente dentro de alguns minutos.";
+  }
+
+  return "Ocorreu um erro ao consultar o assistente. Tente novamente.";
+}
 
 interface RequestBody {
   company_id?: string;
@@ -262,6 +294,7 @@ Deno.serve(async (req) => {
       let inputTokens = 0;
       let outputTokens = 0;
       let cacheReadTokens = 0;
+      let cacheWriteTokens = 0;
       let erro: string | null = null;
 
       const enviar = (evento: string, dados: unknown) => {
@@ -319,12 +352,15 @@ Deno.serve(async (req) => {
           } catch (err) {
             const badRequest = err instanceof Anthropic.BadRequestError;
             if (badRequest && fallbacksSupported) {
-              // A conta ou a versão do SDK não aceita o parâmetro; segue sem ele.
-              console.warn("fallbacks indisponíveis, a repetir sem:", err.message);
-              fallbacksSupported = false;
+              // Pode ser a conta ou o SDK a recusar o parâmetro, ou outro 400
+              // qualquer (saldo esgotado, por exemplo). Repete-se sem ele e só
+              // se desliga de vez se a repetição passar: de outro modo um 400
+              // alheio desligaria os fallbacks até a instância reiniciar.
+              console.warn("pedido com fallbacks recusado, a repetir sem:", err.message);
               const s = pedirAoModelo(false);
               s.on("text", (delta: string) => enviar("delta", { text: delta }));
               resposta = (await s.finalMessage()) as Anthropic.Message;
+              fallbacksSupported = false;
             } else {
               throw err;
             }
@@ -333,6 +369,7 @@ Deno.serve(async (req) => {
           inputTokens += resposta.usage.input_tokens ?? 0;
           outputTokens += resposta.usage.output_tokens ?? 0;
           cacheReadTokens += resposta.usage.cache_read_input_tokens ?? 0;
+          cacheWriteTokens += resposta.usage.cache_creation_input_tokens ?? 0;
 
           messages.push({ role: "assistant", content: resposta.content });
           finalBlocks = resposta.content;
@@ -409,9 +446,7 @@ Deno.serve(async (req) => {
         console.error("ai-assistant:", mensagem);
         erro = mensagem;
 
-        const amigavel = err instanceof Anthropic.RateLimitError
-          ? "O assistente está com muitos pedidos neste momento. Tente dentro de alguns segundos."
-          : "Ocorreu um erro ao consultar o assistente. Tente novamente.";
+        const amigavel = mensagemDeErro(err);
 
         enviar("error", { message: amigavel, code: "AI_ERROR" });
         textoFinal = textoFinal || amigavel;
@@ -449,7 +484,8 @@ Deno.serve(async (req) => {
           const custo =
             (inputTokens / 1_000_000) * PRICE_INPUT +
             (outputTokens / 1_000_000) * PRICE_OUTPUT +
-            (cacheReadTokens / 1_000_000) * PRICE_CACHE_READ;
+            (cacheReadTokens / 1_000_000) * PRICE_CACHE_READ +
+            (cacheWriteTokens / 1_000_000) * PRICE_CACHE_WRITE;
 
           await adminClient.from("ai_usage_events").insert({
             company_id,

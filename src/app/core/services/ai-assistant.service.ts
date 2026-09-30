@@ -346,7 +346,10 @@ export class AiAssistantService {
             break;
 
           case 'error':
-            actualizar({ content: dados.message, streaming: false, error: dados.code });
+            // O servidor envia ainda um 'done' depois do erro, que reescreve o
+            // conteúdo com o acumulado; sem isto a mensagem desaparecia.
+            acumulado = dados.message;
+            actualizar({ content: acumulado, streaming: false, error: dados.code });
             break;
 
           case 'done':
