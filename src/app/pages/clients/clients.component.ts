@@ -490,7 +490,7 @@ export class ClientsComponent implements OnInit {
           invalidRows.push(`linha ${rowNumber}: NUIT deve ter 9 dígitos`);
           return;
         }
-        if (!Validators.email({ value: email } as any)) {
+        if (Validators.email({ value: email } as any)) {
           invalidRows.push(`linha ${rowNumber}: Email inválido`);
           return;
         }
@@ -514,6 +514,10 @@ export class ClientsComponent implements OnInit {
           is_active: !['inactivo', 'inativo', 'false', '0'].includes(status)
         });
       });
+
+      if (invalidRows.length) {
+        console.warn('Linhas inválidas na importação de clientes:', invalidRows);
+      }
 
       if (!clients.length) {
         this.snackBar.open(`Nenhum cliente válido encontrado. ${invalidRows.slice(0, 2).join('; ')}`, 'Fechar', { duration: 7000 });
