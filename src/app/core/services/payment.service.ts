@@ -9,6 +9,9 @@ export interface Payment {
   /** Atribuídos pela base de dados ao inserir (série sequencial por empresa). */
   company_id?: string;
   receipt_number?: string;
+  status?: 'emitido' | 'anulado';
+  annulled_at?: string | null;
+  annulment_reason?: string | null;
   amount: number;
   payment_date: string;
   payment_method: string;
@@ -93,6 +96,7 @@ export class PaymentService {
     const details: Record<string, any> = {
       receipt_number: payment.receipt_number || undefined,
       amount,
+      reason: payment.annulment_reason || undefined,
       payment_method: payment.payment_method,
       payment_date: payment.payment_date,
       reference: payment.reference || undefined,
@@ -182,30 +186,39 @@ export class PaymentService {
     }
   }
 
-  async deletePayment(paymentId: string): Promise<boolean> {
+  /**
+   * Anula um recibo. Os recibos não são eliminados, para que a série não
+   * fique com buracos. A anulação é feita no servidor (annul_payment), que
+   * valida o papel do utilizador e recalcula os totais e o estado da factura.
+   */
+  async annulPayment(paymentId: string, reason: string): Promise<{ success: boolean; error?: string }> {
     try {
+      const { error } = await this.supabase.db.rpc('annul_payment', {
+        p_payment_id: paymentId,
+        p_reason: reason
+      });
+
+      if (error) throw error;
+
       const { data: payment } = await this.supabase.db
         .from('payments')
         .select('*')
         .eq('id', paymentId)
         .single();
 
-      const { error } = await this.supabase.db
-        .from('payments')
-        .delete()
-        .eq('id', paymentId);
-
-      if (error) throw error;
-
       if (payment) {
-        await this.logPaymentAudit('Eliminou Pagamento', payment);
+        await this.logPaymentAudit('Anulou Recibo', payment);
       }
 
-      return true;
-    } catch (error) {
-      console.error('Erro ao eliminar pagamento:', error);
-      return false;
+      return { success: true };
+    } catch (error: any) {
+      console.error('Erro ao anular recibo:', error);
+      return { success: false, error: error?.message };
     }
+  }
+
+  isAnnulled(payment: Pick<Payment, 'status'>): boolean {
+    return payment.status === 'anulado';
   }
 
   /**

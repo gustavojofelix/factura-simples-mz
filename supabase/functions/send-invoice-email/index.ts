@@ -18,7 +18,7 @@ const MAX_PDF_BASE64_LENGTH = 10_000_000;
 /** Tecto para o logótipo embutido na mensagem. */
 const MAX_LOGO_BASE64_LENGTH = 600_000;
 
-type DocumentKind = "factura" | "recibo";
+type DocumentKind = "factura" | "recibo" | "extracto";
 
 interface RequestBody {
   invoice_id?: string;
@@ -26,6 +26,11 @@ interface RequestBody {
   document_kind?: DocumentKind;
   payment_id?: string;
   to_email?: string;
+  /** Extracto: cliente, empresa e período (AAAA-MM-DD). */
+  company_id?: string;
+  client_id?: string;
+  start_date?: string;
+  end_date?: string;
 }
 
 interface Branding {
@@ -39,6 +44,8 @@ interface Branding {
   email_signature: string;
   receipt_email_subject: string;
   receipt_email_body: string;
+  statement_email_subject: string;
+  statement_email_body: string;
   email_reply_to: string | null;
 }
 
@@ -55,6 +62,9 @@ const BRANDING_DEFAULTS: Branding = {
   receipt_email_subject: "Recibo de pagamento - {{empresa}}",
   receipt_email_body:
     "Confirmamos a recepção do pagamento de {{valor_pago}} referente à factura {{numero_factura}}. Segue o recibo em anexo.",
+  statement_email_subject: "Extracto de conta {{periodo}} - {{empresa}}",
+  statement_email_body:
+    "Segue em anexo o extracto da sua conta referente ao período {{periodo}}. O saldo em dívida à data final é de {{saldo}}.",
   email_reply_to: null,
 };
 
@@ -295,6 +305,260 @@ function buildHtml(options: {
 </html>`;
 }
 
+// deno-lint-ignore no-explicit-any
+type UserClient = any;
+
+/** Definições de personalização da empresa, por cima dos valores por omissão. */
+async function loadBranding(userClient: UserClient, companyId: string): Promise<Branding> {
+  const { data: settingsRow } = await userClient
+    .from("document_settings")
+    .select("*")
+    .eq("company_id", companyId)
+    .maybeSingle();
+
+  const branding: Branding = { ...BRANDING_DEFAULTS };
+  if (settingsRow) {
+    for (const key of Object.keys(BRANDING_DEFAULTS) as Array<keyof Branding>) {
+      const value = (settingsRow as Record<string, unknown>)[key];
+      if (value !== null && value !== undefined) {
+        (branding as Record<string, unknown>)[key] = value;
+      }
+    }
+  }
+  return branding;
+}
+
+/** Monta e envia a mensagem com o PDF em anexo. Comum a todos os documentos. */
+async function sendDocumentEmail(options: {
+  branding: Branding;
+  tokens: Record<string, string>;
+  companyName: string;
+  companyEmail?: string;
+  logoUrl?: string;
+  clientEmail: string;
+  subjectTemplate: string;
+  bodyTemplate: string;
+  documentLabel: string;
+  documentNumber: string;
+  attachmentBaseName: string;
+  amountLabel: string;
+  amountValue: string;
+  pdfBase64: string;
+}): Promise<Response> {
+  const { branding, tokens, companyName } = options;
+
+  const subject = sanitizeHeader(renderTemplate(options.subjectTemplate, tokens, false));
+  const greeting = renderTemplate(branding.email_greeting, tokens, true);
+  const bodyHtml = renderTemplate(options.bodyTemplate, tokens, true)
+    .replace(/\n/g, "<br>");
+  const bodyText = renderTemplate(options.bodyTemplate, tokens, false);
+  const thanks = renderTemplate(branding.thank_you_message, tokens, true);
+  const signature = renderTemplate(branding.email_signature, tokens, true);
+  const footerText = renderTemplate(branding.footer_text, tokens, true);
+
+  try {
+    const transporter = buildTransport();
+    const fromAddress = Deno.env.get("SMTP_FROM_EMAIL") ??
+      Deno.env.get("SMTP_USER")!;
+
+    const base64Data = options.pdfBase64.replace(
+      /^data:application\/pdf;base64,/,
+      "",
+    );
+
+    const brand = normalizeHex(branding.primary_color, "#f16c39");
+    const accent = normalizeHex(branding.accent_color, "#332d2a");
+    const logo = buildLogoAttachment(options.logoUrl);
+
+    const attachmentName = `${options.attachmentBaseName.replace(/[\/\\]/g, "-")}.pdf`;
+
+    const html = buildHtml({
+      brand,
+      onBrand: readableTextOn(brand),
+      accent,
+      hasLogo: !!logo,
+      companyName: escapeHtml(companyName),
+      greeting,
+      body: bodyHtml,
+      thanks,
+      signature,
+      documentLabel: options.documentLabel,
+      documentNumber: escapeHtml(options.documentNumber),
+      amountLabel: options.amountLabel,
+      amountValue: escapeHtml(options.amountValue),
+      footerText,
+    });
+
+    const attachments: Record<string, unknown>[] = [
+      {
+        filename: attachmentName,
+        content: base64Data,
+        encoding: "base64",
+      },
+    ];
+    if (logo) attachments.push(logo);
+
+    // O servidor de correio é o da plataforma. Enviar em nome do domínio da
+    // empresa faria a mensagem falhar a autenticação do domínio e cair em spam,
+    // por isso a marca vai no nome do remetente e as respostas são reencaminhadas.
+    const replyTo = branding.email_reply_to?.trim() || options.companyEmail?.trim();
+
+    const info = await transporter.sendMail({
+      from: `"${sanitizeHeader(companyName).replace(/"/g, "")} via ISPC Fácil" <${fromAddress}>`,
+      sender: fromAddress,
+      replyTo: replyTo || undefined,
+      to: options.clientEmail,
+      subject,
+      text:
+        `${renderTemplate(branding.email_greeting, tokens, false)}\n\n${bodyText}\n\n${
+          renderTemplate(branding.email_signature, tokens, false)
+        }\n${companyName}`,
+      html,
+      attachments,
+    });
+
+    console.log("Message sent: %s", info.messageId);
+
+    return new Response(
+      JSON.stringify({ success: true, messageId: info.messageId }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  } catch (error) {
+    const message = (error as Error).message;
+
+    if (message === "SMTP_CONFIG_MISSING") {
+      console.error(
+        "Faltam as variáveis SMTP_HOST, SMTP_USER ou SMTP_PASS na configuração da função.",
+      );
+      return jsonError(
+        "O serviço de e-mail não está configurado.",
+        "SMTP_CONFIG_MISSING",
+        503,
+      );
+    }
+
+    console.error("Failed to send email:", error);
+    return jsonError("Não foi possível enviar o e-mail.", "SEND_FAILED", 500);
+  }
+}
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** 'AAAA-MM-DD' → 'DD/MM/AAAA' sem passar por Date. */
+function formatIsoDate(value: string): string {
+  const [year, month, day] = value.split("-");
+  return `${day}/${month}/${year}`;
+}
+
+/**
+ * Extracto de conta de um cliente.
+ *
+ * Os valores da mensagem não vêm do browser: são recalculados pela mesma
+ * função SQL que gera o extracto, que também valida que quem envia é
+ * Proprietário, Admin ou Gestor da empresa.
+ */
+async function handleStatementEmail(
+  userClient: UserClient,
+  body: RequestBody,
+): Promise<Response> {
+  const { company_id, client_id, start_date, end_date, pdf_base64, to_email } = body;
+
+  if (
+    !company_id || !client_id || !pdf_base64 ||
+    !start_date || !end_date || !ISO_DATE.test(start_date) || !ISO_DATE.test(end_date)
+  ) {
+    return jsonError(
+      "Faltam campos obrigatórios (company_id, client_id, start_date, end_date, pdf_base64).",
+      "BAD_REQUEST",
+      400,
+    );
+  }
+
+  const { data: statement, error: statementError } = await userClient.rpc(
+    "client_statement_movements",
+    {
+      p_company_id: company_id,
+      p_client_id: client_id,
+      p_start: start_date,
+      p_end: end_date,
+    },
+  );
+
+  if (statementError || !statement) {
+    console.error("Erro ao ler o extracto:", statementError);
+    return jsonError(
+      "Extracto não encontrado ou sem permissão de acesso.",
+      "FORBIDDEN",
+      403,
+    );
+  }
+
+  const { data: company } = await userClient
+    .from("companies")
+    .select("name, email, logo_url")
+    .eq("id", company_id)
+    .maybeSingle();
+
+  const client = statement.client as { name?: string; email?: string } | undefined;
+  const clientEmail = client?.email?.trim();
+
+  if (!clientEmail) {
+    return jsonError(
+      "Este cliente não possui endereço de e-mail.",
+      "CLIENT_WITHOUT_EMAIL",
+      400,
+    );
+  }
+
+  // O destinatário não é escolhido por quem chama a função.
+  if (to_email && to_email.trim().toLowerCase() !== clientEmail.toLowerCase()) {
+    return jsonError(
+      "O destinatário não corresponde ao cliente deste extracto.",
+      "RECIPIENT_NOT_ALLOWED",
+      400,
+    );
+  }
+
+  const movements = (statement.movements || []) as Array<{ invoiced?: number; paid?: number }>;
+  const opening = Number(statement.opening_balance) || 0;
+  const invoiced = movements.reduce((sum, m) => sum + (Number(m.invoiced) || 0), 0);
+  const paid = movements.reduce((sum, m) => sum + (Number(m.paid) || 0), 0);
+  const balance = Math.round((opening + invoiced - paid) * 100) / 100;
+
+  const branding = await loadBranding(userClient, company_id);
+  const companyName = company?.name?.trim() || "ISPC Fácil";
+  const period = `${formatIsoDate(start_date)} a ${formatIsoDate(end_date)}`;
+
+  const tokens: Record<string, string> = {
+    cliente: client?.name?.trim() || "Cliente",
+    empresa: companyName,
+    periodo: period,
+    data_inicio: formatIsoDate(start_date),
+    data_fim: formatIsoDate(end_date),
+    saldo_anterior: formatCurrency(opening),
+    total_facturado: formatCurrency(invoiced),
+    total_pago: formatCurrency(paid),
+    saldo: formatCurrency(balance),
+  };
+
+  return await sendDocumentEmail({
+    branding,
+    tokens,
+    companyName,
+    companyEmail: company?.email,
+    logoUrl: company?.logo_url,
+    clientEmail,
+    subjectTemplate: branding.statement_email_subject,
+    bodyTemplate: branding.statement_email_body,
+    documentLabel: "Extracto de conta",
+    documentNumber: period,
+    attachmentBaseName: `Extracto_${start_date}_a_${end_date}`,
+    amountLabel: "Saldo em dívida",
+    amountValue: tokens.saldo,
+    pdfBase64: pdf_base64,
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -316,9 +580,15 @@ Deno.serve(async (req) => {
   const { invoice_id, pdf_base64, to_email, payment_id } = body;
   const documentKind: DocumentKind = body.document_kind === "recibo"
     ? "recibo"
+    : body.document_kind === "extracto"
+    ? "extracto"
     : "factura";
 
-  if (!invoice_id || !pdf_base64) {
+  if (!pdf_base64) {
+    return jsonError("Falta o documento em anexo (pdf_base64).", "BAD_REQUEST", 400);
+  }
+
+  if (documentKind !== "extracto" && !invoice_id) {
     return jsonError(
       "Faltam campos obrigatórios (invoice_id, pdf_base64).",
       "BAD_REQUEST",
@@ -354,6 +624,10 @@ Deno.serve(async (req) => {
   const { data: userData, error: userError } = await userClient.auth.getUser();
   if (userError || !userData?.user) {
     return jsonError("Sessão inválida ou expirada.", "UNAUTHENTICATED", 401);
+  }
+
+  if (documentKind === "extracto") {
+    return await handleStatementEmail(userClient, body);
   }
 
   // --- Leitura da factura ---------------------------------------------------
@@ -422,7 +696,7 @@ Deno.serve(async (req) => {
   if (documentKind === "recibo") {
     const { data: paymentRow, error: paymentError } = await userClient
       .from("payments")
-      .select("id, amount, payment_date, invoice_id, receipt_number")
+      .select("id, amount, payment_date, invoice_id, receipt_number, status")
       .eq("id", payment_id!)
       .maybeSingle();
 
@@ -439,25 +713,18 @@ Deno.serve(async (req) => {
       );
     }
 
+    if (paymentRow.status === "anulado") {
+      return jsonError(
+        "Não é possível enviar um recibo anulado.",
+        "RECEIPT_ANNULLED",
+        400,
+      );
+    }
+
     payment = paymentRow;
   }
 
-  // --- Personalização da empresa -------------------------------------------
-  const { data: settingsRow } = await userClient
-    .from("document_settings")
-    .select("*")
-    .eq("company_id", invoice.company_id)
-    .maybeSingle();
-
-  const branding: Branding = { ...BRANDING_DEFAULTS };
-  if (settingsRow) {
-    for (const key of Object.keys(BRANDING_DEFAULTS) as Array<keyof Branding>) {
-      const value = (settingsRow as Record<string, unknown>)[key];
-      if (value !== null && value !== undefined) {
-        (branding as Record<string, unknown>)[key] = value;
-      }
-    }
-  }
+  const branding = await loadBranding(userClient, invoice.company_id);
 
   const companyName = company?.name?.trim() || "ISPC Fácil";
   const clientName = client?.name?.trim() || "Cliente";
@@ -480,112 +747,23 @@ Deno.serve(async (req) => {
   };
 
   const isReceipt = documentKind === "recibo";
+  const documentLabel = isReceipt ? "Recibo" : "Factura";
+  const documentNumber = isReceipt ? receiptNumber : String(invoiceNumber);
 
-  const subjectTemplate = isReceipt
-    ? branding.receipt_email_subject
-    : branding.email_subject;
-  const bodyTemplate = isReceipt
-    ? branding.receipt_email_body
-    : branding.email_body;
-
-  const subject = sanitizeHeader(renderTemplate(subjectTemplate, tokens, false));
-  const greeting = renderTemplate(branding.email_greeting, tokens, true);
-  const bodyHtml = renderTemplate(bodyTemplate, tokens, true)
-    .replace(/\n/g, "<br>");
-  const bodyText = renderTemplate(bodyTemplate, tokens, false);
-  const thanks = renderTemplate(branding.thank_you_message, tokens, true);
-  const signature = renderTemplate(branding.email_signature, tokens, true);
-  const footerText = renderTemplate(branding.footer_text, tokens, true);
-
-  // --- Envio ----------------------------------------------------------------
-  try {
-    const transporter = buildTransport();
-    const fromAddress = Deno.env.get("SMTP_FROM_EMAIL") ??
-      Deno.env.get("SMTP_USER")!;
-
-    const base64Data = pdf_base64.replace(
-      /^data:application\/pdf;base64,/,
-      "",
-    );
-
-    const brand = normalizeHex(branding.primary_color, "#f16c39");
-    const accent = normalizeHex(branding.accent_color, "#332d2a");
-    const logo = buildLogoAttachment(company?.logo_url);
-
-    const documentLabel = isReceipt ? "Recibo" : "Factura";
-    const documentNumber = isReceipt ? receiptNumber : String(invoiceNumber);
-    const attachmentName = `${documentLabel}_${
-      documentNumber.replace(/\//g, "-")
-    }.pdf`;
-
-    const html = buildHtml({
-      brand,
-      onBrand: readableTextOn(brand),
-      accent,
-      hasLogo: !!logo,
-      companyName: escapeHtml(companyName),
-      greeting,
-      body: bodyHtml,
-      thanks,
-      signature,
-      documentLabel,
-      documentNumber: escapeHtml(documentNumber),
-      amountLabel: isReceipt ? "Valor pago" : "Total",
-      amountValue: escapeHtml(
-        isReceipt ? tokens.valor_pago : tokens.total,
-      ),
-      footerText,
-    });
-
-    const attachments: Record<string, unknown>[] = [
-      {
-        filename: attachmentName,
-        content: base64Data,
-        encoding: "base64",
-      },
-    ];
-    if (logo) attachments.push(logo);
-
-    // O servidor de correio é o da plataforma. Enviar em nome do domínio da
-    // empresa faria a mensagem falhar a autenticação do domínio e cair em spam,
-    // por isso a marca vai no nome do remetente e as respostas são reencaminhadas.
-    const replyTo = branding.email_reply_to?.trim() || company?.email?.trim();
-
-    const info = await transporter.sendMail({
-      from: `"${sanitizeHeader(companyName).replace(/"/g, "")} via ISPC Fácil" <${fromAddress}>`,
-      sender: fromAddress,
-      replyTo: replyTo || undefined,
-      to: clientEmail,
-      subject,
-      text:
-        `${renderTemplate(branding.email_greeting, tokens, false)}\n\n${bodyText}\n\n${
-          renderTemplate(branding.email_signature, tokens, false)
-        }\n${companyName}`,
-      html,
-      attachments,
-    });
-
-    console.log("Message sent: %s", info.messageId);
-
-    return new Response(
-      JSON.stringify({ success: true, messageId: info.messageId }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
-  } catch (error) {
-    const message = (error as Error).message;
-
-    if (message === "SMTP_CONFIG_MISSING") {
-      console.error(
-        "Faltam as variáveis SMTP_HOST, SMTP_USER ou SMTP_PASS na configuração da função.",
-      );
-      return jsonError(
-        "O serviço de e-mail não está configurado.",
-        "SMTP_CONFIG_MISSING",
-        503,
-      );
-    }
-
-    console.error("Failed to send email:", error);
-    return jsonError("Não foi possível enviar o e-mail.", "SEND_FAILED", 500);
-  }
+  return await sendDocumentEmail({
+    branding,
+    tokens,
+    companyName,
+    companyEmail: company?.email,
+    logoUrl: company?.logo_url,
+    clientEmail,
+    subjectTemplate: isReceipt ? branding.receipt_email_subject : branding.email_subject,
+    bodyTemplate: isReceipt ? branding.receipt_email_body : branding.email_body,
+    documentLabel,
+    documentNumber,
+    attachmentBaseName: `${documentLabel}_${documentNumber}`,
+    amountLabel: isReceipt ? "Valor pago" : "Total",
+    amountValue: isReceipt ? tokens.valor_pago : tokens.total,
+    pdfBase64: pdf_base64,
+  });
 });

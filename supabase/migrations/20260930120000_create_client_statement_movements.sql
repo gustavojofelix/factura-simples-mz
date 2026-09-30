@@ -7,7 +7,8 @@
     - movements: facturas e recibos do período, por ordem cronológica
 
   Segue as mesmas regras do extracto geral (client_statement_summary):
-  ficam de fora rascunhos, facturas anuladas e os recibos dessas facturas.
+  ficam de fora rascunhos, facturas anuladas, os recibos dessas facturas e os
+  recibos anulados.
   O saldo corrido é calculado na aplicação, para poder ser ocultado quando o
   utilizador filtra só facturas ou só recibos.
 */
@@ -70,6 +71,7 @@ BEGIN
              FROM public.payments p
              JOIN public.invoices i ON i.id = p.invoice_id
             WHERE p.company_id = p_company_id
+              AND p.status = 'emitido'
               AND i.client_id = p_client_id
               AND i.status NOT IN ('rascunho', 'anulada')
               AND p.payment_date < p_start
@@ -130,6 +132,7 @@ BEGIN
         FROM public.payments p
         JOIN public.invoices i ON i.id = p.invoice_id
        WHERE p.company_id = p_company_id
+         AND p.status = 'emitido'
          AND i.client_id = p_client_id
          AND i.status NOT IN ('rascunho', 'anulada')
          AND p.payment_date BETWEEN p_start AND p_end

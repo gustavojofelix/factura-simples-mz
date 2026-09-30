@@ -1,6 +1,7 @@
 import { Invoice } from '../../../core/services/invoice.service';
 import { Payment } from '../../../core/services/payment.service';
 import { Company } from '../../../core/services/company.service';
+import { ClientStatement } from '../../../core/services/statement.service';
 
 /**
  * Dados de exemplo para a pré-visualização no ecrã de configurações.
@@ -93,3 +94,35 @@ export const SAMPLE_COMPANY: Company = {
   bank_iban: 'MZ59000100000011834194157',
   bank_swift: 'EXMPMZMX'
 } as Company;
+
+/** Extracto de exemplo, coerente com a factura e o recibo acima. */
+export const SAMPLE_CLIENT_STATEMENT: ClientStatement = {
+  client: {
+    id: 'pre-visualizacao',
+    client_code: 'CL0001',
+    name: 'Comercial Zambeze, Lda',
+    nuit: '400123456',
+    address: 'Av. 25 de Setembro, 1200, Maputo',
+    phone: '+258 84 000 0000',
+    email: 'geral@zambeze.co.mz'
+  },
+  opening_balance: 5000,
+  movements: [
+    {
+      kind: 'factura', date: '2026-08-02', document: 'FAC00038', description: 'Consultoria contabilística',
+      invoice_id: 'exemplo-1', invoice_number: 'FAC00038', payment_id: null, invoiced: 15000, paid: 0, balance: 20000
+    },
+    {
+      kind: 'recibo', date: '2026-08-15', document: 'REC00029', description: 'Pagamento da FAC00038 · Transferência',
+      invoice_id: 'exemplo-1', invoice_number: 'FAC00038', payment_id: 'exemplo-1', invoiced: 0, paid: 10000, balance: 10000
+    },
+    {
+      kind: 'factura', date: '2026-08-22', document: 'FAC00042', description: 'Consultoria contabilística e mais 2 item(s)',
+      invoice_id: 'pre-visualizacao', invoice_number: 'FAC00042', payment_id: null, invoiced: 18750, paid: 0, balance: 28750
+    },
+    {
+      kind: 'recibo', date: '2026-08-28', document: 'REC00031', description: 'Pagamento da FAC00042 · Transferência',
+      invoice_id: 'pre-visualizacao', invoice_number: 'FAC00042', payment_id: 'a1b2c3d4', invoiced: 0, paid: 6750, balance: 22000
+    }
+  ]
+};

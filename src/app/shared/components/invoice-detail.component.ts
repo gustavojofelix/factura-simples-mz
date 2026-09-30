@@ -19,6 +19,9 @@ import {
 import { InvoiceDocumentComponent } from './documents/invoice-document.component';
 import { PaymentDialogComponent } from './payment-dialog.component';
 import { ReceiptDetailComponent } from './receipt-detail.component';
+import { AnnulReceiptDialogComponent } from './annul-receipt-dialog.component';
+import { REPORT_ROLES } from '../../core/guards/role.guard';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { InvoiceDialogComponent } from './invoice-dialog.component';
 import { PdfService } from '../../core/services/pdf.service';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -36,6 +39,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
     MatTableModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
+    MatTooltipModule,
     InvoiceDocumentComponent
   ],
   template: `
@@ -166,8 +170,15 @@ import { SupabaseService } from '../../core/services/supabase.service';
                   </thead>
                   <tbody class="divide-y divide-gray-100">
                     @for (payment of payments(); track payment.id) {
-                      <tr class="text-xs sm:text-sm">
-                        <td class="p-3 whitespace-nowrap font-medium">{{ paymentService.getReceiptNumber(payment) }}</td>
+                      <tr class="text-xs sm:text-sm" [class.text-gray-400]="paymentService.isAnnulled(payment)"
+                        [class.line-through]="paymentService.isAnnulled(payment)">
+                        <td class="p-3 whitespace-nowrap font-medium">
+                          {{ paymentService.getReceiptNumber(payment) }}
+                          @if (paymentService.isAnnulled(payment)) {
+                            <span class="ml-1 inline-block no-underline px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700"
+                              [title]="payment.annulment_reason || ''">ANULADO</span>
+                          }
+                        </td>
                         <td class="p-3 whitespace-nowrap">{{ formatDate(payment.payment_date) }}</td>
                         <td class="p-3 whitespace-nowrap">{{ paymentService.getPaymentMethodLabel(payment.payment_method) }}</td>
                         <td class="p-3 whitespace-nowrap">{{ payment.reference || '-' }}</td>
@@ -176,9 +187,10 @@ import { SupabaseService } from '../../core/services/supabase.service';
                           <button mat-icon-button (click)="viewReceipt(payment.id)">
                             <mat-icon>receipt</mat-icon>
                           </button>
-                          @if (invoiceService.canManagePayments(invoice()!)) {
-                            <button mat-icon-button (click)="deletePayment(payment.id)" color="warn">
-                              <mat-icon>delete</mat-icon>
+                          @if (canAnnulReceipt(payment)) {
+                            <button mat-icon-button (click)="annulPayment(payment)" color="warn"
+                              matTooltip="Anular recibo" aria-label="Anular recibo">
+                              <mat-icon>block</mat-icon>
                             </button>
                           }
                         </td>
@@ -412,14 +424,37 @@ export class InvoiceDetailComponent {
     });
   }
 
-  async deletePayment(paymentId: string) {
-    if (confirm('Tem certeza que deseja eliminar este pagamento?')) {
-      const success = await this.paymentService.deletePayment(paymentId);
-      if (success && this.invoice()) {
+  /** Anular recibos: Proprietário, Admin e Gestor, e só em facturas não anuladas. */
+  canAnnulReceipt(payment: Payment): boolean {
+    const invoice = this.invoice();
+    return !!invoice
+      && invoice.status !== 'anulada'
+      && !this.paymentService.isAnnulled(payment)
+      && REPORT_ROLES.includes(this.companyService.activeRole() || '');
+  }
+
+  annulPayment(payment: Payment) {
+    const dialogRef = this.dialog.open(AnnulReceiptDialogComponent, {
+      width: '480px',
+      maxWidth: '95vw',
+      data: {
+        receiptNumber: this.paymentService.getReceiptNumber(payment),
+        amount: this.formatCurrency(payment.amount)
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(async (reason?: string) => {
+      if (!reason) return;
+
+      const result = await this.paymentService.annulPayment(payment.id, reason);
+      if (result.success && this.invoice()) {
         await this.loadInvoice(this.invoice()!.id);
         await this.invoiceService.loadInvoices();
+        this.snackBar.open('Recibo anulado.', 'Fechar', { duration: 3000 });
+      } else {
+        this.snackBar.open(result.error || 'Não foi possível anular o recibo.', 'Fechar', { duration: 4000 });
       }
-    }
+    });
   }
 
   async editInvoice() {

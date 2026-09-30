@@ -23,6 +23,10 @@ import { documentThemeVars } from './document-theme';
   template: `
     <div class="doc" [class]="'doc doc--' + branding().template_code" [style]="themeVars()">
 
+      @if (payment().status === 'anulado') {
+        <div class="doc-watermark doc-watermark--annulled">ANULADO</div>
+      }
+
       <div class="doc-header">
         <div class="doc-header__identity">
           <p class="doc-caption">RECIBO DE PAGAMENTO</p>

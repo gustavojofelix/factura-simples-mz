@@ -21,6 +21,8 @@ export interface DocumentBranding {
   email_signature: string;
   receipt_email_subject: string;
   receipt_email_body: string;
+  statement_email_subject: string;
+  statement_email_body: string;
   email_reply_to: string | null;
 }
 
@@ -50,6 +52,8 @@ export const DEFAULT_DOCUMENT_BRANDING: DocumentBranding = {
   email_signature: 'Com os melhores cumprimentos,',
   receipt_email_subject: 'Recibo de pagamento - {{empresa}}',
   receipt_email_body: 'Confirmamos a recepção do pagamento de {{valor_pago}} referente à factura {{numero_factura}}. Segue o recibo em anexo.',
+  statement_email_subject: 'Extracto de conta {{periodo}} - {{empresa}}',
+  statement_email_body: 'Segue em anexo o extracto da sua conta referente ao período {{periodo}}. O saldo em dívida à data final é de {{saldo}}.',
   email_reply_to: null
 };
 

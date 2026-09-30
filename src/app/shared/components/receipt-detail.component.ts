@@ -85,7 +85,7 @@ export interface ReceiptDialogData {
           Imprimir
         </button>
         <button mat-stroked-button (click)="sendEmail()"
-          [disabled]="!payment() || !invoice()?.client?.email || isGeneratingPdf()">
+          [disabled]="!payment() || !invoice()?.client?.email || isGeneratingPdf() || paymentService.isAnnulled(payment()!)">
           <mat-icon>email</mat-icon>
           Enviar Email
         </button>

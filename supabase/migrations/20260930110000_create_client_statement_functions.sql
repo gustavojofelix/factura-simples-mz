@@ -10,7 +10,7 @@
 
   Regras de cálculo (comuns a todos os extractos):
     - Contam as facturas emitidas: ficam de fora rascunhos e anuladas.
-    - Contam os recibos de facturas emitidas. Os recibos de uma factura anulada
+    - Contam os recibos emitidos (não anulados) de facturas emitidas. Os recibos de uma factura anulada
       também ficam de fora, para que a anulação não deixe crédito fantasma.
     - Saldo anterior = facturado antes do início - pago antes do início.
     - Total facturado = facturas com data dentro do período.
@@ -33,16 +33,7 @@ STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.companies c
-     WHERE c.id = p_company_id AND c.user_id = auth.uid()
-  ) OR EXISTS (
-    SELECT 1 FROM public.company_users cu
-     WHERE cu.company_id = p_company_id
-       AND cu.user_id = auth.uid()
-       AND COALESCE(cu.is_active, true)
-       AND cu.role IN ('owner', 'admin', 'manager')
-  );
+  SELECT public.has_company_role(p_company_id, ARRAY['owner', 'admin', 'manager']);
 $$;
 
 GRANT EXECUTE ON FUNCTION public.can_view_client_statements(uuid) TO authenticated;
@@ -100,6 +91,7 @@ BEGIN
       FROM public.payments p
       JOIN valid_invoices vi ON vi.id = p.invoice_id
      WHERE p.company_id = p_company_id
+       AND p.status = 'emitido'
        AND p.payment_date <= p_end
   ),
   inv AS (

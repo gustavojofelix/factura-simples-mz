@@ -8,6 +8,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Company } from '../../core/services/company.service';
 import { AuthService } from '../../core/services/auth.service';
 import { PdfService } from '../../core/services/pdf.service';
+import { SupabaseService } from '../../core/services/supabase.service';
 import { AuditLogService } from '../../core/services/audit-log.service';
 import {
   DocumentSettingsService,
@@ -120,6 +121,14 @@ export type StatementPreviewData = SummaryStatementPreviewData | ClientStatement
         <mat-icon>print</mat-icon>
         Imprimir
       </button>
+      @if (data.kind === 'client') {
+        <button mat-stroked-button (click)="sendEmail()"
+          [disabled]="isLoading() || isGeneratingPdf() || !data.statement.client.email"
+          [title]="data.statement.client.email ? 'Enviar para ' + data.statement.client.email : 'O cliente não tem e-mail registado'">
+          <mat-icon>email</mat-icon>
+          Enviar por e-mail
+        </button>
+      }
     </mat-dialog-actions>
   `
 })
@@ -131,6 +140,7 @@ export class StatementPreviewDialogComponent implements OnInit {
   private pdfService = inject(PdfService);
   private auditLogService = inject(AuditLogService);
   private snackBar = inject(MatSnackBar);
+  private supabase = inject(SupabaseService);
 
   branding = signal<DocumentBranding>(DEFAULT_DOCUMENT_BRANDING);
   issuerName = signal('');
@@ -227,6 +237,77 @@ export class StatementPreviewDialogComponent implements OnInit {
     } finally {
       this.isGeneratingPdf.set(false);
     }
+  }
+
+  /**
+   * Envia o extracto ao cliente. Os valores da mensagem são recalculados no
+   * servidor; do browser só segue o PDF e a identificação do extracto.
+   */
+  async sendEmail() {
+    const data = this.data;
+    if (data.kind !== 'client') return;
+
+    const email = data.statement.client.email;
+    if (!email) {
+      this.snackBar.open('Este cliente não tem endereço de e-mail.', 'Fechar', { duration: 4000 });
+      return;
+    }
+
+    try {
+      this.isGeneratingPdf.set(true);
+      const blob = await this.generate();
+      const pdfBase64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+      });
+
+      const { data: result, error } = await this.supabase.client.functions.invoke('send-invoice-email', {
+        body: {
+          document_kind: 'extracto',
+          company_id: data.company.id,
+          client_id: data.statement.client.id,
+          start_date: data.start,
+          end_date: data.end,
+          pdf_base64: pdfBase64
+        }
+      });
+
+      if (error) throw new Error(await this.errorMessage(error));
+      if (result && result.success === false) throw new Error(result.error || 'O envio foi recusado.');
+
+      this.auditLogService.log(
+        'Enviou Extracto do Cliente por E-mail',
+        'reports',
+        { start_date: data.start, end_date: data.end, email },
+        data.statement.client.id,
+        data.statement.client.name,
+        data.company.id
+      );
+
+      this.snackBar.open(`Extracto enviado para ${email}.`, 'Fechar', { duration: 5000 });
+    } catch (error) {
+      console.error('Erro ao enviar o extracto:', error);
+      const message = error instanceof Error && error.message ? error.message : 'Não foi possível enviar o extracto.';
+      this.snackBar.open(message, 'Fechar', { duration: 6000 });
+    } finally {
+      this.isGeneratingPdf.set(false);
+    }
+  }
+
+  /** A resposta da função vem dentro do erro do supabase-js. */
+  private async errorMessage(error: unknown): Promise<string> {
+    const context = (error as { context?: unknown })?.context;
+    if (context instanceof Response) {
+      try {
+        const body = await context.clone().json();
+        if (body?.error) return body.error;
+      } catch {
+        // Sem corpo JSON: fica a mensagem genérica.
+      }
+    }
+    return error instanceof Error && error.message ? error.message : 'Não foi possível enviar o extracto.';
   }
 
   close() {

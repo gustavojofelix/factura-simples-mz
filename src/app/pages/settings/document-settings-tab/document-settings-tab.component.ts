@@ -25,10 +25,12 @@ import {
 } from '../../../core/services/document-settings.service';
 import { InvoiceDocumentComponent } from '../../../shared/components/documents/invoice-document.component';
 import { ReceiptDocumentComponent } from '../../../shared/components/documents/receipt-document.component';
+import { ClientStatementDocumentComponent } from '../../../shared/components/documents/client-statement-document.component';
 import {
   SAMPLE_INVOICE,
   SAMPLE_PAYMENT,
-  SAMPLE_COMPANY
+  SAMPLE_COMPANY,
+  SAMPLE_CLIENT_STATEMENT
 } from '../../../shared/components/documents/document-preview.fixtures';
 
 /** Marcadores que o utilizador pode usar nos textos de e-mail. */
@@ -41,7 +43,12 @@ const EMAIL_TOKENS = [
   { token: '{{valor_pago}}', hint: 'Valor já pago' },
   { token: '{{valor_pendente}}', hint: 'Valor por pagar' },
   { token: '{{data}}', hint: 'Data de emissão' },
-  { token: '{{data_vencimento}}', hint: 'Data de vencimento' }
+  { token: '{{data_vencimento}}', hint: 'Data de vencimento' },
+  { token: '{{periodo}}', hint: 'Extracto: período (01/08/2026 a 31/08/2026)' },
+  { token: '{{saldo_anterior}}', hint: 'Extracto: saldo antes do período' },
+  { token: '{{total_facturado}}', hint: 'Extracto: total facturado no período' },
+  { token: '{{total_pago}}', hint: 'Extracto: total pago no período' },
+  { token: '{{saldo}}', hint: 'Extracto: saldo em dívida na data final' }
 ];
 
 const MAX_LOGO_BYTES = 2 * 1024 * 1024;
@@ -63,7 +70,8 @@ const MAX_LOGO_BYTES = 2 * 1024 * 1024;
     MatTooltipModule,
     MatProgressSpinnerModule,
     InvoiceDocumentComponent,
-    ReceiptDocumentComponent
+    ReceiptDocumentComponent,
+    ClientStatementDocumentComponent
   ],
   styles: [`
     /* A pré-visualização é desenhada à largura de uma folha A4 e depois
@@ -94,7 +102,7 @@ const MAX_LOGO_BYTES = 2 * 1024 * 1024;
         <mat-card class="!rounded-2xl !shadow-sm">
           <mat-card-content class="!p-6">
             <h3 class="text-base font-bold text-gray-800 mb-1">Modelo do documento</h3>
-            <p class="text-xs text-gray-500 mb-5">Escolha a disposição das suas facturas e recibos.</p>
+            <p class="text-xs text-gray-500 mb-5">Escolha a disposição das suas facturas, recibos e extractos.</p>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
               @for (modelo of templates; track modelo.code) {
@@ -301,6 +309,19 @@ const MAX_LOGO_BYTES = 2 * 1024 * 1024;
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Assunto do extracto de conta</mat-label>
+                <input matInput formControlName="statement_email_subject" maxlength="200"
+                  (focus)="lastFocused.set('statement_email_subject')">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Corpo da mensagem do extracto de conta</mat-label>
+                <textarea matInput formControlName="statement_email_body" rows="3" maxlength="2000"
+                  (focus)="lastFocused.set('statement_email_body')"></textarea>
+                <mat-hint>Use os marcadores de extracto, como período e saldo.</mat-hint>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Responder para (opcional)</mat-label>
                 <input matInput formControlName="email_reply_to" type="email"
                   placeholder="geral@suaempresa.co.mz">
@@ -349,6 +370,13 @@ const MAX_LOGO_BYTES = 2 * 1024 * 1024;
                 [class.text-slate-500]="previewKind() !== 'recibo'">
                 Recibo
               </button>
+              <button type="button" (click)="previewKind.set('extracto')"
+                class="px-3 py-1 text-[11px] font-semibold transition-colors border-l border-slate-200"
+                [class.bg-orange-500]="previewKind() === 'extracto'"
+                [class.text-white]="previewKind() === 'extracto'"
+                [class.text-slate-500]="previewKind() !== 'extracto'">
+                Extracto
+              </button>
             </div>
           </div>
 
@@ -361,13 +389,23 @@ const MAX_LOGO_BYTES = 2 * 1024 * 1024;
                   [branding]="previewBranding()"
                   [preview]="true">
                 </app-invoice-document>
-              } @else {
+              } @else if (previewKind() === 'recibo') {
                 <app-receipt-document
                   [payment]="samplePayment"
                   [invoice]="sampleInvoice"
                   [company]="previewCompany()"
                   [branding]="previewBranding()">
                 </app-receipt-document>
+              } @else {
+                <app-client-statement-document
+                  [statement]="sampleStatement"
+                  start="2026-08-01"
+                  end="2026-08-31"
+                  issuedAt="2026-09-01"
+                  issuerName="Ana Machava"
+                  [company]="previewCompany()"
+                  [branding]="previewBranding()">
+                </app-client-statement-document>
               }
             </div>
           </div>
@@ -405,9 +443,10 @@ export class DocumentSettingsTabComponent {
 
   sampleInvoice = SAMPLE_INVOICE;
   samplePayment = SAMPLE_PAYMENT;
+  sampleStatement = SAMPLE_CLIENT_STATEMENT;
 
-  /** Qual dos dois documentos a pré-visualização está a mostrar. */
-  previewKind = signal<'factura' | 'recibo'>('factura');
+  /** Qual dos documentos a pré-visualização está a mostrar. */
+  previewKind = signal<'factura' | 'recibo' | 'extracto'>('factura');
 
   /**
    * O separador só é editável por quem manda na empresa. O papel é lido de
@@ -431,6 +470,8 @@ export class DocumentSettingsTabComponent {
     email_body: [''],
     email_signature: [''],
     receipt_email_body: [''],
+    statement_email_subject: [''],
+    statement_email_body: [''],
     email_reply_to: ['', [Validators.email]]
   });
 
