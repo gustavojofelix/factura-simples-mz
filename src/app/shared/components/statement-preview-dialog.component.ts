@@ -14,9 +14,14 @@ import {
   DocumentBranding,
   DEFAULT_DOCUMENT_BRANDING
 } from '../../core/services/document-settings.service';
-import { ClientStatementSummaryRow } from '../../core/services/statement.service';
+import {
+  ClientStatement,
+  ClientStatementSummaryRow,
+  MovementKind
+} from '../../core/services/statement.service';
 import { toIsoDate } from '../../core/utils/date.util';
 import { SummaryStatementDocumentComponent } from './documents/summary-statement-document.component';
+import { ClientStatementDocumentComponent } from './documents/client-statement-document.component';
 
 export interface SummaryStatementPreviewData {
   kind: 'summary';
@@ -27,7 +32,17 @@ export interface SummaryStatementPreviewData {
   notes: string;
 }
 
-export type StatementPreviewData = SummaryStatementPreviewData;
+export interface ClientStatementPreviewData {
+  kind: 'client';
+  company: Company;
+  statement: ClientStatement;
+  filter: 'all' | MovementKind;
+  start: string;
+  end: string;
+  notes: string;
+}
+
+export type StatementPreviewData = SummaryStatementPreviewData | ClientStatementPreviewData;
 
 /**
  * Pré-visualização de um extracto, com descarga em PDF e impressão.
@@ -43,11 +58,12 @@ export type StatementPreviewData = SummaryStatementPreviewData;
     MatIconModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
-    SummaryStatementDocumentComponent
+    SummaryStatementDocumentComponent,
+    ClientStatementDocumentComponent
   ],
   template: `
     <h2 mat-dialog-title class="flex items-center justify-between">
-      <span>Extracto dos Clientes</span>
+      <span>{{ data.kind === 'client' ? 'Extracto do Cliente' : 'Extracto dos Clientes' }}</span>
       <button mat-icon-button (click)="close()">
         <mat-icon>close</mat-icon>
       </button>
@@ -67,16 +83,30 @@ export type StatementPreviewData = SummaryStatementPreviewData;
               <p class="text-sm font-medium text-gray-600">A gerar PDF...</p>
             </div>
           }
-          <app-summary-statement-document
-            [rows]="data.rows"
-            [start]="data.start"
-            [end]="data.end"
-            [issuedAt]="issuedAt"
-            [issuerName]="issuerName()"
-            [notes]="data.notes"
-            [company]="data.company"
-            [branding]="branding()"
-          ></app-summary-statement-document>
+          @if (data.kind === 'client') {
+            <app-client-statement-document
+              [statement]="data.statement"
+              [filter]="data.filter"
+              [start]="data.start"
+              [end]="data.end"
+              [issuedAt]="issuedAt"
+              [issuerName]="issuerName()"
+              [notes]="data.notes"
+              [company]="data.company"
+              [branding]="branding()"
+            ></app-client-statement-document>
+          } @else {
+            <app-summary-statement-document
+              [rows]="data.rows"
+              [start]="data.start"
+              [end]="data.end"
+              [issuedAt]="issuedAt"
+              [issuerName]="issuerName()"
+              [notes]="data.notes"
+              [company]="data.company"
+              [branding]="branding()"
+            ></app-summary-statement-document>
+          }
         </div>
       }
     </mat-dialog-content>
@@ -129,6 +159,11 @@ export class StatementPreviewDialogComponent implements OnInit {
   }
 
   private fileName(): string {
+    if (this.data.kind === 'client') {
+      const client = this.data.statement.client;
+      const id = (client.client_code || client.name).replace(/[^\w-]+/g, '_');
+      return `Extracto_${id}_${this.data.start}_a_${this.data.end}`;
+    }
     return `Extracto_Clientes_${this.data.start}_a_${this.data.end}`;
   }
 
@@ -137,17 +172,21 @@ export class StatementPreviewDialogComponent implements OnInit {
   }
 
   private logExport(format: 'PDF' | 'Impressão') {
+    const data = this.data;
+    const isClient = data.kind === 'client';
+    const label = isClient ? 'Extracto do Cliente' : 'Extracto Geral';
+
     this.auditLogService.log(
-      format === 'PDF' ? 'Exportou Extracto Geral para PDF' : 'Imprimiu Extracto Geral',
+      format === 'PDF' ? `Exportou ${label} para PDF` : `Imprimiu ${label}`,
       'reports',
       {
-        start_date: this.data.start,
-        end_date: this.data.end,
-        records_count: this.data.rows.length
+        start_date: data.start,
+        end_date: data.end,
+        records_count: isClient ? data.statement.movements.length : data.rows.length
       },
-      undefined,
-      undefined,
-      this.data.company.id
+      isClient ? data.statement.client.id : undefined,
+      isClient ? data.statement.client.name : undefined,
+      data.company.id
     );
   }
 

@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -24,7 +25,7 @@ import {
   StatementService,
   StatementStatus
 } from '../../../core/services/statement.service';
-import { formatIsoDate, quarterRange, toIsoDate } from '../../../core/utils/date.util';
+import { formatIsoDate, parseIsoDate, quarterRange, toIsoDate } from '../../../core/utils/date.util';
 import { ReportsNavComponent } from '../reports-nav.component';
 import {
   StatementPreviewDialogComponent,
@@ -64,6 +65,8 @@ type SortKey = 'client_code' | 'client_name' | 'opening_balance' | 'total_invoic
 })
 export class ClientStatementsComponent implements OnInit {
   private fb = inject(FormBuilder);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
   private exportService = inject(ExportService);
@@ -130,10 +133,24 @@ export class ClientStatementsComponent implements OnInit {
   ngOnInit() {
     this.clientService.loadClients();
 
+    // Ao voltar do extracto de um cliente, o período vem no URL.
+    const query = this.route.snapshot.queryParamMap;
+    const start = parseIsoDate(query.get('inicio'));
+    const end = parseIsoDate(query.get('fim'));
+
     const today = new Date();
     this.filterForm.patchValue({
-      startDate: new Date(today.getFullYear(), today.getMonth(), 1),
-      endDate: today
+      startDate: start ?? new Date(today.getFullYear(), today.getMonth(), 1),
+      endDate: end ?? today
+    });
+
+    if (start && end) this.generate();
+  }
+
+  openClient(row: ClientStatementSummaryRow) {
+    const period = this.period();
+    this.router.navigate(['/relatorios/extractos', row.client_id], {
+      queryParams: period ? { inicio: period.start, fim: period.end } : {}
     });
   }
 

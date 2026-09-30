@@ -1,0 +1,230 @@
+<div class="p-4 sm:p-6 max-w-7xl mx-auto">
+  <div class="mb-4">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">Relatórios</h1>
+    <p class="text-gray-600">Extracto de movimentos de um cliente</p>
+  </div>
+
+  <app-reports-nav></app-reports-nav>
+
+  <button mat-button class="!mb-4" (click)="backToSummary()">
+    <mat-icon>arrow_back</mat-icon>
+    Voltar ao extracto geral
+  </button>
+
+  <!-- Filtros -->
+  <mat-card class="mb-6">
+    <mat-card-content class="!pt-6">
+      <form [formGroup]="filterForm" (ngSubmit)="applyFilters()">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <mat-form-field appearance="outline" class="lg:col-span-1">
+            <mat-label>Cliente</mat-label>
+            <mat-select formControlName="clientId">
+              @for (client of clientService.clients(); track client.id) {
+                <mat-option [value]="client.id">
+                  {{ client.client_code ? client.client_code + ' · ' : '' }}{{ client.name }}
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Data inicial</mat-label>
+            <input matInput [matDatepicker]="startPicker" formControlName="startDate" (dateChange)="onDateChange()">
+            <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
+            <mat-datepicker #startPicker></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Data final</mat-label>
+            <input matInput [matDatepicker]="endPicker" formControlName="endDate" (dateChange)="onDateChange()">
+            <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
+            <mat-datepicker #endPicker></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Trimestre</mat-label>
+            <mat-select formControlName="quarter" (selectionChange)="onQuarterChange()">
+              <mat-option value="none">Período personalizado</mat-option>
+              <mat-option value="1">1º Trimestre (Jan–Mar)</mat-option>
+              <mat-option value="2">2º Trimestre (Abr–Jun)</mat-option>
+              <mat-option value="3">3º Trimestre (Jul–Set)</mat-option>
+              <mat-option value="4">4º Trimestre (Out–Dez)</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Ano</mat-label>
+            <input matInput type="number" min="2000" formControlName="year" (change)="onQuarterChange()">
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Observações (opcional)</mat-label>
+          <textarea matInput rows="2" maxlength="500" [ngModel]="notes()" (ngModelChange)="notes.set($event)"
+            [ngModelOptions]="{ standalone: true }" placeholder="Aparece no extracto em PDF"></textarea>
+          <mat-hint align="end">{{ notes().length }}/500</mat-hint>
+        </mat-form-field>
+
+        <div class="flex justify-end mt-2">
+          <button mat-raised-button type="submit" class="!bg-ispc-orange !text-white"
+            [disabled]="isLoading() || filterForm.invalid">
+            <mat-icon>account_balance_wallet</mat-icon>
+            Gerar extracto
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  @if (isLoading()) {
+    <div class="flex justify-center items-center py-12">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+  } @else if (errorMessage()) {
+    <mat-card>
+      <mat-card-content class="!pt-6 text-center text-red-600">{{ errorMessage() }}</mat-card-content>
+    </mat-card>
+  } @else if (statement() && period()) {
+    <!-- Cliente e resumo -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+      <mat-card>
+        <mat-card-content class="!pt-6">
+          <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">{{ statement()!.client.client_code }}</p>
+          <h2 class="text-xl font-bold text-gray-900 mb-2">{{ statement()!.client.name }}</h2>
+          @if (statement()!.client.nuit) {
+            <p class="text-sm text-gray-600">NUIT: {{ statement()!.client.nuit }}</p>
+          }
+          @if (statement()!.client.address) {
+            <p class="text-sm text-gray-600">{{ statement()!.client.address }}</p>
+          }
+          @if (statement()!.client.phone) {
+            <p class="text-sm text-gray-600">Tel.: {{ statement()!.client.phone }}</p>
+          }
+          @if (statement()!.client.email) {
+            <p class="text-sm text-gray-600">{{ statement()!.client.email }}</p>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <div class="lg:col-span-2 grid grid-cols-2 gap-4">
+        <mat-card>
+          <mat-card-content class="!pt-6">
+            <p class="text-sm text-gray-600 mb-1">Saldo anterior</p>
+            <h3 class="text-xl font-bold text-gray-900">{{ formatCurrency(statement()!.opening_balance) }}</h3>
+            <p class="text-xs text-gray-500 mt-1">Antes de {{ formatDate(period()!.start) }}</p>
+          </mat-card-content>
+        </mat-card>
+        <mat-card>
+          <mat-card-content class="!pt-6">
+            <p class="text-sm text-gray-600 mb-1">Total facturado</p>
+            <h3 class="text-xl font-bold text-gray-900">{{ formatCurrency(totals().invoiced) }}</h3>
+          </mat-card-content>
+        </mat-card>
+        <mat-card>
+          <mat-card-content class="!pt-6">
+            <p class="text-sm text-gray-600 mb-1">Total pago</p>
+            <h3 class="text-xl font-bold text-green-600">{{ formatCurrency(totals().paid) }}</h3>
+          </mat-card-content>
+        </mat-card>
+        <mat-card>
+          <mat-card-content class="!pt-6">
+            <p class="text-sm text-gray-600 mb-1">Saldo em dívida</p>
+            <h3 class="text-xl font-bold" [class.text-red-600]="totals().balance > 0"
+              [class.text-green-600]="totals().balance <= 0">
+              {{ formatCurrency(totals().balance) }}
+            </h3>
+            <p class="text-xs text-gray-500 mt-1">Em {{ formatDate(period()!.end) }}</p>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- Movimentos -->
+    <mat-card>
+      <mat-card-content class="!pt-6">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
+          <div>
+            <h2 class="text-lg font-semibold text-gray-900">Movimentos do período</h2>
+            <p class="text-sm text-gray-500">{{ formatDate(period()!.start) }} a {{ formatDate(period()!.end) }}</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <mat-button-toggle-group [value]="movementFilter()" (change)="movementFilter.set($event.value)"
+              aria-label="Tipo de movimento">
+              <mat-button-toggle value="all">Todos</mat-button-toggle>
+              <mat-button-toggle value="factura">Facturas</mat-button-toggle>
+              <mat-button-toggle value="recibo">Recibos</mat-button-toggle>
+            </mat-button-toggle-group>
+            <button mat-stroked-button (click)="openPreview()">
+              <mat-icon>picture_as_pdf</mat-icon>
+              PDF / Imprimir
+            </button>
+            <button mat-stroked-button (click)="exportExcel()">
+              <mat-icon>table_view</mat-icon>
+              Exportar Excel
+            </button>
+          </div>
+        </div>
+
+        @if (!showBalance()) {
+          <p class="text-xs text-gray-500 mb-2">
+            A coluna de saldo fica oculta quando se mostram só facturas ou só recibos.
+            O saldo em dívida conta sempre com todos os movimentos.
+          </p>
+        }
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="text-left p-3 font-semibold text-gray-700 whitespace-nowrap">Data</th>
+                <th class="text-left p-3 font-semibold text-gray-700 whitespace-nowrap">Documento</th>
+                <th class="text-left p-3 font-semibold text-gray-700">Descrição</th>
+                <th class="text-right p-3 font-semibold text-gray-700 whitespace-nowrap">Facturado</th>
+                <th class="text-right p-3 font-semibold text-gray-700 whitespace-nowrap">Pago</th>
+                @if (showBalance()) {
+                  <th class="text-right p-3 font-semibold text-gray-700 whitespace-nowrap">Saldo</th>
+                }
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              @if (showBalance()) {
+                <tr class="bg-gray-50/60 italic text-gray-600">
+                  <td class="p-3 whitespace-nowrap">{{ formatDate(period()!.start) }}</td>
+                  <td class="p-3">—</td>
+                  <td class="p-3">Saldo anterior</td>
+                  <td class="p-3 text-right">—</td>
+                  <td class="p-3 text-right">—</td>
+                  <td class="p-3 text-right font-semibold whitespace-nowrap">{{ formatCurrency(statement()!.opening_balance) }}</td>
+                </tr>
+              }
+              @for (m of visibleMovements(); track m.kind + m.document + m.date) {
+                <tr class="hover:bg-gray-50">
+                  <td class="p-3 whitespace-nowrap">{{ formatDate(m.date) }}</td>
+                  <td class="p-3 whitespace-nowrap">
+                    <button type="button" class="font-medium text-ispc-orange hover:underline"
+                      (click)="openDocument(m)"
+                      [attr.aria-label]="(m.kind === 'recibo' ? 'Ver recibo ' : 'Ver factura ') + m.document">
+                      {{ m.document }}
+                    </button>
+                  </td>
+                  <td class="p-3">{{ m.description }}</td>
+                  <td class="p-3 text-right whitespace-nowrap">{{ m.invoiced ? formatCurrency(m.invoiced) : '—' }}</td>
+                  <td class="p-3 text-right whitespace-nowrap text-green-700">{{ m.paid ? formatCurrency(m.paid) : '—' }}</td>
+                  @if (showBalance()) {
+                    <td class="p-3 text-right whitespace-nowrap font-semibold">{{ formatCurrency(m.balance) }}</td>
+                  }
+                </tr>
+              } @empty {
+                <tr>
+                  <td class="p-6 text-center text-gray-500" [attr.colspan]="showBalance() ? 6 : 5">
+                    Sem movimentos no período.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

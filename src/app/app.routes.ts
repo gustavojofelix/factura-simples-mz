@@ -68,6 +68,11 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/reports/client-statements/client-statements.component').then(m => m.ClientStatementsComponent)
       },
       {
+        path: 'relatorios/extractos/:clientId',
+        canActivate: [roleGuard(REPORT_ROLES)],
+        loadComponent: () => import('./pages/reports/client-statements/client-statement-detail.component').then(m => m.ClientStatementDetailComponent)
+      },
+      {
         path: 'assistente',
         loadComponent: () => import('./pages/assistant/assistant.component').then(m => m.AssistantComponent)
       },

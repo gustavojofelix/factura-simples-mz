@@ -15,6 +15,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSelectModule } from '@angular/material/select';
 import { ClientService, Client } from '../../core/services/client.service';
 import { CompanyService } from '../../core/services/company.service';
+import { REPORT_ROLES } from '../../core/guards/role.guard';
+import { Router } from '@angular/router';
 import { ExportService } from '../../core/services/export.service';
 import { nuitValidator } from '../../core/validators/nuit.validator';
 import { SubscriptionLimitDialogComponent } from '../../shared/components/subscription-limit-dialog.component';
@@ -393,11 +395,19 @@ export class ClientsComponent implements OnInit {
     public companyService: CompanyService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private exportService: ExportService
+    private exportService: ExportService,
+    private router: Router
   ) { }
+
+  /** O extracto só está disponível para Proprietário, Admin e Gestor. */
+  canViewStatement = computed(() => REPORT_ROLES.includes(this.companyService.activeRole() || ''));
 
   ngOnInit() {
     this.clientService.loadClients();
+  }
+
+  viewStatement(client: Client) {
+    this.router.navigate(['/relatorios/extractos', client.id]);
   }
 
 

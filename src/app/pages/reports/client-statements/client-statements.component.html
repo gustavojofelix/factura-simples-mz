@@ -127,7 +127,7 @@
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
           <div>
             <h2 class="text-lg font-semibold text-gray-900">Extracto dos clientes</h2>
-            <p class="text-sm text-gray-500">Período: {{ formatDate(period()!.start) }} a {{ formatDate(period()!.end) }}</p>
+            <p class="text-sm text-gray-500">Período: {{ formatDate(period()!.start) }} a {{ formatDate(period()!.end) }} · clique num cliente para ver os movimentos</p>
           </div>
           <div class="flex flex-wrap gap-2">
             <button mat-stroked-button (click)="openPreview()" [disabled]="visibleRows().length === 0">
@@ -217,7 +217,9 @@
             </ng-container>
 
             <tr mat-header-row *matHeaderRowDef="columns"></tr>
-            <tr mat-row *matRowDef="let row; columns: columns;" class="hover:bg-gray-50"></tr>
+            <tr mat-row *matRowDef="let row; columns: columns;" class="hover:bg-gray-50 cursor-pointer"
+              (click)="openClient(row)" (keydown.enter)="openClient(row)" tabindex="0"
+              [attr.aria-label]="'Ver extracto de ' + row.client_name"></tr>
             <tr mat-footer-row *matFooterRowDef="columns" class="bg-gray-50"></tr>
 
             <tr class="mat-row" *matNoDataRow>
