@@ -17,6 +17,8 @@ import { CompanyService } from '../../core/services/company.service';
 import { ExportService } from '../../core/services/export.service';
 import { ClientService } from '../../core/services/client.service';
 import { AuditLogService } from '../../core/services/audit-log.service';
+import { toIsoDate } from '../../core/utils/date.util';
+import { ReportsNavComponent } from './reports-nav.component';
 
 interface SalesReport {
   totalSales: number;
@@ -58,7 +60,8 @@ interface SalesReport {
     MatTableModule,
     MatProgressSpinnerModule,
     MatTabsModule,
-    MatSelectModule
+    MatSelectModule,
+    ReportsNavComponent
   ],
   template: `
     <div class="p-6 max-w-7xl mx-auto">
@@ -66,6 +69,8 @@ interface SalesReport {
         <h1 class="text-3xl font-bold text-gray-900 mb-2">Relatórios</h1>
         <p class="text-gray-600">Análise detalhada de vendas e faturamento</p>
       </div>
+
+      <app-reports-nav></app-reports-nav>
 
       <mat-card class="mb-6">
         <mat-card-content class="!pt-6">
@@ -575,9 +580,7 @@ export class ReportsComponent implements OnInit {
   }
 
   formatDateForDB(date: Date): string {
-    if (!date) return '';
-    const d = new Date(date);
-    return d.toISOString().split('T')[0];
+    return toIsoDate(date);
   }
 
   formatDate(dateString: string): string {

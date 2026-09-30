@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard } from './core/guards/auth.guard';
 import { adminGuard, adminGuestGuard } from './core/guards/admin.guard';
+import { roleGuard, REPORT_ROLES } from './core/guards/role.guard';
 
 export const routes: Routes = [
   // Rotas normais para clientes (ispcfacil.co.mz)
@@ -58,7 +59,13 @@ export const routes: Routes = [
       },
       {
         path: 'relatorios',
+        canActivate: [roleGuard(REPORT_ROLES)],
         loadComponent: () => import('./pages/reports/reports.component').then(m => m.ReportsComponent)
+      },
+      {
+        path: 'relatorios/extractos',
+        canActivate: [roleGuard(REPORT_ROLES)],
+        loadComponent: () => import('./pages/reports/client-statements/client-statements.component').then(m => m.ClientStatementsComponent)
       },
       {
         path: 'assistente',

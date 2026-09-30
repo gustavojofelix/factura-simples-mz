@@ -1,0 +1,233 @@
+<div class="p-4 sm:p-6 max-w-7xl mx-auto">
+  <div class="mb-4">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">Relatórios</h1>
+    <p class="text-gray-600">Extracto de movimentos dos clientes de {{ companyService.activeCompany()?.name }}</p>
+  </div>
+
+  <app-reports-nav></app-reports-nav>
+
+  <!-- Filtros do extracto -->
+  <mat-card class="mb-6">
+    <mat-card-content class="!pt-6">
+      <form [formGroup]="filterForm" (ngSubmit)="generate()">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <mat-form-field appearance="outline">
+            <mat-label>Data inicial</mat-label>
+            <input matInput [matDatepicker]="startPicker" formControlName="startDate" (dateChange)="onDateChange()">
+            <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
+            <mat-datepicker #startPicker></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Data final</mat-label>
+            <input matInput [matDatepicker]="endPicker" formControlName="endDate" (dateChange)="onDateChange()">
+            <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
+            <mat-datepicker #endPicker></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Trimestre</mat-label>
+            <mat-select formControlName="quarter" (selectionChange)="onQuarterChange()">
+              <mat-option value="none">Período personalizado</mat-option>
+              <mat-option value="1">1º Trimestre (Jan–Mar)</mat-option>
+              <mat-option value="2">2º Trimestre (Abr–Jun)</mat-option>
+              <mat-option value="3">3º Trimestre (Jul–Set)</mat-option>
+              <mat-option value="4">4º Trimestre (Out–Dez)</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Ano</mat-label>
+            <input matInput type="number" min="2000" formControlName="year" (change)="onQuarterChange()">
+          </mat-form-field>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <mat-form-field appearance="outline">
+            <mat-label>Clientes</mat-label>
+            <mat-select formControlName="clientIds" multiple placeholder="Todos os clientes">
+              <mat-select-trigger>
+                @if ((filterForm.value.clientIds || []).length === 0) {
+                  Todos os clientes
+                } @else {
+                  {{ (filterForm.value.clientIds || []).length }} cliente(s) seleccionado(s)
+                }
+              </mat-select-trigger>
+              @for (client of clientService.clients(); track client.id) {
+                <mat-option [value]="client.id">
+                  {{ client.client_code ? client.client_code + ' · ' : '' }}{{ client.name }}
+                </mat-option>
+              }
+            </mat-select>
+            @if ((filterForm.value.clientIds || []).length > 0) {
+              <button mat-icon-button matSuffix type="button" (click)="clearClientSelection(); $event.stopPropagation()"
+                aria-label="Limpar selecção">
+                <mat-icon>close</mat-icon>
+              </button>
+            }
+            <mat-hint>Deixe vazio para incluir todos os clientes</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Observações (opcional)</mat-label>
+            <textarea matInput rows="2" maxlength="500" [ngModel]="notes()" (ngModelChange)="notes.set($event)"
+              [ngModelOptions]="{ standalone: true }" placeholder="Aparece no extracto em PDF"></textarea>
+            <mat-hint align="end">{{ notes().length }}/500</mat-hint>
+          </mat-form-field>
+        </div>
+
+        <div class="flex justify-end mt-2">
+          <button mat-raised-button type="submit" class="!bg-ispc-orange !text-white"
+            [disabled]="isLoading() || filterForm.invalid">
+            <mat-icon>account_balance_wallet</mat-icon>
+            Gerar extracto
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  @if (isLoading()) {
+    <div class="flex justify-center items-center py-12">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+  } @else if (period()) {
+    <!-- Resumo -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <mat-card>
+        <mat-card-content class="!pt-6">
+          <p class="text-sm text-gray-600 mb-1">Total facturado</p>
+          <h3 class="text-2xl font-bold text-gray-900">{{ formatCurrency(totals().total_invoiced) }}</h3>
+        </mat-card-content>
+      </mat-card>
+      <mat-card>
+        <mat-card-content class="!pt-6">
+          <p class="text-sm text-gray-600 mb-1">Total pago</p>
+          <h3 class="text-2xl font-bold text-green-600">{{ formatCurrency(totals().total_paid) }}</h3>
+        </mat-card-content>
+      </mat-card>
+      <mat-card>
+        <mat-card-content class="!pt-6">
+          <p class="text-sm text-gray-600 mb-1">Saldo em dívida</p>
+          <h3 class="text-2xl font-bold text-red-600">{{ formatCurrency(totals().balance) }}</h3>
+          <p class="text-xs text-gray-500 mt-1">Inclui saldo anterior de {{ formatCurrency(totals().opening_balance) }}</p>
+        </mat-card-content>
+      </mat-card>
+      <mat-card>
+        <mat-card-content class="!pt-6">
+          <p class="text-sm text-gray-600 mb-1">Clientes com saldo</p>
+          <h3 class="text-2xl font-bold text-gray-900">{{ debtorCount() }}</h3>
+          <p class="text-xs text-gray-500 mt-1">{{ overdueCount() }} com facturas vencidas</p>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <mat-card>
+      <mat-card-content class="!pt-6">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
+          <div>
+            <h2 class="text-lg font-semibold text-gray-900">Extracto dos clientes</h2>
+            <p class="text-sm text-gray-500">Período: {{ formatDate(period()!.start) }} a {{ formatDate(period()!.end) }}</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button mat-stroked-button (click)="openPreview()" [disabled]="visibleRows().length === 0">
+              <mat-icon>picture_as_pdf</mat-icon>
+              PDF / Imprimir
+            </button>
+            <button mat-stroked-button (click)="exportExcel()" [disabled]="visibleRows().length === 0">
+              <mat-icon>table_view</mat-icon>
+              Exportar Excel
+            </button>
+          </div>
+        </div>
+
+        <!-- Pesquisa e filtros sobre o resultado -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Pesquisar por nome, ID ou NUIT</mat-label>
+            <mat-icon matPrefix class="text-gray-400">search</mat-icon>
+            <input matInput [ngModel]="search()" (ngModelChange)="search.set($event)">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Estado</mat-label>
+            <mat-select [value]="statusFilter()" (selectionChange)="statusFilter.set($event.value)">
+              <mat-option value="all">Todos</mat-option>
+              <mat-option value="com_saldo">Com saldo em dívida</mat-option>
+              <mat-option value="em_divida">Em dívida (não vencido)</mat-option>
+              <mat-option value="vencido">Vencido</mat-option>
+              <mat-option value="pago">Pago</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-slide-toggle [checked]="hideInactive()" (change)="hideInactive.set($event.checked)">
+            Ocultar clientes sem movimentos
+          </mat-slide-toggle>
+        </div>
+
+        <div class="overflow-x-auto mt-4">
+          <table mat-table [dataSource]="visibleRows()" matSort
+            [matSortActive]="sort().active" [matSortDirection]="sort().direction"
+            (matSortChange)="sort.set($event)" class="w-full">
+
+            <ng-container matColumnDef="client_code">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
+              <td mat-cell *matCellDef="let row" class="whitespace-nowrap">{{ row.client_code || '-' }}</td>
+              <td mat-footer-cell *matFooterCellDef class="font-bold">TOTAL</td>
+            </ng-container>
+
+            <ng-container matColumnDef="client_name">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Cliente</th>
+              <td mat-cell *matCellDef="let row" class="font-medium">{{ row.client_name }}</td>
+              <td mat-footer-cell *matFooterCellDef>{{ visibleRows().length }} cliente(s)</td>
+            </ng-container>
+
+            <ng-container matColumnDef="opening_balance">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header arrowPosition="before" class="!text-right">Saldo anterior</th>
+              <td mat-cell *matCellDef="let row" class="!text-right whitespace-nowrap">{{ formatCurrency(row.opening_balance) }}</td>
+              <td mat-footer-cell *matFooterCellDef class="!text-right font-bold whitespace-nowrap">{{ formatCurrency(totals().opening_balance) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="total_invoiced">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header arrowPosition="before" class="!text-right">Total facturado</th>
+              <td mat-cell *matCellDef="let row" class="!text-right whitespace-nowrap">{{ formatCurrency(row.total_invoiced) }}</td>
+              <td mat-footer-cell *matFooterCellDef class="!text-right font-bold whitespace-nowrap">{{ formatCurrency(totals().total_invoiced) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="total_paid">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header arrowPosition="before" class="!text-right">Total pago</th>
+              <td mat-cell *matCellDef="let row" class="!text-right whitespace-nowrap text-green-700">{{ formatCurrency(row.total_paid) }}</td>
+              <td mat-footer-cell *matFooterCellDef class="!text-right font-bold whitespace-nowrap">{{ formatCurrency(totals().total_paid) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="balance">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header arrowPosition="before" class="!text-right">Saldo</th>
+              <td mat-cell *matCellDef="let row" class="!text-right whitespace-nowrap font-semibold">{{ formatCurrency(row.balance) }}</td>
+              <td mat-footer-cell *matFooterCellDef class="!text-right font-bold whitespace-nowrap">{{ formatCurrency(totals().balance) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <td mat-cell *matCellDef="let row">
+                <span class="px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap" [class]="statusClass(row.status)">
+                  {{ statementService.getStatusLabel(row.status) }}
+                </span>
+              </td>
+              <td mat-footer-cell *matFooterCellDef></td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columns"></tr>
+            <tr mat-row *matRowDef="let row; columns: columns;" class="hover:bg-gray-50"></tr>
+            <tr mat-footer-row *matFooterRowDef="columns" class="bg-gray-50"></tr>
+
+            <tr class="mat-row" *matNoDataRow>
+              <td class="mat-cell p-6 text-center text-gray-500" [attr.colspan]="columns.length">
+                Nenhum cliente corresponde aos filtros.
+              </td>
+            </tr>
+          </table>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

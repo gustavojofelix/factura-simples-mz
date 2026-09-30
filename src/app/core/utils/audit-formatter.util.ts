@@ -26,6 +26,8 @@ const KEY_LABELS: Record<string, string> = {
   company_name: 'Nome da Empresa / Contribuinte',
   subscriber_id: 'ID do Subscritor',
   invoice_number: 'Número da Factura',
+  receipt_number: 'Número do Recibo',
+  selected_clients: 'Clientes Seleccionados',
   invoice_id: 'ID da Factura',
   client_name: 'Nome do Cliente',
   client_id: 'ID do Cliente',
