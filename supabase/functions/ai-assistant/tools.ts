@@ -14,10 +14,11 @@ import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
  *     assistente não consegue ler nada que o próprio utilizador não pudesse
  *     abrir na aplicação.
  *
- * Todos os esquemas usam `strict: true`, o que exige `additionalProperties:
- * false` e todas as propriedades em `required`. Os parâmetros opcionais são
- * portanto declarados como anuláveis: o modelo passa `null` quando não os quer
- * especificar e o SQL aplica o seu próprio valor por omissão.
+ * Os esquemas NÃO usam `strict: true`: o modo strict limita a 16 os parâmetros
+ * anuláveis no conjunto das ferramentas, e estas têm mais do que isso. Os
+ * parâmetros opcionais ficam simplesmente fora de `required`; `buildArgs` e o
+ * SQL aplicam os valores por omissão e validam o resto. Um argumento inválido
+ * volta ao modelo como `tool_result` de erro, não rebenta a conversa.
  */
 
 type Json = Record<string, unknown>;
@@ -32,22 +33,28 @@ interface ToolSpec {
   input_schema: Json;
 }
 
-const nullableString = (description: string) => ({
-  type: ["string", "null"],
+const optionalString = (description: string) => ({
+  type: "string",
   description,
 });
 
-const nullableInteger = (description: string) => ({
-  type: ["integer", "null"],
+const optionalInteger = (description: string) => ({
+  type: "integer",
+  description,
+});
+
+const optionalEnum = (values: string[], description: string) => ({
+  type: "string",
+  enum: values,
   description,
 });
 
 const periodProps = {
-  de: nullableString(
-    "Data inicial do período, no formato AAAA-MM-DD. null usa o valor por omissão da consulta.",
+  de: optionalString(
+    "Data inicial do período, no formato AAAA-MM-DD. Se omitida, a consulta usa o seu valor por omissão.",
   ),
-  ate: nullableString(
-    "Data final do período, no formato AAAA-MM-DD. null significa hoje.",
+  ate: optionalString(
+    "Data final do período, no formato AAAA-MM-DD. Se omitida, usa hoje.",
   ),
 };
 
@@ -61,7 +68,6 @@ export const TOOLS: ToolSpec[] = [
     input_schema: {
       type: "object",
       properties: { ...periodProps },
-      required: ["de", "ate"],
       additionalProperties: false,
     },
   },
@@ -79,13 +85,11 @@ export const TOOLS: ToolSpec[] = [
       type: "object",
       properties: {
         ...periodProps,
-        granularidade: {
-          type: ["string", "null"],
-          enum: ["day", "week", "month", "quarter", "year", null],
-          description: "Agregação da série. null usa 'month'.",
-        },
+        granularidade: optionalEnum(
+          ["day", "week", "month", "quarter", "year"],
+          "Agregação da série. Se omitido, usa 'month'.",
+        ),
       },
-      required: ["de", "ate", "granularidade"],
       additionalProperties: false,
     },
   },
@@ -104,14 +108,12 @@ export const TOOLS: ToolSpec[] = [
       type: "object",
       properties: {
         ...periodProps,
-        ordenar_por: {
-          type: ["string", "null"],
-          enum: ["receita", "quantidade", null],
-          description: "Critério de ordenação. null usa 'receita'.",
-        },
-        limite: nullableInteger("Quantos produtos devolver (1 a 50). null usa 10."),
+        ordenar_por: optionalEnum(
+          ["receita", "quantidade"],
+          "Critério de ordenação. Se omitido, usa 'receita'.",
+        ),
+        limite: optionalInteger("Quantos produtos devolver (1 a 50). Se omitido, usa 10."),
       },
-      required: ["de", "ate", "ordenar_por", "limite"],
       additionalProperties: false,
     },
   },
@@ -129,9 +131,8 @@ export const TOOLS: ToolSpec[] = [
       type: "object",
       properties: {
         ...periodProps,
-        limite: nullableInteger("Quantos clientes devolver (1 a 50). null usa 10."),
+        limite: optionalInteger("Quantos clientes devolver (1 a 50). Se omitido, usa 10."),
       },
-      required: ["de", "ate", "limite"],
       additionalProperties: false,
     },
   },
@@ -144,12 +145,11 @@ export const TOOLS: ToolSpec[] = [
     input_schema: {
       type: "object",
       properties: {
-        dias: nullableInteger(
-          "Dias sem comprar a partir dos quais um cliente conta como inactivo. null usa 90.",
+        dias: optionalInteger(
+          "Dias sem comprar a partir dos quais um cliente conta como inactivo. Se omitido, usa 90.",
         ),
-        limite: nullableInteger("Quantos clientes listar (1 a 100). null usa 25."),
+        limite: optionalInteger("Quantos clientes listar (1 a 100). Se omitido, usa 25."),
       },
-      required: ["dias", "limite"],
       additionalProperties: false,
     },
   },
@@ -162,9 +162,8 @@ export const TOOLS: ToolSpec[] = [
     input_schema: {
       type: "object",
       properties: {
-        limite: nullableInteger("Quantos devedores listar (1 a 100). null usa 20."),
+        limite: optionalInteger("Quantos devedores listar (1 a 100). Se omitido, usa 20."),
       },
-      required: ["limite"],
       additionalProperties: false,
     },
   },
@@ -177,9 +176,8 @@ export const TOOLS: ToolSpec[] = [
     input_schema: {
       type: "object",
       properties: {
-        ano: nullableInteger("Ano civil a consultar. null usa o ano corrente."),
+        ano: optionalInteger("Ano civil a consultar. Se omitido, usa o ano corrente."),
       },
-      required: ["ano"],
       additionalProperties: false,
     },
   },
@@ -199,17 +197,15 @@ export const TOOLS: ToolSpec[] = [
       type: "object",
       properties: {
         ...periodProps,
-        estado: {
-          type: ["string", "null"],
-          enum: ["rascunho", "pendente", "paga", "vencida", "anulada", null],
-          description: "Filtrar por estado da factura. null não filtra.",
-        },
-        cliente: nullableString(
-          "Filtrar por nome de cliente (correspondência parcial). null não filtra.",
+        estado: optionalEnum(
+          ["rascunho", "pendente", "paga", "vencida", "anulada"],
+          "Filtrar por estado da factura. Se omitido, não filtra.",
         ),
-        limite: nullableInteger("Quantas facturas devolver (1 a 200). null usa 50."),
+        cliente: optionalString(
+          "Filtrar por nome de cliente (correspondência parcial). Se omitido, não filtra.",
+        ),
+        limite: optionalInteger("Quantas facturas devolver (1 a 200). Se omitido, usa 50."),
       },
-      required: ["de", "ate", "estado", "cliente", "limite"],
       additionalProperties: false,
     },
   },
@@ -226,9 +222,9 @@ export const TOOLS: ToolSpec[] = [
           type: "string",
           description: "Texto a procurar. Mínimo 2 caracteres.",
         },
-        limite: nullableInteger("Resultados por tipo (1 a 25). null usa 8."),
+        limite: optionalInteger("Resultados por tipo (1 a 25). Se omitido, usa 8."),
       },
-      required: ["termo", "limite"],
+      required: ["termo"],
       additionalProperties: false,
     },
   },
@@ -245,9 +241,9 @@ export const TOOLS: ToolSpec[] = [
           type: "string",
           description: "A pergunta ou o tema fiscal a consultar.",
         },
-        limite: nullableInteger("Quantos artigos devolver (1 a 10). null usa 4."),
+        limite: optionalInteger("Quantos artigos devolver (1 a 10). Se omitido, usa 4."),
       },
-      required: ["pergunta", "limite"],
+      required: ["pergunta"],
       additionalProperties: false,
     },
   },
@@ -258,7 +254,6 @@ export const TOOL_DEFINITIONS = TOOLS.map((t) => ({
   name: t.name,
   description: t.description,
   input_schema: t.input_schema,
-  strict: true,
 }));
 
 const BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));
