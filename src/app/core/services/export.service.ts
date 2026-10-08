@@ -37,7 +37,11 @@ export class ExportService {
 
   /** Descarrega texto como ficheiro (CSV, XML, ...). */
   downloadFile(content: string, fileName: string, mime: string) {
-    const blob = new Blob([content], { type: mime });
+    this.downloadBlob(new Blob([content], { type: mime }), fileName);
+  }
+
+  /** Descarrega um Blob (ZIP, ...) como ficheiro. */
+  downloadBlob(blob: Blob, fileName: string) {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
 

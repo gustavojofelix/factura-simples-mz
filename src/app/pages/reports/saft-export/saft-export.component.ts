@@ -17,6 +17,7 @@ import { formatIsoDate, quarterRange, toIsoDate } from '../../../core/utils/date
 import { ReportsNavComponent } from '../reports-nav.component';
 
 type PeriodMode = 'mensal' | 'trimestral' | 'anual';
+type SaftFormat = 'xml' | 'xlsx' | 'csv';
 
 const MONTHS = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -169,11 +170,22 @@ const MONTHS = [
                 </div>
               }
 
-              <div class="flex justify-end">
-                <button mat-raised-button color="primary" type="button" (click)="download()">
+              <div class="flex flex-col sm:flex-row sm:justify-end gap-3">
+                <button mat-stroked-button type="button" [disabled]="isDownloading()" (click)="download('csv')">
+                  <mat-icon>table_rows</mat-icon> Descarregar CSV (.zip)
+                </button>
+                <button mat-stroked-button type="button" [disabled]="isDownloading()" (click)="download('xlsx')">
+                  <mat-icon>grid_on</mat-icon> Descarregar Excel
+                </button>
+                <button mat-raised-button color="primary" type="button" [disabled]="isDownloading()" (click)="download('xml')">
                   <mat-icon>download</mat-icon> Descarregar XML
                 </button>
               </div>
+              <p class="mt-3 text-xs text-gray-500 sm:text-right">
+                Excel e CSV contêm os mesmos dados do XML, uma folha/ficheiro por secção
+                (Cabeçalho, Totais, Clientes, Artigos, Impostos, Facturas, Linhas, Recibos).
+                O CSV usa ';' como separador e ponto decimal.
+              </p>
             </mat-card-content>
           </mat-card>
         }
@@ -200,6 +212,7 @@ export class SaftExportComponent {
   year = signal(this.today.getFullYear());
 
   isGenerating = signal(false);
+  isDownloading = signal(false);
   featureEnabled = signal<boolean | null>(null);
   result = signal<SaftResult | null>(null);
   /** Período e empresa para os quais o resultado actual foi gerado. */
@@ -279,21 +292,38 @@ export class SaftExportComponent {
     }
   }
 
-  async download() {
+  async download(format: SaftFormat) {
     const result = this.result();
-    if (!result || !this.resultContext) return;
+    if (!result || !this.resultContext || this.isDownloading()) return;
 
     const { start, end, company } = this.resultContext;
-    this.exportService.downloadFile(
-      result.xml,
-      this.saftService.fileName(company, start, end),
-      'application/xml;charset=utf-8'
-    );
+    this.isDownloading.set(true);
+    try {
+      if (format === 'xml') {
+        this.exportService.downloadFile(
+          result.xml,
+          this.saftService.fileName(company, start, end),
+          'application/xml;charset=utf-8'
+        );
+      } else if (format === 'xlsx') {
+        await this.saftService.downloadExcel(result, company, start, end);
+      } else {
+        const zip = await this.saftService.buildCsvZip(result);
+        this.exportService.downloadBlob(zip, `${this.saftService.fileBaseName(company, start, end)}_CSV.zip`);
+      }
+    } catch (error) {
+      console.error('Erro ao descarregar SAF-T:', error);
+      this.snackBar.open('Não foi possível descarregar o ficheiro SAF-T.', 'Fechar', { duration: 5000 });
+      return;
+    } finally {
+      this.isDownloading.set(false);
+    }
 
     await this.auditLogService.log(
       'Exportou Ficheiro SAF-T',
       'reports',
       {
+        format,
         start,
         end,
         invoices: result.summary.invoices,

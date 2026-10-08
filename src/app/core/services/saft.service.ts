@@ -103,8 +103,18 @@ export interface SaftSummary {
   products: number;
 }
 
+/** Uma secção do SAF-T em forma de tabela (Excel/CSV), com os mesmos valores do XML. */
+export interface SaftTable {
+  /** Nome da folha Excel / do ficheiro CSV. */
+  name: string;
+  /** Nomes dos campos SAF-T. */
+  columns: string[];
+  rows: (string | number)[][];
+}
+
 export interface SaftResult {
   xml: string;
+  tables: SaftTable[];
   summary: SaftSummary;
   warnings: string[];
 }
@@ -291,33 +301,50 @@ export function buildSaftXml(data: SaftData): SaftResult {
   w.raw('<?xml version="1.0" encoding="UTF-8"?>');
   w.open('AuditFile', ` xmlns="${cfg.namespace}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"`);
 
+  // Tabelas para Excel/CSV, preenchidas em paralelo com o XML
+  const headerRows: (string | number)[][] = [];
+  const customerRows: (string | number)[][] = [];
+  const productRows: (string | number)[][] = [];
+  const invoiceRows: (string | number)[][] = [];
+  const lineRows: (string | number)[][] = [];
+  const paymentRows: (string | number)[][] = [];
+
+  /** Campo do cabeçalho: escrito no XML e na tabela 'Cabecalho'. */
+  const hEl = (tag: string, value: string | number, field = tag) => {
+    w.el(tag, value);
+    headerRows.push([field, value]);
+  };
+  const hOpt = (tag: string, value: string, field = tag) => {
+    if (value.trim() !== '') hEl(tag, value, field);
+  };
+
   // Header -------------------------------------------------------------------
   w.open('Header');
-  w.el('AuditFileVersion', cfg.auditFileVersion);
-  w.el('CompanyID', company.nuit || cfg.unknown);
-  w.el('TaxRegistrationNumber', company.nuit || '0');
-  w.el('TaxAccountingBasis', cfg.taxAccountingBasis);
-  w.el('CompanyName', truncate(company.name, 100));
+  hEl('AuditFileVersion', cfg.auditFileVersion);
+  hEl('CompanyID', company.nuit || cfg.unknown);
+  hEl('TaxRegistrationNumber', company.nuit || '0');
+  hEl('TaxAccountingBasis', cfg.taxAccountingBasis);
+  hEl('CompanyName', truncate(company.name, 100));
   w.open('CompanyAddress');
-  w.el('AddressDetail', truncate(company.address || cfg.unknown, 210));
-  w.el('City', truncate(meta.district || meta.province || cfg.unknown, 50));
-  w.el('PostalCode', truncate(company.postal_code || cfg.unknownPostalCode, 20));
-  w.opt('Region', truncate(meta.province, 50));
-  w.el('Country', cfg.countryCode);
+  hEl('AddressDetail', truncate(company.address || cfg.unknown, 210), 'CompanyAddress.AddressDetail');
+  hEl('City', truncate(meta.district || meta.province || cfg.unknown, 50), 'CompanyAddress.City');
+  hEl('PostalCode', truncate(company.postal_code || cfg.unknownPostalCode, 20), 'CompanyAddress.PostalCode');
+  hOpt('Region', truncate(meta.province, 50), 'CompanyAddress.Region');
+  hEl('Country', cfg.countryCode, 'CompanyAddress.Country');
   w.close('CompanyAddress');
-  w.el('FiscalYear', data.startDate.substring(0, 4));
-  w.el('StartDate', data.startDate);
-  w.el('EndDate', data.endDate);
-  w.el('CurrencyCode', company.currency || cfg.defaultCurrency);
-  w.el('DateCreated', data.dateCreated);
-  w.el('TaxEntity', cfg.taxEntity);
-  w.el('ProductCompanyTaxID', cfg.productCompanyTaxID);
-  w.el('SoftwareCertificateNumber', cfg.softwareCertificateNumber);
-  w.el('ProductID', cfg.productID);
-  w.el('ProductVersion', cfg.productVersion);
-  w.el('HeaderComment', 'Ficheiro informativo: documentos sem assinatura digital (software não certificado).');
-  w.opt('Telephone', truncate(company.phone, 20));
-  w.opt('Email', truncate(company.email, 254));
+  hEl('FiscalYear', data.startDate.substring(0, 4));
+  hEl('StartDate', data.startDate);
+  hEl('EndDate', data.endDate);
+  hEl('CurrencyCode', company.currency || cfg.defaultCurrency);
+  hEl('DateCreated', data.dateCreated);
+  hEl('TaxEntity', cfg.taxEntity);
+  hEl('ProductCompanyTaxID', cfg.productCompanyTaxID);
+  hEl('SoftwareCertificateNumber', cfg.softwareCertificateNumber);
+  hEl('ProductID', cfg.productID);
+  hEl('ProductVersion', cfg.productVersion);
+  hEl('HeaderComment', 'Ficheiro informativo: documentos sem assinatura digital (software não certificado).');
+  hOpt('Telephone', truncate(company.phone, 20));
+  hOpt('Email', truncate(company.email, 254));
   w.close('Header');
 
   // MasterFiles --------------------------------------------------------------
@@ -340,6 +367,11 @@ export function buildSaftXml(data: SaftData): SaftResult {
     w.opt('Email', truncate(c?.email, 254));
     w.el('SelfBillingIndicator', 0);
     w.close('Customer');
+    customerRows.push([
+      id, taxId, truncate(name, 100), contact ? truncate(contact, 50) : '',
+      truncate(c?.address || cfg.unknown, 210), cfg.unknown, cfg.unknownPostalCode, cfg.countryCode,
+      truncate(c?.phone, 20), truncate(c?.email, 254)
+    ]);
   };
 
   for (const c of customers) {
@@ -357,6 +389,10 @@ export function buildSaftXml(data: SaftData): SaftResult {
     w.el('ProductDescription', truncate(p.name, 200));
     w.el('ProductNumberCode', truncate(p.barcode || p.code || p.id, 60));
     w.close('Product');
+    productRows.push([
+      p.type === 'servico' ? 'S' : 'P', productCodeOf(p), p.type === 'servico' ? 'Serviço' : 'Produto',
+      truncate(p.name, 200), truncate(p.barcode || p.code || p.id, 60)
+    ]);
   }
   if (needsGenericProduct) {
     w.open('Product');
@@ -365,6 +401,7 @@ export function buildSaftXml(data: SaftData): SaftResult {
     w.el('ProductDescription', cfg.genericProductDescription);
     w.el('ProductNumberCode', cfg.genericProductCode);
     w.close('Product');
+    productRows.push(['O', cfg.genericProductCode, '', cfg.genericProductDescription, cfg.genericProductCode]);
   }
 
   w.open('TaxTable');
@@ -416,15 +453,25 @@ export function buildSaftXml(data: SaftData): SaftResult {
     }
     if (!inv.items.length) warnings.push(`Factura ${inv.invoice_number} sem linhas.`);
 
+    const invoiceNo = documentRef(type, inv.invoice_number, type);
+    const statusDate = annulled
+      ? fmtDateTime(inv.annulled_at, inv.date)
+      : fmtDateTime(inv.issued_at || inv.created_at, inv.date);
+    const reason = annulled ? truncate(inv.annulment_reason || 'Anulação', 50) : '';
+    const systemEntryDate = fmtDateTime(inv.issued_at || inv.created_at, inv.date);
+    const customerId = customerIdOf(customer);
+    invoiceRows.push([
+      invoiceNo, annulled ? 'A' : 'N', statusDate, reason, inv.date, type, systemEntryDate, customerId, sourceId,
+      round2(inv.subtotal), 0, round2(inv.total)
+    ]);
+
     w.open('Invoice');
-    w.el('InvoiceNo', documentRef(type, inv.invoice_number, type));
+    w.el('InvoiceNo', invoiceNo);
     w.el('ATCUD', cfg.atcud);
     w.open('DocumentStatus');
     w.el('InvoiceStatus', annulled ? 'A' : 'N');
-    w.el('InvoiceStatusDate', annulled
-      ? fmtDateTime(inv.annulled_at, inv.date)
-      : fmtDateTime(inv.issued_at || inv.created_at, inv.date));
-    if (annulled) w.el('Reason', truncate(inv.annulment_reason || 'Anulação', 50));
+    w.el('InvoiceStatusDate', statusDate);
+    if (annulled) w.el('Reason', reason);
     w.el('SourceID', sourceId);
     w.el('SourceBilling', 'P');
     w.close('DocumentStatus');
@@ -439,12 +486,20 @@ export function buildSaftXml(data: SaftData): SaftResult {
     w.el('ThirdPartiesBillingIndicator', 0);
     w.close('SpecialRegimes');
     w.el('SourceID', sourceId);
-    w.el('SystemEntryDate', fmtDateTime(inv.issued_at || inv.created_at, inv.date));
-    w.el('CustomerID', customerIdOf(customer));
+    w.el('SystemEntryDate', systemEntryDate);
+    w.el('CustomerID', customerId);
 
     inv.items.forEach((item, index) => {
       const product = item.product_id ? productsById.get(item.product_id) : undefined;
       const description = truncate(item.product_name || item.description || product?.name || cfg.genericProductDescription, 200);
+      const amount = round2(item.subtotal);
+      lineRows.push([
+        invoiceNo, index + 1, productCodeOf(product), product ? truncate(product.name, 200) : description,
+        Number(fmtDecimal(item.quantity)), truncate(product?.unit || 'UN', 20), Number(fmtDecimal(item.unit_price)),
+        inv.date, description,
+        type === 'NC' ? amount : 0, type === 'NC' ? 0 : amount,
+        cfg.tax.type, cfg.tax.code, cfg.tax.percentage, cfg.tax.exemptionCode, cfg.tax.exemptionReason
+      ]);
       w.open('Line');
       w.el('LineNumber', index + 1);
       w.el('ProductCode', productCodeOf(product));
@@ -495,33 +550,45 @@ export function buildSaftXml(data: SaftData): SaftResult {
     const sourceId = sourceIdOf(p.source_id);
     if (!p.receipt_number) warnings.push(`Recibo de ${p.payment_date} sem número atribuído.`);
     const receiptNumber = p.receipt_number || `REC${(p.id || '').replace(/\D/g, '').substring(0, 8) || '0'}`;
+    const paymentRefNo = documentRef('RG', receiptNumber, 'REC');
+    const statusDate = fmtDateTime(annulled ? (p.annulled_at || p.created_at) : p.created_at, p.payment_date);
+    const reason = annulled ? truncate(p.annulment_reason || 'Anulação', 50) : '';
+    const mechanism = SAFT_PAYMENT_MECHANISMS[p.payment_method] || 'OU';
+    const systemEntryDate = fmtDateTime(p.created_at, p.payment_date);
+    const customerId = customerIdOf(customer);
+    const originatingOn = documentRef('FT', p.invoice_number || '', 'FT');
+    const invoiceDate = p.invoice_date || p.payment_date;
+    paymentRows.push([
+      paymentRefNo, annulled ? 'A' : 'N', statusDate, reason, p.payment_date, 'RG', mechanism, round2(p.amount),
+      customerId, originatingOn, invoiceDate, sourceId, systemEntryDate
+    ]);
 
     w.open('Payment');
-    w.el('PaymentRefNo', documentRef('RG', receiptNumber, 'REC'));
+    w.el('PaymentRefNo', paymentRefNo);
     w.el('ATCUD', cfg.atcud);
     w.el('Period', Number(p.payment_date.substring(5, 7)));
     w.el('TransactionDate', p.payment_date);
     w.el('PaymentType', 'RG');
     w.open('DocumentStatus');
     w.el('PaymentStatus', annulled ? 'A' : 'N');
-    w.el('PaymentStatusDate', fmtDateTime(annulled ? (p.annulled_at || p.created_at) : p.created_at, p.payment_date));
-    if (annulled) w.el('Reason', truncate(p.annulment_reason || 'Anulação', 50));
+    w.el('PaymentStatusDate', statusDate);
+    if (annulled) w.el('Reason', reason);
     w.el('SourceID', sourceId);
     w.el('SourcePayment', 'P');
     w.close('DocumentStatus');
     w.open('PaymentMethod');
-    w.el('PaymentMechanism', SAFT_PAYMENT_MECHANISMS[p.payment_method] || 'OU');
+    w.el('PaymentMechanism', mechanism);
     w.el('PaymentAmount', fmtAmount(p.amount));
     w.el('PaymentDate', p.payment_date);
     w.close('PaymentMethod');
     w.el('SourceID', sourceId);
-    w.el('SystemEntryDate', fmtDateTime(p.created_at, p.payment_date));
-    w.el('CustomerID', customerIdOf(customer));
+    w.el('SystemEntryDate', systemEntryDate);
+    w.el('CustomerID', customerId);
     w.open('Line');
     w.el('LineNumber', 1);
     w.open('SourceDocumentID');
-    w.el('OriginatingON', documentRef('FT', p.invoice_number || '', 'FT'));
-    w.el('InvoiceDate', p.invoice_date || p.payment_date);
+    w.el('OriginatingON', originatingOn);
+    w.el('InvoiceDate', invoiceDate);
     w.close('SourceDocumentID');
     w.el('CreditAmount', fmtAmount(p.amount));
     w.close('Line');
@@ -549,8 +616,57 @@ export function buildSaftXml(data: SaftData): SaftResult {
     }
   }
 
+  const tables: SaftTable[] = [
+    { name: 'Cabecalho', columns: ['Campo', 'Valor'], rows: headerRows },
+    {
+      name: 'Totais',
+      columns: ['Seccao', 'NumberOfEntries', 'TotalDebit', 'TotalCredit'],
+      rows: [
+        ['SalesInvoices', invoices.length, round2(totalDebit), round2(totalCredit)],
+        ['Payments', payments.length, 0, round2(paymentsTotal)]
+      ]
+    },
+    {
+      name: 'Clientes',
+      columns: ['CustomerID', 'CustomerTaxID', 'CompanyName', 'Contact', 'AddressDetail', 'City', 'PostalCode',
+        'Country', 'Telephone', 'Email'],
+      rows: customerRows
+    },
+    {
+      name: 'Artigos',
+      columns: ['ProductType', 'ProductCode', 'ProductGroup', 'ProductDescription', 'ProductNumberCode'],
+      rows: productRows
+    },
+    {
+      name: 'Impostos',
+      columns: ['TaxType', 'TaxCountryRegion', 'TaxCode', 'Description', 'TaxPercentage'],
+      rows: [[cfg.tax.type, cfg.countryCode, cfg.tax.code, cfg.tax.description, cfg.tax.percentage]]
+    },
+    {
+      name: 'Facturas',
+      columns: ['InvoiceNo', 'InvoiceStatus', 'InvoiceStatusDate', 'Reason', 'InvoiceDate', 'InvoiceType',
+        'SystemEntryDate', 'CustomerID', 'SourceID', 'NetTotal', 'TaxPayable', 'GrossTotal'],
+      rows: invoiceRows
+    },
+    {
+      name: 'Linhas_Facturas',
+      columns: ['InvoiceNo', 'LineNumber', 'ProductCode', 'ProductDescription', 'Quantity', 'UnitOfMeasure',
+        'UnitPrice', 'TaxPointDate', 'Description', 'DebitAmount', 'CreditAmount', 'TaxType', 'TaxCode',
+        'TaxPercentage', 'TaxExemptionCode', 'TaxExemptionReason'],
+      rows: lineRows
+    },
+    {
+      name: 'Recibos',
+      columns: ['PaymentRefNo', 'PaymentStatus', 'PaymentStatusDate', 'Reason', 'TransactionDate', 'PaymentType',
+        'PaymentMechanism', 'PaymentAmount', 'CustomerID', 'OriginatingON', 'InvoiceDate', 'SourceID',
+        'SystemEntryDate'],
+      rows: paymentRows
+    }
+  ];
+
   return {
     xml: w.toString(),
+    tables,
     warnings,
     summary: {
       invoices: invoices.length,
@@ -563,6 +679,32 @@ export function buildSaftXml(data: SaftData): SaftResult {
       products: products.length + (needsGenericProduct ? 1 : 0)
     }
   };
+}
+
+// ---------------------------------------------------------------------------
+// Exportação em tabelas (CSV / Excel)
+// ---------------------------------------------------------------------------
+
+/** Colunas inteiras (as restantes colunas numéricas são valores com casas decimais). */
+const SAFT_INTEGER_COLUMNS = new Set(['LineNumber', 'NumberOfEntries']);
+
+function csvCell(value: string | number, column: string): string {
+  const text = typeof value === 'number'
+    ? (SAFT_INTEGER_COLUMNS.has(column) ? String(Math.round(value)) : fmtDecimal(value))
+    : String(value ?? '');
+  return /[;"\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+/**
+ * Tabela → CSV (separador ';', ponto decimal, UTF-8 com BOM para o Excel
+ * reconhecer os acentos).
+ */
+export function saftTableToCsv(table: SaftTable): string {
+  const lines = [
+    table.columns.map(c => csvCell(c, '')).join(';'),
+    ...table.rows.map(row => row.map((value, i) => csvCell(value, table.columns[i])).join(';'))
+  ];
+  return '﻿' + lines.join('\r\n') + '\r\n';
 }
 
 // ---------------------------------------------------------------------------
@@ -721,8 +863,76 @@ export class SaftService {
     });
   }
 
+  /** Nome base dos ficheiros exportados (sem extensão). */
+  fileBaseName(company: SaftCompany, startDate: string, endDate: string): string {
+    return `SAFT_MZ_${company.nuit || 'SEM-NUIT'}_${startDate}_${endDate}`;
+  }
+
   fileName(company: SaftCompany, startDate: string, endDate: string): string {
-    return `SAFT_MZ_${company.nuit || 'SEM-NUIT'}_${startDate}_${endDate}.xml`;
+    return `${this.fileBaseName(company, startDate, endDate)}.xml`;
+  }
+
+  /** ZIP com um CSV por secção do SAF-T (01_Cabecalho.csv, 02_Totais.csv, ...). */
+  async buildCsvZip(result: SaftResult): Promise<Blob> {
+    const { zipSync, strToU8 } = await import('fflate');
+    const files: Record<string, Uint8Array> = {};
+    result.tables.forEach((table, i) => {
+      files[`${String(i + 1).padStart(2, '0')}_${table.name}.csv`] = strToU8(saftTableToCsv(table));
+    });
+    const zipped = zipSync(files, { level: 6 });
+    return new Blob([zipped as Uint8Array<ArrayBuffer>], { type: 'application/zip' });
+  }
+
+  /** Livro Excel com uma folha por secção do SAF-T (a biblioteca é carregada só aqui). */
+  async downloadExcel(result: SaftResult, company: SaftCompany, startDate: string, endDate: string): Promise<void> {
+    const mod: any = await import('xlsx-js-style');
+    const XLSX = (mod.default ?? mod) as typeof import('xlsx-js-style');
+
+    const thin = { style: 'thin' as const, color: { rgb: 'BFBFBF' } };
+    const border = { top: thin, bottom: thin, left: thin, right: thin };
+    const headerStyle = {
+      font: { name: 'Arial', sz: 10, bold: true, color: { rgb: 'FFFFFF' } },
+      fill: { patternType: 'solid' as const, fgColor: { rgb: '1F4E78' } },
+      alignment: { horizontal: 'center' as const, vertical: 'center' as const, wrapText: true },
+      border
+    };
+    const cellStyle = (numFmt?: string) => ({
+      font: { name: 'Arial', sz: 10 },
+      alignment: { vertical: 'center' as const },
+      border,
+      ...(numFmt ? { numFmt } : {})
+    });
+
+    const wb = XLSX.utils.book_new();
+    for (const table of result.tables) {
+      const ws = XLSX.utils.aoa_to_sheet([table.columns, ...table.rows]);
+      table.columns.forEach((column, c) => {
+        const head = ws[XLSX.utils.encode_cell({ r: 0, c })];
+        if (head) head.s = headerStyle;
+        table.rows.forEach((row, r) => {
+          const cell = ws[XLSX.utils.encode_cell({ r: r + 1, c })];
+          if (!cell) return;
+          const numFmt = typeof row[c] === 'number'
+            ? (SAFT_INTEGER_COLUMNS.has(column) ? '0' : (['Quantity', 'UnitPrice'].includes(column) ? '#,##0.00####' : '#,##0.00'))
+            : undefined;
+          cell.s = cellStyle(numFmt);
+        });
+      });
+      ws['!cols'] = table.columns.map((column, c) => {
+        const longest = Math.max(column.length, ...table.rows.map(row => String(row[c] ?? '').length));
+        return { wch: Math.min(Math.max(longest + 2, 10), 60) };
+      });
+      XLSX.utils.book_append_sheet(wb, ws, table.name);
+    }
+
+    wb.Props = {
+      Title: `SAF-T (MZ) ${startDate} a ${endDate}`,
+      Subject: 'Ficheiro SAF-T — versão em folha de cálculo (informativo)',
+      Author: 'ISPC Fácil',
+      Company: company.name
+    };
+
+    XLSX.writeFile(wb, `${this.fileBaseName(company, startDate, endDate)}.xlsx`, { compression: true });
   }
 
   /** Lê todas as páginas de uma consulta (o Supabase devolve no máximo 1000 linhas). */

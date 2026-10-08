@@ -5,6 +5,7 @@ import {
   fmtAmount,
   fmtDateTime,
   fmtDecimal,
+  saftTableToCsv,
   splitDocumentNumber
 } from './saft.service';
 import { SAFT_CONFIG } from '../constants/saft';
@@ -196,6 +197,45 @@ describe('SAF-T', () => {
       data.invoices[0].subtotal = 999;
       const { warnings } = buildSaftXml(data);
       expect(warnings.some(w => w.includes('FAC00001') && w.includes('soma das linhas'))).toBeTrue();
+    });
+  });
+
+  describe('tabelas (Excel/CSV)', () => {
+    it('gera uma tabela por secção com os mesmos valores do XML', () => {
+      const { tables, xml } = buildSaftXml(baseData());
+      expect(tables.map(t => t.name)).toEqual(
+        ['Cabecalho', 'Totais', 'Clientes', 'Artigos', 'Impostos', 'Facturas', 'Linhas_Facturas', 'Recibos']);
+
+      const facturas = tables.find(t => t.name === 'Facturas')!;
+      expect(facturas.rows.length).toBe(2);
+      for (const row of facturas.rows) expect(xml).toContain(`<InvoiceNo>${row[0]}</InvoiceNo>`);
+      expect(facturas.rows[1][1]).toBe('A');
+
+      const linhas = tables.find(t => t.name === 'Linhas_Facturas')!;
+      expect(linhas.rows.length).toBe(3);
+      expect(linhas.rows[0][linhas.columns.indexOf('CreditAmount')]).toBe(100);
+
+      const recibos = tables.find(t => t.name === 'Recibos')!;
+      expect(recibos.rows.map(r => r[0])).toEqual(['RG REC/1', 'RG REC/2']);
+
+      const totais = tables.find(t => t.name === 'Totais')!;
+      expect(totais.rows[0]).toEqual(['SalesInvoices', 2, 0, 150]);
+
+      const cabecalho = tables.find(t => t.name === 'Cabecalho')!;
+      expect(cabecalho.rows).toContain(['CompanyID', '400123456']);
+    });
+
+    it('gera CSV com separador ";", ponto decimal e aspas quando necessário', () => {
+      const csv = saftTableToCsv({
+        name: 'X',
+        columns: ['LineNumber', 'Description', 'CreditAmount'],
+        rows: [[1, 'Arroz; "tipo A"', 100], [2, 'Feijão', 12.5]]
+      });
+      expect(csv.startsWith('﻿')).toBeTrue();
+      const lines = csv.substring(1).trim().split('\r\n');
+      expect(lines[0]).toBe('LineNumber;Description;CreditAmount');
+      expect(lines[1]).toBe('1;"Arroz; ""tipo A""";100.00');
+      expect(lines[2]).toBe('2;Feijão;12.50');
     });
   });
 });
