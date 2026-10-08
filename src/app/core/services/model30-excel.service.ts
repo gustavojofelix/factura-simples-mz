@@ -4,6 +4,7 @@ import type { TaxDeclaration } from './tax.service';
 import type { Company } from './company.service';
 import { computeModel30Fields, getModel30PaymentMethodLabel, MODEL30_RATE_LABELS } from '../utils/model30-fields';
 import { AuditLogService } from './audit-log.service';
+import { ExportService } from './export.service';
 
 /* ------------------------------------------------------------------ */
 /* Estilos (aproximam o formulário oficial do Modelo 30)               */
@@ -34,7 +35,9 @@ const S = {
   headerTop: style({ h: 'center', fill: 'FFFEF0', sz: 10 }),
   headerTopBold: style({ h: 'center', fill: 'FFFEF0', sz: 10, bold: true }),
   modelTitle: style({ h: 'center', fill: 'FFFF00', sz: 16, bold: true }),
-  ispcTitle: style({ h: 'center', fill: 'FFFEF0', sz: 11, bold: true }),
+  modelSubtitle: style({ h: 'center', v: 'bottom', fill: 'FFFF00', sz: 10, bold: true }),
+  ispcBig: style({ h: 'center', fill: 'FFFEF0', sz: 22, bold: true }),
+  ispcTitle: style({ h: 'center', fill: 'FFFEF0', sz: 8, bold: true }),
   instructionBar: style({ h: 'center', sz: 8, bold: true }),
   section: style({ fill: 'FFFF99', bold: true, sz: 10 }),
   subSection: style({ fill: 'E8E8E8', bold: true }),
@@ -57,6 +60,16 @@ const S = {
   instHeading: style({ bold: true, sz: 9, border: false, fill: 'FFFF99' }),
   instText: style({ sz: 9, border: false, v: 'top' }),
 };
+
+/** Alturas (pt) das 6 linhas do cabeçalho: 4 de texto + faixa amarela (2 linhas). */
+const MODEL30_HEADER_ROW_HEIGHTS = [16, 16, 16, 16, 18, 26];
+
+/**
+ * Posição do escudo sobre o bloco A1:A6 (coluna A ≈ 201 px; cabeçalho ≈ 144 px).
+ * 591x605 px no original: reduzido para 84x86 px e centrado.
+ */
+const MODEL30_LOGO_ANCHOR = { col: 0, row: 0, offsetX: 58, offsetY: 29, width: 84, height: 86 };
+const MODEL30_LOGO_URL = 'assets/escudomozambique.png';
 
 /* ------------------------------------------------------------------ */
 /* Pequeno construtor de folhas com células estilizadas e merges       */
@@ -102,6 +115,18 @@ class SheetBuilder {
       }
     }
     if (c1 > c0) this.merges.push({ s: { r, c: c0 }, e: { r, c: c1 } });
+    return this;
+  }
+
+  /** Bloco [r0..r1] x [c0..c1] unido, com o texto na primeira célula e o estilo em todas. */
+  area(r0: number, r1: number, c0: number, c1: number, value: CellValue, s: CellStyle): this {
+    for (let r = r0; r <= r1; r++) {
+      for (let c = c0; c <= c1; c++) {
+        const a = this.addr(r, c);
+        this.ws[a] = r === r0 && c === c0 && value ? { t: 's', v: String(value), s } : { t: 's', v: '', s };
+      }
+    }
+    if (r1 > r0 || c1 > c0) this.merges.push({ s: { r: r0, c: c0 }, e: { r: r1, c: c1 } });
     return this;
   }
 
@@ -156,19 +181,20 @@ const chk = (b: boolean) => (b ? '[X]' : '[  ]');
 @Injectable({ providedIn: 'root' })
 export class Model30ExcelService {
   private auditLog = inject(AuditLogService);
+  private exportService = inject(ExportService);
 
   async exportModel30(decl: TaxDeclaration, company: Company): Promise<void> {
     const mod: any = await import('xlsx-js-style');
     const XLSX = (mod.default ?? mod) as typeof import('xlsx-js-style');
 
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, this.buildModelSheet(decl, company), 'Modelo 30');
+    const model = this.buildModelSheet(decl, company);
+    XLSX.utils.book_append_sheet(wb, model.ws, 'Modelo 30');
 
     const payments = decl.payments || [];
     if (payments.length > 0) {
       XLSX.utils.book_append_sheet(wb, this.buildPaymentsSheet(decl), 'Pagamentos');
     }
-    XLSX.utils.book_append_sheet(wb, this.buildInstructionsSheet(), 'Instruções');
 
     wb.Props = {
       Title: `Modelo 30 — ${decl.period}º Trimestre ${decl.year}`,
@@ -177,7 +203,19 @@ export class Model30ExcelService {
       Company: company.name,
     };
 
-    XLSX.writeFile(wb, `Modelo_30_${decl.year}_T${decl.period}.xlsx`, { compression: true });
+    let file = new Uint8Array(XLSX.write(wb, { type: 'array', bookType: 'xlsx', compression: true }) as ArrayBuffer);
+    // 'Modelo 30' é a primeira folha (sheet1.xml): A4 ajustado à largura,
+    // instruções numa página nova e o escudo no cabeçalho.
+    const { addPngToXlsx, setXlsxPrintLayout } = await import('../utils/xlsx-package.util');
+    file = setXlsxPrintLayout(file, 1, { paperSize: 9, fitToWidth: true, rowBreaks: [model.instructionsRow] }) as Uint8Array<ArrayBuffer>;
+    const logo = await this.loadLogo();
+    if (logo) {
+      file = addPngToXlsx(file, 1, logo, MODEL30_LOGO_ANCHOR) as Uint8Array<ArrayBuffer>;
+    }
+    this.exportService.downloadBlob(
+      new Blob([file], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+      `Modelo_30_${decl.year}_T${decl.period}.xlsx`
+    );
 
     // Registo de auditoria só depois de o ficheiro ser gerado com sucesso
     // (ponto único para o botão do diálogo e o ícone da tabela).
@@ -195,7 +233,7 @@ export class Model30ExcelService {
   /* Folha principal                                                 */
   /* -------------------------------------------------------------- */
   // Colunas: A,B = rótulos/valores largos | C = código | D = valor | E = código | F = valor
-  private buildModelSheet(decl: TaxDeclaration, company: Company): WorkSheet {
+  private buildModelSheet(decl: TaxDeclaration, company: Company): { ws: WorkSheet; instructionsRow: number } {
     const f = computeModel30Fields(decl, company);
     const meta = company.documents_metadata || {};
     const b = new SheetBuilder([28, 28, 6, 20, 6, 20]);
@@ -214,11 +252,22 @@ export class Model30ExcelService {
       b.next();
     };
 
-    // Cabeçalho
-    b.full('República de Moçambique — Ministério das Finanças', S.headerTop);
-    b.full('Autoridade Tributária de Moçambique — DIRECÇÃO GERAL DE IMPOSTOS', S.headerTopBold);
-    b.full('DECLARAÇÃO PERIÓDICA — MODELO 30', S.modelTitle, 26);
-    b.full('ISPC — IMPOSTO SIMPLIFICADO PARA PEQUENOS CONTRIBUINTES', S.ispcTitle, 18);
+    // Cabeçalho (como no formulário): escudo | textos + faixa amarela | caixa ISPC.
+    // O escudo é inserido depois sobre o bloco A1:A6 (ver MODEL30_LOGO_ANCHOR).
+    b.area(0, 5, 0, 0, '', S.headerTop);
+    b.area(0, 0, 1, 3, 'República de Moçambique', S.headerTop);
+    b.area(1, 1, 1, 3, 'Ministério das Finanças', S.headerTop);
+    b.area(2, 2, 1, 3, 'Autoridade Tributária de Moçambique', S.headerTopBold);
+    b.area(3, 3, 1, 3, 'DIRECÇÃO GERAL DE IMPOSTOS', S.headerTop);
+    b.area(4, 4, 1, 3, 'DECLARAÇÃO PERIÓDICA', S.modelSubtitle);
+    b.area(5, 5, 1, 3, 'MODELO 30', S.modelTitle);
+    b.area(0, 2, 4, LAST, 'ISPC', S.ispcBig);
+    b.area(3, 5, 4, LAST, 'IMPOSTO SIMPLIFICADO PARA PEQUENOS CONTRIBUINTES', S.ispcTitle);
+    for (const [r, h] of MODEL30_HEADER_ROW_HEIGHTS.entries()) {
+      b.row = r;
+      b.height(h);
+    }
+    b.row = MODEL30_HEADER_ROW_HEIGHTS.length;
     b.full('SE PREENCHER MANUALMENTE, POR FAVOR UTILIZE LETRA DE IMPRENSA', S.instructionBar);
 
     // Quadro 1
@@ -347,7 +396,20 @@ export class Model30ExcelService {
     const generated = new Date().toLocaleDateString('pt-MZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
     b.put(0, LAST, `Gerado pelo ISPC Fácil em ${generated} — ${decl.period}º Trimestre ${decl.year}`, S.footer).next();
 
-    return b.finish();
+    // Instruções de preenchimento, na mesma folha, abaixo do formulário (nova página ao imprimir)
+    b.next();
+    const instructionsRow = b.row;
+    b.full('INSTRUÇÕES DE PREENCHIMENTO', S.instTitle, 20);
+    b.full('Declaração Periódica - ISPC', S.instSub);
+    b.full('MODELO 30', S.instSub);
+    b.next();
+    for (const [heading, text] of MODEL30_INSTRUCTIONS) {
+      if (heading) b.full(heading, S.instHeading);
+      // Largura total ≈ 108 caracteres a 11pt ≈ 130 caracteres a 9pt (fonte das instruções)
+      if (text) b.put(0, LAST, text, S.instText).fit(text, 130).next();
+    }
+
+    return { ws: b.finish(), instructionsRow };
   }
 
   /* -------------------------------------------------------------- */
@@ -371,21 +433,16 @@ export class Model30ExcelService {
     return b.finish();
   }
 
-  /* -------------------------------------------------------------- */
-  /* Folha de instruções (texto da página 4 do PDF)                  */
-  /* -------------------------------------------------------------- */
-  private buildInstructionsSheet(): WorkSheet {
-    const b = new SheetBuilder([110]);
-    b.full('INSTRUÇÕES DE PREENCHIMENTO', S.instTitle, 20);
-    b.full('Declaração Periódica - ISPC — MODELO 30', S.instSub);
-    b.next();
-    for (const [heading, text] of MODEL30_INSTRUCTIONS) {
-      if (heading) b.full(heading, S.instHeading);
-      if (text) {
-        b.put(0, 0, text, S.instText).fit(text, 115).next();
-      }
+  /** Escudo da República (PNG). Sem escudo o Excel é gerado na mesma. */
+  private async loadLogo(): Promise<Uint8Array | null> {
+    try {
+      const response = await fetch(MODEL30_LOGO_URL);
+      if (!response.ok) return null;
+      return new Uint8Array(await response.arrayBuffer());
+    } catch (error) {
+      console.warn('Modelo 30 (Excel): não foi possível carregar o escudo.', error);
+      return null;
     }
-    return b.finish();
   }
 
   private formatDate(dateString?: string): string {
