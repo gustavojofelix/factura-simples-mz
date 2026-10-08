@@ -75,6 +75,11 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/reports/client-statements/client-statement-detail.component').then(m => m.ClientStatementDetailComponent)
       },
       {
+        path: 'relatorios/saft',
+        canActivate: [roleGuard(REPORT_ROLES)],
+        loadComponent: () => import('./pages/reports/saft-export/saft-export.component').then(m => m.SaftExportComponent)
+      },
+      {
         path: 'assistente',
         loadComponent: () => import('./pages/assistant/assistant.component').then(m => m.AssistantComponent)
       },

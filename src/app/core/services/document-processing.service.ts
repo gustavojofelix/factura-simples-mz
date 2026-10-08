@@ -35,7 +35,7 @@ export class DocumentProcessingService {
   async uploadDocument(
     file: File,
     companyId: string,
-    documentType: 'nuit' | 'activity_start' | 'commercial_activity' | 'registration_certificate'
+    documentType: 'nuit' | 'activity_start' | 'commercial_activity' | 'registration_certificate' | 'bank_details'
   ): Promise<DocumentUploadResult> {
     const fileExt = file.name.split('.').pop();
     const fileName = `${companyId}/${documentType}_${Date.now()}.${fileExt}`;
@@ -157,9 +157,22 @@ export class DocumentProcessingService {
     }
   }
 
+  /**
+   * Caminho relativo dentro do bucket (ex.: "<companyId>/bank_details_123.pdf"),
+   * a partir de uma URL pública completa ou de um caminho já relativo.
+   */
+  storagePath(urlOrPath: string): string {
+    const marker = `${this.BUCKET_NAME}/`;
+    const index = urlOrPath.indexOf(marker);
+    const path = index >= 0 ? urlOrPath.substring(index + marker.length) : urlOrPath;
+    return path.split('?')[0];
+  }
+
   async deleteDocument(url: string): Promise<void> {
     try {
-      const path = url.split('/').slice(-2).join('/');
+      const path = url.includes(this.BUCKET_NAME)
+        ? this.storagePath(url)
+        : url.split('/').slice(-2).join('/');
       const { error } = await this.supabase.client.storage
         .from(this.BUCKET_NAME)
         .remove([path]);

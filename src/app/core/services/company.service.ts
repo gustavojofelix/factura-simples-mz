@@ -3,6 +3,7 @@ import { friendlyErrorMessage } from '../utils/error-message';
 import { SupabaseService } from './supabase.service';
 import { AuthService } from './auth.service';
 import { AuditLogService } from './audit-log.service';
+import type { CompanyBankAccount } from './company-bank-account.service';
 
 export interface Company {
   id: string;
@@ -25,7 +26,9 @@ export interface Company {
   category2?: string;
   category3?: string;
   business_volume?: string;
+  /** @deprecated Ver company_bank_accounts. */
   bank_name?: string;
+  /** @deprecated Ver company_bank_accounts. */
   bank_account?: string;
   bank_iban?: string;
   bank_swift?: string;
@@ -42,12 +45,23 @@ export interface Company {
   updated_at: string;
 }
 
-/** True when the company has at least one bank / mobile-money field filled in. */
-export function companyHasBankDetails(company: Company | null | undefined): boolean {
+/**
+ * True when the company has something to show in the bank-details block: at
+ * least one account marked "show on invoice", or M-Pesa / e-Mola. When
+ * `accounts` is not available (null/undefined: not loaded, read failed or
+ * migration not applied) it falls back to the legacy single-bank columns on
+ * `companies` (deprecated, kept until the data migration is verified).
+ */
+export function companyHasBankDetails(
+  company: Company | null | undefined,
+  accounts?: CompanyBankAccount[] | null
+): boolean {
   if (!company) return false;
+  if (accounts?.some(account => account.show_on_invoice)) return true;
+  if ([company.mpesa_number, company.emola_number].some(value => !!value?.trim())) return true;
+  if (Array.isArray(accounts)) return false;
   return [
-    company.bank_name, company.bank_account, company.bank_iban, company.bank_swift,
-    company.nib, company.mpesa_number, company.emola_number
+    company.bank_name, company.bank_account, company.bank_iban, company.bank_swift, company.nib
   ].some(value => !!value?.trim());
 }
 

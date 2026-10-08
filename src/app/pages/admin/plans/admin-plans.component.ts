@@ -154,6 +154,15 @@ import { PlanEntitlement, SubscriptionFeature, SubscriptionPlan, SubscriptionSer
               </div>
             </div>
 
+            <div>
+              <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nível do Plano (tier)</label>
+              <input type="number" [(ngModel)]="form.tier" name="tier" min="0" step="1" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <p class="text-[11px] text-gray-500 mt-1">
+                Usado para bloquear o downgrade: enquanto a subscrição estiver activa, o cliente não pode mudar para um plano de nível inferior.
+                Planos com o mesmo nível são equivalentes (ex.: Trial 0, Essencial 10, Profissional/Standard 20).
+              </p>
+            </div>
+
             <div class="flex items-center gap-6 py-2">
               <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
                 <input type="checkbox" [(ngModel)]="form.is_active" name="is_active" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
@@ -229,7 +238,8 @@ export class AdminPlansComponent implements OnInit {
     features: [],
     is_active: true,
     is_popular: false,
-    sort_order: 1
+    sort_order: 1,
+    tier: 0
   };
 
   featuresRaw = '';
@@ -282,7 +292,8 @@ export class AdminPlansComponent implements OnInit {
       features: [],
       is_active: true,
       is_popular: false,
-      sort_order: this.plans.length + 1
+      sort_order: this.plans.length + 1,
+      tier: Math.max(0, ...this.plans.map(p => this.subscriptionService.planTier(p) ?? 0)) + 10
     };
     this.featuresRaw = '';
     this.entitlements = [];
@@ -339,7 +350,8 @@ export class AdminPlansComponent implements OnInit {
       three_months_price: Number(this.form.three_months_price || 0),
       six_months_price: Number(this.form.six_months_price || 0),
       yearly_price: Number(this.form.yearly_price || 0),
-      sort_order: Number(this.form.sort_order || 0)
+      sort_order: Number(this.form.sort_order || 0),
+      tier: Math.max(0, Math.round(Number(this.form.tier || 0)))
     };
 
     let success = false;

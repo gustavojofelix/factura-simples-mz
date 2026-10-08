@@ -1,6 +1,7 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Company, companyHasBankDetails } from '../../../core/services/company.service';
+import { CompanyBankAccount, documentBankAccounts } from '../../../core/services/company-bank-account.service';
 import {
   DocumentBranding,
   DEFAULT_DOCUMENT_BRANDING
@@ -11,6 +12,7 @@ import {
   StatementService
 } from '../../../core/services/statement.service';
 import { formatIsoDate } from '../../../core/utils/date.util';
+import { PreferencesService } from '../../../core/services/preferences.service';
 import { documentThemeVars } from './document-theme';
 
 /**
@@ -169,44 +171,50 @@ import { documentThemeVars } from './document-theme';
       @if (branding().show_bank_details && hasBankDetails() && finalBalance() > 0) {
         <div class="doc-bank">
           <h3 class="doc-section-title">COORDENADAS BANCÁRIAS</h3>
-          <div class="doc-bank__grid">
-            @if (company()!.bank_name) {
-              <div>
-                <span class="doc-bank__label">Banco</span>
-                <span class="doc-bank__value">{{ company()!.bank_name }}</span>
-              </div>
-            }
-            @if (company()!.bank_account) {
-              <div>
-                <span class="doc-bank__label">Conta</span>
-                <span class="doc-bank__value">{{ company()!.bank_account }}</span>
-              </div>
-            }
-            @if (company()!.bank_iban) {
-              <div class="doc-bank__wide">
-                <span class="doc-bank__label">IBAN</span>
-                <span class="doc-bank__value">{{ company()!.bank_iban }}</span>
-              </div>
-            }
-            @if (company()!.nib) {
-              <div class="doc-bank__wide">
-                <span class="doc-bank__label">NIB</span>
-                <span class="doc-bank__value">{{ company()!.nib }}</span>
-              </div>
-            }
-            @if (company()!.mpesa_number) {
-              <div>
-                <span class="doc-bank__label">M-Pesa</span>
-                <span class="doc-bank__value">{{ company()!.mpesa_number }}</span>
-              </div>
-            }
-            @if (company()!.emola_number) {
-              <div>
-                <span class="doc-bank__label">e-Mola</span>
-                <span class="doc-bank__value">{{ company()!.emola_number }}</span>
-              </div>
-            }
-          </div>
+          @if (visibleBankAccounts().length > 0) {
+            <div class="doc-bank__accounts">
+              @for (acc of visibleBankAccounts(); track acc.id ?? $index) {
+                <div class="doc-bank__account">
+                  @if (acc.bank_name) {
+                    <span class="doc-bank__bank">{{ acc.bank_name }}{{ acc.currency && acc.currency !== 'MZN' ? ' (' + acc.currency + ')' : '' }}</span>
+                  }
+                  <div class="doc-bank__rows">
+                    @if (acc.account_holder) {
+                      <div><span class="doc-bank__label">Titular</span><span class="doc-bank__value">{{ acc.account_holder }}</span></div>
+                    }
+                    @if (acc.account_number) {
+                      <div><span class="doc-bank__label">Conta</span><span class="doc-bank__value">{{ acc.account_number }}</span></div>
+                    }
+                    @if (acc.nib) {
+                      <div><span class="doc-bank__label">NIB</span><span class="doc-bank__value">{{ acc.nib }}</span></div>
+                    }
+                    @if (acc.iban) {
+                      <div><span class="doc-bank__label">IBAN</span><span class="doc-bank__value">{{ acc.iban }}</span></div>
+                    }
+                    @if (acc.swift) {
+                      <div><span class="doc-bank__label">SWIFT/BIC</span><span class="doc-bank__value">{{ acc.swift }}</span></div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+          @if (company()!.mpesa_number || company()!.emola_number) {
+            <div class="doc-bank__grid doc-bank__mobile">
+              @if (company()!.mpesa_number) {
+                <div>
+                  <span class="doc-bank__label">M-Pesa</span>
+                  <span class="doc-bank__value">{{ company()!.mpesa_number }}</span>
+                </div>
+              }
+              @if (company()!.emola_number) {
+                <div>
+                  <span class="doc-bank__label">e-Mola</span>
+                  <span class="doc-bank__value">{{ company()!.emola_number }}</span>
+                </div>
+              }
+            </div>
+          }
         </div>
       }
 
@@ -241,11 +249,20 @@ export class ClientStatementDocumentComponent {
   notes = input<string>('');
   company = input<Company | null>(null);
   branding = input<DocumentBranding>(DEFAULT_DOCUMENT_BRANDING);
+  /**
+   * Contas bancárias da empresa (company_bank_accounts). null = não disponíveis,
+   * caso em que se mostra o banco antigo guardado em companies.
+   */
+  bankAccounts = input<CompanyBankAccount[] | null>(null);
 
   private statementService = inject(StatementService);
+  /** Formato de data de Configurações > Sistema. */
+  private preferences = inject(PreferencesService);
 
   themeVars = computed(() => documentThemeVars(this.branding()));
-  hasBankDetails = computed(() => companyHasBankDetails(this.company()));
+  hasBankDetails = computed(() => companyHasBankDetails(this.company(), this.bankAccounts()));
+  /** Contas visíveis, a conta por omissão primeiro (ou o banco antigo de companies). */
+  visibleBankAccounts = computed(() => documentBankAccounts(this.company(), this.bankAccounts()));
   showBalance = computed(() => this.filter() === 'all');
 
   visibleMovements = computed(() => {
@@ -264,6 +281,6 @@ export class ClientStatementDocumentComponent {
   }
 
   formatDate(iso: string): string {
-    return formatIsoDate(iso);
+    return formatIsoDate(iso, this.preferences.dateFormat());
   }
 }

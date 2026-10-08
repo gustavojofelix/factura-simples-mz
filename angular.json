@@ -47,6 +47,9 @@
               "src/global_styles.css",
               "src/theme.scss"
             ],
+            "allowedCommonJsDependencies": [
+              "xlsx-js-style"
+            ],
             "tsConfig": "tsconfig.app.json"
           }
         },

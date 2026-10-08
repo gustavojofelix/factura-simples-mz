@@ -1,4 +1,5 @@
-import { Component, OnInit, signal, effect } from '@angular/core';
+import { Component, OnInit, signal, effect, inject } from '@angular/core';
+import { PreferencesService } from '../../core/services/preferences.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -17,20 +18,23 @@ import { TaxService, TaxCalculation, TaxDeclaration, TaxSummary } from '../../co
 import { CompanyService } from '../../core/services/company.service';
 import { TaxPaymentDialogComponent } from '../../shared/components/tax-payment-dialog.component';
 import { Model30Component } from '../../shared/components/model30.component';
+import { Model30ExcelService } from '../../core/services/model30-excel.service';
 import { AuditLogService } from '../../core/services/audit-log.service';
 import { SupabaseService } from '../../core/services/supabase.service';
+import { friendlyFunctionError } from '../../core/utils/error-message';
 
 /** Lembrete de obrigação fiscal gerado por generate_tax_reminders(). */
 export interface TaxReminder {
   id: string;
   year: number;
   quarter: number;
-  kind: 'd15' | 'd7' | 'd1' | 'overdue';
+  kind: 'qend' | 'd15' | 'd7' | 'd1' | 'd0' | 'overdue';
   due_date: string;
   title: string;
   body: string;
   created_at: string;
   emailed_at: string | null;
+  cancelled_at: string | null;
 }
 
 @Component({
@@ -70,6 +74,8 @@ export class TaxesComponent implements OnInit {
     pendingDeclarations: 0
   });
   reminders = signal<TaxReminder[]>([]);
+  isSendingTestReminder = signal(false);
+  exportingExcelId = signal<string | null>(null);
 
   years: number[] = [];
   periods = [
@@ -81,12 +87,16 @@ export class TaxesComponent implements OnInit {
 
   displayedColumns = ['period', 'dates', 'amount', 'status', 'due_date', 'actions'];
 
+  /** Formato de data e fuso horário de Configurações > Sistema. */
+  private preferences = inject(PreferencesService);
+
   constructor(
     public taxService: TaxService,
     public companyService: CompanyService,
     private dialog: MatDialog,
     private auditLogService: AuditLogService,
-    private supabase: SupabaseService
+    private supabase: SupabaseService,
+    private model30Excel: Model30ExcelService
   ) {
     const currentYear = new Date().getFullYear();
     for (let i = currentYear; i >= currentYear - 5; i--) {
@@ -123,7 +133,7 @@ export class TaxesComponent implements OnInit {
 
     const { data } = await this.supabase.db
       .from('tax_reminders')
-      .select('id, year, quarter, kind, due_date, title, body, created_at, emailed_at')
+      .select('id, year, quarter, kind, due_date, title, body, created_at, emailed_at, cancelled_at')
       .eq('company_id', company.id)
       .order('created_at', { ascending: false })
       .limit(5);
@@ -135,12 +145,45 @@ export class TaxesComponent implements OnInit {
     switch (kind) {
       case 'overdue':
         return { icon: 'gavel', classes: 'bg-red-50 border-red-300 text-red-600' };
+      case 'd0':
+        return { icon: 'alarm', classes: 'bg-red-50 border-red-300 text-red-600' };
       case 'd1':
         return { icon: 'alarm', classes: 'bg-red-50 border-red-200 text-red-600' };
       case 'd7':
         return { icon: 'schedule', classes: 'bg-orange-50 border-orange-200 text-orange-600' };
+      case 'qend':
+        return { icon: 'event_available', classes: 'bg-blue-50 border-blue-200 text-blue-600' };
       default:
         return { icon: 'event', classes: 'bg-blue-50 border-blue-200 text-blue-600' };
+    }
+  }
+
+  /** Só o proprietário pode pedir um lembrete de teste (enviado para o seu próprio email). */
+  canSendTestReminder(): boolean {
+    const company = this.companyService.activeCompany();
+    return !!company && this.companyService.isOwner(company.id);
+  }
+
+  /** Envia para o email do proprietário um lembrete "[TESTE]" com a data de hoje. Não regista nada. */
+  async sendTestReminder() {
+    const company = this.companyService.activeCompany();
+    if (!company || this.isSendingTestReminder()) return;
+
+    this.isSendingTestReminder.set(true);
+    try {
+      const { data, error } = await this.supabase.client.functions.invoke('send-tax-reminders', {
+        body: { mode: 'test', company_id: company.id, sample: true }
+      });
+      if (error) throw error;
+      window.alert(
+        data?.message ||
+        (data?.ok ? 'Lembrete de teste enviado para o seu email.' : 'Não foi possível enviar o lembrete de teste.')
+      );
+    } catch (error) {
+      console.error('Erro ao enviar lembrete de teste:', error);
+      window.alert(await friendlyFunctionError(error, 'Não foi possível enviar o lembrete de teste.'));
+    } finally {
+      this.isSendingTestReminder.set(false);
     }
   }
 
@@ -224,6 +267,23 @@ export class TaxesComponent implements OnInit {
     });
   }
 
+  async exportModel30Excel(declaration: TaxDeclaration) {
+    if (this.exportingExcelId()) return;
+    const company = this.companyService.activeCompany();
+    if (!company) return;
+
+    this.exportingExcelId.set(declaration.id);
+    try {
+      // O registo de auditoria é feito pelo serviço após exportação bem-sucedida.
+      await this.model30Excel.exportModel30(declaration, company);
+    } catch (error) {
+      console.error('Erro ao gerar o Excel do Modelo 30:', error);
+      window.alert('Não foi possível gerar o Excel. Por favor, tente novamente.');
+    } finally {
+      this.exportingExcelId.set(null);
+    }
+  }
+
   formatCurrency(value: number): string {
     return new Intl.NumberFormat('pt-MZ', {
       style: 'decimal',
@@ -234,12 +294,7 @@ export class TaxesComponent implements OnInit {
 
   formatDate(dateString?: string): string {
     if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-MZ', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    return this.preferences.formatDate(dateString) || '-';
   }
 
   getPeriodLabel(period: number): string {

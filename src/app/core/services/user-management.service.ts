@@ -369,32 +369,54 @@ export class UserManagementService {
     this.settingsSignal.set(data);
   }
 
-  async updateSystemSettings(companyId: string, updates: Partial<SystemSettings>): Promise<boolean> {
+  /**
+   * Grava as configurações do sistema. Usa upsert + select para detectar o caso
+   * em que a RLS (só o proprietário pode alterar) filtra a linha: o PostgREST
+   * devolve 0 linhas sem erro e antes a UI mostrava "sucesso" sem nada mudar.
+   */
+  async updateSystemSettings(
+    companyId: string,
+    updates: Partial<SystemSettings>
+  ): Promise<{ ok: boolean; data?: SystemSettings; error?: string }> {
     try {
-      const { error } = await this.supabase.client
+      const { id: _id, created_at: _c, updated_at: _u, company_id: _cid, ...fields } = updates;
+      const { data, error } = await this.supabase.client
         .from('system_settings')
-        .update({ ...updates, updated_at: new Date().toISOString() })
-        .eq('company_id', companyId);
+        .upsert(
+          { ...fields, company_id: companyId, updated_at: new Date().toISOString() },
+          { onConflict: 'company_id' }
+        )
+        .select()
+        .maybeSingle();
 
       if (error) {
         console.error('Error updating system settings:', error);
-        return false;
+        const denied = (error as any)?.code === '42501' || /row-level security/i.test(error.message || '');
+        return {
+          ok: false,
+          error: denied
+            ? 'Apenas o proprietário da empresa pode alterar as configurações do sistema.'
+            : friendlyErrorMessage(error, 'Não foi possível guardar as configurações.')
+        };
+      }
+      if (!data) {
+        return { ok: false, error: 'Apenas o proprietário da empresa pode alterar as configurações do sistema.' };
       }
 
       await this.auditLogService.log(
         'Atualizou Configurações do Sistema',
         'system',
-        { updates },
+        { updates: fields },
         undefined,
         undefined,
         companyId
       );
 
-      await this.loadSystemSettings(companyId);
-      return true;
+      this.settingsSignal.set(data as SystemSettings);
+      return { ok: true, data: data as SystemSettings };
     } catch (error) {
       console.error('Error updating system settings:', error);
-      return false;
+      return { ok: false, error: friendlyErrorMessage(error, 'Não foi possível guardar as configurações.') };
     }
   }
 

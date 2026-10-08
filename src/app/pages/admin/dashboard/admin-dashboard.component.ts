@@ -142,7 +142,7 @@ interface RecentUser {
                         </span>
                       </td>
                       <td class="px-6 py-4 text-gray-500 text-xs text-right">
-                        {{ user.created_at | date:'dd/MM' }}
+                        {{ user.created_at | date:'dd/MM':'+0200' }}
                       </td>
                     </tr>
                   }

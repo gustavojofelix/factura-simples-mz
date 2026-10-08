@@ -10,6 +10,7 @@ import {
   StatementService
 } from '../../../core/services/statement.service';
 import { formatIsoDate } from '../../../core/utils/date.util';
+import { PreferencesService } from '../../../core/services/preferences.service';
 import { documentThemeVars } from './document-theme';
 
 /**
@@ -152,6 +153,8 @@ export class SummaryStatementDocumentComponent {
   branding = input<DocumentBranding>(DEFAULT_DOCUMENT_BRANDING);
 
   private statementService = inject(StatementService);
+  /** Formato de data de Configurações > Sistema. */
+  private preferences = inject(PreferencesService);
 
   themeVars = computed(() => documentThemeVars(this.branding()));
   totals = computed(() => this.statementService.totals(this.rows()));
@@ -166,6 +169,6 @@ export class SummaryStatementDocumentComponent {
   }
 
   formatDate(iso: string): string {
-    return formatIsoDate(iso);
+    return formatIsoDate(iso, this.preferences.dateFormat());
   }
 }

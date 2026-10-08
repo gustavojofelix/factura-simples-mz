@@ -1,8 +1,9 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { friendlyErrorMessage } from '../utils/error-message';
 import { SupabaseService } from './supabase.service';
 import { CompanyService } from './company.service';
 import { AuditLogService } from './audit-log.service';
+import { PreferencesService } from './preferences.service';
 
 export interface InvoiceItem {
   id?: string;
@@ -59,6 +60,9 @@ export class InvoiceService {
   private roundMoney(value: number): number {
     return Math.round((Number(value) || 0) * 100) / 100;
   }
+
+  /** Formato de data e fuso horário de Configurações > Sistema. */
+  private preferences = inject(PreferencesService);
 
   constructor(
     private supabase: SupabaseService,
@@ -586,33 +590,21 @@ export class InvoiceService {
     }).format(safeValue) + ' MZN';
   }
 
+  /** Data segundo Configurações > Sistema. Datas 'AAAA-MM-DD' não sofrem conversão de fuso. */
   formatDate(dateString: string): string {
     if (!dateString) return '-';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return dateString;
-    return date.toLocaleDateString('pt-MZ', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    return this.preferences.formatDate(dateString) || dateString;
   }
 
 
 
   formatDateTime(dateString?: string): string {
     if (!dateString) return '-';
+    // Só data (sem hora): não inventar "00:00".
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return this.preferences.formatDate(dateString);
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return dateString;
-    const formattedDate = date.toLocaleDateString('pt-MZ', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-    const formattedTime = date.toLocaleTimeString('pt-MZ', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-    return `${formattedDate} às ${formattedTime}`;
+    return `${this.preferences.formatDate(date)} às ${this.preferences.formatTime(date)}`;
   }
 
   async incrementPrintCount(invoiceId: string): Promise<number> {

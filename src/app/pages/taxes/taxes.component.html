@@ -54,13 +54,30 @@
     </mat-card>
   </div>
 
-  @if (reminders().length > 0) {
+  @if (reminders().length > 0 || canSendTestReminder()) {
     <mat-card class="mb-6">
       <mat-card-content>
-        <div class="flex items-center gap-2 mb-3">
-          <mat-icon class="text-gray-600">notifications_active</mat-icon>
-          <h2 class="text-lg font-semibold text-gray-900">Obrigações fiscais</h2>
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div class="flex items-center gap-2">
+            <mat-icon class="text-gray-600">notifications_active</mat-icon>
+            <h2 class="text-lg font-semibold text-gray-900">Obrigações fiscais</h2>
+          </div>
+          @if (canSendTestReminder()) {
+            <button
+              mat-stroked-button
+              [disabled]="isSendingTestReminder()"
+              [matTooltip]="'Envia para o seu email um exemplo do lembrete do Modelo 30, para confirmar que os emails chegam.'"
+              (click)="sendTestReminder()">
+              <mat-icon>forward_to_inbox</mat-icon>
+              {{ isSendingTestReminder() ? 'A enviar...' : 'Enviar lembrete de teste para mim' }}
+            </button>
+          }
         </div>
+        @if (reminders().length === 0) {
+          <p class="text-sm text-gray-500">
+            Sem lembretes de momento. Receberá um email no fim de cada trimestre, 15, 7 e 1 dia antes do prazo e no próprio dia do prazo.
+          </p>
+        }
         <div class="space-y-2">
           @for (r of reminders(); track r.id) {
             <div class="flex items-start gap-3 p-3 rounded-md border {{ getReminderStyle(r.kind).classes }}">
@@ -72,6 +89,8 @@
                   Prazo: {{ formatDate(r.due_date) }} · Emitido a {{ formatDate(r.created_at) }}
                   @if (r.emailed_at) {
                     · Enviado por email
+                  } @else if (r.cancelled_at) {
+                    · Sem envio por email
                   }
                 </p>
               </div>
@@ -281,6 +300,14 @@
                           [matTooltip]="'Gerar Modelo 30'"
                           (click)="openModel30(declaration)">
                           <mat-icon>description</mat-icon>
+                        </button>
+
+                        <button
+                          mat-icon-button
+                          [matTooltip]="exportingExcelId() === declaration.id ? 'A gerar Excel...' : 'Exportar Modelo 30 (Excel)'"
+                          [disabled]="!!exportingExcelId()"
+                          (click)="exportModel30Excel(declaration)">
+                          <mat-icon>{{ exportingExcelId() === declaration.id ? 'hourglass_empty' : 'table_view' }}</mat-icon>
                         </button>
 
                         @if (declaration.status === 'pendente') {

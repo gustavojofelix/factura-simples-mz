@@ -26,6 +26,7 @@ import {
   StatementStatus
 } from '../../../core/services/statement.service';
 import { formatIsoDate, parseIsoDate, quarterRange, toIsoDate } from '../../../core/utils/date.util';
+import { PreferencesService } from '../../../core/services/preferences.service';
 import { ReportsNavComponent } from '../reports-nav.component';
 import {
   StatementPreviewDialogComponent,
@@ -74,6 +75,8 @@ export class ClientStatementsComponent implements OnInit {
   companyService = inject(CompanyService);
   clientService = inject(ClientService);
   statementService = inject(StatementService);
+  /** Formato de data de Configurações > Sistema. */
+  private preferences = inject(PreferencesService);
 
   readonly columns = ['client_code', 'client_name', 'opening_balance', 'total_invoiced', 'total_paid', 'balance', 'status'];
 
@@ -257,7 +260,7 @@ export class ClientStatementsComponent implements OnInit {
     });
     data.push({});
     data.push({ 'ID': `Empresa: ${company.name}` });
-    data.push({ 'ID': `Período: ${formatIsoDate(period.start)} a ${formatIsoDate(period.end)}` });
+    data.push({ 'ID': `Período: ${formatIsoDate(period.start, this.preferences.dateFormat())} a ${formatIsoDate(period.end, this.preferences.dateFormat())}` });
     if (this.notes().trim()) {
       data.push({ 'ID': `Observações: ${this.notes().trim()}` });
     }
@@ -291,6 +294,6 @@ export class ClientStatementsComponent implements OnInit {
   }
 
   formatDate(iso: string): string {
-    return formatIsoDate(iso);
+    return formatIsoDate(iso, this.preferences.dateFormat());
   }
 }

@@ -1,4 +1,5 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
+import { PreferencesService } from '../../core/services/preferences.service';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -374,6 +375,9 @@ export class ReportsComponent implements OnInit {
   topClientsColumns = ['client', 'invoices', 'total'];
   dailySalesColumns = ['date', 'invoices', 'amount'];
 
+  /** Formato de data e fuso horário de Configurações > Sistema. */
+  private preferences = inject(PreferencesService);
+
   constructor(
     private fb: FormBuilder,
     private invoiceService: InvoiceService,
@@ -584,12 +588,7 @@ export class ReportsComponent implements OnInit {
   }
 
   formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-MZ', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    return this.preferences.formatDate(dateString);
   }
 
   formatCurrency(value: number): string {

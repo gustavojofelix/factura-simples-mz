@@ -1,10 +1,25 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import nodemailer from "npm:nodemailer@6.9.11";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.8";
+import {
+  adminRecipients,
+  detailsTable,
+  emailLayout,
+  escapeHtml,
+  isEmail,
+  sendEmail,
+} from "../_shared/email.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -14,80 +29,47 @@ serve(async (req) => {
   try {
     const { type, email, fullName, phone } = await req.json();
 
-    if (!email) {
-      throw new Error("Email is required");
+    if (!isEmail(email)) {
+      return json({ success: false, error: "Email is required" }, 400);
     }
 
-    // As credenciais vêm da configuração da função, nunca do código.
-    const smtpHost = Deno.env.get("SMTP_HOST");
-    const smtpUser = Deno.env.get("SMTP_USER");
-    const smtpPass = Deno.env.get("SMTP_PASS");
-    const smtpPort = Number(Deno.env.get("SMTP_PORT") ?? "465");
-
-    if (!smtpHost || !smtpUser || !smtpPass) {
-      throw new Error("O serviço de e-mail não está configurado (SMTP_HOST, SMTP_USER, SMTP_PASS).");
-    }
-
-    const transporter = nodemailer.createTransport({
-       host: smtpHost,
-       port: smtpPort,
-       secure: smtpPort === 465,
-       auth: {
-         user: smtpUser,
-         pass: smtpPass,
-       },
-    });
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    const db = supabaseUrl && serviceKey ? createClient(supabaseUrl, serviceKey) : null;
 
     const isInvite = type === 'invite';
     const actionText = isInvite ? 'convidado para a plataforma' : 'registado na plataforma';
-    const subject = isInvite ? `[Notificação] Novo Utilizador Convidado - ISPC Fácil` : `[Notificação] Novo Registo de Conta - ISPC Fácil`;
+    const subject = isInvite
+      ? `[Notificação] Novo Utilizador Convidado - ISPC Fácil`
+      : `[Notificação] Novo Registo de Conta - ISPC Fácil`;
 
-    const htmlContent = `
-      <div style="font-family: sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 8px;">
-        <h2 style="color: #f16c39; border-bottom: 2px solid #f16c39; padding-bottom: 10px;">Notificação de Sistema</h2>
-        <p>Olá Administrador,</p>
-        <p>Um novo utilizador foi <strong>${actionText}</strong>.</p>
-        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-          <tr>
-            <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; width: 120px;">Email:</td>
-            <td style="padding: 8px; border-bottom: 1px solid #eee;">${email}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Nome Completo:</td>
-            <td style="padding: 8px; border-bottom: 1px solid #eee;">${fullName || '-'}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Telefone:</td>
-            <td style="padding: 8px; border-bottom: 1px solid #eee;">${phone || '-'}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Data/Hora:</td>
-            <td style="padding: 8px; border-bottom: 1px solid #eee;">${new Date().toLocaleString('pt-PT')}</td>
-          </tr>
-        </table>
-        <hr style="border: none; border-top: 1px solid #eee; margin-top: 30px;"/>
-        <p style="font-size: 11px; color: #888;">Este é um e-mail automático do sistema de notificações do ISPC Fácil.</p>
-      </div>
-    `;
+    const inner = `
+      <p>Olá Administrador,</p>
+      <p>Um novo utilizador foi <strong>${escapeHtml(actionText)}</strong>.</p>
+      ${detailsTable([
+        ["Email", String(email).trim()],
+        ["Nome Completo", typeof fullName === "string" ? fullName.slice(0, 200) : ""],
+        ["Telefone", typeof phone === "string" ? phone.slice(0, 50) : ""],
+        ["Data/Hora", new Date().toLocaleString('pt-PT', { timeZone: 'Africa/Maputo' })],
+      ])}`;
 
-    const mailOptions = {
-      from: `"ISPC Fácil" <${Deno.env.get("SMTP_FROM_EMAIL") ?? smtpUser}>`,
-      to: Deno.env.get("ADMIN_NOTIFICATION_EMAIL") ?? 'info@ispcfacil.com',
-      subject: subject,
-      html: htmlContent,
-    };
+    const result = await sendEmail(db, {
+      kind: isInvite ? "invite_admin" : "signup_admin",
+      to: adminRecipients(),
+      replyTo: String(email).trim(),
+      subject,
+      html: emailLayout("Notificação de Sistema", inner, "Este é um e-mail automático do sistema de notificações do ISPC Fácil."),
+      relatedTable: "profiles",
+      relatedId: String(email).trim().toLowerCase(),
+    });
 
-    await transporter.sendMail(mailOptions);
+    if (!result.ok) {
+      return json({ success: false, status: result.status, error: result.error }, result.status === "skipped" ? 200 : 500);
+    }
 
-    return new Response(
-      JSON.stringify({ success: true }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return json({ success: true });
   } catch (error) {
     console.error("Failed to send notification email:", error);
-    return new Response(
-      JSON.stringify({ success: false, error: (error as Error).message }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
-    );
+    return json({ success: false, error: (error as Error).message }, 500);
   }
 });

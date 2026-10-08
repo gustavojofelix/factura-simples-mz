@@ -267,6 +267,47 @@
   word-break: break-all;
 }
 
+/* Várias contas: grelha compacta para que 3-4 bancos caibam no rodapé A4. */
+.doc-bank__accounts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px 24px;
+  font-size: 13px;
+}
+
+.doc-bank__account {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.doc-bank__bank {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.doc-bank__rows {
+  display: grid;
+  gap: 4px;
+}
+
+.doc-bank__rows > div {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.doc-bank__rows .doc-bank__label {
+  flex: 0 0 72px;
+  margin-bottom: 0;
+  font-size: 11px;
+}
+
+.doc-bank__mobile {
+  margin-top: 16px;
+}
+
 .doc-footer {
   padding: 24px;
   border-top: 1px solid #e5e7eb;
@@ -465,6 +506,7 @@
 
 @media (max-width: 640px) {
   .doc-parties,
+  .doc-bank__accounts,
   .doc-bank__grid {
     grid-template-columns: 1fr;
   }

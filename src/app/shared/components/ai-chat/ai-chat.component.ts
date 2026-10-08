@@ -27,6 +27,7 @@ import { ExportService } from '../../../core/services/export.service';
 import { PdfService } from '../../../core/services/pdf.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { AiMarkdownPipe } from './markdown.pipe';
+import { AppDatePipe } from '../../pipes/app-date.pipe';
 
 /** Perguntas de arranque, mostradas apenas numa conversa vazia. */
 const SUGESTOES = [
@@ -50,7 +51,8 @@ const SUGESTOES = [
     MatMenuModule,
     MatTooltipModule,
     MatProgressSpinnerModule,
-    AiMarkdownPipe
+    AiMarkdownPipe,
+    AppDatePipe
   ],
   templateUrl: './ai-chat.component.html',
   styleUrls: ['./ai-chat.component.css']

@@ -40,6 +40,13 @@ enabled = true
 verify_jwt = true
 entrypoint = "./functions/process-subscription-payment/index.ts"
 
+# Envio/reenvio dos e-mails de subscrição a partir do painel do admin.
+# O JWT é verificado pela plataforma e o papel 'admin' dentro da função.
+[functions.subscription-notify]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/subscription-notify/index.ts"
+
 
 [functions.ai-assistant]
 enabled = true
@@ -56,8 +63,9 @@ verify_jwt = false
 import_map = "./functions/ai-alerts/deno.json"
 entrypoint = "./functions/ai-alerts/index.ts"
 
-# verify_jwt = false porque só é chamada por agendador (pg_cron + pg_net ou
-# externo), autenticada pelo cabeçalho x-cron-secret validado na função.
+# verify_jwt = false porque o agendador (pg_cron + pg_net ou externo) se
+# autentica pelo cabeçalho x-cron-secret, sem JWT. Os pedidos do Back Office
+# (admin) e o teste do dono trazem JWT, validado dentro da própria função.
 [functions.send-tax-reminders]
 enabled = true
 verify_jwt = false

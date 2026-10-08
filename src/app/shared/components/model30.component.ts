@@ -6,6 +6,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { TaxDeclaration } from '../../core/services/tax.service';
 import { CompanyService, Company } from '../../core/services/company.service';
 import { PdfService } from '../../core/services/pdf.service';
+import { Model30ExcelService } from '../../core/services/model30-excel.service';
+import {
+  computeModel30Fields, getModel30Month, isModel30BensRate, isModel30ServicosRate, getModel30PaymentMethodLabel, MODEL30_RATE_LABELS
+} from '../../core/utils/model30-fields';
 
 @Component({
   selector: 'app-model30',
@@ -20,6 +24,9 @@ import { PdfService } from '../../core/services/pdf.service';
         <span style="font-size:12px; color:#666; margin-left:4px;">{{ data.declaration.period }}º Trimestre {{ data.declaration.year }}</span>
       </div>
       <div style="display:flex; gap:8px; align-items:center;">
+        <button mat-stroked-button (click)="downloadExcel()" [disabled]="isGeneratingExcel()" style="gap:6px;">
+          <mat-icon>table_view</mat-icon> {{ isGeneratingExcel() ? 'A gerar Excel...' : 'Descarregar Excel' }}
+        </button>
         <button mat-stroked-button (click)="downloadPdf()" [disabled]="isGeneratingPdf()" style="gap:6px;">
           <mat-icon>picture_as_pdf</mat-icon> {{ isGeneratingPdf() ? 'A gerar PDF...' : 'Descarregar PDF' }}
         </button>
@@ -198,13 +205,13 @@ import { PdfService } from '../../core/services/pdf.service';
           <div class="section-body">
             <div class="q8-sub-header">8.1 - TAXAS SOBRE TRANSMISSÃO DE BENS</div>
             <div class="q8-check-line">
-              <label class="check-label"><span class="chk">{{ isBensRate(3) ? '☑' : '☐' }}</span> 3% para o volume de negócios anual ≤ 1.000.000,00MT</label>
+              <label class="check-label"><span class="chk">{{ isBensRate(3) ? '☑' : '☐' }}</span> {{ rateLabels.bens3 }}</label>
             </div>
             <div class="q8-check-line">
-              <label class="check-label"><span class="chk">{{ isBensRate(4) ? '☑' : '☐' }}</span> 4% para o volume de negócios anual &lt; 1.000.000,00MT ≥ 2.500.000,00MT</label>
+              <label class="check-label"><span class="chk">{{ isBensRate(4) ? '☑' : '☐' }}</span> {{ rateLabels.bens4 }}</label>
             </div>
             <div class="q8-check-line">
-              <label class="check-label"><span class="chk">{{ isBensRate(5) ? '☑' : '☐' }}</span> 5% para o volume de negócios anual &lt; 2.500.000,00MT ≤ 4.000.000,00MT.</label>
+              <label class="check-label"><span class="chk">{{ isBensRate(5) ? '☑' : '☐' }}</span> {{ rateLabels.bens5 }}</label>
             </div>
             <div class="q8-sub-header" style="margin-top:4px;">8.2 -TAXAS SOBRE PRESTAÇÃO DE SERVIÇOS</div>
             <div class="q8-check-line">
@@ -292,7 +299,7 @@ import { PdfService } from '../../core/services/pdf.service';
                   <td class="q9-num-cell">10</td>
                     <td class="q9-value-cell">{{ data.declaration.period === 4 ? formatAmount(field10) : '' }}</td>
                   <td class="q9-num-cell">11</td>
-                    <td class="q9-value-cell">{{ data.declaration.period === 4 ? (field11 + '%') : '' }}</td>
+                    <td class="q9-value-cell">{{ data.declaration.period === 4 ? (formatAmount(field11) + '%') : '' }}</td>
                   <td class="q9-num-cell">12</td>
                     <td class="q9-value-cell">{{ data.declaration.period === 4 ? formatAmount(field12) : '' }}</td>
                 </tr>
@@ -314,7 +321,7 @@ import { PdfService } from '../../core/services/pdf.service';
         <div class="page page-break">
 
           <!-- QUADRO 11 -->
-          <div class="section-header">11 - IMPOSTO A ENTRGAR AO ESTADO</div>
+          <div class="section-header">11 - IMPOSTO A ENTREGAR AO ESTADO</div>
           <div class="section-body" style="padding:0;">
             <div class="q11-grid">
               <div class="q11-left">
@@ -398,7 +405,7 @@ import { PdfService } from '../../core/services/pdf.service';
                   @for (payment of data.declaration.payments; track payment.id) {
                     <tr>
                       <td>{{ formatDate(payment.payment_date) }}</td>
-                      <td>{{ payment.payment_method || '-' }}</td>
+                      <td>{{ paymentMethodLabel(payment.payment_method) }}</td>
                       <td>{{ payment.reference || '-' }}</td>
                       <td style="text-align:right;">{{ formatAmount(payment.amount) }}</td>
                     </tr>
@@ -811,6 +818,8 @@ import { PdfService } from '../../core/services/pdf.service';
 export class Model30Component implements OnInit {
   company = signal<Company | null>(null);
   isGeneratingPdf = signal(false);
+  isGeneratingExcel = signal(false);
+  readonly rateLabels = MODEL30_RATE_LABELS;
 
   field01 = 0;
   field02 = 0;
@@ -833,7 +842,8 @@ export class Model30Component implements OnInit {
     public dialogRef: MatDialogRef<Model30Component>,
     @Inject(MAT_DIALOG_DATA) public data: { declaration: TaxDeclaration },
     private companyService: CompanyService,
-    private pdfService: PdfService
+    private pdfService: PdfService,
+    private model30Excel: Model30ExcelService
   ) {}
 
   ngOnInit() {
@@ -842,43 +852,27 @@ export class Model30Component implements OnInit {
   }
 
   calculateFields() {
-    const decl = this.data.declaration;
-    this.field01 = decl.total_sales || 0;
-
-    const model = decl.model_30_data || {};
-    this.field06 = model.annual_sales || 0;
-    this.field07 = model.annual_normal_tax || 0;
-    this.field08 = model.annual_excess_base || 0;
-    this.field09 = model.annual_excess_tax || 0;
-    this.field10 = model.annual_sales || 0;
-    this.field11 = model.effective_rate || decl.ispc_rate || 0;
-    this.field12 = model.annual_tax || 0;
-
-    const splits = decl.ispc_splits || [];
-    const normalSplits = splits.filter((s: any) => s.rate !== 20);
-    const excessSplits = splits.filter((s: any) => s.rate === 20);
-
-    this.field02 = model.normal_tax_period ?? normalSplits.reduce((sum: number, s: any) => sum + (s.amount || 0), 0);
-    this.field03 = model.excess_base_period ?? excessSplits.reduce((sum: number, s: any) => sum + (s.base || 0), 0);
-    this.field04 = model.excess_tax_period ?? excessSplits.reduce((sum: number, s: any) => sum + (s.amount || 0), 0);
-    this.field05 = this.field02 + this.field04;
-
-    // If no splits available, fall back to stored ispc_amount
-    if (splits.length === 0) {
-      this.field02 = decl.ispc_amount || 0;
-      this.field05 = this.field02;
-    }
-
-    this.field13 = this.field12 > 0 ? this.field12 - this.field07 : 0;
-    this.field14 = this.field05 + this.field13;
-    this.field15 = 0;
-    this.field16 = this.field14 + this.field15;
+    const f = computeModel30Fields(this.data.declaration, this.company());
+    this.field01 = f.f01;
+    this.field02 = f.f02;
+    this.field03 = f.f03;
+    this.field04 = f.f04;
+    this.field05 = f.f05;
+    this.field06 = f.f06;
+    this.field07 = f.f07;
+    this.field08 = f.f08;
+    this.field09 = f.f09;
+    this.field10 = f.f10;
+    this.field11 = f.f11;
+    this.field12 = f.f12;
+    this.field13 = f.f13;
+    this.field14 = f.f14;
+    this.field15 = f.f15;
+    this.field16 = f.f16;
   }
 
   getMonthDigits(): string[] {
-    const quarterStartMonths: { [key: number]: string } = { 1: '01', 2: '04', 3: '07', 4: '10' };
-    const month = quarterStartMonths[this.data.declaration.period] || '01';
-    return month.split('');
+    return getModel30Month(this.data.declaration.period).split('');
   }
 
   getYearDigits(): string[] {
@@ -891,19 +885,11 @@ export class Model30Component implements OnInit {
   }
 
   isBensRate(rate: number): boolean {
-    const c = this.company();
-    if (!c) return false;
-    const cat2 = c.category2;
-    if (cat2 === 'servicos_nao_liberais' || cat2 === 'servicos_liberais') return false;
-    return this.data.declaration.ispc_rate === rate;
+    return isModel30BensRate(this.data.declaration, this.company(), rate);
   }
 
   isServicosRate(rate: number): boolean {
-    const c = this.company();
-    if (!c) return false;
-    if (rate === 12 && c.category2 === 'servicos_nao_liberais') return true;
-    if (rate === 15 && c.category2 === 'servicos_liberais') return true;
-    return false;
+    return isModel30ServicosRate(this.company(), rate);
   }
 
   formatDate(dateString?: string): string {
@@ -941,6 +927,26 @@ export class Model30Component implements OnInit {
     } finally {
       this.isGeneratingPdf.set(false);
     }
+  }
+
+  async downloadExcel() {
+    if (this.isGeneratingExcel()) return;
+    const company = this.company();
+    if (!company) return;
+
+    try {
+      this.isGeneratingExcel.set(true);
+      await this.model30Excel.exportModel30(this.data.declaration, company);
+    } catch (error) {
+      console.error('Erro ao gerar o Excel do Modelo 30:', error);
+      window.alert('Não foi possível gerar o Excel. Por favor, tente novamente.');
+    } finally {
+      this.isGeneratingExcel.set(false);
+    }
+  }
+
+  paymentMethodLabel(method: string | null | undefined): string {
+    return getModel30PaymentMethodLabel(method);
   }
 
   print() { window.print(); }

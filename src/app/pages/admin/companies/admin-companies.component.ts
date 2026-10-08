@@ -5,6 +5,7 @@ import { SupabaseService } from '../../../core/services/supabase.service';
 import { AuditLogService } from '../../../core/services/audit-log.service';
 import { ActivityService, ActivityType } from '../../../core/services/activity.service';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
+import { friendlyFunctionError } from '../../../core/utils/error-message';
 
 @Component({
   selector: 'app-admin-companies',
@@ -343,6 +344,89 @@ import { ConfirmDialogService } from '../../../core/services/confirm-dialog.serv
                 </div>
               </div>
 
+              <!-- Testar lembretes fiscais -->
+              <div class="space-y-4 border-t border-gray-100 pt-6">
+                <h4 class="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center">
+                  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                  Testar lembretes fiscais
+                </h4>
+                <p class="text-xs text-gray-500 leading-relaxed">
+                  Simula uma data para ver que lembretes do Modelo 30 seriam emitidos a este contribuinte.
+                  O teste não regista nada e o email vai apenas para o endereço indicado, nunca para o cliente.
+                </p>
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Data simulada</label>
+                    <input type="date" [ngModel]="taxTestDate()" (ngModelChange)="taxTestDate.set($event)"
+                      class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Enviar para</label>
+                    <input type="email" [ngModel]="taxTestEmail()" (ngModelChange)="taxTestEmail.set($event)"
+                      placeholder="O seu email"
+                      class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                  </div>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <button (click)="runTaxReminderTest('preview')" [disabled]="taxTestBusy()"
+                    class="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-xs font-bold uppercase tracking-tight disabled:opacity-50">
+                    {{ taxTestBusy() === 'preview' ? 'A calcular...' : 'Pré-visualizar' }}
+                  </button>
+                  <button (click)="runTaxReminderTest('test')" [disabled]="taxTestBusy()"
+                    class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-bold uppercase tracking-tight disabled:opacity-50">
+                    {{ taxTestBusy() === 'test' ? 'A enviar...' : 'Enviar lembrete de teste' }}
+                  </button>
+                </div>
+
+                <p *ngIf="taxTestError()" class="text-xs text-red-600 font-medium">{{ taxTestError() }}</p>
+
+                <div *ngIf="taxTestResult() as res" class="space-y-3">
+                  <p *ngIf="res.message" class="text-xs font-medium" [class.text-green-700]="res.ok" [class.text-red-600]="!res.ok">
+                    {{ res.message }}
+                  </p>
+                  <div class="text-[11px] text-gray-600 space-y-1 bg-gray-50 border border-gray-100 rounded-xl p-3">
+                    <p>
+                      <span class="font-bold">Servidor de email:</span>
+                      <span *ngIf="res.smtp_configured" class="text-green-700 font-semibold"> configurado{{ res.from ? ' (' + res.from + ')' : '' }}</span>
+                      <span *ngIf="!res.smtp_configured" class="text-red-600 font-semibold"> NÃO configurado (SMTP_HOST/SMTP_USER/SMTP_PASS em falta)</span>
+                    </p>
+                    <p>
+                      <span class="font-bold">Destinatários reais:</span>
+                      {{ (res.recipients || res.real_recipients || []).join(', ') || 'nenhum email configurado' }}
+                    </p>
+                    <p *ngIf="res.sample_used" class="text-amber-700">Nenhum lembrete por enviar nessa data: foi enviado um lembrete de exemplo.</p>
+                  </div>
+
+                  <div class="space-y-2">
+                    <p class="text-[10px] font-bold text-gray-500 uppercase">Lembretes em {{ formatTaxTestDate(res.reference_date) }}</p>
+                    <p *ngIf="!res.reminders?.length" class="text-xs text-gray-500">Nenhum lembrete previsto nesta data.</p>
+                    <div *ngFor="let r of res.reminders" class="p-3 rounded-xl border text-xs {{ taxReminderKindClass(r.kind) }}">
+                      <div class="flex items-center justify-between gap-2 mb-1">
+                        <span class="font-bold uppercase text-[10px] tracking-wider">{{ taxReminderKindLabel(r.kind) }} · {{ r.quarter }}º Trim. {{ r.year }}</span>
+                        <span class="text-[10px] text-gray-500">Prazo {{ formatTaxTestDate(r.due_date) }}</span>
+                      </div>
+                      <p class="font-semibold text-gray-800">{{ r.title }}</p>
+                      <p *ngIf="r.already_issued" class="text-[10px] text-gray-500 mt-1">Já emitido (o motor não o voltaria a emitir).</p>
+                    </div>
+                  </div>
+
+                  <div *ngIf="res.history?.length" class="space-y-2">
+                    <p class="text-[10px] font-bold text-gray-500 uppercase">Histórico de lembretes</p>
+                    <div *ngFor="let h of res.history" class="flex items-start justify-between gap-2 text-[11px] border-b border-gray-100 pb-1">
+                      <span class="text-gray-700">{{ taxReminderKindLabel(h.kind) }} · {{ h.quarter }}º Trim. {{ h.year }}</span>
+                      <span class="text-right text-gray-500">
+                        {{ formatTaxTestDate(h.created_at) }} ·
+                        <ng-container *ngIf="h.emailed_at">enviado</ng-container>
+                        <ng-container *ngIf="!h.emailed_at && h.cancelled_at">não enviado ({{ h.email_error }})</ng-container>
+                        <ng-container *ngIf="!h.emailed_at && !h.cancelled_at">na fila{{ h.email_error ? ' — ' + h.email_error : '' }}</ng-container>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
 
             </div>
           </div>
@@ -530,10 +614,10 @@ import { ConfirmDialogService } from '../../../core/services/confirm-dialog.serv
                   <td class="px-4 py-4">
                     <div class="flex flex-col">
                       <span *ngIf="company.last_access" class="text-xs text-gray-700">
-                        {{ company.last_access | date:'dd/MM/yyyy' }}
+                        {{ company.last_access | date:'dd/MM/yyyy':'+0200' }}
                       </span>
                       <span *ngIf="company.last_access" class="text-[10px] text-gray-400">
-                        {{ company.last_access | date:'HH:mm' }}
+                        {{ company.last_access | date:'HH:mm':'+0200' }}
                       </span>
                       <span *ngIf="!company.last_access" class="text-[10px] text-gray-400">—</span>
                     </div>
@@ -673,6 +757,11 @@ export class AdminCompaniesComponent implements OnInit {
   saveError = '';
   isDetailsOpen = false;
   selectedCompany = signal<any>({});
+  taxTestDate = signal<string>(new Date().toISOString().slice(0, 10));
+  taxTestEmail = signal<string>('');
+  taxTestResult = signal<any>(null);
+  taxTestError = signal<string>('');
+  taxTestBusy = signal<'preview' | 'test' | null>(null);
   isLoading = signal(false);
 
   // Ordering
@@ -1023,6 +1112,7 @@ export class AdminCompaniesComponent implements OnInit {
   async openDetails(company: any) {
     this.selectedCompany.set({ ...company, users: [] });
     this.isDetailsOpen = true;
+    this.resetTaxReminderTest();
 
     const { data: usersData } = await this.supabase.db
       .from('company_users')
@@ -1038,6 +1128,80 @@ export class AdminCompaniesComponent implements OnInit {
   closeDetails() {
     this.isDetailsOpen = false;
     this.selectedCompany.set({});
+  }
+
+  // --- Testar lembretes fiscais (Edge Function send-tax-reminders) -----------
+  // 'preview' não escreve nada; 'test' envia "[TESTE]" só para o email indicado.
+
+  private resetTaxReminderTest() {
+    this.taxTestDate.set(new Date().toISOString().slice(0, 10));
+    this.taxTestEmail.set('');
+    this.taxTestResult.set(null);
+    this.taxTestError.set('');
+    this.taxTestBusy.set(null);
+  }
+
+  async runTaxReminderTest(mode: 'preview' | 'test') {
+    const companyId = this.selectedCompany()?.id;
+    if (!companyId) return;
+
+    const email = this.taxTestEmail().trim();
+    if (mode === 'test' && email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      this.taxTestError.set('Indique um endereço de email válido.');
+      return;
+    }
+
+    this.taxTestBusy.set(mode);
+    this.taxTestError.set('');
+    try {
+      const body: Record<string, unknown> = {
+        mode,
+        company_id: companyId,
+        reference_date: this.taxTestDate() || undefined,
+      };
+      if (mode === 'test') {
+        body['sample'] = true;
+        if (email) body['to'] = email;
+      }
+
+      const { data, error } = await this.supabase.client.functions.invoke('send-tax-reminders', { body });
+      if (error) throw error;
+      this.taxTestResult.set(data);
+    } catch (error) {
+      console.error('Erro ao testar lembretes fiscais:', error);
+      this.taxTestResult.set(null);
+      this.taxTestError.set(await friendlyFunctionError(error, 'Não foi possível testar os lembretes fiscais.'));
+    } finally {
+      this.taxTestBusy.set(null);
+    }
+  }
+
+  taxReminderKindLabel(kind: string): string {
+    switch (kind) {
+      case 'qend': return 'Fim do trimestre';
+      case 'd15': return '15 dias';
+      case 'd7': return '7 dias';
+      case 'd1': return '1 dia';
+      case 'd0': return 'Último dia';
+      case 'overdue': return 'Incumprimento';
+      default: return kind;
+    }
+  }
+
+  taxReminderKindClass(kind: string): string {
+    switch (kind) {
+      case 'overdue':
+      case 'd0':
+      case 'd1': return 'bg-red-50 border-red-200';
+      case 'd7': return 'bg-orange-50 border-orange-200';
+      default: return 'bg-blue-50 border-blue-200';
+    }
+  }
+
+  formatTaxTestDate(value: string | null | undefined): string {
+    if (!value) return '—';
+    const [y, m, d] = value.slice(0, 10).split('-');
+    return d && m && y ? `${d}/${m}/${y}` : value;
   }
 
   async loadAllCompanies() {

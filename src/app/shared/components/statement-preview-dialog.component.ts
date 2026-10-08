@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Company } from '../../core/services/company.service';
+import { CompanyBankAccountService, CompanyBankAccount } from '../../core/services/company-bank-account.service';
 import { AuthService } from '../../core/services/auth.service';
 import { PdfService } from '../../core/services/pdf.service';
 import { SupabaseService } from '../../core/services/supabase.service';
@@ -95,6 +96,7 @@ export type StatementPreviewData = SummaryStatementPreviewData | ClientStatement
               [notes]="data.notes"
               [company]="data.company"
               [branding]="branding()"
+              [bankAccounts]="bankAccounts()"
             ></app-client-statement-document>
           } @else {
             <app-summary-statement-document
@@ -141,8 +143,10 @@ export class StatementPreviewDialogComponent implements OnInit {
   private auditLogService = inject(AuditLogService);
   private snackBar = inject(MatSnackBar);
   private supabase = inject(SupabaseService);
+  private bankAccountService = inject(CompanyBankAccountService);
 
   branding = signal<DocumentBranding>(DEFAULT_DOCUMENT_BRANDING);
+  bankAccounts = signal<CompanyBankAccount[] | null>(null);
   issuerName = signal('');
   isLoading = signal(true);
   isGeneratingPdf = signal(false);
@@ -151,11 +155,13 @@ export class StatementPreviewDialogComponent implements OnInit {
 
   async ngOnInit() {
     try {
-      const [branding, profile] = await Promise.all([
+      const [branding, profile, bankAccounts] = await Promise.all([
         this.documentSettings.resolve(this.data.company.id),
-        this.authService.getCurrentProfile()
+        this.authService.getCurrentProfile(),
+        this.bankAccountService.list(this.data.company.id)
       ]);
       this.branding.set(branding);
+      this.bankAccounts.set(bankAccounts);
 
       const user = this.authService.currentUser();
       this.issuerName.set(

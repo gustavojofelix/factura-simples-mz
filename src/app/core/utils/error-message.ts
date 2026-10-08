@@ -52,6 +52,7 @@ const CONSTRAINT_MESSAGES: Array<[RegExp, string]> = [
 const DETAIL_MESSAGES: Record<string, string> = {
   DUPLICATE_COMPANY_NUIT: 'Já existe uma empresa registada com este NUIT.',
   SUBSCRIPTION_EXPIRED: 'A subscrição desta empresa expirou. Renove o plano em Configurações → Subscrição para continuar.',
+  SUBSCRIPTION_DOWNGRADE_BLOCKED: 'Não é possível fazer downgrade enquanto a subscrição estiver activa.',
 };
 
 const TEXT_MESSAGES: Array<[RegExp, string]> = [

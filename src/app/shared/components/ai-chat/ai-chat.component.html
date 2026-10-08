@@ -36,7 +36,7 @@
           <mat-icon class="!text-[16px] !w-4 !h-4 text-slate-400 shrink-0">chat_bubble_outline</mat-icon>
           <span class="truncate flex-1 text-left">{{ c.title }}</span>
           <span class="text-[10px] text-slate-400 shrink-0">
-            {{ c.last_message_at | date:'dd/MM' }}
+            {{ c.last_message_at | appDate:'short' }}
           </span>
         </button>
       }

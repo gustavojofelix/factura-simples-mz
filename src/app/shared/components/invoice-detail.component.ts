@@ -11,6 +11,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { InvoiceService, Invoice } from '../../core/services/invoice.service';
 import { PaymentService, Payment } from '../../core/services/payment.service';
 import { CompanyService, Company } from '../../core/services/company.service';
+import { CompanyBankAccountService, CompanyBankAccount } from '../../core/services/company-bank-account.service';
 import {
   DocumentSettingsService,
   DocumentBranding,
@@ -138,7 +139,8 @@ import { SupabaseService } from '../../core/services/supabase.service';
             <app-invoice-document
               [invoice]="invoice()!"
               [company]="documentCompany()"
-              [branding]="branding()">
+              [branding]="branding()"
+              [bankAccounts]="bankAccounts()">
             </app-invoice-document>
           </div>
 
@@ -308,6 +310,7 @@ export class InvoiceDetailComponent {
   private pdfService = inject(PdfService);
   private supabase = inject(SupabaseService);
   private documentSettings = inject(DocumentSettingsService);
+  private bankAccountService = inject(CompanyBankAccountService);
 
   invoice = signal<Invoice | null>(null);
   payments = signal<Payment[]>([]);
@@ -322,6 +325,8 @@ export class InvoiceDetailComponent {
 
   /** Personalização da empresa emissora. */
   branding = signal<DocumentBranding>(DEFAULT_DOCUMENT_BRANDING);
+  /** Contas bancárias da empresa emissora (legíveis por qualquer membro). */
+  bankAccounts = signal<CompanyBankAccount[] | null>(null);
   isLoading = signal(true);
   isGeneratingPdf = signal(false);
 
@@ -383,7 +388,12 @@ export class InvoiceDetailComponent {
       }
     }
 
-    this.branding.set(await this.documentSettings.resolve(invoice.company_id));
+    const [branding, bankAccounts] = await Promise.all([
+      this.documentSettings.resolve(invoice.company_id),
+      this.bankAccountService.list(invoice.company_id)
+    ]);
+    this.branding.set(branding);
+    this.bankAccounts.set(bankAccounts);
   }
 
   openPaymentDialog() {

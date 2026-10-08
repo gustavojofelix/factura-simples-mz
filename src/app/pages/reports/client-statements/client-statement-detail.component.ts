@@ -25,6 +25,7 @@ import {
   StatementService
 } from '../../../core/services/statement.service';
 import { formatIsoDate, parseIsoDate, quarterRange, toIsoDate } from '../../../core/utils/date.util';
+import { PreferencesService } from '../../../core/services/preferences.service';
 import { ReportsNavComponent } from '../reports-nav.component';
 import {
   StatementPreviewDialogComponent,
@@ -73,6 +74,8 @@ export class ClientStatementDetailComponent implements OnInit {
   companyService = inject(CompanyService);
   clientService = inject(ClientService);
   statementService = inject(StatementService);
+  /** Formato de data de Configurações > Sistema. */
+  private preferences = inject(PreferencesService);
 
   filterForm = this.fb.group({
     clientId: ['', Validators.required],
@@ -247,7 +250,7 @@ export class ClientStatementDetailComponent implements OnInit {
     const data: Record<string, string | number>[] = [];
     if (showBalance) {
       data.push({
-        'Data': formatIsoDate(period.start),
+        'Data': formatIsoDate(period.start, this.preferences.dateFormat()),
         'Documento': '',
         'Descrição': 'Saldo anterior',
         'Facturado (MZN)': '',
@@ -258,7 +261,7 @@ export class ClientStatementDetailComponent implements OnInit {
 
     for (const m of this.visibleMovements()) {
       const line: Record<string, string | number> = {
-        'Data': formatIsoDate(m.date),
+        'Data': formatIsoDate(m.date, this.preferences.dateFormat()),
         'Documento': m.document,
         'Descrição': m.description,
         'Facturado (MZN)': m.invoiced || '',
@@ -275,7 +278,7 @@ export class ClientStatementDetailComponent implements OnInit {
     data.push({});
     data.push({ 'Data': `Cliente: ${statement.client.client_code || ''} ${statement.client.name}`.trim() });
     data.push({ 'Data': `Empresa: ${company.name}` });
-    data.push({ 'Data': `Período: ${formatIsoDate(period.start)} a ${formatIsoDate(period.end)}` });
+    data.push({ 'Data': `Período: ${formatIsoDate(period.start, this.preferences.dateFormat())} a ${formatIsoDate(period.end, this.preferences.dateFormat())}` });
     if (this.notes().trim()) data.push({ 'Data': `Observações: ${this.notes().trim()}` });
 
     const id = (statement.client.client_code || statement.client.name).replace(/[^\w-]+/g, '_');
@@ -296,6 +299,6 @@ export class ClientStatementDetailComponent implements OnInit {
   }
 
   formatDate(iso: string): string {
-    return formatIsoDate(iso);
+    return formatIsoDate(iso, this.preferences.dateFormat());
   }
 }

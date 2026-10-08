@@ -30,6 +30,7 @@ import { MatIconModule } from '@angular/material/icon';
 export class ReportsNavComponent {
   links = [
     { label: 'Vendas', icon: 'assessment', route: '/relatorios', exact: true },
-    { label: 'Extracto de clientes', icon: 'account_balance_wallet', route: '/relatorios/extractos', exact: false }
+    { label: 'Extracto de clientes', icon: 'account_balance_wallet', route: '/relatorios/extractos', exact: false },
+    { label: 'Ficheiro SAF-T', icon: 'description', route: '/relatorios/saft', exact: false }
   ];
 }

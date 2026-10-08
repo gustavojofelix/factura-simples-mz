@@ -94,6 +94,11 @@ export class AuthService {
             fullName,
             phone
           }
+        }).then(({ data, error }) => {
+          // invoke() resolve com { error } em vez de rejeitar.
+          if (error || data?.success === false) {
+            console.error('Error invoking notify-admin:', error ?? data?.error ?? data?.status);
+          }
         }).catch(err => console.error('Error invoking notify-admin:', err));
 
         return { success: true, user: data.user };

@@ -1,16 +1,24 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CompanyService } from '../../core/services/company.service';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { PaginationComponent, PageChangeEvent } from '../../shared/components/pagination.component';
-import { formatAuditDetails, FormattedAuditItem } from '../../core/utils/audit-formatter.util';
+import { PreferencesService } from '../../core/services/preferences.service';
+import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
+import {
+  formatAuditDetails,
+  FormattedAuditItem,
+  AUDIT_CATEGORIES,
+  getAuditCategoryLabel,
+  getAuditCategoryBadge
+} from '../../core/utils/audit-formatter.util';
 
 @Component({
   selector: 'app-audit-logs',
   standalone: true,
-  imports: [CommonModule, FormsModule, PaginationComponent],
+  imports: [CommonModule, FormsModule, PaginationComponent, AppDatePipe],
   template: `
     <div class="p-6 max-w-7xl mx-auto space-y-6">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -99,7 +107,7 @@ import { formatAuditDetails, FormattedAuditItem } from '../../core/utils/audit-f
             <tbody class="divide-y divide-slate-100 text-slate-700 text-sm">
               <tr *ngFor="let log of paginatedLogs()" class="hover:bg-slate-50/50 transition-colors">
                 <td class="px-6 py-4 font-medium text-slate-500 text-xs">
-                  {{ log.created_at | date:'dd/MM/yyyy HH:mm:ss' }}
+                  {{ log.created_at | appDate:'datetime-seconds' }}
                 </td>
                 <td class="px-6 py-4 truncate max-w-[200px]" [title]="log.user_email || ''">
                   {{ getUserName(log) }}
@@ -148,7 +156,7 @@ import { formatAuditDetails, FormattedAuditItem } from '../../core/utils/audit-f
         <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <div>
             <h3 class="text-lg font-bold text-slate-800">Histórico da Actividade</h3>
-            <p class="text-xs text-slate-500 font-medium">{{ selectedLog.created_at | date:'dd/MM/yyyy HH:mm:ss' }}</p>
+            <p class="text-xs text-slate-500 font-medium">{{ selectedLog.created_at | appDate:'datetime-seconds' }}</p>
           </div>
           <button (click)="closeDetails()" class="text-slate-400 hover:text-slate-600 focus:outline-none">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -254,19 +262,7 @@ export class AuditLogsComponent implements OnInit {
   // Dialog details
   selectedLog: any = null;
 
-  categories = [
-    { id: 'auth', label: 'Login e Logout' },
-    { id: 'clients', label: 'Clientes' },
-    { id: 'products', label: 'Produtos e Serviços' },
-    { id: 'invoices', label: 'Facturas' },
-    { id: 'reports', label: 'Relatórios' },
-    { id: 'declarations', label: 'Declarações Fiscais' },
-    { id: 'payments', label: 'Pagamentos' },
-    { id: 'settings', label: 'Configurações' },
-    { id: 'users', label: 'Utilizadores' },
-    { id: 'subscriptions', label: 'Subscrições' },
-    { id: 'system', label: 'Sistema' }
-  ];
+  categories = AUDIT_CATEGORIES;
 
   filteredLogs = computed(() => {
     let list = this.logs();
@@ -297,6 +293,9 @@ export class AuditLogsComponent implements OnInit {
     const start = (this.currentPage() - 1) * this.pageSize();
     return list.slice(start, start + this.pageSize());
   });
+
+  /** Formato de data e fuso horário de Configurações > Sistema. */
+  private preferences = inject(PreferencesService);
 
   constructor(
     public companyService: CompanyService,
@@ -434,24 +433,11 @@ export class AuditLogsComponent implements OnInit {
   }
 
   getCategoryLabel(category: string): string {
-    const found = this.categories.find(c => c.id === category);
-    return found ? found.label : category;
+    return getAuditCategoryLabel(category);
   }
 
   getCategoryBadge(category: string): string {
-    switch (category) {
-      case 'auth': return 'bg-cyan-50 border-cyan-200 text-cyan-700';
-      case 'clients': return 'bg-sky-50 border-sky-200 text-sky-700';
-      case 'products': return 'bg-violet-50 border-violet-200 text-violet-700';
-      case 'invoices': return 'bg-indigo-50 border-indigo-200 text-indigo-700';
-      case 'reports': return 'bg-emerald-50 border-emerald-200 text-emerald-700';
-      case 'declarations': return 'bg-amber-50 border-amber-200 text-amber-700';
-      case 'payments': return 'bg-green-50 border-green-200 text-green-700';
-      case 'settings': return 'bg-purple-50 border-purple-200 text-purple-700';
-      case 'users': return 'bg-pink-50 border-pink-200 text-pink-700';
-      case 'subscriptions': return 'bg-rose-50 border-rose-200 text-rose-700';
-      default: return 'bg-slate-50 border-slate-200 text-slate-700';
-    }
+    return getAuditCategoryBadge(category);
   }
 
   exportToCSV() {
@@ -461,7 +447,7 @@ export class AuditLogsComponent implements OnInit {
     const headers = ['Data/Hora', 'Utilizador', 'E-mail', 'Acção', 'Categoria', 'Detalhes', 'ID Entidade', 'IP', 'Histórico'];
 
     const rows = data.map(l => [
-      `"${new Date(l.created_at).toLocaleString('pt-MZ')}"`,
+      `"${this.preferences.formatDateTime(l.created_at, true)}"`,
       `"${this.getUserName(l).replace(/"/g, '""')}"`,
       `"${l.user_email || ''}"`,
       `"${l.action.replace(/"/g, '""')}"`,
@@ -491,6 +477,6 @@ export class AuditLogsComponent implements OnInit {
   }
 
   getFormattedDetails(details: any): FormattedAuditItem[] {
-    return formatAuditDetails(details);
+    return formatAuditDetails(details, (iso) => this.preferences.formatDate(iso));
   }
 }

@@ -1,6 +1,6 @@
-import { Component, OnInit, signal, effect, computed } from '@angular/core';
+import { Component, OnInit, signal, effect, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -15,6 +15,9 @@ import { InvoiceDialogComponent } from '../../shared/components/invoice-dialog.c
 import { InvoiceService, Invoice } from '../../core/services/invoice.service';
 import { TaxService } from '../../core/services/tax.service';
 import { AuthService } from '../../core/services/auth.service';
+import { AuditLogService, AuditLogEntry } from '../../core/services/audit-log.service';
+import { PreferencesService } from '../../core/services/preferences.service';
+import { getAuditCategoryLabel, getAuditCategoryBadge, getAuditCategoryIcon } from '../../core/utils/audit-formatter.util';
 
 interface DashboardMetrics {
   quarterSales: number;
@@ -30,6 +33,7 @@ interface RecentInvoice {
   date: string;
   total: number;
   status: string;
+  issuer_name?: string;
 }
 
 @Component({
@@ -85,6 +89,13 @@ export class DashboardComponent implements OnInit {
 
   displayedColumns = ['invoice_number', 'client', 'issuer_name', 'date', 'total', 'status'];
 
+  recentActivities = signal<AuditLogEntry[]>([]);
+  activityColumns = ['when', 'action', 'user'];
+  /** Mirrors the audit_logs RLS policy: only company owners/admins can read the log. */
+  readonly canSeeActivity = computed(() => ['owner', 'admin'].includes(this.companyService.activeRole() ?? ''));
+  /** Formato de data e fuso horário de Configurações > Sistema. */
+  private preferences = inject(PreferencesService);
+
   constructor(
     public companyService: CompanyService,
     public subscriptionService: SubscriptionService,
@@ -92,12 +103,25 @@ export class DashboardComponent implements OnInit {
     public taxService: TaxService,
     public authService: AuthService,
     private supabase: SupabaseService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private auditLogService: AuditLogService,
+    public router: Router
   ) {
     effect(() => {
       const company = this.companyService.activeCompany();
       if (company) {
         this.loadDashboardData(company.id);
+      }
+    });
+
+    // Separate effect: activeRole may still be null on the first run, so re-load once it resolves.
+    effect(() => {
+      const company = this.companyService.activeCompany();
+      const canSee = this.canSeeActivity();
+      if (company && canSee) {
+        this.loadRecentActivities(company.id);
+      } else {
+        this.recentActivities.set([]);
       }
     });
   }
@@ -123,6 +147,25 @@ export class DashboardComponent implements OnInit {
       console.error('Erro ao carregar dados:', error);
     } finally {
       this.isLoading.set(false);
+    }
+  }
+
+  async loadRecentActivities(companyId: string) {
+    if (!this.canSeeActivity()) {
+      this.recentActivities.set([]);
+      return;
+    }
+    try {
+      const rows = await this.auditLogService.getRecentLogs(companyId, 6);
+      // Ignore stale responses if the user switched company while the request was in flight.
+      if (this.companyService.activeCompany()?.id === companyId) {
+        this.recentActivities.set(rows);
+      }
+    } catch (error) {
+      console.warn('Não foi possível carregar as actividades recentes:', error);
+      if (this.companyService.activeCompany()?.id === companyId) {
+        this.recentActivities.set([]);
+      }
     }
   }
 
@@ -276,16 +319,11 @@ export class DashboardComponent implements OnInit {
   formatLastUpdated(): string {
     const value = this.lastUpdatedAt();
     if (!value) return 'A sincronizar';
-    return `Hoje, ${value.toLocaleTimeString('pt-MZ', { hour: '2-digit', minute: '2-digit' })}`;
+    return `Hoje, ${this.preferences.formatTime(value)}`;
   }
 
   formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-MZ', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    return this.preferences.formatDate(dateString);
   }
 
   getStatusColor(status: string): string {
@@ -294,6 +332,56 @@ export class DashboardComponent implements OnInit {
 
   getStatusLabel(status: string): string {
     return this.invoiceService.getStatusLabel(status);
+  }
+
+  categoryLabel(category: string): string {
+    return getAuditCategoryLabel(category);
+  }
+
+  categoryBadge(category: string): string {
+    return getAuditCategoryBadge(category);
+  }
+
+  categoryIcon(category: string): string {
+    return getAuditCategoryIcon(category);
+  }
+
+  formatRelativeTime(iso: string): string {
+    const date = new Date(iso);
+    if (isNaN(date.getTime())) return '-';
+    const diffMs = Date.now() - date.getTime();
+    const minutes = Math.floor(diffMs / 60000);
+    const time = this.preferences.formatTime(date);
+
+    if (minutes < 1) return 'Agora mesmo';
+    if (minutes < 60) return `há ${minutes} min`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `há ${hours} h`;
+
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    if (this.preferences.formatDate(date) === this.preferences.formatDate(yesterday)) return `Ontem, ${time}`;
+
+    return `${this.formatDate(iso)} ${time}`;
+  }
+
+  formatFullTimestamp(iso: string): string {
+    const date = new Date(iso);
+    if (isNaN(date.getTime())) return '';
+    return this.preferences.formatDateTime(date, true);
+  }
+
+  openInvoice(invoice: RecentInvoice) {
+    this.router.navigate(['/facturas', invoice.id]);
+  }
+
+  openActivity(log: AuditLogEntry) {
+    // Only invoice entries carry the invoice id in entity_id (payments carry the payment id).
+    // Deletions point to a record that no longer exists, so they go to the audit log instead.
+    if (log.category === 'invoices' && log.entity_id && !log.action.startsWith('Eliminou')) {
+      this.router.navigate(['/facturas', log.entity_id]);
+    } else {
+      this.router.navigate(['/auditoria']);
+    }
   }
 
   openNewInvoiceDialog() {
@@ -308,6 +396,7 @@ export class DashboardComponent implements OnInit {
         const company = this.companyService.activeCompany();
         if (company) {
           this.loadDashboardData(company.id);
+          this.loadRecentActivities(company.id);
         }
       }
     });

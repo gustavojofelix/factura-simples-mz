@@ -26,11 +26,27 @@ interface PaymentTransaction {
   officegest_document_id?: string | null;
   officegest_document_number?: string | null;
   officegest_synced_at?: string | null;
+  payer_email?: string | null;
+  client_notified_at?: string | null;
+  admin_notified_at?: string | null;
+  notification_error?: string | null;
   created_at: string;
   updated_at: string;
 }
 
 interface Subscription { status: string; amount: number; billing_cycle: string; }
+
+interface EmailLogEntry {
+  id: string;
+  created_at: string;
+  kind: string;
+  recipients: string[];
+  subject: string | null;
+  status: 'sent' | 'failed' | 'skipped';
+  error: string | null;
+}
+
+interface NotifyPart { ok: boolean; status: string; recipients?: string[]; error?: string; }
 
 @Component({
   selector: 'app-admin-revenue',
@@ -242,7 +258,7 @@ interface Subscription { status: string; amount: number; billing_cycle: string; 
               <tbody>
                 @for (payment of paginatedPayments(); track payment.id) {
                   <tr (click)="selectPayment(payment)" class="clickable-row" [class.row-selected]="selectedPayment()?.id === payment.id">
-                    <td class="date-cell">{{ payment.created_at | date:'dd/MM/yyyy, HH:mm' }}</td>
+                    <td class="date-cell">{{ payment.created_at | date:'dd/MM/yyyy, HH:mm':'+0200' }}</td>
                     <td><strong class="company-name">{{ payment.company_name }}</strong></td>
                     <td>
                       <div class="plan-cell">
@@ -341,10 +357,10 @@ interface Subscription { status: string; amount: number; billing_cycle: string; 
                 <dd class="mono">{{ selectedPayment()!.reference_code }}</dd>
 
                 <dt>Criado em</dt>
-                <dd>{{ selectedPayment()!.created_at | date:'dd/MM/yyyy, HH:mm:ss' }}</dd>
+                <dd>{{ selectedPayment()!.created_at | date:'dd/MM/yyyy, HH:mm:ss':'+0200' }}</dd>
 
                 <dt>Actualizado em</dt>
-                <dd>{{ selectedPayment()!.updated_at | date:'dd/MM/yyyy, HH:mm:ss' }}</dd>
+                <dd>{{ selectedPayment()!.updated_at | date:'dd/MM/yyyy, HH:mm:ss':'+0200' }}</dd>
 
                 <dt>Fatura OfficeGest</dt>
                 <dd>
@@ -356,13 +372,63 @@ interface Subscription { status: string; amount: number; billing_cycle: string; 
                       {{ selectedPayment()!.officegest_document_number }}
                     </span>
                     @if (selectedPayment()!.officegest_synced_at) {
-                      <small class="og-sync-time">Emitida em {{ selectedPayment()!.officegest_synced_at | date:'dd/MM/yyyy, HH:mm' }}</small>
+                      <small class="og-sync-time">Emitida em {{ selectedPayment()!.officegest_synced_at | date:'dd/MM/yyyy, HH:mm':'+0200' }}</small>
                     }
                   } @else {
                     <span class="text-gray-400 font-medium">Ainda não emitida</span>
                   }
                 </dd>
               </dl>
+
+              <!-- Notificações por e-mail -->
+              @if (selectedPayment()!.status === 'completed') {
+                <div class="drawer-section">
+                  <span class="drawer-section-label">Notificações por e-mail</span>
+                  <dl class="drawer-dl">
+                    <dt>Cliente</dt>
+                    <dd>
+                      @if (selectedPayment()!.client_notified_at) {
+                        <span class="notif-ok">Enviado {{ selectedPayment()!.client_notified_at | date:'dd/MM/yyyy, HH:mm':'+0200' }}</span>
+                      } @else {
+                        <span class="notif-pending">Não enviado</span>
+                      }
+                    </dd>
+                    <dt>LTS (interno)</dt>
+                    <dd>
+                      @if (selectedPayment()!.admin_notified_at) {
+                        <span class="notif-ok">Enviado {{ selectedPayment()!.admin_notified_at | date:'dd/MM/yyyy, HH:mm':'+0200' }}</span>
+                      } @else {
+                        <span class="notif-pending">Não enviado</span>
+                      }
+                    </dd>
+                    @if (selectedPayment()!.payer_email) {
+                      <dt>Pago por</dt>
+                      <dd class="mono">{{ selectedPayment()!.payer_email }}</dd>
+                    }
+                  </dl>
+                  @if (selectedPayment()!.notification_error) {
+                    <p class="action-error">{{ notificationErrorLabel(selectedPayment()!.notification_error) }}</p>
+                  }
+                  @if (emailLogLoading()) {
+                    <small class="og-sync-time">A carregar histórico de envios…</small>
+                  } @else if (emailLog().length) {
+                    <ul class="email-log">
+                      @for (log of emailLog(); track log.id) {
+                        <li>
+                          <span [class]="'email-log-status email-log-status--' + log.status">{{ emailStatusLabel(log.status) }}</span>
+                          <span class="email-log-main">
+                            <strong>{{ emailKindLabel(log.kind) }}</strong>
+                            <small>{{ log.created_at | date:'dd/MM/yyyy, HH:mm':'+0200' }} · {{ log.recipients.join(', ') || '—' }}</small>
+                            @if (log.error) {
+                              <small class="email-log-error">{{ notificationErrorLabel(log.error) }}</small>
+                            }
+                          </span>
+                        </li>
+                      }
+                    </ul>
+                  }
+                </div>
+              }
 
               <!-- Resposta Sislog -->
               <div class="drawer-section">
@@ -388,6 +454,12 @@ interface Subscription { status: string; amount: number; billing_cycle: string; 
                       </button>
                     }
                     @if (selectedPayment()!.status === 'completed') {
+                      <button class="action-btn action-btn--mail" (click)="resendNotifications(selectedPayment()!)" title="Envia de novo a confirmação ao cliente e a notificação interna à LTS">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                        Reenviar e-mails
+                      </button>
                       @if (!selectedPayment()!.officegest_document_id) {
                         <button class="action-btn action-btn--og" (click)="syncSingleWithOfficeGest(selectedPayment()!)">
                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -588,6 +660,19 @@ interface Subscription { status: string; amount: number; billing_cycle: string; 
     .action-btn--og:hover{background:#dbeafe}
     .action-btn--og-reemit{background:#fffbeb;color:#b45309;border:1px solid #fde68a}
     .action-btn--og-reemit:hover{background:#fef3c7}
+    .action-btn--mail{background:#fff4ef;color:#c2410c;border:1px solid #fed7c3}
+    .action-btn--mail:hover{background:#ffe8dd}
+    .notif-ok{color:#14795a;font-weight:600}
+    .notif-pending{color:#b45309;font-weight:600}
+    .email-log{list-style:none;margin:4px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+    .email-log li{display:flex;gap:10px;align-items:flex-start;font-size:12px;color:#2c3a50}
+    .email-log-main{display:flex;flex-direction:column;gap:2px;min-width:0;word-break:break-word}
+    .email-log-main small{color:#63728a;font-size:11px}
+    .email-log-main .email-log-error{color:#b83c3c}
+    .email-log-status{flex-shrink:0;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;background:#eef2f7;color:#415069}
+    .email-log-status--sent{background:#e8f8f0;color:#14795a}
+    .email-log-status--failed{background:#fff0f0;color:#b83c3c}
+    .email-log-status--skipped{background:#fffbeb;color:#b45309}
     .action-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:11px;color:#63728a;font-size:13px}
     .action-error{margin:0;padding:10px;border-radius:8px;background:#fff0f0;color:#b83c3c;font-size:12px}
     .action-success{margin:0;padding:10px;border-radius:8px;background:#e8f8f0;color:#14795a;font-size:12px;font-weight:600}
@@ -643,6 +728,8 @@ export class AdminRevenueComponent implements OnInit {
   actionLoading = signal(false);
   actionError = signal('');
   actionSuccess = signal('');
+  emailLog = signal<EmailLogEntry[]>([]);
+  emailLogLoading = signal(false);
 
   // ── OfficeGest Sync state ──
   isSyncingOfficeGest = signal(false);
@@ -877,8 +964,120 @@ export class AdminRevenueComponent implements OnInit {
     this.actionError.set('');
     this.actionSuccess.set('');
     this.selectedPayment.set(payment);
+    this.loadEmailLog(payment);
   }
-  closeDrawer() { this.selectedPayment.set(null); }
+  closeDrawer() { this.selectedPayment.set(null); this.emailLog.set([]); }
+
+  // ── Notificações por e-mail ──
+  async loadEmailLog(payment: PaymentTransaction) {
+    this.emailLog.set([]);
+    if (payment.status !== 'completed') return;
+    this.emailLogLoading.set(true);
+    try {
+      const { data, error } = await this.supabase.db
+        .from('email_log')
+        .select('id, created_at, kind, recipients, subject, status, error')
+        .eq('related_table', 'subscription_payments')
+        .eq('related_id', payment.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      if (this.selectedPayment()?.id === payment.id) {
+        this.emailLog.set((data ?? []).map((l: any) => ({ ...l, recipients: l.recipients ?? [] })));
+      }
+    } catch (err) {
+      // A tabela pode ainda não existir (migração por aplicar); não bloqueia o painel.
+      console.warn('Não foi possível carregar o histórico de e-mails:', err);
+    } finally {
+      this.emailLogLoading.set(false);
+    }
+  }
+
+  emailKindLabel(kind: string): string {
+    switch (kind) {
+      case 'subscription_activated_client': return 'Confirmação ao cliente';
+      case 'subscription_activated_admin': return 'Notificação interna (LTS)';
+      case 'subscription_payment_failed_admin': return 'Aviso de falha (LTS)';
+      default: return kind;
+    }
+  }
+
+  emailStatusLabel(status: string): string {
+    return status === 'sent' ? 'Enviado' : status === 'failed' ? 'Falhou' : 'Ignorado';
+  }
+
+  notificationErrorLabel(error: string | null | undefined): string {
+    if (!error) return '';
+    return error
+      .replace(/SMTP_CONFIG_MISSING/g, 'serviço de e-mail não configurado (SMTP)')
+      .replace(/NO_RECIPIENTS/g, 'sem destinatário válido');
+  }
+
+  /** Chama a função subscription-notify. Nunca lança excepção. */
+  private async sendSubscriptionEmails(paymentId: string, force: boolean): Promise<{ ok: boolean; message: string }> {
+    try {
+      const { data, error } = await this.supabase.client.functions.invoke('subscription-notify', {
+        body: { paymentId, force, source: force ? 'resend' : 'manual' }
+      });
+      if (error) {
+        let message = error.message || 'Erro ao contactar o serviço de e-mail.';
+        try {
+          const ctx = await (error as any).context?.json?.();
+          if (ctx?.error) message = ctx.error;
+        } catch { /* corpo não-JSON */ }
+        return { ok: false, message };
+      }
+      const client = data?.client as NotifyPart | undefined;
+      const admin = data?.admin as NotifyPart | undefined;
+      const describe = (label: string, part?: NotifyPart) => {
+        if (!part) return `${label}: sem resposta`;
+        if (part.status === 'already_sent') return `${label}: já enviado`;
+        if (part.ok) return `${label}: enviado${part.recipients?.length ? ` (${part.recipients.join(', ')})` : ''}`;
+        return `${label}: ${this.notificationErrorLabel(part.error || part.status)}`;
+      };
+      return {
+        ok: !!data?.success,
+        message: `${describe('Cliente', client)} · ${describe('LTS', admin)}`
+      };
+    } catch (err: any) {
+      return { ok: false, message: err?.message || 'Erro ao contactar o serviço de e-mail.' };
+    }
+  }
+
+  private async refreshPaymentNotificationState(paymentId: string) {
+    try {
+      const { data } = await this.supabase.db
+        .from('subscription_payments')
+        .select('client_notified_at, admin_notified_at, notification_error, payer_email')
+        .eq('id', paymentId)
+        .maybeSingle();
+      if (data) {
+        this.allPayments.update(all => all.map(p => p.id === paymentId ? { ...p, ...data } : p));
+        this.selectedPayment.update(p => p && p.id === paymentId ? { ...p, ...data } : p);
+      }
+    } catch (err) {
+      console.warn('Não foi possível actualizar o estado das notificações:', err);
+    }
+    const current = this.selectedPayment();
+    if (current?.id === paymentId) await this.loadEmailLog(current);
+  }
+
+  async resendNotifications(payment: PaymentTransaction) {
+    this.actionLoading.set(true);
+    this.actionError.set('');
+    this.actionSuccess.set('');
+    try {
+      const result = await this.sendSubscriptionEmails(payment.id, true);
+      if (result.ok) {
+        this.actionSuccess.set(`E-mails reenviados. ${result.message}`);
+      } else {
+        this.actionError.set(`Não foi possível enviar todos os e-mails. ${result.message}`);
+      }
+      await this.refreshPaymentNotificationState(payment.id);
+    } finally {
+      this.actionLoading.set(false);
+    }
+  }
 
   formatSislog(data: Record<string, unknown> | null): string {
     if (!data || Object.keys(data).length === 0) return '{}';
@@ -929,7 +1128,16 @@ export class AdminRevenueComponent implements OnInit {
         all.map(p => p.id === payment.id ? { ...p, status: 'completed' as PaymentStatus } : p)
       );
       this.selectedPayment.update(p => p ? { ...p, status: 'completed' as PaymentStatus } : p);
-      this.actionSuccess.set('Pagamento confirmado e subscrição activada com sucesso.');
+
+      // E-mails ao cliente e à LTS (só depois de a subscrição estar activa).
+      const mail = await this.sendSubscriptionEmails(payment.id, false);
+      await this.refreshPaymentNotificationState(payment.id);
+      this.actionSuccess.set(mail.ok
+        ? `Pagamento confirmado e subscrição activada com sucesso. ${mail.message}`
+        : 'Pagamento confirmado e subscrição activada com sucesso.');
+      if (!mail.ok) {
+        this.actionError.set(`Subscrição activada, mas o e-mail não foi enviado: ${mail.message}`);
+      }
     } catch (err: any) {
       console.error('Erro ao confirmar pagamento:', err);
       this.actionError.set(err?.message || 'Erro ao confirmar pagamento. Tente novamente.');

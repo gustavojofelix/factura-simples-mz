@@ -1,6 +1,7 @@
 import { Invoice } from '../../../core/services/invoice.service';
 import { Payment } from '../../../core/services/payment.service';
 import { Company } from '../../../core/services/company.service';
+import { CompanyBankAccount } from '../../../core/services/company-bank-account.service';
 import { ClientStatement } from '../../../core/services/statement.service';
 
 /**
@@ -95,6 +96,33 @@ export const SAMPLE_COMPANY: Company = {
   bank_swift: 'EXMPMZMX',
   nib: '000100000011834194157'
 } as Company;
+
+/** Contas bancárias de exemplo, usadas quando a empresa ainda não tem contas. */
+export const SAMPLE_BANK_ACCOUNTS: CompanyBankAccount[] = [
+  {
+    id: 'pre-visualizacao-1',
+    bank_name: 'BCI',
+    account_holder: 'A Sua Empresa, Lda',
+    account_number: '000123456789',
+    nib: '000800000012345678901',
+    iban: 'MZ59000800000012345678901',
+    swift: 'CGDIMZMA',
+    currency: 'MZN',
+    is_default: true,
+    show_on_invoice: true,
+    sort_order: 0
+  },
+  {
+    id: 'pre-visualizacao-2',
+    bank_name: 'Standard Bank',
+    account_number: '1087654321',
+    swift: 'SBICMZMX',
+    currency: 'USD',
+    is_default: false,
+    show_on_invoice: true,
+    sort_order: 1
+  }
+];
 
 /** Extracto de exemplo, coerente com a factura e o recibo acima. */
 export const SAMPLE_CLIENT_STATEMENT: ClientStatement = {

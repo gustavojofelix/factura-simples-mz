@@ -15,11 +15,39 @@ export function toIsoDate(date: Date | string | null | undefined): string {
   return `${year}-${month}-${day}`;
 }
 
-/** 'AAAA-MM-DD' → 'DD/MM/AAAA', sem passar por Date (evita desvios de fuso). */
-export function formatIsoDate(iso: string | null | undefined): string {
+/** Formatos de data suportados nas Configurações do Sistema. */
+export type DateFormat = 'DD/MM/YYYY' | 'MM/DD/YYYY' | 'YYYY-MM-DD';
+export const DATE_FORMATS: readonly DateFormat[] = ['DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD'];
+export const DEFAULT_DATE_FORMAT: DateFormat = 'DD/MM/YYYY';
+
+/** Normaliza um valor vindo da BD/localStorage para um formato suportado. */
+export function toDateFormat(value: unknown): DateFormat {
+  return DATE_FORMATS.includes(value as DateFormat) ? (value as DateFormat) : DEFAULT_DATE_FORMAT;
+}
+
+/** Junta ano/mês/dia (já com zeros à esquerda) segundo o formato escolhido. */
+export function formatDateParts(year: string, month: string, day: string, format: DateFormat = DEFAULT_DATE_FORMAT): string {
+  switch (format) {
+    case 'MM/DD/YYYY': return `${month}/${day}/${year}`;
+    case 'YYYY-MM-DD': return `${year}-${month}-${day}`;
+    default: return `${day}/${month}/${year}`;
+  }
+}
+
+/** Dia e mês (sem ano) na ordem do formato escolhido: 'DD/MM', 'MM/DD' ou 'MM-DD'. */
+export function formatDayMonthParts(month: string, day: string, format: DateFormat = DEFAULT_DATE_FORMAT): string {
+  switch (format) {
+    case 'MM/DD/YYYY': return `${month}/${day}`;
+    case 'YYYY-MM-DD': return `${month}-${day}`;
+    default: return `${day}/${month}`;
+  }
+}
+
+/** 'AAAA-MM-DD' → data no formato escolhido, sem passar por Date (evita desvios de fuso). */
+export function formatIsoDate(iso: string | null | undefined, format: DateFormat = DEFAULT_DATE_FORMAT): string {
   if (!iso) return '';
   const [year, month, day] = iso.substring(0, 10).split('-');
-  return `${day}/${month}/${year}`;
+  return formatDateParts(year, month, day, format);
 }
 
 /** 'AAAA-MM-DD' → Date à meia-noite local. Devolve null se o texto não for válido. */

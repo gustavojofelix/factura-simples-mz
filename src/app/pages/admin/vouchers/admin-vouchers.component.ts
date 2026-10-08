@@ -196,7 +196,7 @@ interface CompanyOption {
 
                 <td class="py-4 px-6 text-xs text-gray-600">
                   <div *ngIf="voucher.valid_until">
-                    <span>Até {{ voucher.valid_until | date:'dd/MM/yyyy' }}</span>
+                    <span>Até {{ voucher.valid_until | date:'dd/MM/yyyy':'+0200' }}</span>
                     <div [class.text-red-500]="isExpired(voucher)" class="text-[11px] font-bold">
                       {{ isExpired(voucher) ? 'Expirado' : 'Válido' }}
                     </div>
@@ -379,7 +379,7 @@ interface CompanyOption {
             <div *ngFor="let red of redemptions" class="p-4 bg-gray-50 border border-gray-200 rounded-2xl flex items-center justify-between">
               <div>
                 <h4 class="font-bold text-sm text-gray-800">{{ red.company_name }}</h4>
-                <p class="text-xs text-gray-400">Resgatado em: {{ red.redeemed_at | date:'dd/MM/yyyy HH:mm' }}</p>
+                <p class="text-xs text-gray-400">Resgatado em: {{ red.redeemed_at | date:'dd/MM/yyyy HH:mm':'+0200' }}</p>
               </div>
               <span class="text-sm font-bold text-green-600">
                 Desconto: {{ red.discount_applied | number:'1.2-2' }} MZN

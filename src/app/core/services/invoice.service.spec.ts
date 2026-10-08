@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { InvoiceService } from './invoice.service';
 import { SupabaseService } from './supabase.service';
@@ -12,7 +13,7 @@ describe('InvoiceService', () => {
 
   beforeEach(() => {
     supabaseMock = {};
-    companyMock = {};
+    companyMock = { activeCompany: signal(null) };
     auditLogMock = {};
 
     TestBed.configureTestingModule({

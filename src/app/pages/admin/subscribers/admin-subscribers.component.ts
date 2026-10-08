@@ -293,7 +293,7 @@ import { PaginationComponent, PageChangeEvent } from '../../../shared/components
                     <p class="text-xs text-gray-500">{{ sub.user_count }} Utilizadores</p>
                   </td>
                   <td class="px-6 py-4 text-sm text-gray-700">
-                    {{ sub.created_at | date:'dd/MM/yyyy' }}
+                    {{ sub.created_at | date:'dd/MM/yyyy':'+0200' }}
                   </td>
                   <td class="px-6 py-4 text-center">
                     <div class="flex justify-center space-x-3">

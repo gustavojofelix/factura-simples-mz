@@ -1,6 +1,12 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import nodemailer from "npm:nodemailer@6.9.11";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import {
+  type CompanyNotificationSettings,
+  DEFAULT_NOTIFICATION_SETTINGS,
+  formatCompanyDate,
+  getCompanyNotificationSettings,
+} from "../_shared/notification-recipients.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -238,11 +244,18 @@ function formatCurrency(value: unknown): string {
   }).format(amount) + " MZN";
 }
 
-function formatDate(value: unknown): string {
+/**
+ * Data no formato/fuso de Configurações > Sistema da empresa. 'AAAA-MM-DD'
+ * (data da factura/pagamento) é formatada sem conversão de fuso.
+ */
+function formatDate(
+  value: unknown,
+  settings: CompanyNotificationSettings = DEFAULT_NOTIFICATION_SETTINGS,
+): string {
   if (!value) return "";
-  const date = new Date(String(value));
-  if (isNaN(date.getTime())) return "";
-  return date.toLocaleDateString("pt-MZ");
+  const raw = String(value);
+  if (isNaN(new Date(raw).getTime())) return "";
+  return formatCompanyDate(raw, settings);
 }
 
 function normalizeHex(value: unknown, fallback: string): string {
@@ -846,6 +859,7 @@ Deno.serve(async (req) => {
   }
 
   const branding = await loadBranding(userClient, invoice.company_id);
+  const displaySettings = await getCompanyNotificationSettings(userClient, invoice.company_id);
 
   const companyName = company?.name?.trim() || "ISPC Fácil";
   const clientName = client?.name?.trim() || "Cliente";
@@ -863,8 +877,8 @@ Deno.serve(async (req) => {
     total: formatCurrency(invoice.total),
     valor_pago: formatCurrency(payment ? payment.amount : invoice.amount_paid),
     valor_pendente: formatCurrency(invoice.amount_pending),
-    data: formatDate(payment ? payment.payment_date : invoice.date),
-    data_vencimento: formatDate(invoice.due_date),
+    data: formatDate(payment ? payment.payment_date : invoice.date, displaySettings),
+    data_vencimento: formatDate(invoice.due_date, displaySettings),
   };
 
   const isReceipt = documentKind === "recibo";

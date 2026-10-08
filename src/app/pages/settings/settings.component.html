@@ -30,6 +30,12 @@
           </div>
 
           @if (selectedCompanyId()) {
+            @if (!canEditSystemSettings()) {
+              <div class="mb-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                <mat-icon class="shrink-0 text-amber-600">lock</mat-icon>
+                <p>Apenas o proprietário da empresa pode alterar as configurações do sistema. Pode consultá-las, mas não guardar alterações.</p>
+              </div>
+            }
             <form [formGroup]="systemForm" (ngSubmit)="saveSystemSettings()" class="space-y-6">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <mat-form-field appearance="outline" class="w-full">
@@ -39,6 +45,7 @@
                       <mat-option [value]="lang.value">{{ lang.label }}</mat-option>
                     }
                   </mat-select>
+                  <mat-hint>Outros idiomas brevemente</mat-hint>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="w-full">
@@ -48,15 +55,7 @@
                       <mat-option [value]="tz.value">{{ tz.label }}</mat-option>
                     }
                   </mat-select>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Moeda Padrão</mat-label>
-                  <mat-select formControlName="currency">
-                    @for (curr of currencies; track curr.value) {
-                      <mat-option [value]="curr.value">{{ curr.label }}</mat-option>
-                    }
-                  </mat-select>
+                  <mat-hint>Usado para mostrar datas e horas no ecrã, documentos e exportações</mat-hint>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="w-full">
@@ -66,28 +65,29 @@
                       <mat-option [value]="format.value">{{ format.label }}</mat-option>
                     }
                   </mat-select>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Início do Ano Fiscal</mat-label>
-                  <input matInput formControlName="fiscal_year_start" placeholder="01-01">
-                  <mat-hint>Formato: MM-DD</mat-hint>
+                  <mat-hint>O Modelo 30 mantém sempre DD/MM/AAAA</mat-hint>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>Email para Notificações</mat-label>
                   <input matInput type="email" formControlName="notification_email" placeholder="notificacoes@empresa.com">
+                  @if (systemForm.get('notification_email')?.hasError('email') || systemForm.get('notification_email')?.hasError('pattern')) {
+                    <mat-error>Email inválido</mat-error>
+                  } @else {
+                    <mat-hint>Recebe os lembretes fiscais e confirmações de subscrição, além do email do proprietário</mat-hint>
+                  }
                 </mat-form-field>
               </div>
 
-              <div class="flex items-center">
+              <div class="flex flex-col gap-1">
                 <mat-slide-toggle formControlName="enable_notifications">
                   Habilitar Notificações
                 </mat-slide-toggle>
+                <p class="text-xs text-gray-500">Desactivado: deixa de enviar lembretes fiscais por email (continuam visíveis na aplicação). Emails de pagamentos e facturas continuam a ser enviados.</p>
               </div>
 
               <div class="flex justify-end">
-                <button mat-raised-button color="primary" type="submit" [disabled]="systemForm.invalid || loading()">
+                <button mat-raised-button color="primary" type="submit" [disabled]="systemForm.invalid || loading() || !canEditSystemSettings()">
                   <mat-icon>save</mat-icon>
                   Guardar Configurações
                 </button>
@@ -186,7 +186,15 @@
             }
 
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-              <h3 class="text-lg font-semibold">Planos Disponíveis</h3>
+              <div>
+                <h3 class="text-lg font-semibold">Planos Disponíveis</h3>
+                @if (subscription() && hasActivePeriod()) {
+                  <p class="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                    <mat-icon class="!w-4 !h-4 !text-base !leading-4 text-slate-400">info</mat-icon>
+                    <span>Pode fazer upgrade a qualquer momento. Não é possível fazer downgrade enquanto a subscrição estiver activa.</span>
+                  </p>
+                }
+              </div>
 
               <!-- Cycle Switcher Pills -->
               <div class="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-semibold">
@@ -280,16 +288,27 @@
                       }
                     } @else {
                       <!-- Plano diferente do atual -->
-                      @if (plan.monthly_price === 0 && isPaidPlan(subscription()?.plan_name)) {
-                        <!-- Bloquear downgrade para plano gratuito/trial quando já tem plano pago -->
-                        <div class="text-center py-2.5 bg-slate-100 rounded-xl border border-slate-200">
-                          <span class="text-slate-500 font-medium text-sm">Não disponível</span>
+                      @if (isDowngrade(plan)) {
+                        <!-- Bloquear downgrade (plano inferior com subscrição activa, ou pago -> Trial) -->
+                        <div class="text-center py-2.5 px-3 bg-slate-100 rounded-xl border border-slate-200"
+                          [matTooltip]="downgradeBlockedMessage(plan)">
+                          @if (plan.monthly_price === 0) {
+                            <span class="text-slate-500 font-medium text-sm">Não disponível</span>
+                          } @else {
+                            <span class="block text-slate-600 font-semibold text-sm">Downgrade não permitido</span>
+                            <span class="block text-slate-500 text-xs mt-0.5">Não é possível fazer downgrade enquanto a subscrição estiver activa</span>
+                            @if (subscription()?.end_date) {
+                              <span class="block text-slate-400 text-[11px] mt-0.5">Disponível após {{ formatDate(subscription()!.end_date!) }}</span>
+                            }
+                          }
                         </div>
                       } @else {
                         <div class="flex flex-col gap-2">
                           <button mat-raised-button color="primary" class="!py-2.5 !rounded-xl !font-bold" (click)="changePlan(plan)">
                             @if (plan.monthly_price === 0) {
                               Ativar Período de Teste
+                            } @else if (isUpgrade(plan)) {
+                              Fazer Upgrade (M-Pesa / e-Mola)
                             } @else {
                               Subscrever (M-Pesa / e-Mola)
                             }

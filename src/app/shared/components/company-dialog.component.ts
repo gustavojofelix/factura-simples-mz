@@ -2,7 +2,7 @@ import { Component, DestroyRef, Inject, inject, signal } from '@angular/core';
 import { friendlyErrorMessage } from '../../core/utils/error-message';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormArray, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -12,10 +12,22 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { DocumentProcessingService, CompanyDocument } from '../../core/services/document-processing.service';
-import { Company } from '../../core/services/company.service';
+import { Company, CompanyService } from '../../core/services/company.service';
+import { AuthService } from '../../core/services/auth.service';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { ActivityService, ActivityType, CompanyActivity } from '../../core/services/activity.service';
+import {
+  BANK_OTHER_OPTION,
+  CompanyBankAccount,
+  CompanyBankAccountService,
+  MAX_RECOMMENDED_INVOICE_BANKS,
+  MOZAMBIQUE_BANKS,
+  ibanWarning,
+  nibWarning,
+  swiftWarning
+} from '../../core/services/company-bank-account.service';
 
 @Component({
   selector: 'app-company-dialog',
@@ -31,7 +43,8 @@ import { ActivityService, ActivityType, CompanyActivity } from '../../core/servi
     MatIconModule,
     MatTooltipModule,
     MatSnackBarModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatSlideToggleModule
   ],
   template: `
     <h2 mat-dialog-title>{{ data.company ? 'Editar Empresa' : 'Nova Empresa' }}</h2>
@@ -272,36 +285,191 @@ import { ActivityService, ActivityType, CompanyActivity } from '../../core/servi
 
 
           <div class="border-t border-gray-100 pt-6 mt-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <mat-icon class="mr-2 text-ispc-orange">account_balance</mat-icon>
-              Dados Bancários
-            </h3>
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+              <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                <mat-icon class="mr-2 text-ispc-orange">account_balance</mat-icon>
+                Dados Bancários
+              </h3>
+              @if (canEditBanks()) {
+                <button type="button" mat-stroked-button (click)="addBankAccount()"
+                  [disabled]="isLoadingBanks() || bankLoadFailed()">
+                  <mat-icon>add</mat-icon>
+                  Adicionar banco
+                </button>
+              }
+            </div>
+
+            @if (!canEditBanks() && !isLoadingBanks()) {
+              <p class="flex items-start gap-1 text-xs text-gray-500 mb-3">
+                <mat-icon class="!text-[16px] !w-4 !h-4 shrink-0">lock</mat-icon>
+                Só o dono ou um administrador da empresa pode alterar os dados bancários.
+              </p>
+            }
+
+            @if (isLoadingBanks()) {
+              <div class="flex items-center gap-2 text-sm text-gray-500 mb-4">
+                <mat-spinner diameter="18"></mat-spinner>
+                A carregar contas bancárias...
+              </div>
+            } @else if (bankLoadFailed()) {
+              <p class="flex items-start gap-1 text-sm text-red-600 mb-4">
+                <mat-icon class="!text-base shrink-0">error</mat-icon>
+                Não foi possível carregar as contas bancárias. As contas existentes não serão alteradas ao guardar.
+              </p>
+            } @else if (bankAccountsArray.length === 0) {
+              <p class="text-center text-gray-500 py-4 italic">Nenhum banco adicionado.</p>
+            }
+
+            @if (visibleBankCount() > maxRecommendedBanks) {
+              <p class="flex items-start gap-1 text-xs text-amber-700 mb-3">
+                <mat-icon class="!text-amber-600 !text-[16px] !w-4 !h-4 shrink-0">warning</mat-icon>
+                Tem {{ visibleBankCount() }} bancos marcados para aparecer nas facturas. Com mais de {{ maxRecommendedBanks }} o rodapé do documento pode ficar apertado.
+              </p>
+            }
+
+            <div formArrayName="bankAccounts" class="space-y-4">
+              @for (bank of bankAccountsArray.controls; track bank; let i = $index) {
+                <div [formGroupName]="i" class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <div class="flex items-center gap-2">
+                      <span class="text-sm font-semibold text-gray-700">Banco {{ i + 1 }}</span>
+                      @if (bank.get('is_default')?.value) {
+                        <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">Principal</span>
+                      }
+                    </div>
+                    @if (canEditBanks()) {
+                    <div class="flex items-center">
+                      @if (!bank.get('is_default')?.value) {
+                        <button type="button" mat-icon-button (click)="setDefaultBank(i)" matTooltip="Tornar conta principal">
+                          <mat-icon class="text-gray-400">star_outline</mat-icon>
+                        </button>
+                      }
+                      <button type="button" mat-icon-button (click)="moveBankAccount(i, -1)" [disabled]="i === 0" matTooltip="Mover para cima">
+                        <mat-icon>arrow_upward</mat-icon>
+                      </button>
+                      <button type="button" mat-icon-button (click)="moveBankAccount(i, 1)" [disabled]="i === bankAccountsArray.length - 1" matTooltip="Mover para baixo">
+                        <mat-icon>arrow_downward</mat-icon>
+                      </button>
+                      <button type="button" mat-icon-button color="warn" (click)="removeBankAccount(i)" matTooltip="Remover banco">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </div>
+                    }
+                  </div>
+
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>Banco</mat-label>
+                      <mat-select formControlName="bank_choice">
+                        @for (name of bankOptions; track name) {
+                          <mat-option [value]="name">{{ name }}</mat-option>
+                        }
+                        <mat-option [value]="bankOtherOption">Outro</mat-option>
+                      </mat-select>
+                      <mat-icon matPrefix class="text-gray-400">account_balance</mat-icon>
+                    </mat-form-field>
+
+                    @if (bank.get('bank_choice')?.value === bankOtherOption) {
+                      <mat-form-field appearance="outline" class="w-full">
+                        <mat-label>Nome do banco</mat-label>
+                        <input matInput formControlName="bank_name_other" maxlength="120" placeholder="Ex: Banco Exemplo">
+                      </mat-form-field>
+                    }
+
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>Titular da conta</mat-label>
+                      <input matInput formControlName="account_holder" maxlength="160" placeholder="Opcional">
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>Número de Conta</mat-label>
+                      <input matInput formControlName="account_number" maxlength="60" placeholder="Ex: 123456789">
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>NIB</mat-label>
+                      <input matInput formControlName="nib" maxlength="40" placeholder="Ex: 0001 0000 1234 5678 9012 3">
+                      @if (nibWarningFor(bank); as warning) {
+                        <mat-hint class="!text-amber-700">{{ warning }}</mat-hint>
+                      }
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>IBAN</mat-label>
+                      <input matInput formControlName="iban" maxlength="40" placeholder="MZ59 0000...">
+                      @if (ibanWarningFor(bank); as warning) {
+                        <mat-hint class="!text-amber-700">{{ warning }}</mat-hint>
+                      }
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>SWIFT/BIC</mat-label>
+                      <input matInput formControlName="swift" maxlength="15" placeholder="Ex: ABCDMZMM">
+                      @if (swiftWarningFor(bank); as warning) {
+                        <mat-hint class="!text-amber-700">{{ warning }}</mat-hint>
+                      }
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>Moeda da conta</mat-label>
+                      <mat-select formControlName="currency">
+                        <mat-option value="MZN">MZN</mat-option>
+                        <mat-option value="USD">USD</mat-option>
+                        <mat-option value="EUR">EUR</mat-option>
+                        <mat-option value="ZAR">ZAR</mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+
+                  @if (bank.hasError('bankNameRequired') && (bank.touched || bank.dirty)) {
+                    <p class="text-xs text-red-600 mb-2">Escolha o banco (ou indique o nome em "Outro").</p>
+                  }
+                  @if (bank.hasError('identifierRequired') && (bank.touched || bank.dirty)) {
+                    <p class="text-xs text-red-600 mb-2">Indique pelo menos o número de conta, o NIB ou o IBAN.</p>
+                  }
+
+                  <div class="flex flex-wrap items-center justify-between gap-3 mt-1">
+                    <mat-slide-toggle formControlName="show_on_invoice" color="primary">
+                      <span class="text-sm">Mostrar nas facturas</span>
+                    </mat-slide-toggle>
+
+                    <div class="flex items-center gap-2 min-w-0">
+                      @if (bank.get('document_path')?.value) {
+                        <mat-icon class="text-green-500 shrink-0">description</mat-icon>
+                        <span class="text-sm truncate max-w-[220px]" [title]="bank.get('document_file_name')?.value || ''">
+                          {{ bank.get('document_file_name')?.value || 'Comprovativo' }}
+                        </span>
+                        <button type="button" mat-icon-button color="primary" (click)="viewBankDocument(i)" matTooltip="Visualizar comprovativo">
+                          <mat-icon>visibility</mat-icon>
+                        </button>
+                        @if (canEditBanks()) {
+                          <button type="button" mat-icon-button (click)="bankDocInput.click()" [disabled]="uploadingBankIndex() !== null" matTooltip="Substituir comprovativo">
+                            <mat-icon>file_upload</mat-icon>
+                          </button>
+                          <button type="button" mat-icon-button color="warn" (click)="removeBankDocument(i)" matTooltip="Remover comprovativo">
+                            <mat-icon>delete</mat-icon>
+                          </button>
+                        }
+                      } @else if (canEditBanks()) {
+                        <button type="button" mat-stroked-button (click)="bankDocInput.click()"
+                          [disabled]="!data.company?.id || uploadingBankIndex() !== null"
+                          [matTooltip]="data.company?.id ? 'PDF, JPG ou PNG (máx. 10MB)' : 'Guarde a empresa primeiro para carregar o documento'">
+                          <mat-icon>file_upload</mat-icon>
+                          {{ uploadingBankIndex() === i ? 'Carregando...' : 'Comprovativo bancário' }}
+                        </button>
+                      }
+                      <input type="file" #bankDocInput class="hidden" accept=".pdf,.jpg,.jpeg,.png" (change)="onBankDocumentSelected($event, i)">
+                    </div>
+                  </div>
+                  @if (!data.company?.id && canEditBanks()) {
+                    <p class="text-xs text-gray-500 mt-2">Guarde a empresa primeiro para carregar o documento.</p>
+                  }
+                </div>
+              }
+            </div>
+
+            <h4 class="text-sm font-semibold text-gray-700 mt-6 mb-3">Carteiras móveis</h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Nome do Banco</mat-label>
-                <input matInput formControlName="bank_name" placeholder="Ex: BIM, BCI, Standard Bank">
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Número de Conta</mat-label>
-                <input matInput formControlName="bank_account" placeholder="Ex: 123456789">
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>IBAN</mat-label>
-                <input matInput formControlName="bank_iban" placeholder="MZ59 0000...">
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>SWIFT/BIC</mat-label>
-                <input matInput formControlName="bank_swift" placeholder="Ex: ABCDMZMM">
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>NIB</mat-label>
-                <input matInput formControlName="nib" placeholder="Ex: 0001 0000 1234 5678 9012 3">
-              </mat-form-field>
-
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>M-Pesa</mat-label>
                 <input matInput formControlName="mpesa_number" placeholder="Ex: 84 123 4567">
@@ -456,6 +624,9 @@ import { ActivityService, ActivityType, CompanyActivity } from '../../core/servi
       </div>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
+      @if (bankAccountsArray.invalid && !isLoadingBanks()) {
+        <span class="text-xs text-red-600 mr-auto pl-2">Complete ou remova o banco assinalado em Dados Bancários.</span>
+      }
       <button mat-button (click)="onCancel()">Cancelar</button>
       <button mat-raised-button color="primary" (click)="onSave()" [disabled]="form.invalid || loading()">
         {{ data.company ? 'Guardar' : 'Criar' }}
@@ -506,6 +677,7 @@ export class CompanyDialogComponent {
     'Boletim da República',
     'Documento de Identificação (Sócios)',
     'Contrato de Arrendamento',
+    'Comprovativo de Dados Bancários',
     'Outros'
   ];
 
@@ -522,6 +694,21 @@ export class CompanyDialogComponent {
   activityTypes = signal<ActivityType[]>([]);
   isLoadingActivities = signal(false);
   companyActivities = signal<CompanyActivity[]>([]);
+
+  // Contas bancárias
+  readonly bankOptions = MOZAMBIQUE_BANKS;
+  readonly bankOtherOption = BANK_OTHER_OPTION;
+  readonly maxRecommendedBanks = MAX_RECOMMENDED_INVOICE_BANKS;
+  isLoadingBanks = signal(false);
+  bankLoadFailed = signal(false);
+  uploadingBankIndex = signal<number | null>(null);
+  /** Comprovativos já gravados na base de dados (os restantes foram carregados nesta sessão). */
+  private persistedBankDocPaths = new Set<string>();
+  private bankAccountService = inject(CompanyBankAccountService);
+  private companyService = inject(CompanyService);
+  private authService = inject(AuthService);
+  /** Dono/administrador da empresa ou super administrador. Uma empresa nova é sempre do próprio. */
+  canEditBanks = signal(!this.data.company?.id);
 
   get alvaraDoc(): CompanyDocument | undefined {
     return this.otherDocuments().find(d => d.type === 'Alvará');
@@ -553,11 +740,7 @@ export class CompanyDialogComponent {
       currency: [data.company?.currency || 'MZN'],
       invoice_prefix: [data.company?.invoice_prefix || 'FAC'],
       province: [data.company?.documents_metadata?.province || ''],
-      bank_name: [data.company?.bank_name || ''],
-      bank_account: [data.company?.bank_account || ''],
-      bank_iban: [data.company?.bank_iban || ''],
-      bank_swift: [data.company?.bank_swift || ''],
-      nib: [data.company?.nib || ''],
+      bankAccounts: this.fb.array<FormGroup>([]),
       mpesa_number: [data.company?.mpesa_number || ''],
       emola_number: [data.company?.emola_number || ''],
       category1: [data.company?.category1 || ''],
@@ -568,6 +751,241 @@ export class CompanyDialogComponent {
     this.setupCategoryWatchers();
     this.loadActivityCatalog();
     this.loadOtherDocuments();
+    this.loadBankAccounts();
+  }
+
+  get bankAccountsArray(): FormArray<FormGroup> {
+    return this.form.get('bankAccounts') as FormArray<FormGroup>;
+  }
+
+  async loadBankAccounts() {
+    const companyId = this.data.company?.id;
+    if (!companyId) return;
+
+    this.isLoadingBanks.set(true);
+    try {
+      const [accounts, role, isSuperAdmin] = await Promise.all([
+        this.bankAccountService.loadForEdit(companyId),
+        this.companyService.getUserRole(companyId).catch(() => null),
+        this.authService.isAdmin().catch(() => false)
+      ]);
+      const canEdit = isSuperAdmin || role === 'owner' || role === 'admin';
+      this.canEditBanks.set(canEdit);
+
+      this.bankAccountsArray.clear();
+      accounts.forEach(account => {
+        const group = this.createBankGroup(account);
+        // Contas antigas incompletas (ex.: migradas só com o nome do banco)
+        // mostram logo o erro, para o utilizador perceber porque não pode guardar.
+        if (canEdit && group.invalid) group.markAllAsTouched();
+        this.bankAccountsArray.push(group);
+        if (account.document_path) this.persistedBankDocPaths.add(account.document_path);
+      });
+      this.bankAccountsArray.markAsPristine();
+      // Só leitura: controlos desactivados não contam para a validade do formulário.
+      if (!canEdit) this.bankAccountsArray.disable();
+    } catch (error) {
+      console.error('Erro ao carregar contas bancárias:', error);
+      this.bankLoadFailed.set(true);
+      this.snackBar.open('Não foi possível carregar as contas bancárias.', 'Fechar', { duration: 5000 });
+    } finally {
+      this.isLoadingBanks.set(false);
+    }
+  }
+
+  private createBankGroup(account?: Partial<CompanyBankAccount>): FormGroup {
+    const name = (account?.bank_name || '').trim();
+    const known = MOZAMBIQUE_BANKS.includes(name);
+    return this.fb.group({
+      id: [account?.id || null],
+      bank_choice: [known ? name : (name ? BANK_OTHER_OPTION : '')],
+      bank_name_other: [known ? '' : name],
+      account_holder: [account?.account_holder || ''],
+      account_number: [account?.account_number || ''],
+      nib: [account?.nib || ''],
+      iban: [account?.iban || ''],
+      swift: [account?.swift || ''],
+      currency: [account?.currency || this.form?.get('currency')?.value || 'MZN'],
+      is_default: [!!account?.is_default],
+      show_on_invoice: [account?.show_on_invoice ?? true],
+      document_path: [account?.document_path || null],
+      document_file_name: [account?.document_file_name || null]
+    }, { validators: CompanyDialogComponent.bankAccountValidator });
+  }
+
+  /** Banco obrigatório e pelo menos um identificador (conta, NIB ou IBAN). */
+  private static bankAccountValidator(group: AbstractControl): ValidationErrors | null {
+    const value = group.value || {};
+    const errors: ValidationErrors = {};
+    const choice = value.bank_choice;
+    if (!choice || (choice === BANK_OTHER_OPTION && !(value.bank_name_other || '').trim())) {
+      errors['bankNameRequired'] = true;
+    }
+    if (![value.account_number, value.nib, value.iban].some((v: string | null) => !!(v || '').trim())) {
+      errors['identifierRequired'] = true;
+    }
+    return Object.keys(errors).length ? errors : null;
+  }
+
+  addBankAccount() {
+    this.bankAccountsArray.push(this.createBankGroup({ is_default: this.bankAccountsArray.length === 0 }));
+    this.bankAccountsArray.markAsDirty();
+  }
+
+  removeBankAccount(index: number) {
+    const group = this.bankAccountsArray.at(index);
+    const name = this.bankNameOf(group) || `Banco ${index + 1}`;
+    if (!confirm(`Remover o banco "${name}"? A alteração só é gravada ao guardar a empresa.`)) return;
+
+    const path = group.get('document_path')?.value as string | null;
+    const wasDefault = !!group.get('is_default')?.value;
+    this.bankAccountsArray.removeAt(index);
+    this.discardUnsavedBankDocument(path);
+
+    if (wasDefault && this.bankAccountsArray.length > 0) this.setDefaultBank(0);
+    this.bankAccountsArray.markAsDirty();
+  }
+
+  moveBankAccount(index: number, direction: -1 | 1) {
+    const target = index + direction;
+    if (target < 0 || target >= this.bankAccountsArray.length) return;
+    const group = this.bankAccountsArray.at(index);
+    this.bankAccountsArray.removeAt(index, { emitEvent: false });
+    this.bankAccountsArray.insert(target, group);
+    this.bankAccountsArray.markAsDirty();
+  }
+
+  setDefaultBank(index: number) {
+    this.bankAccountsArray.controls.forEach((group, i) =>
+      group.get('is_default')?.setValue(i === index)
+    );
+    this.bankAccountsArray.markAsDirty();
+  }
+
+  visibleBankCount(): number {
+    return this.bankAccountsArray.controls.filter(group => !!group.get('show_on_invoice')?.value).length;
+  }
+
+  nibWarningFor(group: AbstractControl): string | null {
+    return nibWarning(group.get('nib')?.value);
+  }
+
+  ibanWarningFor(group: AbstractControl): string | null {
+    return ibanWarning(group.get('iban')?.value);
+  }
+
+  swiftWarningFor(group: AbstractControl): string | null {
+    return swiftWarning(group.get('swift')?.value);
+  }
+
+  private bankNameOf(group: AbstractControl): string {
+    const choice = group.get('bank_choice')?.value;
+    const name = choice === BANK_OTHER_OPTION ? group.get('bank_name_other')?.value : choice;
+    return (name || '').trim();
+  }
+
+  async onBankDocumentSelected(event: Event, index: number) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const companyId = this.data.company?.id;
+    if (!companyId) {
+      this.snackBar.open('Guarde a empresa primeiro para carregar o documento.', 'Fechar', { duration: 3000 });
+      input.value = '';
+      return;
+    }
+
+    const allowed = ['application/pdf', 'image/jpeg', 'image/png'];
+    if (!allowed.includes(file.type)) {
+      this.snackBar.open('Formato não suportado. Use PDF, JPG ou PNG.', 'Fechar', { duration: 4000 });
+      input.value = '';
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      this.snackBar.open('O ficheiro é muito grande. Tamanho máximo: 10MB.', 'Fechar', { duration: 4000 });
+      input.value = '';
+      return;
+    }
+
+    const group = this.bankAccountsArray.at(index);
+    this.uploadingBankIndex.set(index);
+    try {
+      const result = await this.documentService.uploadDocument(file, companyId, 'bank_details');
+      const previous = group.get('document_path')?.value as string | null;
+      group.patchValue({
+        document_path: this.documentService.storagePath(result.url),
+        document_file_name: file.name
+      });
+      group.markAsDirty();
+      this.discardUnsavedBankDocument(previous);
+      this.snackBar.open('Comprovativo carregado. Guarde a empresa para confirmar.', 'Fechar', { duration: 3000 });
+    } catch (error: any) {
+      console.error('Erro ao carregar comprovativo bancário:', error);
+      this.snackBar.open(friendlyErrorMessage(error, 'Não foi possível carregar o documento.'), 'Fechar', { duration: 6000 });
+    } finally {
+      this.uploadingBankIndex.set(null);
+      input.value = '';
+    }
+  }
+
+  async viewBankDocument(index: number) {
+    const path = this.bankAccountsArray.at(index).get('document_path')?.value;
+    if (!path) return;
+    const signedUrl = await this.documentService.getSignedUrl(path);
+    window.open(signedUrl, '_blank');
+  }
+
+  removeBankDocument(index: number) {
+    if (!confirm('Remover o comprovativo deste banco? A alteração só é gravada ao guardar a empresa.')) return;
+    const group = this.bankAccountsArray.at(index);
+    const path = group.get('document_path')?.value as string | null;
+    group.patchValue({ document_path: null, document_file_name: null });
+    group.markAsDirty();
+    this.discardUnsavedBankDocument(path);
+  }
+
+  /**
+   * Um comprovativo carregado nesta sessão e ainda não gravado pode ser apagado
+   * já. Os que estão gravados só são removidos depois de guardar a empresa.
+   */
+  private discardUnsavedBankDocument(path: string | null | undefined) {
+    if (!path || this.persistedBankDocPaths.has(path)) return;
+    this.documentService.deleteDocument(path).catch(error =>
+      console.warn('Não foi possível remover o comprovativo temporário:', error)
+    );
+  }
+
+  /**
+   * Contas a gravar. undefined quando a leitura falhou, para que a gravação
+   * não apague as contas existentes que não chegaram a ser mostradas.
+   */
+  private bankAccountsResult(): CompanyBankAccount[] | undefined {
+    if (this.data.company?.id && this.bankLoadFailed()) return undefined;
+    // Sem permissão, ou sem alterações na secção: não mexer nas contas gravadas.
+    if (!this.canEditBanks()) return undefined;
+    if (this.data.company?.id && !this.bankAccountsArray.dirty) return undefined;
+
+    const groups = this.bankAccountsArray.controls;
+    const defaultIndex = Math.max(0, groups.findIndex(group => !!group.get('is_default')?.value));
+    return groups.map((group, index) => {
+      const value = group.getRawValue();
+      return {
+        id: value.id || undefined,
+        bank_name: this.bankNameOf(group),
+        account_holder: value.account_holder,
+        account_number: value.account_number,
+        nib: value.nib,
+        iban: value.iban,
+        swift: value.swift,
+        currency: value.currency || 'MZN',
+        is_default: index === defaultIndex,
+        show_on_invoice: !!value.show_on_invoice,
+        sort_order: index,
+        document_path: value.document_path,
+        document_file_name: value.document_file_name
+      };
+    });
   }
 
   async loadActivityCatalog() {
@@ -905,7 +1323,10 @@ export class CompanyDialogComponent {
         formValue.category3 ? { activity_type_id: this.activityTypes().find(a => a.code === formValue.category3)?.id, activity_role: serviceRole, is_primary: false } : null
       ].filter((activity): activity is { activity_type_id: string; activity_role: 'principal' | 'comercial' | 'servico'; is_primary: boolean } => !!activity?.activity_type_id);
 
-      const formData: Partial<Company> & { companyActivities: typeof selectedActivities } = {
+      const formData: Partial<Company> & {
+        companyActivities: typeof selectedActivities;
+        bankAccounts?: CompanyBankAccount[];
+      } = {
         name: formValue.name,
         nuit: formValue.nuit,
         entity_type: formValue.entity_type,
@@ -921,18 +1342,14 @@ export class CompanyDialogComponent {
         documents_metadata: {
           province: formValue.province
         },
-        bank_name: formValue.bank_name,
-        bank_account: formValue.bank_account,
-        bank_iban: formValue.bank_iban,
-        bank_swift: formValue.bank_swift,
-        nib: formValue.nib,
         mpesa_number: formValue.mpesa_number,
         emola_number: formValue.emola_number,
         category1: formValue.category1,
         category2: formValue.category2,
         category3: formValue.category3,
         business_volume: formValue.business_volume,
-        companyActivities: selectedActivities
+        companyActivities: selectedActivities,
+        bankAccounts: this.bankAccountsResult()
       };
 
       this.dialogRef.close(formData);

@@ -13,7 +13,7 @@ e-mail devolvem erro em vez de enviar.
 | `SMTP_PASS` | Sim | Palavra-passe da conta de envio |
 | `SMTP_PORT` | Não | Porta. Assume 465 se não for definida. A ligação usa TLS quando a porta é 465 |
 | `SMTP_FROM_EMAIL` | Não | Endereço no campo de remetente. Assume `SMTP_USER` se não for definida |
-| `ADMIN_NOTIFICATION_EMAIL` | Não | Destino das notificações internas. Assume `info@ispcfacil.com` |
+| `ADMIN_NOTIFICATION_EMAIL` | Não | Destino das notificações internas (LTS). Aceita vários endereços separados por vírgula, por exemplo `info@ispcfacil.com,financas@ispcfacil.com`. Assume `info@ispcfacil.com` |
 
 Definir com a linha de comandos do Supabase:
 
@@ -32,12 +32,62 @@ automaticamente pela plataforma e não precisam de ser definidas.
 
 ## Funções afectadas
 
-Estas quatro lêem as variáveis acima e deixam de funcionar se elas faltarem:
+Estas lêem as variáveis acima e não enviam e-mail se elas faltarem:
 
 - `send-invoice-email`
 - `invite-user`
 - `notify-admin`
 - `sislog-webhook`
+- `subscription-notify`
+- `send-tax-reminders`
+
+## Envio partilhado (`_shared/email.ts`)
+
+`sislog-webhook`, `notify-admin` e `subscription-notify` usam o módulo
+`_shared/email.ts` (importado com `../_shared/email.ts`; a CLI inclui a pasta
+`_shared` no bundle de cada função). O `sendEmail` desse módulo:
+
+- nunca lança excepção e devolve `{ ok, status, error }`;
+- regista cada tentativa na tabela `public.email_log` com o estado `sent`,
+  `failed` ou `skipped`;
+- sem `SMTP_HOST`/`SMTP_USER`/`SMTP_PASS` regista `skipped` com o erro
+  `SMTP_CONFIG_MISSING` e escreve `skipped: SMTP not configured` nos logs da
+  função, em vez de falhar em silêncio.
+
+Os administradores vêem `email_log` (RLS só para `profiles.role = 'admin'`).
+
+## E-mails de subscrição
+
+Quando um pagamento M-Pesa / e-Mola é concluído:
+
+1. O cliente recebe "Subscrição Activada – Confirmação de Pagamento". Os
+   destinatários são o dono da empresa, quem iniciou o pagamento
+   (`subscription_payments.payer_email`) e o e-mail de notificações das
+   Configurações do Sistema quando `enable_notifications` está activo. Os
+   endereços repetidos são removidos.
+2. A LTS (`ADMIN_NOTIFICATION_EMAIL`) recebe um e-mail interno separado, com
+   empresa, NUIT, dono, plano, valor, referências Sislog e a origem
+   (webhook ou confirmação manual).
+
+O `sislog-webhook` responde 200 à Sislog de imediato e envia os e-mails em
+segundo plano (`EdgeRuntime.waitUntil`). O envio é idempotente: as colunas
+`client_notified_at` e `admin_notified_at` evitam duplicados quando a Sislog
+repete o pedido, e um pedido repetido volta a tentar o que ainda não saiu.
+Quando um pagamento falha na carteira, só a LTS recebe um aviso. Não há
+e-mail no início do pagamento.
+
+Na confirmação manual em Admin > Receitas, o painel chama `subscription-notify`
+depois de activar a subscrição. No mesmo painel, o botão **Reenviar e-mails**
+volta a enviar os dois e-mails de um pagamento concluído e mostra o histórico
+de `email_log`. Esse botão serve também para testar a configuração SMTP.
+
+Ordem de publicação: aplicar a migração
+`20261009110000_email_notifications_log.sql` e depois publicar
+`sislog-webhook`, `process-subscription-payment`, `notify-admin` e
+`subscription-notify`. A migração **tem de estar aplicada antes** de publicar
+`sislog-webhook`: sem as colunas `client_notified_at` / `admin_notified_at` o
+webhook não consegue saber o que já foi enviado. Nesse caso, nas repetições da
+Sislog não volta a enviar e-mails, para não haver duplicados.
 
 ## Mudança de palavra-passe
 

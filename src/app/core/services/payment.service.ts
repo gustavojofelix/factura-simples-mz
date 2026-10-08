@@ -1,8 +1,9 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { friendlyErrorMessage } from '../utils/error-message';
 import { SupabaseService } from './supabase.service';
 import { CompanyService } from './company.service';
 import { AuditLogService } from './audit-log.service';
+import { PreferencesService } from './preferences.service';
 
 export interface Payment {
   id: string;
@@ -40,6 +41,8 @@ export class PaymentService {
 
   payments = signal<Payment[]>([]);
   isLoading = signal(false);
+
+  private preferences = inject(PreferencesService);
 
   constructor(
     private supabase: SupabaseService,
@@ -256,12 +259,8 @@ export class PaymentService {
     }).format(value) + ' MZN';
   }
 
+  /** Data segundo Configurações > Sistema (datas 'AAAA-MM-DD' sem conversão de fuso). */
   formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-MZ', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    return this.preferences.formatDate(dateString);
   }
 }

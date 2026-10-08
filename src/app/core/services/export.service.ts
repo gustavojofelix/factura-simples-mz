@@ -32,12 +32,17 @@ export class ExportService {
       }).join(','))
     ].join('\r\n');
 
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    this.downloadFile('\uFEFF' + csv, `${fileName}.csv`, 'text/csv;charset=utf-8;');
+  }
+
+  /** Descarrega texto como ficheiro (CSV, XML, ...). */
+  downloadFile(content: string, fileName: string, mime: string) {
+    const blob = new Blob([content], { type: mime });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
-    
+
     link.setAttribute('href', url);
-    link.setAttribute('download', `${fileName}.csv`);
+    link.setAttribute('download', fileName);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();

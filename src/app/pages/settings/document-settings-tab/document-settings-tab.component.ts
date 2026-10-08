@@ -31,8 +31,10 @@ import {
   SAMPLE_INVOICE,
   SAMPLE_PAYMENT,
   SAMPLE_COMPANY,
-  SAMPLE_CLIENT_STATEMENT
+  SAMPLE_CLIENT_STATEMENT,
+  SAMPLE_BANK_ACCOUNTS
 } from '../../../shared/components/documents/document-preview.fixtures';
+import { CompanyBankAccountService, CompanyBankAccount } from '../../../core/services/company-bank-account.service';
 
 /** Marcadores que o utilizador pode usar nos textos de e-mail. */
 const EMAIL_TOKENS = [
@@ -176,7 +178,8 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
                     <span class="text-sm">Mostrar as coordenadas bancárias</span>
                   </mat-slide-toggle>
                   <p class="text-xs text-gray-500 mt-1">
-                    Banco, conta, IBAN, NIB, M-Pesa e e-Mola aparecem no fim das facturas e extractos.
+                    Os bancos marcados "Mostrar nas facturas" (a conta principal primeiro), M-Pesa e e-Mola
+                    aparecem no fim das facturas e extractos.
                     Edite-os nos dados da empresa: Configurações → Empresas → editar → Dados Bancários.
                   </p>
                   @if (!companyHasBankDetails()) {
@@ -417,6 +420,7 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
                   [invoice]="sampleInvoice"
                   [company]="previewCompany()"
                   [branding]="previewBranding()"
+                  [bankAccounts]="previewBankAccounts()"
                   [preview]="true">
                 </app-invoice-document>
               } @else if (previewKind() === 'recibo') {
@@ -434,7 +438,8 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
                   issuedAt="2026-09-01"
                   issuerName="Ana Machava"
                   [company]="previewCompany()"
-                  [branding]="previewBranding()">
+                  [branding]="previewBranding()"
+                  [bankAccounts]="previewBankAccounts()">
                 </app-client-statement-document>
               }
             </div>
@@ -455,6 +460,7 @@ export class DocumentSettingsTabComponent {
   private fb = inject(FormBuilder);
   private settings = inject(DocumentSettingsService);
   private companyService = inject(CompanyService);
+  private bankAccountService = inject(CompanyBankAccountService);
   private snackBar = inject(MatSnackBar);
 
   templates = DOCUMENT_TEMPLATES;
@@ -526,11 +532,21 @@ export class DocumentSettingsTabComponent {
     return { ...base, logo_url: this.logoUrl() ?? undefined } as Company;
   });
 
+  /**
+   * Contas bancárias da empresa real (lidas da cache do serviço). Sem empresa
+   * real carregada, usa contas de exemplo.
+   */
+  previewBankAccounts = computed<CompanyBankAccount[] | null>(() => {
+    const id = this.companyId();
+    const real = id ? this.companyService.companies().find(c => c.id === id) : null;
+    return real ? this.bankAccountService.accountsFor(id) : SAMPLE_BANK_ACCOUNTS;
+  });
+
   /** Só avisa quando a empresa real já está carregada e não tem dados bancários. */
   companyHasBankDetails = computed(() => {
     const id = this.companyId();
     const real = id ? this.companyService.companies().find(c => c.id === id) : null;
-    return !real || companyHasBankDetails(real);
+    return !real || companyHasBankDetails(real, this.bankAccountService.accountsFor(id));
   });
 
   constructor() {
@@ -547,7 +563,8 @@ export class DocumentSettingsTabComponent {
   private async load(companyId: string) {
     const [branding, role] = await Promise.all([
       this.settings.resolve(companyId),
-      this.companyService.getUserRole(companyId)
+      this.companyService.getUserRole(companyId),
+      this.bankAccountService.list(companyId)
     ]);
 
     // A empresa pode ter mudado enquanto estas leituras decorriam.

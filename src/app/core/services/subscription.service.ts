@@ -35,8 +35,31 @@ export interface SubscriptionPlan {
   is_active?: boolean;
   is_popular?: boolean;
   sort_order?: number;
+  /** Nível do plano (maior = superior). Usado para bloquear downgrade. */
+  tier?: number;
   created_at?: string;
   updated_at?: string;
+}
+
+/** Data de hoje (YYYY-MM-DD) no fuso de Moçambique, igual a public.subscription_today(). */
+export function maputoToday(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Maputo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+}
+
+/** Nível por omissão de um plano (igual ao backfill da migração 20261009120000). */
+export function defaultPlanTier(code?: string | null, sortOrder?: number | null): number {
+  switch ((code || '').trim().toLowerCase()) {
+    case 'trial': return 0;
+    case 'essencial': return 10;
+    case 'profissional': return 20;
+    case 'standard': return 20;
+    default: return Math.max(Number(sortOrder) || 0, 0) * 10;
+  }
 }
 
 export interface SubscriptionFeature {
@@ -78,6 +101,8 @@ export class SubscriptionService {
   loadingPlans = signal<boolean>(false);
   private featuresSignal = signal<SubscriptionFeature[]>([]);
   features = this.featuresSignal.asReadonly();
+  /** Nível/preço do plano actual vindo do servidor (cobre planos desactivados, invisíveis pela RLS). */
+  private currentPlanLevelSignal = signal<{ plan_name: string; tier: number | null; monthly_price: number } | null>(null);
 
   private defaultPlans: SubscriptionPlan[] = [
     {
@@ -97,6 +122,7 @@ export class SubscriptionService {
       ],
       is_active: true,
       sort_order: 1,
+      tier: 0,
     },
     {
       code: "essencial",
@@ -117,6 +143,7 @@ export class SubscriptionService {
       ],
       is_active: true,
       sort_order: 2,
+      tier: 10,
     },
     {
       code: "profissional",
@@ -138,6 +165,7 @@ export class SubscriptionService {
       is_active: true,
       is_popular: true,
       sort_order: 3,
+      tier: 20,
     },
     {
       code: "standard",
@@ -158,6 +186,7 @@ export class SubscriptionService {
       ],
       is_active: true,
       sort_order: 4,
+      tier: 20,
     },
   ];
 
@@ -200,6 +229,7 @@ export class SubscriptionService {
           three_months_price: p.three_months_price !== undefined && p.three_months_price !== null ? Number(p.three_months_price) : Number(p.monthly_price || 0) * 3,
           six_months_price: p.six_months_price !== undefined && p.six_months_price !== null ? Number(p.six_months_price) : Number(p.monthly_price || 0) * 6,
           yearly_price: Number(p.yearly_price || 0),
+          tier: p.tier !== undefined && p.tier !== null ? Number(p.tier) : defaultPlanTier(p.code, p.sort_order),
           entitlements: (p.plan_features || []).map((pf: any) => ({
             feature_id: pf.feature_id,
             feature: pf.feature,
@@ -269,6 +299,7 @@ export class SubscriptionService {
       is_active: plan.is_active ?? true,
       is_popular: plan.is_popular ?? false,
       sort_order: plan.sort_order ?? 0,
+      tier: plan.tier ?? defaultPlanTier(code, plan.sort_order),
     };
 
     const { data, error } = await this.supabase.client
@@ -313,7 +344,8 @@ export class SubscriptionService {
       'features',
       'is_active',
       'is_popular',
-      'sort_order'
+      'sort_order',
+      'tier'
     ];
 
     const payloadToUpdate: any = {};
@@ -382,6 +414,28 @@ export class SubscriptionService {
     }
 
     this.subscriptionSignal.set(data);
+    await this.loadCurrentPlanLevel(companyId);
+  }
+
+  /** Carrega o nível e preço do plano actual (mesmo que o plano esteja desactivado). */
+  private async loadCurrentPlanLevel(companyId: string): Promise<void> {
+    try {
+      const { data, error } = await this.supabase.client.rpc('get_company_plan_level', {
+        p_company_id: companyId,
+      });
+      const row = Array.isArray(data) ? data[0] : data;
+      if (error || !row) {
+        this.currentPlanLevelSignal.set(null);
+        return;
+      }
+      this.currentPlanLevelSignal.set({
+        plan_name: row.plan_name,
+        tier: row.tier === null || row.tier === undefined ? null : Number(row.tier),
+        monthly_price: Number(row.monthly_price || 0),
+      });
+    } catch {
+      this.currentPlanLevelSignal.set(null);
+    }
   }
 
   async updateSubscription(
@@ -516,12 +570,9 @@ export class SubscriptionService {
     billingCycle: "monthly" | "quarterly" | "semiannual" | "yearly",
     companyId?: string
   ): Promise<boolean> {
-    const plan = this.availablePlans.find(
-      (p) =>
-        p.name.toLowerCase() === planName.toLowerCase() ||
-        (p.code && p.code.toLowerCase() === planName.toLowerCase()),
-    );
+    const plan = this.findPlan(planName);
     if (!plan) return false;
+    if (this.isDowngrade(plan)) return false;
 
     let amount = plan.monthly_price;
 
@@ -587,6 +638,64 @@ export class SubscriptionService {
       status: "active",
       auto_renew: true,
     });
+  }
+
+  /** Procura um plano pelo nome ou código (sem distinguir maiúsculas). */
+  findPlan(nameOrCode?: string | null): SubscriptionPlan | undefined {
+    const key = (nameOrCode || '').trim().toLowerCase();
+    if (!key) return undefined;
+    return this.availablePlans.find(
+      (p) => p.name.trim().toLowerCase() === key || (!!p.code && p.code.trim().toLowerCase() === key),
+    );
+  }
+
+  planTier(plan?: SubscriptionPlan | null): number | null {
+    if (!plan) return null;
+    return plan.tier ?? defaultPlanTier(plan.code, plan.sort_order);
+  }
+
+  /**
+   * Subscrição actual activa e dentro do período (downgrade bloqueado).
+   * Compara datas no fuso de Moçambique, como public.subscription_today() no SQL,
+   * para que a interface e o servidor concordem sobre o dia da expiração.
+   */
+  hasActivePeriod(): boolean {
+    const sub = this.subscriptionSignal();
+    if (!sub) return false;
+    if (sub.status !== "active" && sub.status !== "trialing") return false;
+    if (!sub.end_date) return !this.isExpired();
+    return sub.end_date.substring(0, 10) >= maputoToday();
+  }
+
+  /** Nível e preço do plano actual: do catálogo carregado ou, se o plano estiver desactivado, do servidor. */
+  currentPlanLevel(): { tier: number | null; monthly_price: number } | null {
+    const sub = this.subscriptionSignal();
+    if (!sub) return null;
+    const current = this.findPlan(sub.plan_name);
+    if (current) return { tier: this.planTier(current), monthly_price: current.monthly_price };
+    const level = this.currentPlanLevelSignal();
+    if (level && level.plan_name?.trim().toLowerCase() === (sub.plan_name || '').trim().toLowerCase()) {
+      return { tier: level.tier, monthly_price: level.monthly_price };
+    }
+    return null;
+  }
+
+  /**
+   * Mudar para `target` é um downgrade não permitido?
+   * - pago -> gratuito (Trial): sempre bloqueado;
+   * - nível inferior: bloqueado só enquanto a subscrição actual estiver activa;
+   * - mesmo nível ou só mudança de ciclo: permitido.
+   * Igual a public.subscription_change_is_downgrade() no SQL.
+   */
+  isDowngrade(target: SubscriptionPlan): boolean {
+    const current = this.currentPlanLevel();
+    if (!current) return false;
+    if (current.monthly_price > 0 && target.monthly_price === 0) return true;
+    if (!this.hasActivePeriod()) return false;
+    const curTier = current.tier;
+    const newTier = this.planTier(target);
+    if (curTier === null || newTier === null) return false;
+    return newTier < curTier;
   }
 
   isSubscriptionActive(): boolean {
@@ -682,6 +791,7 @@ export class SubscriptionService {
     success: boolean;
     message?: string;
     error?: string;
+    code?: string;
     referenceCode?: string;
   }> {
     try {
@@ -719,6 +829,7 @@ export class SubscriptionService {
       return {
         success: false,
         error: data?.error || error?.message || "Erro ao enviar pedido de pagamento. Tente novamente.",
+        code: data?.code,
       };
     } catch (err: any) {
       console.error("Exception processing mobile payment:", err);

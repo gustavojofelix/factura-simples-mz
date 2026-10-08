@@ -100,7 +100,7 @@ import { formatAuditDetails, FormattedAuditItem } from '../../../core/utils/audi
             <tbody class="divide-y divide-gray-100 text-gray-700 text-sm">
               <tr *ngFor="let log of paginatedLogs()" class="hover:bg-gray-50/50 transition-colors">
                 <td class="px-6 py-4 text-xs text-gray-500 font-medium">
-                  {{ log.created_at | date:'dd/MM/yyyy HH:mm:ss' }}
+                  {{ log.created_at | date:'dd/MM/yyyy HH:mm:ss':'+0200' }}
                 </td>
                 <td class="px-6 py-4 truncate max-w-[180px]" [title]="log.user_email || ''">
                   {{ getUserName(log) }}
@@ -150,7 +150,7 @@ import { formatAuditDetails, FormattedAuditItem } from '../../../core/utils/audi
         <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
           <div>
             <h3 class="text-xl font-bold text-gray-800 font-serif uppercase tracking-tight">Atividade do Sistema</h3>
-            <p class="text-xs text-gray-500 font-medium">{{ selectedLog.created_at | date:'dd/MM/yyyy HH:mm:ss' }}</p>
+            <p class="text-xs text-gray-500 font-medium">{{ selectedLog.created_at | date:'dd/MM/yyyy HH:mm:ss':'+0200' }}</p>
           </div>
           <button (click)="closeDetails()" class="text-gray-400 hover:text-gray-600 transition-colors">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

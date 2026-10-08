@@ -1,6 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.8";
-import nodemailer from "npm:nodemailer@6.9.11";
+import { runInBackground } from "../_shared/email.ts";
+import {
+  notifySubscriptionActivated,
+  notifySubscriptionPaymentFailed,
+} from "../_shared/subscription-notifications.ts";
 
 // Sislog calls this endpoint via GET when a payment succeeds OR fails.
 // Success:  entity != "00000"
@@ -149,6 +153,11 @@ serve(async (req) => {
         throw updateFailedError;
       }
 
+      // Aviso interno à LTS (só na primeira notificação de falha).
+      if (payment.status !== "failed") {
+        runInBackground(notifySubscriptionPaymentFailed(supabase, payment.id, decodedError));
+      }
+
       // Must return 200 so Sislog stops retrying
       return new Response("OK", { status: 200 });
     }
@@ -158,8 +167,35 @@ serve(async (req) => {
       console.log(
         `[SislogWebhook] Payment for transactionId ${transactionId} is already processed.`,
       );
-      // Already processed (Sislog retried) — respond 200 to stop retries
+      // Already processed (Sislog retried) — respond 200 to stop retries.
+      // Se os e-mails ainda não saíram (ex.: SMTP em falta), tenta de novo.
+      // Sem as colunas *_notified_at (migração 20261009110000 por aplicar) não
+      // há como saber se já foi enviado: assume que sim, para não duplicar.
+      const hasNotifyColumns = "client_notified_at" in payment && "admin_notified_at" in payment;
+      if (hasNotifyColumns && (!payment.client_notified_at || !payment.admin_notified_at)) {
+        runInBackground(notifySubscriptionActivated(supabase, payment.id, { source: "webhook" }));
+      }
       return new Response("OK", { status: 200 });
+    }
+
+    // 0. Downgrade enquanto a subscrição está activa? (ex.: dois pagamentos
+    // pendentes em corrida). O dinheiro já foi cobrado, por isso os dias são
+    // somados, mas o plano superior actual é mantido e o pagamento fica
+    // assinalado (sislog_response.downgrade_ignored) para revisão do admin.
+    let downgradeIgnored = false;
+    {
+      const { data: isDowngrade, error: downgradeError } = await supabase.rpc(
+        "is_subscription_downgrade",
+        { p_company_id: payment.company_id, p_target_plan: payment.plan_name },
+      );
+      if (downgradeError) {
+        console.warn("[SislogWebhook] is_subscription_downgrade failed:", downgradeError.message);
+      } else if (isDowngrade === true) {
+        downgradeIgnored = true;
+        console.warn(
+          `[SislogWebhook] Payment ${payment.id} requested a downgrade to "${payment.plan_name}" while the current subscription is active — keeping the current plan and only extending the period.`,
+        );
+      }
     }
 
     // 1. Mark payment as completed
@@ -175,6 +211,9 @@ serve(async (req) => {
           value,
           provider,
           paymentdatetime,
+          ...(downgradeIgnored
+            ? { downgrade_ignored: true, downgrade_requested_plan: payment.plan_name }
+            : {}),
         },
       })
       .eq("id", payment.id);
@@ -211,7 +250,7 @@ serve(async (req) => {
     if (payment.subscription_id) {
       const { data } = await supabase
         .from("subscriptions")
-        .select("id, start_date, end_date")
+        .select("id, start_date, end_date, plan_name, billing_cycle, amount")
         .eq("id", payment.subscription_id)
         .maybeSingle();
       existingSubscription = data;
@@ -220,7 +259,7 @@ serve(async (req) => {
     if (!existingSubscription) {
       const { data, error } = await supabase
         .from("subscriptions")
-        .select("id, start_date, end_date")
+        .select("id, start_date, end_date, plan_name, billing_cycle, amount")
         .eq("company_id", payment.company_id)
         .limit(1)
         .maybeSingle();
@@ -251,9 +290,14 @@ serve(async (req) => {
       const { error: updateSubError } = await supabase
         .from("subscriptions")
         .update({
-          plan_name: payment.plan_name,
-          billing_cycle: payment.billing_cycle,
-          amount: payment.amount,
+          // Downgrade bloqueado: mantém plano/ciclo/valor actuais, só soma os dias.
+          ...(downgradeIgnored
+            ? {}
+            : {
+              plan_name: payment.plan_name,
+              billing_cycle: payment.billing_cycle,
+              amount: payment.amount,
+            }),
           status: "active",
           payment_method: payment.payment_method,
           start_date: startDateStr,
@@ -320,121 +364,14 @@ serve(async (req) => {
       console.warn("[SislogWebhook] OfficeGest sync setup failed (non-critical):", syncErr);
     }
 
-    // 4. Send confirmation email
-
-    try {
-      console.log(
-        `[SislogWebhook] Querying company owner email for company: ${payment.company_id}`,
-      );
-      const { data: companyUser, error: ownerError } = await supabase
-        .from("company_users")
-        .select("profiles ( email, full_name ), companies ( name )")
-        .eq("company_id", payment.company_id)
-        .eq("role", "owner")
-        .single();
-
-      if (ownerError) {
-        console.warn(
-          "[SislogWebhook] Failed to query company owner for confirmation email:",
-          ownerError,
-        );
-      }
-
-      if (companyUser?.profiles && (companyUser.profiles as any).email) {
-        const userEmail = (companyUser.profiles as any).email;
-        const userName =
-          (companyUser.profiles as any).full_name || "Estimado(a) Cliente";
-        const companyName =
-          (companyUser.companies as any)?.name || "sua empresa";
-
-        console.log(
-          `[SislogWebhook] Sending active subscription email to owner: ${userEmail}`,
-        );
-
-        // As credenciais vêm da configuração da função, nunca do código.
-        const smtpHost = Deno.env.get("SMTP_HOST");
-        const smtpUser = Deno.env.get("SMTP_USER");
-        const smtpPass = Deno.env.get("SMTP_PASS");
-        const smtpPort = Number(Deno.env.get("SMTP_PORT") ?? "465");
-
-        if (!smtpHost || !smtpUser || !smtpPass) {
-          throw new Error(
-            "O serviço de e-mail não está configurado (SMTP_HOST, SMTP_USER, SMTP_PASS).",
-          );
-        }
-
-        const transporter = nodemailer.createTransport({
-          host: smtpHost,
-          port: smtpPort,
-          secure: smtpPort === 465,
-          auth: { user: smtpUser, pass: smtpPass },
-        });
-
-        const amountMZN = Number(payment.amount).toLocaleString("pt-MZ", {
-          minimumFractionDigits: 2,
-        });
-        const cycleLabel =
-          payment.billing_cycle === "yearly"
-            ? "Anual (1 Ano)"
-            : payment.billing_cycle === "semiannual"
-            ? "Semestral (6 Meses)"
-            : payment.billing_cycle === "quarterly"
-            ? "Trimestral (3 Meses)"
-            : "Mensal (1 Mês)";
-
-        const htmlContent = `
-          <div style="font-family:sans-serif;padding:24px;max-width:600px;margin:0 auto;border:1px solid #eee;border-radius:10px;">
-            <h2 style="color:#f16c39;border-bottom:2px solid #f16c39;padding-bottom:10px;">✅ Confirmação de Pagamento de Subscrição</h2>
-            <p>Olá <strong>${userName}</strong>,</p>
-            <p>Confirmamos a receção do pagamento da subscrição para a empresa <strong>${companyName}</strong> no ISPC Fácil. A sua subscrição já está activa!</p>
-            <table style="width:100%;border-collapse:collapse;margin:20px 0;">
-              <tr><td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;width:160px;">Plano:</td><td style="padding:8px;border-bottom:1px solid #eee;">${
-                payment.plan_name
-              }</td></tr>
-              <tr><td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;">Ciclo:</td><td style="padding:8px;border-bottom:1px solid #eee;">${cycleLabel}</td></tr>
-              <tr><td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;">Valor:</td><td style="padding:8px;border-bottom:1px solid #eee;">${amountMZN} MT</td></tr>
-              <tr><td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;">Método:</td><td style="padding:8px;border-bottom:1px solid #eee;">${
-                payment.payment_method?.toUpperCase() || provider
-              } (${payment.phone_number || ""})</td></tr>
-              <tr><td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;">Referência Sislog:</td><td style="padding:8px;border-bottom:1px solid #eee;">${
-                reference || transactionId
-              }</td></tr>
-              <tr><td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;">Próxima Faturação:</td><td style="padding:8px;border-bottom:1px solid #eee;">${nextBillingDate.toLocaleDateString(
-                "pt-PT",
-              )}</td></tr>
-            </table>
-            <p>Agradecemos a sua preferência. Pode continuar a utilizar todas as funcionalidades sem interrupções.</p>
-            <hr style="border:none;border-top:1px solid #eee;margin-top:24px;"/>
-            <p style="font-size:11px;color:#888;">E-mail automático do ISPC Fácil. Não responda a este e-mail.</p>
-          </div>`;
-
-        await transporter.sendMail({
-          from: `"ISPC Fácil" <${
-            Deno.env.get("SMTP_FROM_EMAIL") ?? smtpUser
-          }>`,
-          to: userEmail,
-          cc: Deno.env.get("ADMIN_NOTIFICATION_EMAIL") ?? "info@ispcfacil.com",
-          subject:
-            "✅ [ISPC Fácil] Subscrição Activada – Confirmação de Pagamento",
-          html: htmlContent,
-        });
-
-        console.log(
-          "[SislogWebhook] Confirmation email successfully sent to:",
-          userEmail,
-        );
-      } else {
-        console.warn(
-          "[SislogWebhook] No owner profile email found. Skipping confirmation email.",
-        );
-      }
-    } catch (emailErr) {
-      console.error(
-        "[SislogWebhook] Erro ao enviar email de confirmação:",
-        emailErr,
-      );
-      // Don't fail the webhook — email is non-critical
-    }
+    // 4. E-mails de confirmação (cliente + LTS) em segundo plano, para responder
+    // 200 à Sislog de imediato. notifySubscriptionActivated é idempotente
+    // (client_notified_at / admin_notified_at) e regista tudo em email_log.
+    runInBackground(
+      notifySubscriptionActivated(supabase, payment.id, { source: "webhook" }).then((r) =>
+        console.log(`[SislogWebhook] Notifications for ${payment.id}:`, JSON.stringify(r))
+      ),
+    );
 
     // Must return 200 so Sislog considers the notification delivered
     return new Response("OK", { status: 200 });

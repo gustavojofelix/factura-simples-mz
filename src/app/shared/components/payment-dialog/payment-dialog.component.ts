@@ -412,7 +412,21 @@ export class PaymentDialogComponent implements OnInit, OnDestroy {
     this.voucherMessage = '';
   }
 
+  /** Bloqueia downgrade enquanto a subscrição actual estiver activa. */
+  private blockIfDowngrade(): boolean {
+    if (!this.subscriptionService.isDowngrade(this.data.plan)) return false;
+    this.snackBar.open(
+      this.data.plan.monthly_price === 0
+        ? 'Não é possível voltar ao período de teste depois de subscrever um plano pago.'
+        : 'Não é possível fazer downgrade enquanto a subscrição estiver activa.',
+      'Fechar',
+      { duration: 6000 },
+    );
+    return true;
+  }
+
   async onActivateFreeWithVoucher() {
+    if (this.blockIfDowngrade()) return;
     this.loading.set(true);
     const companyId = this.data.companyId;
 
@@ -457,6 +471,7 @@ export class PaymentDialogComponent implements OnInit, OnDestroy {
       this.paymentForm.markAllAsTouched();
       return;
     }
+    if (this.blockIfDowngrade()) return;
 
     this.loading.set(true);
 

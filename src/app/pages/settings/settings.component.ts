@@ -25,9 +25,11 @@ import { CompanyDialogComponent } from '../../shared/components/company-dialog.c
 import { UserCompanyDialogComponent } from '../../shared/components/user-company-dialog.component';
 import { PaymentDialogComponent } from '../../shared/components/payment-dialog/payment-dialog.component';
 import { ActivityService } from '../../core/services/activity.service';
+import { CompanyBankAccountService } from '../../core/services/company-bank-account.service';
 import { SubscriptionLimitDialogComponent } from '../../shared/components/subscription-limit-dialog.component';
 import { DocumentSettingsTabComponent } from './document-settings-tab/document-settings-tab.component';
 import { friendlyErrorMessage } from '../../core/utils/error-message';
+import { PreferencesService } from '../../core/services/preferences.service';
 
 @Component({
   selector: 'app-settings',
@@ -83,21 +85,15 @@ export class SettingsComponent implements OnInit {
   companyColumns = ['name', 'nuit', 'phone', 'actions'];
   userColumns = ['email', 'companies', 'actions'];
 
+  /** Por agora a interface só existe em português; outros idiomas brevemente. */
   languages = [
-    { value: 'pt', label: 'Português' },
-    { value: 'en', label: 'English' }
+    { value: 'pt', label: 'Português (Moçambique)' }
   ];
 
   timezones = [
     { value: 'Africa/Maputo', label: 'Africa/Maputo (CAT)' },
     { value: 'Africa/Johannesburg', label: 'Africa/Johannesburg (SAST)' },
     { value: 'UTC', label: 'UTC' }
-  ];
-
-  currencies = [
-    { value: 'MZN', label: 'Metical (MZN)' },
-    { value: 'USD', label: 'Dólar (USD)' },
-    { value: 'EUR', label: 'Euro (EUR)' }
   ];
 
   dateFormats = [
@@ -115,7 +111,9 @@ export class SettingsComponent implements OnInit {
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private activityService: ActivityService,
-    private route: ActivatedRoute
+    private bankAccountService: CompanyBankAccountService,
+    private route: ActivatedRoute,
+    private preferences: PreferencesService
   ) {
     effect(() => {
       if (this.locked() && this.selectedTab() !== SUBSCRIPTION_TAB_INDEX) {
@@ -145,13 +143,14 @@ export class SettingsComponent implements OnInit {
 
   initializeForms() {
     this.systemForm = this.fb.group({
-      language: ['pt'],
-      timezone: ['Africa/Maputo'],
-      currency: ['MZN'],
-      date_format: ['DD/MM/YYYY'],
-      fiscal_year_start: ['01-01'],
+      // Moeda Padrão e Início do Ano Fiscal não são usados pela aplicação
+      // (moeda é sempre MZN; o ano fiscal é o ano civil) — por isso não aparecem.
+      language: [{ value: 'pt', disabled: true }],
+      timezone: ['Africa/Maputo', Validators.required],
+      date_format: ['DD/MM/YYYY', Validators.required],
       enable_notifications: [true],
-      notification_email: ['']
+      // Mesma regra do CHECK system_settings_notification_email_check e do isEmail() das edge functions
+      notification_email: ['', [Validators.email, Validators.pattern(/^[^@\s]+@[^@\s]+\.[^@\s]+$/), Validators.maxLength(254)]]
     });
   }
 
@@ -179,15 +178,39 @@ export class SettingsComponent implements OnInit {
     ]);
 
     const settings = this.userManagementService.settings();
-    if (settings) {
-      this.systemForm.patchValue(settings);
+    this.systemForm.reset({
+      language: 'pt',
+      timezone: settings?.timezone || 'Africa/Maputo',
+      date_format: settings?.date_format || 'DD/MM/YYYY',
+      enable_notifications: settings?.enable_notifications ?? true,
+      notification_email: settings?.notification_email || ''
+    });
+    // Só o proprietário pode alterar (RLS): para os restantes o formulário fica só de leitura.
+    if (this.canEditSystemSettings()) {
+      this.systemForm.enable();
+      this.systemForm.get('language')?.disable();
+    } else {
+      this.systemForm.disable();
     }
 
     this.loading.set(false);
   }
 
+  /** As configurações do sistema só podem ser alteradas pelo proprietário da empresa. */
+  canEditSystemSettings(): boolean {
+    const id = this.selectedCompanyId();
+    return !!id && this.companyService.isOwner(id);
+  }
+
   async saveSystemSettings() {
-    if (this.systemForm.invalid) return;
+    if (!this.canEditSystemSettings()) {
+      this.snackBar.open('Apenas o proprietário da empresa pode alterar as configurações do sistema.', 'Fechar', { duration: 5000 });
+      return;
+    }
+    if (this.systemForm.invalid) {
+      this.systemForm.markAllAsTouched();
+      return;
+    }
 
     const companyId = this.selectedCompanyId();
     if (!companyId) {
@@ -196,20 +219,24 @@ export class SettingsComponent implements OnInit {
     }
 
     this.loading.set(true);
-    const success = await this.userManagementService.updateSystemSettings(
-      companyId,
-      this.systemForm.value
-    );
+    const { language: _language, ...values } = this.systemForm.getRawValue();
+    const notificationEmail = (values.notification_email || '').trim();
+    const result = await this.userManagementService.updateSystemSettings(companyId, {
+      ...values,
+      language: 'pt',
+      notification_email: notificationEmail || null
+    } as any);
 
     this.loading.set(false);
 
-    if (success) {
-      this.snackBar.open('Configurações atualizadas com sucesso', 'Fechar', {
+    if (result.ok) {
+      if (result.data) this.preferences.applyIfActive(companyId, result.data);
+      this.snackBar.open('Configurações actualizadas com sucesso', 'Fechar', {
         duration: 3000
       });
     } else {
-      this.snackBar.open('Erro ao atualizar configurações', 'Fechar', {
-        duration: 3000
+      this.snackBar.open(result.error || 'Erro ao actualizar configurações', 'Fechar', {
+        duration: 6000
       });
     }
   }
@@ -222,17 +249,20 @@ export class SettingsComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(async (result) => {
       if (!result) return;
-      const { companyActivities, ...companyData } = result;
+      const { companyActivities, bankAccounts, ...companyData } = result;
       try {
         if (company) {
           await this.companyService.updateCompanyOrThrow(company.id, companyData);
           await this.activityService.saveCompanyActivities(company.id, companyActivities || []);
+          // undefined = as contas não chegaram a ser carregadas no diálogo; não mexer.
+          if (bankAccounts) await this.bankAccountService.saveForCompany(company.id, bankAccounts);
           this.snackBar.open('Empresa atualizada com sucesso', 'Fechar', { duration: 3000 });
           await this.companyService.loadCompanies();
         } else {
           const newCompany = await this.companyService.createCompany(companyData);
           if (newCompany) {
             await this.activityService.saveCompanyActivities(newCompany.id, companyActivities || []);
+            if (bankAccounts?.length) await this.bankAccountService.saveForCompany(newCompany.id, bankAccounts);
             this.snackBar.open('Empresa criada com sucesso', 'Fechar', { duration: 3000 });
             await this.companyService.loadCompanies();
           } else {
@@ -367,6 +397,11 @@ export class SettingsComponent implements OnInit {
       return;
     }
 
+    if (this.isDowngrade(plan)) {
+      this.snackBar.open(this.downgradeBlockedMessage(plan), 'Fechar', { duration: 6000 });
+      return;
+    }
+
     if (plan.monthly_price > 0) {
       // Launch Mobile Payment Dialog for M-Pesa / e-Mola
       const dialogRef = this.dialog.open(PaymentDialogComponent, {
@@ -479,19 +514,32 @@ export class SettingsComponent implements OnInit {
   }
 
   formatDate(date: string): string {
-    return new Date(date).toLocaleDateString('pt-MZ');
+    return this.preferences.formatDate(date);
   }
 
-  /**
-   * Returns true if the given plan name corresponds to a paid plan
-   * (i.e. not the free Trial plan). Used to block downgrade once a
-   * user has subscribed to a paid plan.
-   */
-  isPaidPlan(planName?: string): boolean {
-    if (!planName) return false;
-    const plan = this.availablePlans.find(
-      (p) => p.name.toLowerCase() === planName.toLowerCase()
-    );
-    return !!plan && plan.monthly_price > 0;
+  /** Mudar para este plano seria um downgrade bloqueado? */
+  isDowngrade(plan: SubscriptionPlan): boolean {
+    return this.subscriptionService.isDowngrade(plan);
+  }
+
+  /** Subscrição actual activa (não expirada): só é possível fazer upgrade. */
+  hasActivePeriod(): boolean {
+    return this.subscriptionService.hasActivePeriod();
+  }
+
+  /** O plano é de nível superior ao actual (para mostrar "Fazer Upgrade"). */
+  isUpgrade(plan: SubscriptionPlan): boolean {
+    const current = this.subscriptionService.currentPlanLevel();
+    if (!current || !this.hasActivePeriod()) return false;
+    const curTier = current.tier ?? 0;
+    const newTier = this.subscriptionService.planTier(plan) ?? 0;
+    return newTier > curTier;
+  }
+
+  downgradeBlockedMessage(plan: SubscriptionPlan): string {
+    if (plan.monthly_price === 0) {
+      return 'Não é possível voltar ao período de teste depois de subscrever um plano pago.';
+    }
+    return 'Não é possível fazer downgrade enquanto a subscrição estiver activa.';
   }
 }
