@@ -15,7 +15,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { toSignal } from '@angular/core/rxjs-interop';
 
-import { CompanyService, Company } from '../../../core/services/company.service';
+import { CompanyService, Company, companyHasBankDetails } from '../../../core/services/company.service';
 import {
   DocumentSettingsService,
   DocumentBranding,
@@ -171,9 +171,21 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
                   <span class="text-sm">Mostrar o logótipo nos documentos</span>
                 </mat-slide-toggle>
 
-                <mat-slide-toggle formControlName="show_bank_details" color="primary">
-                  <span class="text-sm">Mostrar as coordenadas bancárias</span>
-                </mat-slide-toggle>
+                <div>
+                  <mat-slide-toggle formControlName="show_bank_details" color="primary">
+                    <span class="text-sm">Mostrar as coordenadas bancárias</span>
+                  </mat-slide-toggle>
+                  <p class="text-xs text-gray-500 mt-1">
+                    Banco, conta, IBAN, NIB, M-Pesa e e-Mola aparecem no fim das facturas e extractos.
+                    Edite-os nos dados da empresa: Configurações → Empresas → editar → Dados Bancários.
+                  </p>
+                  @if (!companyHasBankDetails()) {
+                    <p class="flex items-start gap-1 text-xs text-amber-700 mt-1">
+                      <mat-icon class="!text-amber-600 !text-[16px] !w-4 !h-4 shrink-0">warning</mat-icon>
+                      Esta empresa ainda não tem dados bancários, por isso nada será mostrado nos documentos.
+                    </p>
+                  }
+                </div>
               </div>
 
               <div>
@@ -512,6 +524,13 @@ export class DocumentSettingsTabComponent {
     const real = id ? this.companyService.companies().find(c => c.id === id) : null;
     const base = real ?? SAMPLE_COMPANY;
     return { ...base, logo_url: this.logoUrl() ?? undefined } as Company;
+  });
+
+  /** Só avisa quando a empresa real já está carregada e não tem dados bancários. */
+  companyHasBankDetails = computed(() => {
+    const id = this.companyId();
+    const real = id ? this.companyService.companies().find(c => c.id === id) : null;
+    return !real || companyHasBankDetails(real);
   });
 
   constructor() {

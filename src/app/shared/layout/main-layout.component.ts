@@ -1,4 +1,5 @@
 import { Component, signal, computed } from '@angular/core';
+import { isSubscriptionFreeUrl } from '../../core/guards/subscription.guard';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -94,6 +95,17 @@ export class MainLayoutComponent {
       const company = this.companyService.activeCompany();
       if (company) {
         this.subscriptionService.loadSubscription(company.id);
+      }
+    });
+
+    // Se a subscrição da empresa activa expirar (ou se mudar para uma empresa
+    // expirada) enquanto o utilizador está numa página bloqueada, sai dela.
+    effect(() => {
+      const company = this.companyService.activeCompany();
+      const sub = this.subscriptionService.subscription();
+      if (!company || sub?.company_id !== company.id || !this.subscriptionService.isExpired()) return;
+      if (!isSubscriptionFreeUrl(this.router.url)) {
+        this.router.navigate(['/configuracoes'], { queryParams: { tab: 'subscricao' } });
       }
     });
   }

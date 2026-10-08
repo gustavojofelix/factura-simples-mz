@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { friendlyErrorMessage } from '../utils/error-message';
 import { SupabaseService } from './supabase.service';
 import { CompanyService } from './company.service';
 import { AuditLogService } from './audit-log.service';
@@ -33,6 +34,9 @@ export interface ClientImportData {
   providedIn: 'root'
 })
 export class ClientService {
+  /** Motivo (já traduzido) da última operação de escrita falhada. */
+  lastError: string | null = null;
+
   clients = signal<Client[]>([]);
   isLoading = signal(false);
 
@@ -128,7 +132,7 @@ export class ClientService {
       return { imported: data?.length || 0 };
     } catch (error: any) {
       console.error('Erro ao importar clientes:', error);
-      return { imported: 0, error: error?.message || 'Não foi possível importar os clientes.' };
+      return { imported: 0, error: friendlyErrorMessage(error, 'Não foi possível importar os clientes.') };
     }
   }
 
@@ -158,6 +162,7 @@ export class ClientService {
       return true;
     } catch (error) {
       console.error('Erro ao actualizar cliente:', error);
+      this.lastError = friendlyErrorMessage(error, 'Não foi possível actualizar o cliente.');
       return false;
     }
   }
@@ -198,7 +203,7 @@ export class ClientService {
       return { success: true };
     } catch (error: any) {
       console.error('Erro ao eliminar cliente:', error);
-      return { success: false, error: 'Erro inesperado ao eliminar cliente' };
+      return { success: false, error: friendlyErrorMessage(error, 'Não foi possível eliminar o cliente.') };
     }
   }
 

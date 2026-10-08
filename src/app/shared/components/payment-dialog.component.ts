@@ -1,4 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
+import { toIsoDate } from '../../core/utils/date.util';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialog, MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -216,7 +217,7 @@ export class PaymentDialogComponent {
       const payment = await this.paymentService.createPayment({
         invoice_id: this.data.invoiceId,
         amount: formValue.amount!,
-        payment_date: (formValue.payment_date as Date).toISOString().split('T')[0],
+        payment_date: toIsoDate(formValue.payment_date as Date),
         payment_method: formValue.payment_method!,
         reference: formValue.reference || undefined,
         notes: formValue.notes || undefined
@@ -236,10 +237,10 @@ export class PaymentDialogComponent {
           });
         }, 300);
       } else {
-        this.errorMessage.set('Erro ao registar pagamento. Tente novamente.');
+        this.errorMessage.set(this.paymentService.lastError || 'Não foi possível registar o pagamento. Tente novamente.');
       }
     } catch (error) {
-      this.errorMessage.set('Erro ao registar pagamento. Tente novamente.');
+      this.errorMessage.set(this.paymentService.lastError || 'Não foi possível registar o pagamento. Tente novamente.');
     } finally {
       this.isSaving.set(false);
     }

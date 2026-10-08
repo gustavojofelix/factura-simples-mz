@@ -252,19 +252,19 @@
           </mat-card>
           }
 
-          @if (subscriptionService.isTrialExpired()) {
+          @if (subscriptionService.isExpired()) {
           <mat-card class="!shadow-sm mb-6 !rounded-2xl !border !border-rose-200 !bg-rose-50/70">
             <mat-card-content class="p-4">
               <div class="flex items-start">
-                <mat-icon class="mr-3 !text-2xl text-red-600">error</mat-icon>
+                <mat-icon class="mr-3 !text-2xl text-red-600">lock</mat-icon>
                 <div class="flex-1">
                   <h3 class="font-bold text-red-900 mb-1 text-base">
-                    Período de Teste Expirado
+                    {{ subscriptionService.isTrialing() ? 'Período de Teste Expirado' : 'Subscrição Expirada' }}
                   </h3>
                   <p class="text-sm text-red-700 mb-3 leading-relaxed">
-                    O seu período de teste terminou. Por favor, escolha um plano para continuar a utilizar o ISPC Fácil.
+                    O sistema está bloqueado até subscrever um plano. Os seus dados estão guardados e voltam a ficar disponíveis assim que o pagamento for confirmado.
                   </p>
-                  <button mat-raised-button routerLink="/configuracoes" color="warn" class="!h-10">
+                  <button mat-raised-button routerLink="/configuracoes" [queryParams]="{ tab: 'subscricao' }" color="warn" class="!h-10">
                     Escolher Plano
                   </button>
                 </div>

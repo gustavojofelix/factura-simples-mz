@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { friendlyErrorMessage } from '../utils/error-message';
 import { SupabaseService } from './supabase.service';
 import { CompanyService } from './company.service';
 import { AuditLogService } from './audit-log.service';
@@ -34,6 +35,9 @@ export interface CreatePaymentData {
   providedIn: 'root'
 })
 export class PaymentService {
+  /** Motivo (já traduzido) da última operação de escrita falhada. */
+  lastError: string | null = null;
+
   payments = signal<Payment[]>([]);
   isLoading = signal(false);
 
@@ -75,11 +79,13 @@ export class PaymentService {
 
       if (error) throw error;
 
-      await this.logPaymentAudit('Registou Pagamento', data);
+      // A entrada de auditoria é escrita pelo trigger zz_audit_payment_insert.
+      await this.syncInvoiceAfterPayment(data.invoice_id);
 
       return data;
     } catch (error) {
       console.error('Erro ao criar pagamento:', error);
+      this.lastError = friendlyErrorMessage(error, 'Não foi possível registar o pagamento.');
       return null;
     }
   }

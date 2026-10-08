@@ -18,6 +18,20 @@ import { CompanyService } from '../../core/services/company.service';
 import { TaxPaymentDialogComponent } from '../../shared/components/tax-payment-dialog.component';
 import { Model30Component } from '../../shared/components/model30.component';
 import { AuditLogService } from '../../core/services/audit-log.service';
+import { SupabaseService } from '../../core/services/supabase.service';
+
+/** Lembrete de obrigação fiscal gerado por generate_tax_reminders(). */
+export interface TaxReminder {
+  id: string;
+  year: number;
+  quarter: number;
+  kind: 'd15' | 'd7' | 'd1' | 'overdue';
+  due_date: string;
+  title: string;
+  body: string;
+  created_at: string;
+  emailed_at: string | null;
+}
 
 @Component({
   selector: 'app-taxes',
@@ -55,6 +69,7 @@ export class TaxesComponent implements OnInit {
     totalPaid: 0,
     pendingDeclarations: 0
   });
+  reminders = signal<TaxReminder[]>([]);
 
   years: number[] = [];
   periods = [
@@ -70,7 +85,8 @@ export class TaxesComponent implements OnInit {
     public taxService: TaxService,
     public companyService: CompanyService,
     private dialog: MatDialog,
-    private auditLogService: AuditLogService
+    private auditLogService: AuditLogService,
+    private supabase: SupabaseService
   ) {
     const currentYear = new Date().getFullYear();
     for (let i = currentYear; i >= currentYear - 5; i--) {
@@ -94,6 +110,38 @@ export class TaxesComponent implements OnInit {
   async loadData() {
     await this.taxService.loadDeclarations();
     await this.updateSummary();
+    await this.loadReminders();
+  }
+
+  /** Lembretes do Modelo 30 (prazos e incumprimentos), mais recentes primeiro. */
+  async loadReminders() {
+    const company = this.companyService.activeCompany();
+    if (!company) {
+      this.reminders.set([]);
+      return;
+    }
+
+    const { data } = await this.supabase.db
+      .from('tax_reminders')
+      .select('id, year, quarter, kind, due_date, title, body, created_at, emailed_at')
+      .eq('company_id', company.id)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    this.reminders.set((data ?? []) as TaxReminder[]);
+  }
+
+  getReminderStyle(kind: TaxReminder['kind']): { icon: string; classes: string } {
+    switch (kind) {
+      case 'overdue':
+        return { icon: 'gavel', classes: 'bg-red-50 border-red-300 text-red-600' };
+      case 'd1':
+        return { icon: 'alarm', classes: 'bg-red-50 border-red-200 text-red-600' };
+      case 'd7':
+        return { icon: 'schedule', classes: 'bg-orange-50 border-orange-200 text-orange-600' };
+      default:
+        return { icon: 'event', classes: 'bg-blue-50 border-blue-200 text-blue-600' };
+    }
   }
 
   async updateSummary() {

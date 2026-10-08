@@ -58,6 +58,14 @@ export interface PlanEntitlement {
   limit_value: number | null;
 }
 
+/** Cada pacote conta em dias: 1 mês = 30 dias. Manter igual a subscription_cycle_days() no SQL. */
+export const SUBSCRIPTION_CYCLE_DAYS: Record<Subscription['billing_cycle'], number> = {
+  monthly: 30,
+  quarterly: 90,
+  semiannual: 180,
+  yearly: 360,
+};
+
 @Injectable({
   providedIn: "root",
 })
@@ -423,10 +431,7 @@ export class SubscriptionService {
     if (!companyId) return false;
 
     const cycle = updates.billing_cycle || 'monthly';
-    let monthsToAdd = 1;
-    if (cycle === 'quarterly') monthsToAdd = 3;
-    else if (cycle === 'semiannual') monthsToAdd = 6;
-    else if (cycle === 'yearly') monthsToAdd = 12;
+    const daysToAdd = SUBSCRIPTION_CYCLE_DAYS[cycle] ?? 30;
 
     const { data: existing } = await this.supabase.client
       .from('subscriptions')
@@ -441,11 +446,7 @@ export class SubscriptionService {
     const isExistingPeriodActive = !!existingEnd && existingEnd.getTime() >= new Date(`${todayStr}T00:00:00Z`).getTime();
     const periodStart = updates.start_date || (isExistingPeriodActive ? existing!.start_date : todayStr);
     const endDateObj = isExistingPeriodActive ? existingEnd! : new Date(`${todayStr}T00:00:00Z`);
-    const originalDay = endDateObj.getUTCDate();
-    endDateObj.setUTCDate(1);
-    endDateObj.setUTCMonth(endDateObj.getUTCMonth() + monthsToAdd);
-    const lastDayOfTargetMonth = new Date(Date.UTC(endDateObj.getUTCFullYear(), endDateObj.getUTCMonth() + 1, 0)).getUTCDate();
-    endDateObj.setUTCDate(Math.min(originalDay, lastDayOfTargetMonth));
+    endDateObj.setUTCDate(endDateObj.getUTCDate() + daysToAdd);
     const endDateStr = endDateObj.toISOString().substring(0, 10);
 
     const payload = {
@@ -613,48 +614,59 @@ export class SubscriptionService {
     return sub?.status === "trialing";
   }
 
+  /** Fim do período (inclusive): a subscrição vale até ao fim do dia de end_date, como no servidor. */
+  private periodEnd(sub: Subscription): Date {
+    if (sub.end_date) {
+      const [y, m, d] = sub.end_date.substring(0, 10).split("-").map(Number);
+      return new Date(y, m - 1, d, 23, 59, 59, 999);
+    }
+    const start = sub.start_date ? new Date(sub.start_date) : new Date(sub.created_at || Date.now());
+    return new Date(start.getTime() + 14 * 24 * 60 * 60 * 1000);
+  }
+
   isTrialExpired(): boolean {
     const sub = this.subscriptionSignal();
     if (!sub || sub.status !== "trialing") return false;
+    return new Date() > this.periodEnd(sub);
+  }
 
-    let endDate: Date;
-    if (sub.end_date) {
-      endDate = new Date(sub.end_date);
-    } else {
-      const start = sub.start_date ? new Date(sub.start_date) : new Date(sub.created_at || Date.now());
-      endDate = new Date(start.getTime() + 14 * 24 * 60 * 60 * 1000);
-    }
+  /** Subscrição (trial ou paga) expirada/cancelada: o sistema fica bloqueado excepto a subscrição. */
+  isExpired(): boolean {
+    const sub = this.subscriptionSignal();
+    if (!sub) return false;
+    if (sub.status !== "active" && sub.status !== "trialing") return true;
+    return new Date() > this.periodEnd(sub);
+  }
 
-    return new Date() > endDate;
+  getDaysRemaining(): number {
+    const sub = this.subscriptionSignal();
+    if (!sub) return 0;
+    const diff = this.periodEnd(sub).getTime() - Date.now();
+    return diff > 0 ? Math.ceil(diff / (1000 * 60 * 60 * 24)) : 0;
   }
 
   getDaysRemainingInTrial(): number {
     const sub = this.subscriptionSignal();
     if (!sub || sub.status !== "trialing") return 0;
-
-    let endDate: Date;
-    if (sub.end_date) {
-      endDate = new Date(sub.end_date);
-    } else {
-      const start = sub.start_date ? new Date(sub.start_date) : new Date(sub.created_at || Date.now());
-      endDate = new Date(start.getTime() + 14 * 24 * 60 * 60 * 1000);
-    }
-
-    const today = new Date();
-    const diff = endDate.getTime() - today.getTime();
-    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-    return days > 0 ? days : 0;
+    return this.getDaysRemaining();
   }
 
   canAccessFeatures(): boolean {
-    const sub = this.subscriptionSignal();
-    if (!sub) return false;
+    return !!this.subscriptionSignal() && !this.isExpired();
+  }
 
-    if (sub.status === "trialing") {
-      return !this.isTrialExpired();
+  /** Estado do pagamento de subscrição pendente (actualizado pelo sislog-webhook). */
+  async getSubscriptionPaymentStatus(referenceCode: string): Promise<string | null> {
+    const { data, error } = await this.supabase.client
+      .from("subscription_payments")
+      .select("status")
+      .eq("reference_code", referenceCode)
+      .maybeSingle();
+    if (error) {
+      console.error("Error loading subscription payment status:", error);
+      return null;
     }
-
-    return sub.status === "active";
+    return data?.status ?? null;
   }
 
   async processMobilePayment(

@@ -1,4 +1,5 @@
 import { Component, DestroyRef, Inject, inject, signal } from '@angular/core';
+import { friendlyErrorMessage } from '../../core/utils/error-message';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -295,6 +296,23 @@ import { ActivityService, ActivityType, CompanyActivity } from '../../core/servi
                 <mat-label>SWIFT/BIC</mat-label>
                 <input matInput formControlName="bank_swift" placeholder="Ex: ABCDMZMM">
               </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>NIB</mat-label>
+                <input matInput formControlName="nib" placeholder="Ex: 0001 0000 1234 5678 9012 3">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>M-Pesa</mat-label>
+                <input matInput formControlName="mpesa_number" placeholder="Ex: 84 123 4567">
+                <mat-icon matPrefix class="text-gray-400">smartphone</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>e-Mola</mat-label>
+                <input matInput formControlName="emola_number" placeholder="Ex: 86 123 4567">
+                <mat-icon matPrefix class="text-gray-400">smartphone</mat-icon>
+              </mat-form-field>
             </div>
           </div>
 
@@ -539,6 +557,9 @@ export class CompanyDialogComponent {
       bank_account: [data.company?.bank_account || ''],
       bank_iban: [data.company?.bank_iban || ''],
       bank_swift: [data.company?.bank_swift || ''],
+      nib: [data.company?.nib || ''],
+      mpesa_number: [data.company?.mpesa_number || ''],
+      emola_number: [data.company?.emola_number || ''],
       category1: [data.company?.category1 || ''],
       category2: [data.company?.category2 || ''],
       category3: [data.company?.category3 || '']
@@ -693,7 +714,7 @@ export class CompanyDialogComponent {
       }
     } catch (error: any) {
       console.error('Erro ao subir NUIT:', error);
-      this.snackBar.open('Erro ao carregar documento', 'Fechar', { duration: 3000 });
+      this.snackBar.open(friendlyErrorMessage(error, 'Não foi possível carregar o documento.'), 'Fechar', { duration: 6000 });
     } finally {
       this.isUploadingNuit.set(false);
       input.value = '';
@@ -723,7 +744,7 @@ export class CompanyDialogComponent {
       }
     } catch (error: any) {
       console.error('Erro ao subir Exercício de Actividade Comercial:', error);
-      this.snackBar.open('Erro ao carregar documento', 'Fechar', { duration: 3000 });
+      this.snackBar.open(friendlyErrorMessage(error, 'Não foi possível carregar o documento.'), 'Fechar', { duration: 6000 });
     } finally {
       this.isUploadingCommercial.set(false);
       input.value = '';
@@ -762,7 +783,7 @@ export class CompanyDialogComponent {
       }
     } catch (error: any) {
       console.error('Erro ao subir documento:', error);
-      this.snackBar.open('Erro ao carregar documento', 'Fechar', { duration: 3000 });
+      this.snackBar.open(friendlyErrorMessage(error, 'Não foi possível carregar o documento.'), 'Fechar', { duration: 6000 });
     } finally {
       this.isUploadingOther.set(false);
       input.value = '';
@@ -792,7 +813,7 @@ export class CompanyDialogComponent {
       }
     } catch (error: any) {
       console.error('Erro ao subir alvará:', error);
-      this.snackBar.open('Erro ao carregar o Alvará', 'Fechar', { duration: 3000 });
+      this.snackBar.open(friendlyErrorMessage(error, 'Não foi possível carregar o Alvará.'), 'Fechar', { duration: 6000 });
     } finally {
       this.isUploadingAlvara.set(false);
       input.value = '';
@@ -817,7 +838,7 @@ export class CompanyDialogComponent {
         this.snackBar.open('Documento removido com sucesso!', 'Fechar', { duration: 3000 });
       } catch (error) {
         console.error('Erro ao remover documento:', error);
-        this.snackBar.open('Erro ao remover documento', 'Fechar', { duration: 3000 });
+        this.snackBar.open(friendlyErrorMessage(error, 'Não foi possível remover o documento.'), 'Fechar', { duration: 6000 });
       }
     }
   }
@@ -866,7 +887,7 @@ export class CompanyDialogComponent {
       this.snackBar.open('Documento removido!', 'Fechar', { duration: 3000 });
     } catch (error) {
       console.error('Erro ao remover documento:', error);
-      this.snackBar.open('Erro ao remover documento', 'Fechar', { duration: 3000 });
+      this.snackBar.open(friendlyErrorMessage(error, 'Não foi possível remover o documento.'), 'Fechar', { duration: 6000 });
     }
   }
 
@@ -904,6 +925,9 @@ export class CompanyDialogComponent {
         bank_account: formValue.bank_account,
         bank_iban: formValue.bank_iban,
         bank_swift: formValue.bank_swift,
+        nib: formValue.nib,
+        mpesa_number: formValue.mpesa_number,
+        emola_number: formValue.emola_number,
         category1: formValue.category1,
         category2: formValue.category2,
         category3: formValue.category3,

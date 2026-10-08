@@ -163,7 +163,7 @@ export class InvoicesComponent implements OnInit {
     if (success) {
       this.snackBar.open('Factura emitida com sucesso!', 'Fechar', { duration: 3000 });
     } else {
-      this.snackBar.open('Erro ao emitir factura', 'Fechar', { duration: 3000 });
+      this.snackBar.open(this.invoiceService.lastError || 'Não foi possível emitir a factura.', 'Fechar', { duration: 6000 });
     }
   }
 
@@ -181,7 +181,7 @@ export class InvoicesComponent implements OnInit {
     if (success) {
       this.snackBar.open('Rascunho eliminado!', 'Fechar', { duration: 2000 });
     } else {
-      this.snackBar.open('Erro ao eliminar rascunho', 'Fechar', { duration: 3000 });
+      this.snackBar.open(this.invoiceService.lastError || 'Não foi possível eliminar o rascunho.', 'Fechar', { duration: 6000 });
     }
   }
 
@@ -195,7 +195,7 @@ export class InvoicesComponent implements OnInit {
     if (success) {
       this.snackBar.open('Factura anulada com sucesso!', 'Fechar', { duration: 3000 });
     } else {
-      this.snackBar.open('Erro ao anular factura', 'Fechar', { duration: 3000 });
+      this.snackBar.open(this.invoiceService.lastError || 'Não foi possível anular a factura.', 'Fechar', { duration: 6000 });
     }
   }
 

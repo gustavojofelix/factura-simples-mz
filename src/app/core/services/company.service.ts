@@ -1,4 +1,5 @@
 import { Injectable, signal, computed, effect } from '@angular/core';
+import { friendlyErrorMessage } from '../utils/error-message';
 import { SupabaseService } from './supabase.service';
 import { AuthService } from './auth.service';
 import { AuditLogService } from './audit-log.service';
@@ -28,6 +29,9 @@ export interface Company {
   bank_account?: string;
   bank_iban?: string;
   bank_swift?: string;
+  nib?: string;
+  mpesa_number?: string;
+  emola_number?: string;
   documents_metadata?: {
     province?: string;
     district?: string;
@@ -36,6 +40,15 @@ export interface Company {
   status?: 'active' | 'suspended' | 'trial';
   created_at: string;
   updated_at: string;
+}
+
+/** True when the company has at least one bank / mobile-money field filled in. */
+export function companyHasBankDetails(company: Company | null | undefined): boolean {
+  if (!company) return false;
+  return [
+    company.bank_name, company.bank_account, company.bank_iban, company.bank_swift,
+    company.nib, company.mpesa_number, company.emola_number
+  ].some(value => !!value?.trim());
 }
 
 @Injectable({
@@ -155,37 +168,41 @@ export class CompanyService {
 
   async updateCompany(id: string, updates: Partial<Company>, skipAuditLog = false): Promise<boolean> {
     try {
-      const oldCompany = this.companies().find(c => c.id === id);
-      const { error } = await this.supabase.db
-        .from('companies')
-        .update(updates)
-        .eq('id', id);
-
-      if (error) throw error;
-
-      this.companies.update(companies =>
-        companies.map(c => c.id === id ? { ...c, ...updates } : c)
-      );
-
-      if (this.activeCompany()?.id === id) {
-        this.activeCompany.update(c => c ? { ...c, ...updates } : null);
-      }
-
-      if (!skipAuditLog) {
-        await this.auditLogService.log(
-          'Atualizou Configurações da Empresa',
-          'settings',
-          { updates, old: oldCompany ? { name: oldCompany.name, nuit: oldCompany.nuit } : null },
-          id,
-          updates.name || oldCompany?.name,
-          id
-        );
-      }
-
+      await this.updateCompanyOrThrow(id, updates, skipAuditLog);
       return true;
     } catch (error) {
       console.error('Erro ao actualizar empresa:', error);
       return false;
+    }
+  }
+
+  /** Igual a updateCompany, mas propaga o erro para o chamador mostrar o motivo. */
+  async updateCompanyOrThrow(id: string, updates: Partial<Company>, skipAuditLog = false): Promise<void> {
+    const oldCompany = this.companies().find(c => c.id === id);
+    const { error } = await this.supabase.db
+      .from('companies')
+      .update(updates)
+      .eq('id', id);
+
+    if (error) throw error;
+
+    this.companies.update(companies =>
+      companies.map(c => c.id === id ? { ...c, ...updates } : c)
+    );
+
+    if (this.activeCompany()?.id === id) {
+      this.activeCompany.update(c => c ? { ...c, ...updates } : null);
+    }
+
+    if (!skipAuditLog) {
+      await this.auditLogService.log(
+        'Atualizou Configurações da Empresa',
+        'settings',
+        { updates, old: oldCompany ? { name: oldCompany.name, nuit: oldCompany.nuit } : null },
+        id,
+        updates.name || oldCompany?.name,
+        id
+      );
     }
   }
 
@@ -248,7 +265,7 @@ export class CompanyService {
       return { success: true };
     } catch (error: any) {
       console.error('Erro ao deletar empresa:', error);
-      return { success: false, error: error.message || 'Erro ao eliminar empresa' };
+      return { success: false, error: friendlyErrorMessage(error, 'Não foi possível eliminar a empresa.') };
     }
   }
 

@@ -1,4 +1,5 @@
 import { Component, OnInit, signal, computed, Inject } from '@angular/core';
+import { friendlyErrorMessage } from '../../core/utils/error-message';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -190,7 +191,7 @@ export class ProductDialogComponent implements OnInit {
           );
           this.dialogRef.close();
         } else {
-          this.snackBar.open('Erro ao actualizar', 'Fechar', { duration: 3000 });
+          this.snackBar.open(this.productService.lastError || 'Não foi possível actualizar o produto.', 'Fechar', { duration: 6000 });
         }
       } else {
         const product = await this.productService.createProduct(formData);
@@ -217,7 +218,7 @@ export class ProductDialogComponent implements OnInit {
         });
       } else {
         console.error('Erro ao guardar produto:', error);
-        this.snackBar.open('Erro ao guardar. Verifique os dados.', 'Fechar', { duration: 4000 });
+        this.snackBar.open(friendlyErrorMessage(error, 'Não foi possível guardar o produto.'), 'Fechar', { duration: 8000 });
       }
     } finally {
       this.saving.set(false);
@@ -402,7 +403,7 @@ export class ProductsComponent implements OnInit {
         { duration: 3000 }
       );
     } else {
-      this.snackBar.open('Erro ao alterar estado do produto', 'Fechar', { duration: 3000 });
+      this.snackBar.open(this.productService.lastError || 'Não foi possível alterar o estado do produto.', 'Fechar', { duration: 6000 });
     }
   }
 
@@ -473,68 +474,173 @@ export class ProductsComponent implements OnInit {
     if (!file) return;
 
     try {
-      const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+      const workbook = await this.readImportWorkbook(file);
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
-      const existing = new Set(this.productService.products().map(p => `${p.type}:${p.name.trim().toLowerCase()}`));
-      const seen = new Set<string>();
+      const existingProducts = this.productService.products();
+      const existing = new Set(existingProducts.map(p => `${p.type}:${p.name.trim().toLowerCase()}`));
+      const existingCodes = new Set(existingProducts.map(p => p.code?.trim()).filter((c): c is string => !!c));
+      const existingBarcodes = new Set(existingProducts.map(p => p.barcode?.trim()).filter((c): c is string => !!c));
+      const seen = new Map<string, number>();
+      const seenCodes = new Map<string, number>();
+      const seenBarcodes = new Map<string, number>();
       const products: Array<{ name: string; type: 'produto' | 'servico'; code?: string; barcode?: string; description?: string; price: number; unit?: string; stock?: number; is_active: boolean }> = [];
       const invalidRows: string[] = [];
 
       rows.forEach((row, index) => {
+        // Ignore completely empty rows (e.g. trailing lines in a CSV)
+        if (Object.values(row).every(v => String(v ?? '').trim() === '')) return;
+
         const get = (...names: string[]) => {
-          const found = Object.entries(row).find(([key]) => names.includes(key.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()));
-          return String(found?.[1] ?? '').trim();
+          const found = Object.entries(row).find(([key]) => names.includes(this.normalizeImportText(key)));
+          return this.repairMojibake(String(found?.[1] ?? '')).trim();
         };
+        const rowNumber = index + 2;
         const name = get('nome', 'name');
         const code = get('codigo', 'code');
-        const barcode = get('codigo de barras', 'codigodebarras', 'barcode', 'bar_code');
-        const typeValue = get('tipo', 'type').toLowerCase();
-        const type = ['produto', 'product'].includes(typeValue) ? 'produto' : ['servico', 'service'].includes(typeValue) ? 'servico' : null;
-        const price = Number(get('preco', 'price').replace(',', '.'));
+        const barcode = get('codigo de barras', 'codigodebarras', 'codigo barras', 'barcode', 'bar_code');
+        const typeRaw = get('tipo', 'type');
+        const type = this.parseImportType(typeRaw);
+        const priceText = get('preco', 'price', 'preco unitario');
+        const price = this.parseImportNumber(priceText);
         const stockText = get('stock', 'quantidade');
-        const stock = stockText === '' ? 0 : Number(stockText.replace(',', '.'));
+        const stock = stockText === '' ? 0 : this.parseImportNumber(stockText);
+
+        const errors: string[] = [];
+        if (!name) errors.push('Nome em falta');
+        if (!typeRaw) errors.push('Tipo em falta (use Produto ou Serviço)');
+        else if (!type) errors.push(`Tipo inválido '${typeRaw}' (use Produto ou Serviço)`);
+        if (!priceText) errors.push('Preço em falta');
+        else if (price === null || price < 0) errors.push(`Preço inválido '${priceText}'`);
+        if (type === 'produto' && (stock === null || stock < 0)) errors.push(`Stock inválido '${stockText}' (deve ser zero ou positivo)`);
+
         const key = type ? `${type}:${name.toLowerCase()}` : '';
-        const rowNumber = index + 2;
-
-        if (!name || !type || !Number.isFinite(price) || price < 0) {
-          invalidRows.push(`linha ${rowNumber}: Nome, Tipo e Preço válido são obrigatórios`);
-          return;
+        if (name && type) {
+          if (existing.has(key)) errors.push(`já existe um ${type === 'produto' ? 'produto' : 'serviço'} com o nome '${name}'`);
+          else if (seen.has(key)) errors.push(`nome '${name}' repetido (igual à linha ${seen.get(key)})`);
         }
-        if (type === 'produto' && (!Number.isFinite(stock) || stock < 0)) {
-          invalidRows.push(`linha ${rowNumber}: Stock não pode ser negativo`);
-          return;
+        if (code) {
+          if (existingCodes.has(code)) errors.push(`já existe um produto ou serviço com o código '${code}'`);
+          else if (seenCodes.has(code)) errors.push(`código '${code}' repetido (igual à linha ${seenCodes.get(code)})`);
         }
-        if (existing.has(key) || seen.has(key)) {
-          invalidRows.push(`linha ${rowNumber}: produto ou serviço duplicado`);
-          return;
+        if (barcode) {
+          if (existingBarcodes.has(barcode)) errors.push(`já existe um produto ou serviço com o código de barras '${barcode}'`);
+          else if (seenBarcodes.has(barcode)) errors.push(`código de barras '${barcode}' repetido (igual à linha ${seenBarcodes.get(barcode)})`);
         }
 
-        seen.add(key);
-        const status = get('estado', 'status').toLowerCase();
+        if (errors.length || !type || price === null) {
+          invalidRows.push(`linha ${rowNumber}: ${errors.join('; ')}`);
+          return;
+        }
+
+        seen.set(key, rowNumber);
+        if (code) seenCodes.set(code, rowNumber);
+        if (barcode) seenBarcodes.set(barcode, rowNumber);
+        const status = this.normalizeImportText(get('estado', 'status'));
         products.push({
-          name, type, code: code || undefined, barcode: barcode || undefined, price, stock: type === 'produto' ? stock : undefined,
+          name, type, code: code || undefined, barcode: barcode || undefined, price,
+          stock: type === 'produto' ? (stock ?? 0) : undefined,
           description: get('descricao', 'description') || undefined,
           unit: get('unidade', 'unit') || undefined,
-          is_active: !['inactivo', 'inativo', 'false', '0'].includes(status)
+          is_active: !['inactivo', 'inativo', 'inactive', 'false', '0', 'nao'].includes(status)
         });
       });
 
+      if (invalidRows.length) console.warn('Linhas inválidas na importação de produtos:', invalidRows);
+
       if (!products.length) {
-        this.snackBar.open(`Nenhum item válido encontrado. ${invalidRows.slice(0, 2).join('; ')}`, 'Fechar', { duration: 7000 });
+        const details = invalidRows.length ? ` ${this.summarizeInvalidRows(invalidRows)}` : '';
+        this.snackBar.open(`Nenhum item válido encontrado.${details}`, 'Fechar', { duration: 10000 });
         return;
       }
       const result = await this.productService.importProducts(products);
       if (result.error) {
-        this.snackBar.open(`Erro ao importar: ${result.error}`, 'Fechar', { duration: 6000 });
+        this.snackBar.open(`Erro ao importar: ${result.error}`, 'Fechar', { duration: 8000 });
         return;
       }
-      const skipped = invalidRows.length ? ` ${invalidRows.length} linha(s) inválida(s) ignorada(s).` : '';
-      this.snackBar.open(`${result.imported} item(ns) importado(s) com sucesso.${skipped}`, 'Fechar', { duration: 6000 });
+      const skipped = invalidRows.length
+        ? ` ${invalidRows.length} linha(s) ignorada(s): ${this.summarizeInvalidRows(invalidRows)}`
+        : '';
+      this.snackBar.open(`${result.imported} item(ns) importado(s) com sucesso.${skipped}`, 'Fechar', { duration: invalidRows.length ? 12000 : 6000 });
     } catch (error) {
       console.error('Erro ao ler ficheiro de produtos:', error);
       this.snackBar.open('Não foi possível ler o ficheiro. Use um CSV ou Excel válido.', 'Fechar', { duration: 5000 });
     }
+  }
+
+  /** CSV files are decoded explicitly (UTF-8, falling back to Windows-1252) so accents survive. */
+  private async readImportWorkbook(file: File): Promise<XLSX.WorkBook> {
+    const buffer = await file.arrayBuffer();
+    if (!/\.(csv|txt)$/i.test(file.name)) {
+      return XLSX.read(buffer, { type: 'array' });
+    }
+    let text: string;
+    try {
+      text = new TextDecoder('utf-8', { fatal: true }).decode(buffer);
+    } catch {
+      text = new TextDecoder('windows-1252').decode(buffer);
+    }
+    return XLSX.read(text.replace(/^﻿/, ''), { type: 'string' });
+  }
+
+  /** Fixes UTF-8 text that was decoded as Latin-1 (e.g. "ServiÃ§o" -> "Serviço"). */
+  private repairMojibake(value: string): string {
+    if (!/[ÃÂ]/.test(value)) return value;
+    try {
+      const bytes = Uint8Array.from(value, ch => {
+        const code = ch.charCodeAt(0);
+        if (code > 255) throw new Error('not latin1');
+        return code;
+      });
+      return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    } catch {
+      return value;
+    }
+  }
+
+  private normalizeImportText(value: string): string {
+    return this.repairMojibake(value).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  }
+
+  private parseImportType(value: string): 'produto' | 'servico' | null {
+    const normalized = this.normalizeImportText(value);
+    if (!normalized) return null;
+    if (['produto', 'produtos', 'product', 'products'].includes(normalized) || normalized.startsWith('prod')) return 'produto';
+    if (['servico', 'servicos', 'service', 'services'].includes(normalized) || normalized.startsWith('serv')) return 'servico';
+    return null;
+  }
+
+  /**
+   * Parses numbers written in Portuguese or English notation:
+   * "1500", "1500.50", "1500,50", "1.500,50", "1,500.50", "1 500,50", "1500 MZN".
+   * Returns null for empty or invalid values.
+   */
+  private parseImportNumber(value: string): number | null {
+    let text = value.replace(/[\s  ]/g, '').replace(/(mzn|mt|meticais)$/i, '');
+    if (!text || !/^-?[\d.,]+$/.test(text)) return null;
+
+    const lastComma = text.lastIndexOf(',');
+    const lastDot = text.lastIndexOf('.');
+    if (lastComma > -1 && lastDot > -1) {
+      // Both separators present: the last one is the decimal separator
+      const decimal = lastComma > lastDot ? ',' : '.';
+      const thousands = decimal === ',' ? '.' : ',';
+      text = text.split(thousands).join('').replace(decimal, '.');
+    } else if (lastComma > -1 || lastDot > -1) {
+      const separator = lastComma > -1 ? ',' : '.';
+      const parts = text.split(separator);
+      // A repeated separator ("1.500.000") is a thousands separator; a single one is decimal
+      text = parts.length > 2 ? parts.join('') : parts.join('.');
+    }
+
+    if (!/^-?\d+(\.\d+)?$/.test(text)) return null;
+    const result = Number(text);
+    return Number.isFinite(result) ? result : null;
+  }
+
+  private summarizeInvalidRows(invalidRows: string[]): string {
+    const shown = invalidRows.slice(0, 3).join(' | ');
+    return invalidRows.length > 3 ? `${shown} | e mais ${invalidRows.length - 3}…` : shown;
   }
 
   formatCurrency(value: number): string {

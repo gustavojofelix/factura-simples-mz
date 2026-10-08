@@ -54,6 +54,34 @@
     </mat-card>
   </div>
 
+  @if (reminders().length > 0) {
+    <mat-card class="mb-6">
+      <mat-card-content>
+        <div class="flex items-center gap-2 mb-3">
+          <mat-icon class="text-gray-600">notifications_active</mat-icon>
+          <h2 class="text-lg font-semibold text-gray-900">Obrigações fiscais</h2>
+        </div>
+        <div class="space-y-2">
+          @for (r of reminders(); track r.id) {
+            <div class="flex items-start gap-3 p-3 rounded-md border {{ getReminderStyle(r.kind).classes }}">
+              <mat-icon class="shrink-0">{{ getReminderStyle(r.kind).icon }}</mat-icon>
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-gray-900">{{ r.title }}</p>
+                <p class="text-sm text-gray-700 mt-1">{{ r.body }}</p>
+                <p class="text-xs text-gray-500 mt-1">
+                  Prazo: {{ formatDate(r.due_date) }} · Emitido a {{ formatDate(r.created_at) }}
+                  @if (r.emailed_at) {
+                    · Enviado por email
+                  }
+                </p>
+              </div>
+            </div>
+          }
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+
   <mat-tab-group class="segmented-tabs mb-6" [(selectedIndex)]="selectedTabIndex">
     <mat-tab label="Calculadora">
       <div class="py-6">

@@ -13,7 +13,7 @@
     </div>
 
     <mat-tab-group [(selectedIndex)]="selectedTab" class="settings-tabs bg-white rounded-2xl shadow-sm">
-      <mat-tab label="Sistema">
+      <mat-tab label="Sistema" [disabled]="locked()">
         <div class="p-6">
           <h2 class="text-xl font-semibold mb-4">Configurações do Sistema</h2>
 
@@ -155,6 +155,18 @@
                     </div>
                   </div>
 
+                  @if (subscriptionService.isExpired()) {
+                    <div class="bg-red-50 border border-red-200 rounded p-4 mb-4">
+                      <div class="flex items-center gap-2">
+                        <mat-icon class="text-red-600">lock</mat-icon>
+                        <p class="text-red-800 font-semibold">{{ sub.status === 'trialing' ? 'Período de teste expirado' : 'Subscrição expirada' }}</p>
+                      </div>
+                      <p class="text-red-600 mt-2">O sistema está bloqueado. Escolha um plano abaixo para voltar a usar todas as funcionalidades.</p>
+                    </div>
+                  } @else {
+                    <p class="text-sm text-slate-600 mb-4">Restam <strong>{{ subscriptionService.getDaysRemaining() }}</strong> dia(s) no período actual.</p>
+                  }
+
                   @if (sub.status === 'past_due') {
                     <div class="bg-red-50 border border-red-200 rounded p-4 mb-4">
                       <div class="flex items-center gap-2">
@@ -184,7 +196,7 @@
                   [class]="selectedCycle() === 'monthly' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
                   class="px-3 py-1.5 rounded-lg transition-all"
                 >
-                  Mensal (1 Mês)
+                  Mensal (30 dias)
                 </button>
                 <button
                   type="button"
@@ -192,7 +204,7 @@
                   [class]="selectedCycle() === 'quarterly' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
                   class="px-3 py-1.5 rounded-lg transition-all"
                 >
-                  3 Meses
+                  90 dias
                 </button>
                 <button
                   type="button"
@@ -200,7 +212,7 @@
                   [class]="selectedCycle() === 'semiannual' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
                   class="px-3 py-1.5 rounded-lg transition-all"
                 >
-                  6 Meses
+                  180 dias
                 </button>
                 <button
                   type="button"
@@ -208,7 +220,7 @@
                   [class]="selectedCycle() === 'yearly' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
                   class="px-3 py-1.5 rounded-lg transition-all"
                 >
-                  Anual (1 Ano)
+                  Anual (360 dias)
                 </button>
               </div>
             </div>
@@ -298,7 +310,7 @@
         </div>
       </mat-tab>
 
-      <mat-tab label="Empresas">
+      <mat-tab label="Empresas" [disabled]="locked()">
         <div class="p-6">
           <div class="flex justify-between items-center mb-6">
             <div>
@@ -374,7 +386,7 @@
         </div>
       </mat-tab>
 
-      <mat-tab label="Utilizadores">
+      <mat-tab label="Utilizadores" [disabled]="locked()">
         <div class="p-6">
           <div class="flex justify-between items-center mb-6">
             <div>
@@ -417,9 +429,13 @@
                     <th mat-header-cell *matHeaderCellDef class="font-semibold">Ações</th>
                     <td mat-cell *matCellDef="let user">
                       <div class="flex gap-2">
-                        <button mat-icon-button matTooltip="Gerir Acesso" (click)="openUserDialog(user)">
-                          <mat-icon>manage_accounts</mat-icon>
-                        </button>
+                        @if (canManageUser(user)) {
+                          <button mat-icon-button matTooltip="Gerir Acesso" (click)="openUserDialog(user)">
+                            <mat-icon>manage_accounts</mat-icon>
+                          </button>
+                        } @else if (user.user_id === currentUserId()) {
+                          <span class="text-xs text-gray-500">Você</span>
+                        }
                       </div>
                     </td>
                   </ng-container>
@@ -444,7 +460,7 @@
         </div>
       </mat-tab>
 
-      <mat-tab label="Documentos">
+      <mat-tab label="Documentos" [disabled]="locked()">
         <div class="p-6">
           <h2 class="text-xl font-semibold mb-1">Personalização de Documentos</h2>
           <p class="text-gray-600 text-sm mb-4">

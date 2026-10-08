@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { friendlyErrorMessage } from '../utils/error-message';
 import { SupabaseService } from './supabase.service';
 import { CompanyService } from './company.service';
 import { AuditLogService } from './audit-log.service';
@@ -34,6 +35,9 @@ export interface ProductImportData {
   providedIn: 'root'
 })
 export class ProductService {
+  /** Motivo (já traduzido) da última operação de escrita falhada. */
+  lastError: string | null = null;
+
   products = signal<Product[]>([]);
   isLoading = signal(false);
 
@@ -130,6 +134,7 @@ export class ProductService {
       return true;
     } catch (error) {
       console.error('Erro ao actualizar produto:', error);
+      this.lastError = friendlyErrorMessage(error, 'Não foi possível actualizar o produto.');
       return false;
     }
   }
@@ -170,7 +175,7 @@ export class ProductService {
       return { success: true };
     } catch (error: any) {
       console.error('Erro ao eliminar produto:', error);
-      return { success: false, error: 'Erro inesperado ao eliminar produto' };
+      return { success: false, error: friendlyErrorMessage(error, 'Não foi possível eliminar o produto.') };
     }
   }
 
@@ -256,7 +261,12 @@ export class ProductService {
       return { imported: data?.length || 0 };
     } catch (error: any) {
       console.error('Erro ao importar produtos:', error);
-      return { imported: 0, error: error?.message || 'Não foi possível importar os produtos.' };
+      if (error?.code === '23505') {
+        const detail = `${error?.message || ''} ${error?.details || ''}`;
+        const field = detail.includes('barcode') ? 'código de barras' : detail.includes('code') ? 'código' : 'identificador';
+        return { imported: 0, error: `Existe um ${field} duplicado (já usado por outro produto ou serviço). Nenhum item foi importado.` };
+      }
+      return { imported: 0, error: friendlyErrorMessage(error, 'Não foi possível importar os produtos.') };
     }
   }
 

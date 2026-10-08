@@ -1,4 +1,5 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
+import { friendlyErrorMessage } from '../../core/utils/error-message';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -245,7 +246,7 @@ export class ClientDialogComponent {
       };
       reader.readAsDataURL(file);
     } catch (error) {
-      this.snackBar.open('Erro ao carregar documento', 'Fechar', { duration: 3000 });
+      this.snackBar.open(friendlyErrorMessage(error, 'Não foi possível carregar o documento.'), 'Fechar', { duration: 6000 });
     } finally {
       this.uploading.set(false);
     }
@@ -284,7 +285,7 @@ export class ClientDialogComponent {
           this.snackBar.open('Cliente actualizado com sucesso!', 'Fechar', { duration: 3000 });
           this.dialog.closeAll();
         } else {
-          this.snackBar.open('Erro ao actualizar cliente', 'Fechar', { duration: 3000 });
+          this.snackBar.open(this.clientService.lastError || 'Não foi possível actualizar o cliente.', 'Fechar', { duration: 6000 });
         }
       } else {
         const client = await this.clientService.createClient(formData);
@@ -307,7 +308,7 @@ export class ClientDialogComponent {
         });
       } else {
         console.error('Erro ao guardar cliente:', error);
-        this.snackBar.open('Erro ao guardar. Verifique os dados.', 'Fechar', { duration: 4000 });
+        this.snackBar.open(friendlyErrorMessage(error, 'Não foi possível guardar o cliente.'), 'Fechar', { duration: 8000 });
       }
     } finally {
       this.saving.set(false);
@@ -574,7 +575,7 @@ export class ClientsComponent implements OnInit {
         { duration: 3000 }
       );
     } else {
-      this.snackBar.open('Erro ao alterar estado do cliente', 'Fechar', { duration: 3000 });
+      this.snackBar.open(this.clientService.lastError || 'Não foi possível alterar o estado do cliente.', 'Fechar', { duration: 6000 });
     }
   }
 

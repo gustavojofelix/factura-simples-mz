@@ -2,6 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { AuthService } from './auth.service';
 import { AuditLogService } from './audit-log.service';
+import { friendlyErrorMessage, friendlyFunctionError } from '../utils/error-message';
 
 export interface CompanyUser {
   id: string;
@@ -14,6 +15,12 @@ export interface CompanyUser {
   updated_at: string;
   user_email?: string;
   company_name?: string;
+}
+
+export interface UserAccessResult {
+  ok: boolean;
+  error?: string;
+  warning?: string;
 }
 
 export interface UserWithCompanies {
@@ -143,85 +150,84 @@ export class UserManagementService {
     this.companyUsersSignal.set(usersWithEmails);
   }
 
+  /**
+   * Dá acesso a uma empresa. Para utilizadores sem acesso a essa empresa envia
+   * convite (a Edge Function cria a conta se necessário); para quem já tem
+   * acesso apenas actualiza a função, sem reenviar emails.
+   */
   async addUserToCompany(
-    rawEmail: string, 
-    companyId: string, 
+    rawEmail: string,
+    companyId: string,
     role: CompanyUser['role'],
     fullName?: string,
     phone?: string,
     companyName?: string,
     inviterName?: string,
     roleName?: string
-  ): Promise<boolean> {
+  ): Promise<UserAccessResult> {
     try {
       const email = (rawEmail || '').trim().toLowerCase();
-      if (!email) return false;
+      if (!email) return { ok: false, error: 'Indique o email do utilizador.' };
+      if ((role as string) === 'owner') {
+        return { ok: false, error: 'Não é possível atribuir a função de proprietário.' };
+      }
 
-      let targetUserId: string | null = null;
+      const currentUser = this.authService.currentUser();
+      if (currentUser?.email?.toLowerCase() === email) {
+        return { ok: false, error: 'Não pode alterar o seu próprio acesso.' };
+      }
 
-      // 1. Try RPC function to find user ID by email
-      const { data: rpcUserId, error: rpcError } = await this.supabase.client
+      // 1. O utilizador já existe e já tem acesso a esta empresa?
+      const { data: rpcUserId } = await this.supabase.client
         .rpc('get_user_id_by_email', { email_query: email });
+      let targetUserId: string | null = rpcUserId || null;
 
-      if (rpcUserId) {
-        targetUserId = rpcUserId;
-      } else {
-        // Fallback: check profiles table by email
-        const { data: profile } = await this.supabase.client
-          .from('profiles')
-          .select('id')
-          .ilike('email', email)
+      if (targetUserId) {
+        const { data: existing, error: existingError } = await this.supabase.client
+          .from('company_users')
+          .select('id, role, is_active')
+          .eq('company_id', companyId)
+          .eq('user_id', targetUserId)
           .maybeSingle();
+        if (existingError) throw existingError;
 
-        if (profile?.id) {
-          targetUserId = profile.id;
+        if (existing) {
+          if (existing.role === 'owner') {
+            return { ok: false, error: 'Este utilizador é o proprietário da empresa; a sua função não pode ser alterada.' };
+          }
+          if (existing.role !== role || !existing.is_active) {
+            const { data: updated, error: updateError } = await this.supabase.client
+              .from('company_users')
+              .update({ role, is_active: true, updated_at: new Date().toISOString() })
+              .eq('id', existing.id)
+              .select('id');
+            if (updateError) throw updateError;
+            if (!updated?.length) {
+              return { ok: false, error: 'Não tem permissão para alterar utilizadores desta empresa. Apenas o proprietário o pode fazer.' };
+            }
+            await this.auditLogService.log(
+              'Atualizou Papel do Utilizador', 'users',
+              { user_email: email, old_role: existing.role, new_role: role },
+              targetUserId, email, companyId
+            );
+          }
+          return { ok: true };
         }
       }
-      
-      // 2. Invoke invite-user Edge Function to create auth user (if new) and send confirmation/invite email
-      const { data: inviteData } = await this.supabase.client.functions.invoke('invite-user', {
-        body: { email, fullName, phone, companyName, role: roleName || role, inviterName }
-      }).catch(err => {
-        console.warn('Error invoking invite-user Edge Function:', err);
-        return { data: null };
+
+      // 2. Novo acesso: enviar convite (cria a conta, se ainda não existir).
+      const { data: inviteData, error: inviteError } = await this.supabase.client.functions.invoke('invite-user', {
+        body: { email, fullName, phone, companyId, companyName, role: roleName || role, inviterName }
       });
-
-      if (!targetUserId && inviteData?.user?.id) {
-        targetUserId = inviteData.user.id;
+      if (inviteError) {
+        return { ok: false, error: await friendlyFunctionError(inviteError, 'Não foi possível enviar o convite.') };
+      }
+      targetUserId = inviteData?.user?.id || targetUserId;
+      if (!targetUserId) {
+        return { ok: false, error: 'Não foi possível criar a conta do utilizador.' };
       }
 
-      // 3. Sync extra profile data if user exists
-      if (fullName && targetUserId) {
-        await this.supabase.client
-          .from('profiles')
-          .upsert({
-            id: targetUserId,
-            full_name: fullName,
-            email: email,
-            phone: phone
-          });
-      }
-
-      if (!targetUserId) return false;
-
-      const { data: existingUser } = await this.supabase.client
-        .from('company_users')
-        .select('*')
-        .eq('company_id', companyId)
-        .eq('user_id', targetUserId)
-        .maybeSingle();
-
-      if (existingUser) {
-        // If already exists, update role and ensure active
-        if (existingUser.role !== role || !existingUser.is_active) {
-          await this.supabase.client
-            .from('company_users')
-            .update({ role, is_active: true, updated_at: new Date().toISOString() })
-            .eq('id', existingUser.id);
-        }
-        return true;
-      }
-
+      // 3. Criar o acesso
       const { error } = await this.supabase.client
         .from('company_users')
         .insert({
@@ -230,11 +236,7 @@ export class UserManagementService {
           role,
           is_active: true
         });
-
-      if (error) {
-        console.error('Error adding user:', error);
-        return false;
-      }
+      if (error) throw error;
 
       await this.auditLogService.log(
         'Adicionou Utilizador à Empresa',
@@ -246,10 +248,10 @@ export class UserManagementService {
       );
 
       await this.loadCompanyUsers(companyId);
-      return true;
+      return { ok: true, warning: inviteData?.warning };
     } catch (error) {
       console.error('Error adding user to company:', error);
-      return false;
+      return { ok: false, error: friendlyErrorMessage(error, 'Não foi possível adicionar o utilizador.') };
     }
   }
 
@@ -315,18 +317,24 @@ export class UserManagementService {
     }
   }
 
-  async removeUserFromCompany(userId: string, companyId: string): Promise<boolean> {
+  async removeUserFromCompany(userId: string, companyId: string): Promise<UserAccessResult> {
     try {
+      if (userId === this.authService.currentUser()?.id) {
+        return { ok: false, error: 'Não pode remover o seu próprio acesso.' };
+      }
       const user = this.companyUsersSignal().find(u => u.user_id === userId);
-      const { error } = await this.supabase.client
+      const { data, error } = await this.supabase.client
         .from('company_users')
         .delete()
         .eq('user_id', userId)
-        .eq('company_id', companyId);
+        .eq('company_id', companyId)
+        .neq('role', 'owner')
+        .select('id');
 
-      if (error) {
-        console.error('Error removing user:', error);
-        return false;
+      if (error) throw error;
+      // Com RLS, um DELETE sem permissão não dá erro: apenas não apaga nada.
+      if (!data?.length) {
+        return { ok: false, error: 'Não foi possível remover o acesso. Apenas o proprietário da empresa pode remover utilizadores, e o proprietário não pode ser removido.' };
       }
 
       await this.auditLogService.log(
@@ -339,10 +347,10 @@ export class UserManagementService {
       );
 
       await this.loadCompanyUsers(companyId);
-      return true;
+      return { ok: true };
     } catch (error) {
       console.error('Error removing user:', error);
-      return false;
+      return { ok: false, error: friendlyErrorMessage(error, 'Não foi possível remover o acesso.') };
     }
   }
 

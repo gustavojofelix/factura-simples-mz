@@ -552,7 +552,7 @@ async function sendDocumentEmail(options: {
         "Faltam as variáveis SMTP_HOST, SMTP_USER ou SMTP_PASS na configuração da função.",
       );
       return jsonError(
-        "O serviço de e-mail não está configurado.",
+        "O envio de emails está temporariamente indisponível (servidor de e-mail da plataforma não configurado). Descarregue o PDF para o enviar manualmente e contacte o suporte ISPC Fácil.",
         "SMTP_CONFIG_MISSING",
         503,
       );

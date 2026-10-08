@@ -1,4 +1,6 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { SUBSCRIPTION_TAB_INDEX } from '../../core/guards/subscription.guard';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatTabsModule } from '@angular/material/tabs';
@@ -25,6 +27,7 @@ import { PaymentDialogComponent } from '../../shared/components/payment-dialog/p
 import { ActivityService } from '../../core/services/activity.service';
 import { SubscriptionLimitDialogComponent } from '../../shared/components/subscription-limit-dialog.component';
 import { DocumentSettingsTabComponent } from './document-settings-tab/document-settings-tab.component';
+import { friendlyErrorMessage } from '../../core/utils/error-message';
 
 @Component({
   selector: 'app-settings',
@@ -58,9 +61,17 @@ export class SettingsComponent implements OnInit {
 
   systemForm!: FormGroup;
   selectedCompanyId = signal<string | null>(null);
-  subscription = signal<any>(null);
+  /** Lê directamente do serviço: actualiza sozinho quando o plano é activado (polling/webhook). */
+  subscription = this.subscriptionService.subscription;
 
   selectedTab = signal(0);
+
+  /** Subscrição da empresa activa expirada: só o separador de subscrição fica disponível. */
+  locked = computed(() => {
+    const active = this.companyService.activeCompany();
+    const sub = this.subscription();
+    return !!active && sub?.company_id === active.id && this.subscriptionService.isExpired();
+  });
   loading = signal(false);
   selectedCycle = signal<'monthly' | 'quarterly' | 'semiannual' | 'yearly'>('monthly');
 
@@ -103,8 +114,15 @@ export class SettingsComponent implements OnInit {
     private authService: AuthService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private activityService: ActivityService
-  ) {}
+    private activityService: ActivityService,
+    private route: ActivatedRoute
+  ) {
+    effect(() => {
+      if (this.locked() && this.selectedTab() !== SUBSCRIPTION_TAB_INDEX) {
+        this.selectedTab.set(SUBSCRIPTION_TAB_INDEX);
+      }
+    }, { allowSignalWrites: true });
+  }
 
   async ngOnInit() {
     const user = this.authService.currentUser();
@@ -116,6 +134,9 @@ export class SettingsComponent implements OnInit {
     const navState = history.state;
     if (navState && typeof navState['tab'] === 'number') {
       this.selectedTab.set(navState['tab']);
+    }
+    if (this.route.snapshot.queryParamMap.get('tab') === 'subscricao') {
+      this.selectedTab.set(SUBSCRIPTION_TAB_INDEX);
     }
 
     this.initializeForms();
@@ -142,7 +163,8 @@ export class SettingsComponent implements OnInit {
     ]);
     const list = this.companies();
     if (list.length > 0 && !this.selectedCompanyId()) {
-      await this.loadCompanySettings(list[0].id);
+      const active = this.companyService.activeCompany();
+      await this.loadCompanySettings(active && list.some(c => c.id === active.id) ? active.id : list[0].id);
     }
     this.loading.set(false);
   }
@@ -155,9 +177,6 @@ export class SettingsComponent implements OnInit {
       this.subscriptionService.loadSubscription(companyId),
       this.userManagementService.loadSystemSettings(companyId)
     ]);
-
-    const sub = this.subscriptionService.subscription();
-    this.subscription.set(sub);
 
     const settings = this.userManagementService.settings();
     if (settings) {
@@ -202,49 +221,55 @@ export class SettingsComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe(async (result) => {
-      if (result) {
-        const { companyActivities, ...companyData } = result;
+      if (!result) return;
+      const { companyActivities, ...companyData } = result;
+      try {
         if (company) {
-          const success = await this.companyService.updateCompany(company.id, companyData);
-          if (success) {
-            await this.activityService.saveCompanyActivities(company.id, companyActivities || []);
-            this.snackBar.open('Empresa atualizada com sucesso', 'Fechar', { duration: 3000 });
-            await this.companyService.loadCompanies();
-          }
+          await this.companyService.updateCompanyOrThrow(company.id, companyData);
+          await this.activityService.saveCompanyActivities(company.id, companyActivities || []);
+          this.snackBar.open('Empresa atualizada com sucesso', 'Fechar', { duration: 3000 });
+          await this.companyService.loadCompanies();
         } else {
-          try {
-            const newCompany = await this.companyService.createCompany(companyData);
-            if (newCompany) {
-              await this.activityService.saveCompanyActivities(newCompany.id, companyActivities || []);
-              this.snackBar.open('Empresa criada com sucesso', 'Fechar', { duration: 3000 });
-              await this.companyService.loadCompanies();
-            }
-          } catch (error: any) {
-            if (
-              error?.code === 'P0001' &&
-              error?.details === 'SUBSCRIPTION_FEATURE_DISABLED'
-            ) {
-              this.dialog.open(SubscriptionLimitDialogComponent, {
-                width: '420px',
-                panelClass: 'subscription-limit-dialog',
-                data: { errorMessage: error?.message }
-              });
-            } else {
-              console.error('Erro ao criar empresa:', error);
-              this.snackBar.open('Erro ao criar empresa. Verifique os dados.', 'Fechar', { duration: 4000 });
-            }
+          const newCompany = await this.companyService.createCompany(companyData);
+          if (newCompany) {
+            await this.activityService.saveCompanyActivities(newCompany.id, companyActivities || []);
+            this.snackBar.open('Empresa criada com sucesso', 'Fechar', { duration: 3000 });
+            await this.companyService.loadCompanies();
+          } else {
+            this.snackBar.open('A sua sessão expirou. Entre novamente para criar a empresa.', 'Fechar', { duration: 6000 });
           }
         }
+      } catch (error: any) {
+        console.error(company ? 'Erro ao actualizar empresa:' : 'Erro ao criar empresa:', error);
+        if (this.isPlanLimitError(error)) {
+          this.dialog.open(SubscriptionLimitDialogComponent, {
+            width: '420px',
+            panelClass: 'subscription-limit-dialog',
+            data: { errorMessage: error?.message }
+          });
+          return;
+        }
+        const fallback = company ? 'Não foi possível actualizar a empresa.' : 'Não foi possível criar a empresa.';
+        this.snackBar.open(friendlyErrorMessage(error, fallback), 'Fechar', { duration: 8000 });
       }
     });
+  }
+
+  /** Erros de limite/funcionalidade do plano levantados pelos triggers de subscrição. */
+  private isPlanLimitError(error: any): boolean {
+    if (error?.code !== 'P0001') return false;
+    if (['SUBSCRIPTION_FEATURE_DISABLED', 'SUBSCRIPTION_LIMIT_REACHED', 'SUBSCRIPTION_EXPIRED'].includes(error?.details)) return true;
+    return /plano|subscri/i.test(error?.message ?? '');
   }
 
   async deleteCompany(company: Company) {
     if (!confirm(`Tem certeza que deseja eliminar a empresa "${company.name}"?`)) return;
 
-    const success = await this.companyService.deleteCompany(company.id);
-    if (success) {
+    const result = await this.companyService.deleteCompany(company.id);
+    if (result.success) {
       this.snackBar.open('Empresa eliminada com sucesso', 'Fechar', { duration: 3000 });
+    } else {
+      this.snackBar.open(result.error || 'Não foi possível eliminar a empresa.', 'Fechar', { duration: 6000 });
     }
   }
 
@@ -259,70 +284,76 @@ export class SettingsComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe(async (result) => {
-      if (result) {
-        this.loading.set(true);
-        const inviter = this.authService.currentUser();
-        const inviterName = inviter?.user_metadata?.['full_name'] || inviter?.email || 'Um administrador';
+      if (!result) return;
+      this.loading.set(true);
+      const inviter = this.authService.currentUser();
+      const inviterName = inviter?.user_metadata?.['full_name'] || inviter?.email || 'Um administrador';
 
-        const newCompanies = result.companies || [];
-        const newCompanyIds = new Set(newCompanies.map((c: any) => c.company_id));
+      const newCompanies: Array<{ company_id: string; role: string }> = result.companies || [];
+      const newCompanyIds = new Set(newCompanies.map(c => c.company_id));
+      const errors: string[] = [];
+      const warnings: string[] = [];
 
-        // If editing an existing user, remove access for unselected companies
-        if (user) {
-          for (const oldComp of user.companies) {
-            if (!newCompanyIds.has(oldComp.company_id)) {
-              await this.userManagementService.removeUserFromCompany(user.user_id, oldComp.company_id);
-            }
+      // Ao editar, remover o acesso às empresas desmarcadas (só as do proprietário, nunca o próprio owner)
+      if (user) {
+        for (const oldComp of user.companies) {
+          if (oldComp.role === 'owner' || !this.companyService.isOwner(oldComp.company_id)) continue;
+          if (!newCompanyIds.has(oldComp.company_id)) {
+            const res = await this.userManagementService.removeUserFromCompany(user.user_id, oldComp.company_id);
+            if (!res.ok) errors.push(`${oldComp.company_name}: ${res.error}`);
           }
         }
+      }
 
-        // Add or update company access
-        let hasSuccess = false;
-        for (let i = 0; i < newCompanies.length; i++) {
-          const { company_id, role } = newCompanies[i];
-          const companyName = this.getCompanyName(company_id);
-          const translatedRole = this.getRoleLabel(role);
+      for (let i = 0; i < newCompanies.length; i++) {
+        const { company_id, role } = newCompanies[i];
+        const companyName = this.getCompanyName(company_id);
+        const res = await this.userManagementService.addUserToCompany(
+          result.email,
+          company_id,
+          role as any,
+          result.fullName || undefined,
+          result.phone || undefined,
+          companyName,
+          inviterName,
+          this.getRoleLabel(role)
+        );
+        if (!res.ok) errors.push(newCompanies.length > 1 ? `${companyName}: ${res.error}` : res.error!);
+        if (res.warning) warnings.push(res.warning);
+      }
 
-          const ok = await this.userManagementService.addUserToCompany(
-            result.email,
-            company_id,
-            role as any,
-            i === 0 ? result.fullName : undefined,
-            i === 0 ? result.phone : undefined,
-            companyName,
-            inviterName,
-            translatedRole
-          );
-          if (ok) hasSuccess = true;
-        }
+      this.loading.set(false);
+      await this.userManagementService.loadAllUsers();
 
-        this.loading.set(false);
-        await this.userManagementService.loadAllUsers();
-
-        if (hasSuccess || (user && newCompanies.length === 0)) {
-          this.snackBar.open(
-            user ? 'Acesso atualizado com sucesso' : 'Utilizador adicionado com sucesso',
-            'Fechar',
-            { duration: 3000 }
-          );
-        } else {
-          this.snackBar.open(
-            'Erro ao adicionar utilizador. Tente novamente.',
-            'Fechar',
-            { duration: 5000 }
-          );
-        }
+      if (errors.length) {
+        this.snackBar.open(errors.join(' | '), 'Fechar', { duration: 10000 });
+      } else if (warnings.length) {
+        this.snackBar.open(warnings[0], 'Fechar', { duration: 10000 });
+      } else {
+        this.snackBar.open(
+          user ? 'Acesso atualizado com sucesso' : `Convite enviado para ${result.email}`,
+          'Fechar',
+          { duration: 4000 }
+        );
       }
     });
+  }
+
+  /** O proprietário (e o próprio utilizador) não são geridos a partir desta lista. */
+  canManageUser(user: UserWithCompanies): boolean {
+    if (user.user_id === this.currentUserId()) return false;
+    return user.companies.some(c => c.role !== 'owner' && this.companyService.isOwner(c.company_id));
   }
 
   async removeUserFromCompany(userId: string, companyId: string) {
     if (!confirm('Tem certeza que deseja remover este acesso?')) return;
 
-    const success = await this.userManagementService.removeUserFromCompany(userId, companyId);
-    if (success) {
+    const result = await this.userManagementService.removeUserFromCompany(userId, companyId);
+    if (result.ok) {
       await this.userManagementService.loadAllUsers();
       this.snackBar.open('Acesso removido com sucesso', 'Fechar', { duration: 3000 });
+    } else {
+      this.snackBar.open(result.error || 'Não foi possível remover o acesso.', 'Fechar', { duration: 6000 });
     }
   }
 
@@ -401,10 +432,10 @@ export class SettingsComponent implements OnInit {
 
   getCycleLabel(cycle: string): string {
     const labels: Record<string, string> = {
-      monthly: 'Mensal (1 Mês)',
-      quarterly: 'Trimestral (3 Meses)',
-      semiannual: 'Semestral (6 Meses)',
-      yearly: 'Anual (1 Ano)'
+      monthly: 'Mensal (30 dias)',
+      quarterly: 'Trimestral (90 dias)',
+      semiannual: 'Semestral (180 dias)',
+      yearly: 'Anual (360 dias)'
     };
     return labels[cycle] || cycle;
   }

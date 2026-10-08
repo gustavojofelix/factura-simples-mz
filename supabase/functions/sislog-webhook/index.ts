@@ -190,23 +190,20 @@ serve(async (req) => {
     // 2. Activate or extend the subscription. A payment made while the
     // subscription is active starts after its current end date, so paid days
     // are never lost. Expired subscriptions start from today.
-    const monthsToAdd = payment.billing_cycle === "yearly"
-      ? 12
+    // Os pacotes contam em dias (1 mês = 30 dias), igual a subscription_cycle_days() no SQL.
+    const daysToAdd = payment.billing_cycle === "yearly"
+      ? 360
       : payment.billing_cycle === "semiannual"
-        ? 6
+        ? 180
         : payment.billing_cycle === "quarterly"
-          ? 3
-          : 1;
+          ? 90
+          : 30;
     const today = new Date();
     const todayStr = today.toISOString().substring(0, 10);
 
-    const addMonthsToDate = (date: Date, months: number): Date => {
+    const addDaysToDate = (date: Date, days: number): Date => {
       const result = new Date(date);
-      const originalDay = result.getUTCDate();
-      result.setUTCDate(1);
-      result.setUTCMonth(result.getUTCMonth() + months);
-      const lastDay = new Date(Date.UTC(result.getUTCFullYear(), result.getUTCMonth() + 1, 0)).getUTCDate();
-      result.setUTCDate(Math.min(originalDay, lastDay));
+      result.setUTCDate(result.getUTCDate() + days);
       return result;
     };
 
@@ -239,7 +236,7 @@ serve(async (req) => {
     const periodStart = isActivePeriod
       ? existingSubscription.start_date
       : todayStr;
-    const newEnd = addMonthsToDate(isActivePeriod ? currentEnd! : todayStart, monthsToAdd);
+    const newEnd = addDaysToDate(isActivePeriod ? currentEnd! : todayStart, daysToAdd);
     const nextBillingDateStr = newEnd.toISOString().substring(0, 10);
     const startDateStr = periodStart || todayStr;
 

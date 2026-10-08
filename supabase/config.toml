@@ -55,3 +55,11 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/ai-alerts/deno.json"
 entrypoint = "./functions/ai-alerts/index.ts"
+
+# verify_jwt = false porque só é chamada por agendador (pg_cron + pg_net ou
+# externo), autenticada pelo cabeçalho x-cron-secret validado na função.
+[functions.send-tax-reminders]
+enabled = true
+verify_jwt = false
+import_map = "./functions/send-tax-reminders/deno.json"
+entrypoint = "./functions/send-tax-reminders/index.ts"

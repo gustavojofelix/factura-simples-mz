@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit, signal } from '@angular/core';
+import { Component, Inject, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
@@ -120,14 +120,14 @@ import { UserManagementService } from '../../core/services/user-management.servi
     <mat-dialog-actions align="end">
       <button mat-button (click)="onCancel()">Cancelar</button>
       <button mat-raised-button color="primary" (click)="onSave()"
-              [disabled]="(!data.userId && form.invalid) || selectedCompanies().size === 0 || loading()">
+              [disabled]="(!data.userId && (form.invalid || selectedCompanies().size === 0)) || loading()">
         {{ data.userId ? 'Atualizar' : 'Adicionar' }}
       </button>
     </mat-dialog-actions>
   `,
   styles: [`
     mat-dialog-content {
-      min-width: 600px;
+      min-width: min(600px, 85vw);
       max-width: 700px;
     }
   `]
@@ -135,7 +135,8 @@ import { UserManagementService } from '../../core/services/user-management.servi
 export class UserCompanyDialogComponent implements OnInit {
   form: FormGroup;
   loading = signal(false);
-  companies = this.companyService.companies;
+  /** Só o proprietário pode gerir acessos (RLS de company_users), por isso só listamos as empresas dele. */
+  companies = computed(() => this.companyService.companies().filter(c => this.companyService.isOwner(c.id)));
   selectedCompanies = signal<Map<string, string>>(new Map());
 
   roles = [
@@ -165,9 +166,9 @@ export class UserCompanyDialogComponent implements OnInit {
   async ngOnInit() {
     if (this.data.userId && this.data.userCompanies) {
       const companyMap = new Map<string, string>();
-      this.data.userCompanies.forEach(uc => {
-        companyMap.set(uc.company_id, uc.role);
-      });
+      this.data.userCompanies
+        .filter(uc => uc.role !== 'owner' && this.companyService.isOwner(uc.company_id))
+        .forEach(uc => companyMap.set(uc.company_id, uc.role));
       this.selectedCompanies.set(companyMap);
     }
   }
@@ -201,8 +202,12 @@ export class UserCompanyDialogComponent implements OnInit {
   }
 
   onSave(): void {
-    if (!this.data.userId && this.form.invalid) return;
-    if (this.selectedCompanies().size === 0) return;
+    if (!this.data.userId && this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    // Ao criar é preciso pelo menos uma empresa; ao editar, nenhuma = remover todos os acessos.
+    if (!this.data.userId && this.selectedCompanies().size === 0) return;
 
     const result = {
       email: this.data.userId ? this.data.userEmail : this.form.value.email,

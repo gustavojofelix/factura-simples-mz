@@ -493,7 +493,7 @@ export class InvoiceDialogComponent implements OnInit {
         this.snackBar.open(message, 'Fechar', { duration: 3000 });
         this.dialogRef.close(result);
       } else {
-        this.snackBar.open('Erro ao guardar factura', 'Fechar', { duration: 3000 });
+        this.snackBar.open(this.invoiceService.lastError || 'Não foi possível guardar a factura.', 'Fechar', { duration: 8000 });
       }
     } finally {
       this.saving.set(false);

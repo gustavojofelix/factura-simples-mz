@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { authGuard, guestGuard } from './core/guards/auth.guard';
 import { adminGuard, adminGuestGuard } from './core/guards/admin.guard';
 import { roleGuard, REPORT_ROLES } from './core/guards/role.guard';
+import { subscriptionGuard } from './core/guards/subscription.guard';
 
 export const routes: Routes = [
   // Rotas normais para clientes (ispcfacil.co.mz)
@@ -31,6 +32,7 @@ export const routes: Routes = [
   {
     path: '',
     canActivate: [authGuard],
+    canActivateChild: [subscriptionGuard],
     loadComponent: () => import('./shared/layout/main-layout.component').then(m => m.MainLayoutComponent),
     children: [
       {

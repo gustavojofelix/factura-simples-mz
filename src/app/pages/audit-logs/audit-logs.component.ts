@@ -318,34 +318,42 @@ export class AuditLogsComponent implements OnInit {
     this.isLoading.set(true);
 
     try {
-      let query = this.supabase.db
-        .from('audit_logs')
-        .select('*')
-        .order('created_at', { ascending: false });
-
+      let compIds: string[];
       if (this.selectedCompanyId !== 'all') {
-        query = query.eq('company_id', this.selectedCompanyId);
+        compIds = [this.selectedCompanyId];
       } else {
         // Limit to only companies the user is authorized to manage
-        const compIds = this.companyService.companies().map(c => c.id);
-        if (compIds.length > 0) {
-          query = query.in('company_id', compIds);
-        } else {
+        compIds = this.companyService.companies().map(c => c.id);
+        if (compIds.length === 0) {
           this.logs.set([]);
           this.isLoading.set(false);
           return;
         }
       }
 
-      if (this.startDate) {
-        query = query.gte('created_at', `${this.startDate}T00:00:00Z`);
-      }
-      if (this.endDate) {
-        query = query.lte('created_at', `${this.endDate}T23:59:59Z`);
-      }
+      // As datas do filtro são do dia local (Maputo), não de UTC.
+      const from = this.startDate ? new Date(`${this.startDate}T00:00:00`).toISOString() : null;
+      const to = this.endDate ? new Date(`${this.endDate}T23:59:59.999`).toISOString() : null;
 
-      const { data, error } = await query;
-      if (error) throw error;
+      // O PostgREST devolve no máximo 1000 linhas por pedido: ler por páginas.
+      const PAGE = 1000;
+      const MAX_ROWS = 20000;
+      const data: any[] = [];
+      for (let offset = 0; offset < MAX_ROWS; offset += PAGE) {
+        let query = this.supabase.db
+          .from('audit_logs')
+          .select('*')
+          .in('company_id', compIds)
+          .order('created_at', { ascending: false })
+          .range(offset, offset + PAGE - 1);
+        if (from) query = query.gte('created_at', from);
+        if (to) query = query.lte('created_at', to);
+
+        const { data: page, error } = await query;
+        if (error) throw error;
+        data.push(...(page || []));
+        if (!page || page.length < PAGE) break;
+      }
 
       this.logs.set(data || []);
       this.currentPage.set(1); // Reset to first page when data loads/filters

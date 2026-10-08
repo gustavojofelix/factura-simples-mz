@@ -92,7 +92,8 @@ export const SAMPLE_COMPANY: Company = {
   bank_name: 'Banco Exemplo',
   bank_account: '000123456789',
   bank_iban: 'MZ59000100000011834194157',
-  bank_swift: 'EXMPMZMX'
+  bank_swift: 'EXMPMZMX',
+  nib: '000100000011834194157'
 } as Company;
 
 /** Extracto de exemplo, coerente com a factura e o recibo acima. */

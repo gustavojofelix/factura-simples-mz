@@ -37,3 +37,19 @@ mat-card {
 .text-orange-600 {
   color: #ea580c;
 }
+
+.border-red-200 {
+  border-color: #fecaca;
+}
+
+.border-red-300 {
+  border-color: #fca5a5;
+}
+
+.border-orange-200 {
+  border-color: #fed7aa;
+}
+
+.border-blue-200 {
+  border-color: #bfdbfe;
+}

@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit, signal } from '@angular/core';
+import { Component, Inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
@@ -227,6 +227,14 @@ export interface PaymentDialogData {
             </p>
             <p class="text-xs text-slate-500 mt-2">O plano será ativado automaticamente após a confirmação do pagamento.</p>
           </div>
+          @if (paymentFailed()) {
+            <p class="text-sm text-red-400 font-semibold">O pagamento não foi concluído (cancelado, saldo insuficiente ou tempo esgotado). Pode fechar e tentar novamente.</p>
+          } @else {
+            <div class="flex items-center gap-2 text-xs text-slate-400">
+              <mat-spinner diameter="14"></mat-spinner>
+              <span>A aguardar a confirmação do pagamento...</span>
+            </div>
+          }
           @if (referenceCode()) {
             <div class="px-4 py-2 bg-slate-800 rounded-lg border border-slate-700">
               <span class="text-xs text-slate-400">Referência: </span>
@@ -255,7 +263,7 @@ export interface PaymentDialogData {
     }
   `]
 })
-export class PaymentDialogComponent implements OnInit {
+export class PaymentDialogComponent implements OnInit, OnDestroy {
   paymentForm: FormGroup;
   selectedMethod = signal<'mpesa' | 'emola'>('mpesa');
   loading = signal(false);
@@ -263,6 +271,11 @@ export class PaymentDialogComponent implements OnInit {
   /** True after a successful PUSH has been sent – shows the "awaiting PIN" screen. */
   pushSent = signal(false);
   referenceCode = signal('');
+  paymentFailed = signal(false);
+  private pollTimer: ReturnType<typeof setTimeout> | null = null;
+  private pollStartedAt = 0;
+  private static readonly POLL_INTERVAL_MS = 4000;
+  private static readonly POLL_TIMEOUT_MS = 3 * 60 * 1000;
 
   voucherInput = '';
   validatingVoucher = signal(false);
@@ -293,6 +306,45 @@ export class PaymentDialogComponent implements OnInit {
     }
   }
 
+  ngOnDestroy() {
+    this.stopPolling();
+  }
+
+  private stopPolling() {
+    if (this.pollTimer) {
+      clearTimeout(this.pollTimer);
+      this.pollTimer = null;
+    }
+  }
+
+  /** O sislog-webhook marca o pagamento como concluído e activa o plano; aqui só esperamos por isso. */
+  private startPolling(referenceCode: string) {
+    this.stopPolling();
+    this.pollStartedAt = Date.now();
+    const tick = async () => {
+      const status = await this.subscriptionService.getSubscriptionPaymentStatus(referenceCode);
+      if (status === 'completed') {
+        this.pollTimer = null;
+        await this.subscriptionService.loadSubscription(this.data.companyId);
+        this.snackBar.open(`Pagamento confirmado! Plano ${this.data.plan.name} activado.`, 'Fechar', { duration: 5000 });
+        this.dialogRef.close(true);
+        return;
+      }
+      if (status === 'failed' || status === 'cancelled') {
+        this.pollTimer = null;
+        this.paymentFailed.set(true);
+        return;
+      }
+      if (Date.now() - this.pollStartedAt >= PaymentDialogComponent.POLL_TIMEOUT_MS) {
+        this.pollTimer = null;
+        this.paymentFailed.set(true);
+        return;
+      }
+      this.pollTimer = setTimeout(tick, PaymentDialogComponent.POLL_INTERVAL_MS);
+    };
+    this.pollTimer = setTimeout(tick, PaymentDialogComponent.POLL_INTERVAL_MS);
+  }
+
   selectMethod(method: 'mpesa' | 'emola') {
     this.selectedMethod.set(method);
   }
@@ -313,10 +365,10 @@ export class PaymentDialogComponent implements OnInit {
 
   getCycleSuffix(): string {
     switch (this.data.billingCycle) {
-      case 'quarterly': return '3 meses';
-      case 'semiannual': return '6 meses';
-      case 'yearly': return 'ano';
-      case 'monthly': default: return 'mês';
+      case 'quarterly': return '90 dias';
+      case 'semiannual': return '180 dias';
+      case 'yearly': return '360 dias';
+      case 'monthly': default: return '30 dias';
     }
   }
 
@@ -368,6 +420,7 @@ export class PaymentDialogComponent implements OnInit {
       // 1. Upsert active subscription with 0 MZN
       const success = await this.subscriptionService.upsertSubscription(companyId, {
         plan_name: this.data.plan.name,
+        plan_id: this.data.plan.id,
         billing_cycle: this.data.billingCycle,
         amount: 0,
         status: 'active'
@@ -437,10 +490,12 @@ export class PaymentDialogComponent implements OnInit {
 
       this.loading.set(false);
       // Store reference code and show the "awaiting PIN" overlay.
-      // Do NOT close with true – the plan is not yet active.
-      // The sislog-webhook will activate it after the user enters the PIN.
+      // The sislog-webhook activates the plan after the user enters the PIN;
+      // polling closes the dialog with true as soon as that happens.
       this.referenceCode.set(result.referenceCode || '');
+      this.paymentFailed.set(false);
       this.pushSent.set(true);
+      if (result.referenceCode) this.startPolling(result.referenceCode);
     } else {
       this.loading.set(false);
       this.snackBar.open(

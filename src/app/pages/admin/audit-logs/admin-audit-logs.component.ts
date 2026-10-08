@@ -358,7 +358,7 @@ export class AdminAuditLogsComponent implements OnInit {
         query = query.eq('company_id', this.selectedCompanyId);
       }
       if (this.startDate) {
-        query = query.gte('created_at', `${this.startDate}T00:00:00Z`);
+        query = query.gte('created_at', new Date(`${this.startDate}T00:00:00`).toISOString());
       }
 
       const { data, error, count } = await query;

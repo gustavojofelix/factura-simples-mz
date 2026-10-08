@@ -1,7 +1,7 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Invoice, InvoiceService } from '../../../core/services/invoice.service';
-import { Company } from '../../../core/services/company.service';
+import { Company, companyHasBankDetails } from '../../../core/services/company.service';
 import {
   DocumentBranding,
   DEFAULT_DOCUMENT_BRANDING
@@ -144,7 +144,7 @@ import { documentThemeVars } from './document-theme';
         </div>
       }
 
-      @if (branding().show_bank_details && company()?.bank_name) {
+      @if (branding().show_bank_details && hasBankDetails()) {
         <div class="doc-bank">
           <h3 class="doc-section-title">COORDENADAS BANCÁRIAS</h3>
           <div class="doc-bank__grid">
@@ -170,6 +170,24 @@ import { documentThemeVars } from './document-theme';
               <div>
                 <span class="doc-bank__label">SWIFT/BIC</span>
                 <span class="doc-bank__value">{{ company()!.bank_swift }}</span>
+              </div>
+            }
+            @if (company()!.nib) {
+              <div class="doc-bank__wide">
+                <span class="doc-bank__label">NIB</span>
+                <span class="doc-bank__value">{{ company()!.nib }}</span>
+              </div>
+            }
+            @if (company()!.mpesa_number) {
+              <div>
+                <span class="doc-bank__label">M-Pesa</span>
+                <span class="doc-bank__value">{{ company()!.mpesa_number }}</span>
+              </div>
+            }
+            @if (company()!.emola_number) {
+              <div>
+                <span class="doc-bank__label">e-Mola</span>
+                <span class="doc-bank__value">{{ company()!.emola_number }}</span>
               </div>
             }
           </div>
@@ -204,6 +222,7 @@ export class InvoiceDocumentComponent {
   private invoiceService = inject(InvoiceService);
 
   themeVars = computed(() => documentThemeVars(this.branding()));
+  hasBankDetails = computed(() => companyHasBankDetails(this.company()));
 
   isReprint = computed(() =>
     !this.preview() && (this.invoice().print_count || 0) > 1

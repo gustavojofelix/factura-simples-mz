@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { friendlyErrorMessage } from '../utils/error-message';
 import { SupabaseService } from './supabase.service';
 import { CompanyService } from './company.service';
 import { AuditLogService } from './audit-log.service';
@@ -49,6 +50,9 @@ export interface Invoice {
   providedIn: 'root'
 })
 export class InvoiceService {
+  /** Motivo (já traduzido) da última operação de escrita falhada. */
+  lastError: string | null = null;
+
   invoices = signal<Invoice[]>([]);
   isLoading = signal(false);
 
@@ -334,6 +338,7 @@ export class InvoiceService {
       return invoice;
     } catch (error) {
       console.error('Erro ao criar factura:', error);
+      this.lastError = friendlyErrorMessage(error, 'Não foi possível guardar a factura.');
       return null;
     }
   }
@@ -386,6 +391,7 @@ export class InvoiceService {
       return true;
     } catch (error) {
       console.error('Erro ao emitir factura:', error);
+      this.lastError = friendlyErrorMessage(error, 'Não foi possível emitir a factura.');
       return false;
     }
   }
@@ -478,6 +484,7 @@ export class InvoiceService {
       return updatedInvoice;
     } catch (error) {
       console.error('Erro ao actualizar factura:', error);
+      this.lastError = friendlyErrorMessage(error, 'Não foi possível actualizar a factura.');
       return null;
     }
   }
@@ -517,6 +524,7 @@ export class InvoiceService {
       return true;
     } catch (error) {
       console.error('Erro ao eliminar factura:', error);
+      this.lastError = friendlyErrorMessage(error, 'Não foi possível eliminar o rascunho.');
       return false;
     }
   }
@@ -564,6 +572,7 @@ export class InvoiceService {
       return true;
     } catch (error) {
       console.error('Erro ao anular factura:', error);
+      this.lastError = friendlyErrorMessage(error, 'Não foi possível anular a factura.');
       return false;
     }
   }
