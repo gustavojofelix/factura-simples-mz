@@ -2022,3 +2022,66 @@ section[id] {
     transform: none;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Identidade visual: logótipo real e acabamento mais sóbrio
+// ---------------------------------------------------------------------------
+
+.nav-logo-img {
+  display: block;
+  height: 46px;
+  width: auto;
+}
+
+.footer-logo-img {
+  display: block;
+  height: 64px;
+  width: auto;
+  padding: 0.5rem 0.875rem;
+  border-radius: $radius-md;
+  background: #fff;
+}
+
+// Etiquetas de secção: texto simples com um traço, em vez de "pílulas" com ícone.
+.section-badge {
+  gap: 0.625rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: $orange-600;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+
+  &::before {
+    content: '';
+    width: 1.75rem;
+    height: 2px;
+    background: currentColor;
+  }
+}
+
+// Destaques a cor sólida com sublinhado de marcador, sem texto em gradiente.
+.hero-title .hero-highlight,
+.hero-title .highlight-mz {
+  background: linear-gradient(transparent 62%, rgba(241, 108, 57, 0.22) 62%);
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  -webkit-text-fill-color: $orange-500;
+  color: $orange-500;
+}
+
+.section-title .highlight {
+  color: $orange-500;
+}
+
+.hero-proof-line {
+  margin: 0.25rem 0 0;
+  padding-left: 0.875rem;
+  border-left: 3px solid $orange-500;
+  color: $text-secondary;
+  font-size: 0.92rem;
+  font-weight: 500;
+}

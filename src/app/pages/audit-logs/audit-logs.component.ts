@@ -92,8 +92,8 @@ import { formatAuditDetails, FormattedAuditItem } from '../../core/utils/audit-f
                 <th class="px-6 py-4 w-52">Utilizador</th>
                 <th class="px-6 py-4">Acção</th>
                 <th class="px-6 py-4 w-44">Categoria</th>
-                <th class="px-6 py-4 w-40">Entidade</th>
-                <th class="px-6 py-4 w-20 text-center">Detalhes</th>
+                <th class="px-6 py-4 w-40">Detalhes</th>
+                <th class="px-6 py-4 w-20 text-center">Histórico</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 text-slate-700 text-sm">
@@ -147,7 +147,7 @@ import { formatAuditDetails, FormattedAuditItem } from '../../core/utils/audit-f
       <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
         <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <div>
-            <h3 class="text-lg font-bold text-slate-800">Detalhes da Atividade</h3>
+            <h3 class="text-lg font-bold text-slate-800">Histórico da Actividade</h3>
             <p class="text-xs text-slate-500 font-medium">{{ selectedLog.created_at | date:'dd/MM/yyyy HH:mm:ss' }}</p>
           </div>
           <button (click)="closeDetails()" class="text-slate-400 hover:text-slate-600 focus:outline-none">
@@ -184,7 +184,7 @@ import { formatAuditDetails, FormattedAuditItem } from '../../core/utils/audit-f
               <p class="font-semibold text-slate-800 mt-0.5">{{ selectedLog.action }}</p>
             </div>
             <div *ngIf="selectedLog.entity_name">
-              <span class="text-[10px] font-bold text-slate-400 uppercase">Referência da Entidade</span>
+              <span class="text-[10px] font-bold text-slate-400 uppercase">Detalhes</span>
               <p class="font-semibold text-slate-800 mt-0.5 font-mono text-xs">{{ selectedLog.entity_name }}</p>
             </div>
             <div *ngIf="selectedLog.entity_id">
@@ -450,7 +450,7 @@ export class AuditLogsComponent implements OnInit {
     const data = this.filteredLogs();
     if (data.length === 0) return;
 
-    const headers = ['Data/Hora', 'Utilizador', 'E-mail', 'Acção', 'Categoria', 'Entidade', 'ID Entidade', 'IP', 'Detalhes'];
+    const headers = ['Data/Hora', 'Utilizador', 'E-mail', 'Acção', 'Categoria', 'Detalhes', 'ID Entidade', 'IP', 'Histórico'];
 
     const rows = data.map(l => [
       `"${new Date(l.created_at).toLocaleString('pt-MZ')}"`,

@@ -3,10 +3,7 @@
     <nav class="container-xl" aria-label="Navegação principal">
       <div class="nav-inner">
         <a routerLink="/" class="nav-logo" aria-label="ISPC Fácil, página inicial">
-          <div class="logo-icon">
-            <i class="fas fa-file-invoice"></i>
-          </div>
-          <span class="logo-text">ISPC <span class="logo-accent">Fácil</span></span>
+          <img src="assets/ispc-facil-logo-wide.png" alt="ISPC Fácil" class="nav-logo-img">
         </a>
 
         <div class="nav-links" id="mobile-nav" [class.open]="mobileMenuOpen">
@@ -37,9 +34,6 @@
   </header>
 
   <section id="hero" class="hero-section">
-    <div class="hero-bg-glow hero-glow-1"></div>
-    <div class="hero-bg-glow hero-glow-2"></div>
-
     <div class="container-xl hero-grid">
       <div
         #revealItem
@@ -75,21 +69,7 @@
           <i class="fas fa-shield-halved"></i>
           {{ hero.guaranteeText }}
         </p>
-        <div class="hero-proof">
-          <div class="proof-avatars" aria-hidden="true">
-            <div class="avatar av-1">JF</div>
-            <div class="avatar av-2">AM</div>
-            <div class="avatar av-3">SC</div>
-            <div class="avatar av-more">+50</div>
-          </div>
-          <div class="proof-text">
-            <div class="proof-stars" aria-hidden="true">
-              <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-              <i class="fas fa-star"></i><i class="fas fa-star"></i>
-            </div>
-            <span>{{ hero.proofText || 'Centenas de negócios moçambicanos confiam em nós' }}</span>
-          </div>
-        </div>
+        <p class="hero-proof-line">{{ hero.proofText || 'Usado por negócios em Maputo, Beira, Nampula e no resto do país' }}</p>
       </div>
 
       <div
@@ -127,11 +107,9 @@
   <section id="funcionalidades" class="features-section">
     <div class="container-xl">
       <div #revealItem class="section-header reveal-item" [attr.data-reveal-key]="'features-header'" [class.is-visible]="isVisible('features-header')">
-        <div class="section-badge">
-          <i class="fas fa-sparkles"></i> Funcionalidades
-        </div>
-        <h2 class="section-title">Tudo o que precisa para <span class="highlight">crescer</span></h2>
-        <p class="section-subtitle">Ferramentas pensadas especificamente para o mercado moçambicano.</p>
+        <div class="section-badge">Funcionalidades</div>
+        <h2 class="section-title">O que o ISPC Fácil <span class="highlight">faz por si</span></h2>
+        <p class="section-subtitle">Pensado para as regras do ISPC e para a forma como se trabalha em Moçambique.</p>
       </div>
       <div class="features-grid">
         <div
@@ -147,9 +125,6 @@
           </div>
           <h3 class="feature-title">{{ feature.title }}</h3>
           <p class="feature-desc">{{ feature.description }}</p>
-          <div class="feature-arrow">
-            <i class="fas fa-arrow-right"></i>
-          </div>
         </div>
       </div>
     </div>
@@ -205,9 +180,7 @@
         [attr.data-reveal-key]="'about-content'"
         [class.is-visible]="isVisible('about-content')"
       >
-        <div class="section-badge">
-          <i class="fas fa-building"></i> Sobre nós
-        </div>
+        <div class="section-badge">Sobre nós</div>
         <h2 class="section-title">Nascemos para <span class="highlight">simplificar</span> o seu negócio</h2>
         <p class="about-lead">
           Somos uma equipa moçambicana que acredita que a tecnologia deve estar ao serviço de todos os negócios,
@@ -237,11 +210,9 @@
   <section id="precos" class="pricing-section">
     <div class="container-xl">
       <div #revealItem class="section-header reveal-item" [attr.data-reveal-key]="'pricing-header'" [class.is-visible]="isVisible('pricing-header')">
-        <div class="section-badge">
-          <i class="fas fa-tag"></i> Preços
-        </div>
-        <h2 class="section-title">Planos <span class="highlight">simples</span> e transparentes</h2>
-        <p class="section-subtitle">Sem custos ocultos. Escolha e comece hoje mesmo - 14 dias grátis.</p>
+        <div class="section-badge">Preços</div>
+        <h2 class="section-title">Quanto <span class="highlight">custa</span></h2>
+        <p class="section-subtitle">Preços em meticais, sem custos escondidos. Experimente 14 dias antes de decidir.</p>
       </div>
 
       <div class="pricing-cycle-switcher">
@@ -322,7 +293,7 @@
 
       <div class="pricing-guarantee">
         <i class="fas fa-shield-check"></i>
-        <p>{{ hero.guaranteeText || 'Garantia de 14 dias. Experimente sem riscos - sem cartão de crédito necessário.' }}</p>
+        <p>{{ hero.guaranteeText || 'Garantia de 14 dias. Experimente sem riscos, sem cartão de crédito necessário.' }}</p>
       </div>
     </div>
   </section>
@@ -330,11 +301,9 @@
   <section id="faq" class="faq-section">
     <div class="container-xl">
       <div #revealItem class="section-header reveal-item" [attr.data-reveal-key]="'faq-header'" [class.is-visible]="isVisible('faq-header')">
-        <div class="section-badge">
-          <i class="fas fa-question-circle"></i> FAQ
-        </div>
+        <div class="section-badge">FAQ</div>
         <h2 class="section-title">Perguntas <span class="highlight">frequentes</span></h2>
-        <p class="section-subtitle">Tem dúvidas? Temos respostas.</p>
+        <p class="section-subtitle">As perguntas que mais nos fazem.</p>
       </div>
       <div class="faq-list">
         <div
@@ -374,9 +343,7 @@
         [attr.data-reveal-key]="'contact-info'"
         [class.is-visible]="isVisible('contact-info')"
       >
-        <div class="section-badge">
-          <i class="fas fa-envelope"></i> Contacto
-        </div>
+        <div class="section-badge">Contacto</div>
         <h2 class="section-title">Fale <span class="highlight">connosco</span></h2>
         <p class="contact-lead">
           A nossa equipa está disponível para o ajudar. Envie-nos uma mensagem e responderemos o mais rápido possível.
@@ -521,20 +488,17 @@
       >
         <div class="footer-brand">
           <div class="footer-logo">
-            <div class="logo-icon">
-              <i class="fas fa-file-invoice"></i>
-            </div>
-            <span class="logo-text">ISPC <span class="logo-accent">Fácil</span></span>
+            <img src="assets/ispc-facil-logo-wide.png" alt="ISPC Fácil" class="footer-logo-img">
           </div>
           <p class="footer-tagline">
-            Facturação simplificada para o mercado moçambicano. Foque no que realmente importa - o seu negócio.
+            Facturação e ISPC para pequenos negócios moçambicanos, sem complicações.
           </p>
           <div class="footer-social">
             <button type="button" class="social-btn" aria-label="Facebook em breve">
               <i class="fab fa-facebook-f"></i>
             </button>
-            <button type="button" class="social-btn" aria-label="X em breve">
-              <i class="fab fa-twitter"></i>
+            <button type="button" class="social-btn" aria-label="Instagram em breve">
+              <i class="fab fa-instagram"></i>
             </button>
             <button type="button" class="social-btn" aria-label="LinkedIn em breve">
               <i class="fab fa-linkedin-in"></i>
@@ -559,8 +523,7 @@
           <h4>Empresa</h4>
           <ul>
             <li><a href="#contacto" (click)="scrollToSection('contacto', $event)"><i class="fas fa-chevron-right"></i>Contacto</a></li>
-            <li><a href="#faq" (click)="scrollToSection('faq', $event)"><i class="fas fa-chevron-right"></i>Suporte</a></li>
-            <li><a href="#funcionalidades" (click)="scrollToSection('funcionalidades', $event)"><i class="fas fa-chevron-right"></i>Blog</a></li>
+            <li><a href="#contacto" (click)="scrollToSection('contacto', $event)"><i class="fas fa-chevron-right"></i>Suporte</a></li>
           </ul>
         </div>
 
@@ -577,7 +540,7 @@
       <div class="footer-bottom">
         <p class="footer-copy">&copy; {{ currentYear }} ISPC Fácil. Todos os direitos reservados.</p>
         <p class="footer-made">
-          Feito com <i class="fas fa-heart" style="color:#f59e0b"></i> em Moçambique
+          Feito em Moçambique
         </p>
       </div>
     </div>

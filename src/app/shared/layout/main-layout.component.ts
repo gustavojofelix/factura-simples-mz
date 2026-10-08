@@ -50,15 +50,15 @@ export class MainLayoutComponent {
   isMobileMenuOpen = signal(false);
 
   menuItems: MenuItem[] = [
-    { icon: 'dashboard', label: 'Painel', route: '/painel' },
-    { icon: 'auto_awesome', label: 'Assistente', route: '/assistente' },
-    { icon: 'receipt_long', label: 'Facturas', route: '/facturas' },
-    { icon: 'people', label: 'Clientes', route: '/clientes' },
-    { icon: 'inventory_2', label: 'Produtos e Serviços', route: '/produtos' },
-    { icon: 'account_balance', label: 'Impostos', route: '/impostos' },
-    { icon: 'assessment', label: 'Relatórios', route: '/relatorios' },
-    { icon: 'settings', label: 'Configurações', route: '/configuracoes' },
-    { icon: 'policy', label: 'Auditoria', route: '/auditoria' }
+    { icon: 'fa-house', label: 'Painel', route: '/painel' },
+    { icon: 'fa-headset', label: 'Assistente', route: '/assistente' },
+    { icon: 'fa-file-invoice-dollar', label: 'Facturas', route: '/facturas' },
+    { icon: 'fa-address-book', label: 'Clientes', route: '/clientes' },
+    { icon: 'fa-boxes-stacked', label: 'Produtos e Serviços', route: '/produtos' },
+    { icon: 'fa-landmark', label: 'Impostos', route: '/impostos' },
+    { icon: 'fa-chart-column', label: 'Relatórios', route: '/relatorios' },
+    { icon: 'fa-sliders', label: 'Configurações', route: '/configuracoes' },
+    { icon: 'fa-clipboard-check', label: 'Auditoria', route: '/auditoria' }
   ];
 
   filteredMenuItems = computed(() => {
@@ -67,7 +67,7 @@ export class MainLayoutComponent {
     return this.menuItems.filter(item => {
       // Vendedor (user) only gets Invoices, Clients, Products and the assistant
       if (role === 'user') {
-        return ['receipt_long', 'people', 'inventory_2', 'auto_awesome'].includes(item.icon);
+        return ['/facturas', '/clientes', '/produtos', '/assistente'].includes(item.route);
       }
       
       // Gestor (manager) gets everything except Settings and Auditoria
@@ -133,7 +133,7 @@ export class MainLayoutComponent {
       '/painel': 'Visão geral', '/assistente': 'Visão geral',
       '/facturas': 'Operações', '/clientes': 'Operações',
       '/produtos': 'Operações', '/impostos': 'Fiscalidade', '/relatorios': 'Fiscalidade',
-      '/auditoria': 'Fiscalidade', '/configuracoes': 'Sistema'
+      '/configuracoes': 'Sistema', '/auditoria': 'Sistema'
     };
     const groups: { label: string; items: MenuItem[] }[] = [];
     for (const item of this.filteredMenuItems()) {

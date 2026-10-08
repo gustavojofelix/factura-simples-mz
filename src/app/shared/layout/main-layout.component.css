@@ -13,8 +13,16 @@
   box-shadow: inset 3px 0 0 #f97316;
 }
 
-.nav-item-active mat-icon {
+.nav-item-active mat-icon,
+.nav-item-active .nav-fa-icon {
   color: #f97316 !important;
+}
+
+.nav-fa-icon {
+  width: 1.25rem;
+  font-size: 1rem;
+  text-align: center;
+  flex-shrink: 0;
 }
 
 .profile-chip {

@@ -189,8 +189,34 @@ export class InvoiceService {
   }
 
   canAnnulInvoice(invoice: Invoice): boolean {
-    // Can annul if it's not a draft and not already annulled
-    return invoice.status !== 'rascunho' && invoice.status !== 'anulada';
+    return this.getAnnulBlockReason(invoice) === null;
+  }
+
+  /**
+   * Motivo pelo qual a factura não pode ser anulada, ou null se pode.
+   * Facturas com pagamentos (mesmo parciais) e facturas de um trimestre já
+   * encerrado não se anulam. Para anular uma factura com pagamentos, anulam-se
+   * primeiro os recibos.
+   */
+  getAnnulBlockReason(invoice: Invoice): string | null {
+    if (invoice.status === 'rascunho' || invoice.status === 'anulada') {
+      return 'Apenas facturas emitidas podem ser anuladas.';
+    }
+    if (invoice.status === 'paga' || (Number(invoice.amount_paid) || 0) > 0) {
+      return 'Uma factura com pagamentos não pode ser anulada. Anule primeiro os recibos.';
+    }
+    if (!this.isInCurrentQuarter(invoice.date)) {
+      return 'Uma factura de um trimestre já encerrado não pode ser anulada.';
+    }
+    return null;
+  }
+
+  private isInCurrentQuarter(isoDate: string): boolean {
+    if (!isoDate) return false;
+    const [year, month] = isoDate.substring(0, 10).split('-').map(Number);
+    const today = new Date();
+    const quarterOf = (m: number) => Math.floor((m - 1) / 3);
+    return year === today.getFullYear() && quarterOf(month) === quarterOf(today.getMonth() + 1);
   }
 
   canManagePayments(invoice: Invoice): boolean {
@@ -504,6 +530,9 @@ export class InvoiceService {
         .single();
 
       if (fetchError || !invoice) throw fetchError || new Error('Factura não encontrada');
+
+      const blockReason = this.getAnnulBlockReason(invoice as Invoice);
+      if (blockReason) throw new Error(blockReason);
 
       // 1. Update status to 'anulada'
       const { error: updateError } = await this.supabase.db

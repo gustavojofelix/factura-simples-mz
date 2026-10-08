@@ -1,16 +1,40 @@
-/* Custom styling for MatFormField in dark glass background */
-::ng-deep .custom-dark-form-field .mdc-text-field--outlined {
-  --mdc-outlined-text-field-container-color: rgba(255, 255, 255, 0.03) !important;
-  --mdc-outlined-text-field-outline-color: rgba(255, 255, 255, 0.12) !important;
-  --mdc-outlined-text-field-hover-outline-color: rgba(255, 255, 255, 0.25) !important;
-  --mdc-outlined-text-field-focus-outline-color: #f16c39 !important;
+/* Campos do formulário de login sobre fundo escuro (página de login e landing). */
+:host ::ng-deep .custom-dark-form-field {
+  --mat-form-field-outlined-input-text-color: #fff;
+  --mat-form-field-outlined-caret-color: #f16c39;
+  --mat-form-field-outlined-label-text-color: #94a3b8;
+  --mat-form-field-outlined-focus-label-text-color: #fb923c;
+  --mat-form-field-outlined-hover-label-text-color: #cbd5e1;
+  --mat-form-field-outlined-outline-color: rgba(255, 255, 255, 0.18);
+  --mat-form-field-outlined-hover-outline-color: rgba(255, 255, 255, 0.32);
+  --mat-form-field-outlined-focus-outline-color: #f16c39;
+  --mat-form-field-outlined-input-placeholder-color: #64748b;
+  --mat-form-field-leading-icon-color: #94a3b8;
+  --mat-form-field-trailing-icon-color: #94a3b8;
 }
 
-::ng-deep .custom-dark-form-field .mat-mdc-form-field-flex {
+:host ::ng-deep .custom-dark-form-field .mat-mdc-text-field-wrapper {
+  background-color: rgba(255, 255, 255, 0.04) !important;
   border-radius: 0.75rem !important;
 }
 
-::ng-deep .custom-dark-form-field .mat-mdc-form-field-outline {
+:host ::ng-deep .custom-dark-form-field input.mat-mdc-input-element {
+  color: #fff !important;
+  caret-color: #f16c39;
+  -webkit-text-fill-color: #fff;
+}
+
+/* O preenchimento automático do browser aplica fundo claro; mantém o texto legível. */
+:host ::ng-deep .custom-dark-form-field input:-webkit-autofill,
+:host ::ng-deep .custom-dark-form-field input:-webkit-autofill:hover,
+:host ::ng-deep .custom-dark-form-field input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #fff !important;
+  -webkit-box-shadow: 0 0 0 1000px #1e293b inset !important;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+:host ::ng-deep .custom-dark-form-field .mat-mdc-form-field-flex,
+:host ::ng-deep .custom-dark-form-field .mat-mdc-form-field-outline {
   border-radius: 0.75rem !important;
 }
 
