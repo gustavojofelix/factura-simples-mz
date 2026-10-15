@@ -4,6 +4,9 @@ workflows:
     max_build_duration: 60
     instance_type: mac_mini_m2  # Runner macOS gratuito no plano free
 
+    integrations:
+      app_store_connect: ISPC Facil ASC   # nome da API key em Codemagic → Team settings → Integrations
+
     environment:
       ios_signing:
         distribution_type: app_store
@@ -11,7 +14,7 @@ workflows:
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
-      node: 20
+      node: 22
       xcode: latest
       cocoapods: default
 
@@ -30,25 +33,20 @@ workflows:
       - name: Build Angular (web assets)
         script: npm run build
 
-      - name: Sync Capacitor iOS
+      - name: Sync Capacitor iOS (inclui pod install)
         script: npx cap sync ios
 
-      - name: Install CocoaPods
-        script: |
-          cd ios/App
-          pod install
+      - name: Set up code signing
+        script: xcode-project use-profiles
 
       - name: Set app version from tag
         script: |
-          # Usa a tag git como versão (ex: v1.0.2 → 1.0.2)
-          BUILD_NUMBER=$(($PROJECT_BUILD_NUMBER))
-          VERSION=$(echo $CM_TAG | sed 's/v//')
-          if [ -z "$VERSION" ]; then
-            VERSION="1.0.0"
-          fi
-          cd ios/App
-          agvtool new-marketing-version $VERSION
-          agvtool new-version -all $BUILD_NUMBER
+          # Usa a tag git como versão (ex: v1.0.2 → 1.0.2); build number incremental do Codemagic
+          BUILD_NUMBER=$PROJECT_BUILD_NUMBER
+          VERSION=$(echo "${CM_TAG:-v1.0.0}" | sed 's/^v//')
+          PBX=ios/App/App.xcodeproj/project.pbxproj
+          sed -i '' "s/MARKETING_VERSION = .*;/MARKETING_VERSION = $VERSION;/" $PBX
+          sed -i '' "s/CURRENT_PROJECT_VERSION = .*;/CURRENT_PROJECT_VERSION = $BUILD_NUMBER;/" $PBX
           echo "Version: $VERSION, Build: $BUILD_NUMBER"
 
       - name: Build and archive iOS
@@ -63,9 +61,7 @@ workflows:
 
     publishing:
       app_store_connect:
-        api_key: $APP_STORE_CONNECT_PRIVATE_KEY      # variável no painel Codemagic
-        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
-        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        auth: integration
         submit_to_testflight: true   # true = vai para TestFlight primeiro
         submit_to_app_store: false   # muda para true quando estiveres pronto
         beta_groups:

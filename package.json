@@ -43,7 +43,7 @@
     "@angular/cli": "^21.0.2",
     "@angular/compiler-cli": "^21.0.3",
     "@capacitor/assets": "^3.0.5",
-    "@capacitor/cli": "^7.6.1",
+    "@capacitor/cli": "^8.5.3",
     "@types/node": "^25.0.3",
     "typescript": "^5.9.3"
   }
