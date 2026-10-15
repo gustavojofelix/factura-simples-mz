@@ -1,5 +1,5 @@
 -- Contas (tenants): cada subscritor tem uma conta com subdomínio próprio
--- (<slug>.ispcfacil.co.mz) que agrupa as suas empresas. A subscrição continua
+-- (<slug>.ispcfacil.com) que agrupa as suas empresas. A subscrição continua
 -- por empresa; a conta controla apenas o limite de empresas (max_companies).
 
 -- 1. Slugs reservados ---------------------------------------------------------

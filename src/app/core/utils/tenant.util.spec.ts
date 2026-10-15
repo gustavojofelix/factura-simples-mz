@@ -2,24 +2,24 @@ import { parseAccountSlug, sharedCookieDomain, slugifyAccount } from './tenant.u
 
 describe('tenant.util', () => {
   describe('parseAccountSlug', () => {
-    const root = 'ispcfacil.co.mz';
+    const root = 'ispcfacil.com';
 
     it('extrai o slug de um subdomínio de conta', () => {
-      expect(parseAccountSlug('acme.ispcfacil.co.mz', root)).toBe('acme');
-      expect(parseAccountSlug('ACME-2.ispcfacil.co.mz', root)).toBe('acme-2');
+      expect(parseAccountSlug('acme.ispcfacil.com', root)).toBe('acme');
+      expect(parseAccountSlug('ACME-2.ispcfacil.com', root)).toBe('acme-2');
     });
 
     it('devolve null na raiz, em www e noutros domínios', () => {
-      expect(parseAccountSlug('ispcfacil.co.mz', root)).toBeNull();
-      expect(parseAccountSlug('www.ispcfacil.co.mz', root)).toBeNull();
+      expect(parseAccountSlug('ispcfacil.com', root)).toBeNull();
+      expect(parseAccountSlug('www.ispcfacil.com', root)).toBeNull();
       expect(parseAccountSlug('acme.netlify.app', root)).toBeNull();
-      expect(parseAccountSlug('fakeispcfacil.co.mz', root)).toBeNull();
+      expect(parseAccountSlug('fakeispcfacil.com', root)).toBeNull();
     });
 
     it('ignora subdomínios encadeados ou inválidos', () => {
-      expect(parseAccountSlug('a.b.ispcfacil.co.mz', root)).toBeNull();
-      expect(parseAccountSlug('ab.ispcfacil.co.mz', root)).toBeNull();
-      expect(parseAccountSlug('-acme.ispcfacil.co.mz', root)).toBeNull();
+      expect(parseAccountSlug('a.b.ispcfacil.com', root)).toBeNull();
+      expect(parseAccountSlug('ab.ispcfacil.com', root)).toBeNull();
+      expect(parseAccountSlug('-acme.ispcfacil.com', root)).toBeNull();
     });
 
     it('suporta slug.localhost em desenvolvimento', () => {
@@ -42,13 +42,13 @@ describe('tenant.util', () => {
 
   describe('sharedCookieDomain', () => {
     it('partilha cookies entre a raiz e os subdomínios', () => {
-      expect(sharedCookieDomain('acme.ispcfacil.co.mz', 'ispcfacil.co.mz')).toBe('.ispcfacil.co.mz');
-      expect(sharedCookieDomain('ispcfacil.co.mz', 'ispcfacil.co.mz')).toBe('.ispcfacil.co.mz');
+      expect(sharedCookieDomain('acme.ispcfacil.com', 'ispcfacil.com')).toBe('.ispcfacil.com');
+      expect(sharedCookieDomain('ispcfacil.com', 'ispcfacil.com')).toBe('.ispcfacil.com');
     });
 
     it('não usa cookies em localhost nem noutros domínios', () => {
       expect(sharedCookieDomain('acme.localhost', 'localhost')).toBeNull();
-      expect(sharedCookieDomain('preview.netlify.app', 'ispcfacil.co.mz')).toBeNull();
+      expect(sharedCookieDomain('preview.netlify.app', 'ispcfacil.com')).toBeNull();
     });
   });
 });

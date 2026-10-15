@@ -146,7 +146,7 @@ export class AccountService {
     await this.loadAccounts();
     const accounts = this.accounts();
 
-    if (this.tenant.usesSubdomains && this.tenant.currentSlug()) {
+    if (this.tenant.currentSlug()) {
       if (this.accessDenied()) return { kind: 'route', route: '/sem-acesso' };
       return { kind: 'route', route: await this.homeRouteFor(this.activeAccount()!) };
     }
@@ -159,7 +159,7 @@ export class AccountService {
       return { kind: 'external', url: this.tenant.accountUrl(account.slug, await this.homeRouteFor(account)) };
     }
 
-    // App nativa: fica na conta activa.
+    // App nativa / dev: fica na mesma origem, na conta activa.
     return { kind: 'route', route: await this.homeRouteFor(this.activeAccount() ?? accounts[0]) };
   }
 

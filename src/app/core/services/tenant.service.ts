@@ -18,16 +18,20 @@ export class TenantService {
     this.isNative ? null : parseAccountSlug(window.location.hostname, environment.rootDomain)
   );
 
-  /** True quando a navegação entre contas é feita trocando de subdomínio. */
+  /**
+   * True quando a navegação entre contas é feita trocando de subdomínio.
+   * Na app nativa e em dev (localhost) a conta troca-se dentro da mesma origem;
+   * abrir slug.localhost:4200 directamente continua a seleccionar essa conta.
+   */
   get usesSubdomains(): boolean {
-    return !this.isNative;
+    return !this.isNative && environment.subdomainRouting;
   }
 
   isOnRootDomain(): boolean {
     return this.usesSubdomains && this.currentSlug() === null;
   }
 
-  /** Origem (sem rota) do subdomínio de uma conta, ex.: https://acme.ispcfacil.co.mz */
+  /** Origem (sem rota) do subdomínio de uma conta, ex.: https://acme.ispcfacil.com */
   accountOrigin(slug: string): string {
     return this.origin(`${slug}.${environment.rootDomain}`);
   }

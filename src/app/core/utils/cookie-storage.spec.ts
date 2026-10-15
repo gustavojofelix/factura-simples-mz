@@ -22,7 +22,7 @@ function fakeDocument() {
 describe('cookie-storage', () => {
   it('guarda e lê valores grandes em blocos', () => {
     const { doc, jar } = fakeDocument();
-    const storage = createSharedCookieStorage('.ispcfacil.co.mz', doc);
+    const storage = createSharedCookieStorage('.ispcfacil.com', doc);
     const value = JSON.stringify({ token: 'x'.repeat(7000), name: 'Jõão; =' });
 
     storage.setItem('sb-auth', value);
@@ -33,7 +33,7 @@ describe('cookie-storage', () => {
 
   it('remove blocos que sobram quando o valor encolhe', () => {
     const { doc, jar } = fakeDocument();
-    const storage = createSharedCookieStorage('.ispcfacil.co.mz', doc);
+    const storage = createSharedCookieStorage('.ispcfacil.com', doc);
 
     storage.setItem('k', 'y'.repeat(7000));
     storage.setItem('k', 'curto');
@@ -44,7 +44,7 @@ describe('cookie-storage', () => {
 
   it('removeItem apaga todos os blocos', () => {
     const { doc, jar } = fakeDocument();
-    const storage = createSharedCookieStorage('.ispcfacil.co.mz', doc);
+    const storage = createSharedCookieStorage('.ispcfacil.com', doc);
 
     storage.setItem('k', 'z'.repeat(7000));
     storage.removeItem('k');
@@ -55,7 +55,7 @@ describe('cookie-storage', () => {
 
   it('migra uma sessão antiga do localStorage para os cookies', () => {
     const { doc } = fakeDocument();
-    const cookies = createSharedCookieStorage('.ispcfacil.co.mz', doc);
+    const cookies = createSharedCookieStorage('.ispcfacil.com', doc);
     localStorage.setItem('sb-auth', 'sessao-antiga');
 
     const storage = withLocalStorageMigration(cookies, localStorage);

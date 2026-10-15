@@ -1,7 +1,7 @@
 /**
  * Storage síncrono para o supabase-js que guarda a sessão em cookies partilhados
- * por todos os subdomínios (domain=.ispcfacil.co.mz), para que o login feito na
- * raiz continue válido em <conta>.ispcfacil.co.mz.
+ * por todos os subdomínios (domain=.ispcfacil.com), para que o login feito na
+ * raiz continue válido em <conta>.ispcfacil.com.
  *
  * Os cookies têm ~4KB de limite, por isso o valor é partido em blocos
  * `<key>.0`, `<key>.1`, ...; `<key>.n` guarda o número de blocos.

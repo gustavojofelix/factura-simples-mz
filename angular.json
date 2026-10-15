@@ -51,7 +51,8 @@
               "xlsx-js-style"
             ],
             "tsConfig": "tsconfig.app.json"
-          }
+          },
+          "defaultConfiguration": "production"
         },
         "serve": {
           "builder": "@angular/build:dev-server",

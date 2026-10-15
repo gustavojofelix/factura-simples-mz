@@ -6,7 +6,7 @@ const NON_ACCOUNT_SUBDOMAINS = new Set(['www']);
 
 /**
  * Extrai o slug da conta a partir do host.
- * `acme.ispcfacil.co.mz` → `acme`; `ispcfacil.co.mz`, `www.ispcfacil.co.mz`,
+ * `acme.ispcfacil.com` → `acme`; `ispcfacil.com`, `www.ispcfacil.com`,
  * hosts de outros domínios ou subdomínios encadeados → `null`.
  */
 export function parseAccountSlug(hostname: string, rootDomain: string): string | null {

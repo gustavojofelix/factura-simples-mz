@@ -11,7 +11,7 @@ import {
 } from './core/guards/account.guard';
 
 export const routes: Routes = [
-  // Rotas normais para clientes (ispcfacil.co.mz e <conta>.ispcfacil.co.mz)
+  // Rotas normais para clientes (ispcfacil.com e <conta>.ispcfacil.com)
   {
     path: '',
     pathMatch: 'full',

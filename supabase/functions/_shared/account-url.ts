@@ -1,12 +1,12 @@
 // URL da app no subdomínio da conta a que a empresa pertence
-// (ex.: https://acme.ispcfacil.co.mz). Sem conta, ou se a consulta falhar,
+// (ex.: https://acme.ispcfacil.com). Sem conta, ou se a consulta falhar,
 // devolve o SITE_URL da raiz.
 
 // deno-lint-ignore no-explicit-any
 type Admin = any;
 
 export function siteUrl(): string {
-  return (Deno.env.get("SITE_URL") ?? "https://ispcfacil.co.mz").replace(/\/+$/, "");
+  return (Deno.env.get("SITE_URL") ?? "https://ispcfacil.com").replace(/\/+$/, "");
 }
 
 export function accountOrigin(slug: string | null | undefined): string {
