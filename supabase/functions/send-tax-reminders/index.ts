@@ -14,6 +14,7 @@ import {
   getCompanyNotificationSettings,
   withNotificationEmail,
 } from "../_shared/notification-recipients.ts";
+import { accountUrlForCompany, accountUrlsForCompanies, siteUrl } from "../_shared/account-url.ts";
 
 /**
  * Lembretes de obrigações fiscais (Modelo 30 / ISPC) por email.
@@ -170,7 +171,7 @@ function buildHtml(
     })
     .join("");
 
-  const link = `${appUrl.replace(/\/$/, "")}/impostos`;
+  const link = `${appUrl.replace(/\/$/, "")}/#/impostos`;
   const bannerHtml = banner
     ? `<div style="margin:0 0 16px 0;padding:10px 14px;border:1px dashed #d97706;background:#fffbeb;border-radius:6px;font-size:13px;color:#92400e;">${escapeHtml(banner)}</div>`
     : "";
@@ -217,7 +218,7 @@ function buildText(
     `Caro contribuinte ${company.name},`,
     "",
     ...reminders.map((r) => `${r.title}\n${r.body}\n`),
-    `Gestão de Impostos: ${appUrl.replace(/\/$/, "")}/impostos`,
+    `Gestão de Impostos: ${appUrl.replace(/\/$/, "")}/#/impostos`,
   ].join("\n");
 }
 
@@ -513,7 +514,7 @@ async function handleTest(admin: Admin, caller: Caller, body: RequestBody) {
     "Nada foi registado nem enviado ao cliente.",
   ].filter(Boolean).join(" ");
 
-  const appUrl = Deno.env.get("SITE_URL") ?? "https://ispcfacil.co.mz";
+  const appUrl = await accountUrlForCompany(admin, company.id);
   const result = await sendEmail(admin, {
     kind: "tax_reminder_test",
     to,
@@ -723,7 +724,8 @@ async function handleRun(admin: Admin, body: RequestBody) {
   const companies = new Map(((companiesData ?? []) as Company[]).map((c) => [c.id, c]));
   const notificationSettings = await getCompaniesNotificationSettings(admin, [...byCompany.keys()]);
 
-  const appUrl = Deno.env.get("SITE_URL") ?? "https://ispcfacil.co.mz";
+  // Cada email aponta para o subdomínio da conta da empresa.
+  const appUrls = await accountUrlsForCompanies(admin, [...byCompany.keys()]);
 
   // --- 3. Enviar --------------------------------------------------------------
   for (const [cid, unsorted] of byCompany) {
@@ -770,8 +772,8 @@ async function handleRun(admin: Admin, body: RequestBody) {
         kind: "tax_reminder",
         to: recipients,
         subject: buildSubject(company, list),
-        html: buildHtml(company, list, appUrl),
-        text: buildText(company, list, appUrl),
+        html: buildHtml(company, list, appUrls.get(cid) ?? siteUrl()),
+        text: buildText(company, list, appUrls.get(cid) ?? siteUrl()),
         companyId: company.id,
         relatedTable: "tax_reminders",
         relatedId: ids[0],

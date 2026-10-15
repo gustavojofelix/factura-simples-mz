@@ -3,11 +3,19 @@ import { authGuard, guestGuard } from './core/guards/auth.guard';
 import { adminGuard, adminGuestGuard } from './core/guards/admin.guard';
 import { roleGuard, REPORT_ROLES } from './core/guards/role.guard';
 import { subscriptionGuard } from './core/guards/subscription.guard';
+import {
+  accountGuard,
+  accountLandingGuard,
+  ownedAccountGuard,
+  rootDomainOnlyGuard
+} from './core/guards/account.guard';
 
 export const routes: Routes = [
-  // Rotas normais para clientes (ispcfacil.co.mz)
+  // Rotas normais para clientes (ispcfacil.co.mz e <conta>.ispcfacil.co.mz)
   {
     path: '',
+    pathMatch: 'full',
+    canActivate: [accountLandingGuard],
     loadComponent: () => import('./pages/landing/landing.component').then(m => m.LandingComponent)
   },
   {
@@ -17,7 +25,7 @@ export const routes: Routes = [
   },
   {
     path: 'registar',
-    canActivate: [guestGuard],
+    canActivate: [rootDomainOnlyGuard, guestGuard],
     loadComponent: () => import('./pages/register/register.component').then(m => m.RegisterComponent)
   },
   {
@@ -26,12 +34,27 @@ export const routes: Routes = [
   },
   {
     path: 'configurar-empresa',
-    canActivate: [authGuard],
+    canActivate: [authGuard, ownedAccountGuard],
     loadComponent: () => import('./pages/company-setup/company-setup.component').then(m => m.CompanySetupComponent)
   },
   {
-    path: '',
+    path: 'configurar-conta',
     canActivate: [authGuard],
+    loadComponent: () => import('./pages/account/account-setup.component').then(m => m.AccountSetupComponent)
+  },
+  {
+    path: 'escolher-conta',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/account/account-select.component').then(m => m.AccountSelectComponent)
+  },
+  {
+    path: 'sem-acesso',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/account/account-denied.component').then(m => m.AccountDeniedComponent)
+  },
+  {
+    path: '',
+    canActivate: [authGuard, accountGuard],
     canActivateChild: [subscriptionGuard],
     loadComponent: () => import('./shared/layout/main-layout.component').then(m => m.MainLayoutComponent),
     children: [

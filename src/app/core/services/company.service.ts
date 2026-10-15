@@ -1,13 +1,15 @@
-import { Injectable, signal, computed, effect } from '@angular/core';
+import { Injectable, signal, computed, effect, untracked } from '@angular/core';
 import { friendlyErrorMessage } from '../utils/error-message';
 import { SupabaseService } from './supabase.service';
 import { AuthService } from './auth.service';
 import { AuditLogService } from './audit-log.service';
+import { AccountService } from './account.service';
 import type { CompanyBankAccount } from './company-bank-account.service';
 
 export interface Company {
   id: string;
   user_id: string;
+  account_id: string;
   name: string;
   nuit: string;
   entity_type?: 'singular' | 'collective';
@@ -79,11 +81,18 @@ export class CompanyService {
   constructor(
     private supabase: SupabaseService,
     private authService: AuthService,
-    private auditLogService: AuditLogService
+    private auditLogService: AuditLogService,
+    private accountService: AccountService
   ) {
+    // As empresas listadas são sempre as da conta activa.
     effect(() => {
       const user = this.authService.currentUser();
-      if (user) {
+      const account = this.accountService.activeAccount();
+      if (user && account) {
+        if (untracked(this.activeCompany)?.account_id !== account.id) {
+          this.activeCompany.set(null);
+          this.activeRole.set(null);
+        }
         this.loadCompanies();
       } else {
         this.companies.set([]);
@@ -95,7 +104,8 @@ export class CompanyService {
 
   async loadCompanies() {
     const user = this.authService.currentUser();
-    if (!user) return;
+    const account = this.accountService.activeAccount();
+    if (!user || !account) return;
 
     this.isLoading.set(true);
 
@@ -104,6 +114,7 @@ export class CompanyService {
         .from('companies')
         .select('*')
         .eq('user_id', user.id)
+        .eq('account_id', account.id)
         .order('created_at', { ascending: false });
 
       if (ownedError) throw ownedError;
@@ -118,13 +129,16 @@ export class CompanyService {
 
       const shared = (sharedCompanies || [])
         .map((cu: any) => cu.companies)
-        .filter((c: any) => c !== null);
+        .filter((c: any) => c !== null && c.account_id === account.id);
+
+      // A conta pode ter mudado enquanto a consulta corria.
+      if (this.accountService.activeAccount()?.id !== account.id) return;
 
       const allCompanies = [...(ownedCompanies || []), ...shared];
       this.companies.set(allCompanies);
 
       if (allCompanies.length > 0 && !this.activeCompany()) {
-        const savedCompanyId = localStorage.getItem('activeCompanyId');
+        const savedCompanyId = localStorage.getItem(this.activeCompanyKey(account.id));
         const company = savedCompanyId
           ? allCompanies.find(c => c.id === savedCompanyId) || allCompanies[0]
           : allCompanies[0];
@@ -137,9 +151,13 @@ export class CompanyService {
     }
   }
 
+  private activeCompanyKey(accountId: string): string {
+    return `activeCompanyId:${accountId}`;
+  }
+
   async setActiveCompany(company: Company) {
     this.activeCompany.set(company);
-    localStorage.setItem('activeCompanyId', company.id);
+    localStorage.setItem(this.activeCompanyKey(company.account_id), company.id);
     this.activeRole.set(null);
     try {
       const role = await this.getUserRole(company.id);
@@ -151,13 +169,16 @@ export class CompanyService {
 
   async createCompany(companyData: Partial<Company>): Promise<Company | null> {
     const user = this.authService.currentUser();
-    if (!user) return null;
+    // Só o titular cria empresas, e sempre dentro da conta activa.
+    const account = this.accountService.activeAccount();
+    if (!user || !account?.is_owner) return null;
 
     const { data, error } = await this.supabase.db
       .from('companies')
       .insert({
         ...companyData,
-        user_id: user.id
+        user_id: user.id,
+        account_id: account.id
       })
       .select()
       .single();

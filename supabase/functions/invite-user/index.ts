@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import nodemailer from "npm:nodemailer@6.9.11"
+import { accountUrlForCompany, siteUrl as rootSiteUrl } from "../_shared/account-url.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -101,7 +102,8 @@ serve(async (req) => {
     }
 
     const cleanEmail = email.trim().toLowerCase()
-    const siteUrl = Deno.env.get('SITE_URL') ?? 'https://ispcfacil.co.mz'
+    // O convidado entra pelo subdomínio da conta a que a empresa pertence.
+    const siteUrl = isPlatformAdmin ? rootSiteUrl() : await accountUrlForCompany(supabaseClient, companyId)
     const redirectTo = `${siteUrl}/#/resetar-senha`
     let actionLink = `${siteUrl}/#/entrar`
     let needsPassword = false

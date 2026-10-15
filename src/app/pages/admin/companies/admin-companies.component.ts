@@ -573,6 +573,7 @@ import { friendlyFunctionError } from '../../../core/utils/error-message';
                     <div class="flex flex-col">
                       <span class="font-medium text-gray-900 text-xs uppercase font-serif tracking-tight">{{ company.name }}</span>
                       <span *ngIf="company.activity_type" class="text-[10px] text-gray-400 mt-0.5">{{ getActivityLabel(company.activity_type) }}</span>
+                      <span *ngIf="company.account_slug" class="text-[10px] text-ispc-orange font-mono mt-0.5" title="Conta / subdomínio">{{ company.account_slug }}</span>
                     </div>
                   </td>
                   <!-- NUIT (coluna separada) -->
@@ -815,7 +816,8 @@ export class AdminCompaniesComponent implements OnInit {
         c.name?.toLowerCase().includes(term) ||
         c.nuit?.toLowerCase().includes(term) ||
         c.owner_name?.toLowerCase().includes(term) ||
-        c.company_code?.toLowerCase().includes(term)
+        c.company_code?.toLowerCase().includes(term) ||
+        c.account_slug?.toLowerCase().includes(term)
       );
     }
 
@@ -880,7 +882,8 @@ export class AdminCompaniesComponent implements OnInit {
           *,
           profiles (full_name, last_sign_in_at),
           subscriptions (plan_name, next_billing_date, status),
-          company_users (count)
+          company_users (count),
+          accounts (slug)
         `)
         .order('name', { ascending: true });
 
@@ -893,6 +896,7 @@ export class AdminCompaniesComponent implements OnInit {
         return {
           ...c,
           owner_name: c.profiles?.full_name || 'N/A',
+          account_slug: c.accounts?.slug || null,
           last_access: c.profiles?.last_sign_in_at || null,
           plan: activeSub?.plan_name || 'Trial',
           plan_expiry: activeSub?.next_billing_date || null,

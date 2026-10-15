@@ -21,6 +21,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { CompanyDocument } from '../../core/services/document-processing.service';
 import { ActivityService, ActivityType } from '../../core/services/activity.service';
 import { CompanyService } from '../../core/services/company.service';
+import { AccountService } from '../../core/services/account.service';
 
 
 @Component({
@@ -88,7 +89,8 @@ export class CompanySetupComponent {
     private snackBar: MatSnackBar,
     private documentService: DocumentProcessingService,
     private activityService: ActivityService,
-    private companyService: CompanyService
+    private companyService: CompanyService,
+    private accountService: AccountService
   ) {
     this.companyInfoForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
@@ -424,8 +426,11 @@ export class CompanySetupComponent {
       return;
     }
 
+    const account = this.accountService.activeAccount();
     const companyData = {
       user_id: user.id,
+      // O trigger assign_company_account usa a conta do titular quando vem vazio.
+      ...(account?.is_owner ? { account_id: account.id } : {}),
       name: this.companyInfoForm.value.name,
       entity_type: this.companyInfoForm.value.entityType,
       email: this.companyInfoForm.value.email,
@@ -482,6 +487,7 @@ export class CompanySetupComponent {
         panelClass: ['success-snackbar']
       });
 
+      await this.companyService.loadCompanies();
       this.router.navigate(['/painel']);
     } catch (error: any) {
       console.error('Erro ao criar empresa:', error);

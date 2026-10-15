@@ -10,6 +10,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../../core/services/auth.service';
 import { SupabaseService } from '../../core/services/supabase.service';
+import { AccountService } from '../../core/services/account.service';
 
 @Component({
   selector: 'app-reset-password',
@@ -44,7 +45,8 @@ export class ResetPasswordComponent implements OnInit {
     private supabaseService: SupabaseService,
     private route: ActivatedRoute,
     private router: Router,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private accountService: AccountService
   ) {
     this.resetForm = this.fb.group({
       password: ['', [Validators.required, Validators.minLength(6)]],
@@ -160,11 +162,11 @@ export class ResetPasswordComponent implements OnInit {
       });
 
       setTimeout(async () => {
-        const companies = await this.authService.getUserCompanies();
-        if (companies.length === 0) {
-          this.router.navigate(['/configurar-empresa']);
+        const target = await this.accountService.resolvePostLoginTarget();
+        if (target.kind === 'external') {
+          window.location.href = target.url;
         } else {
-          this.router.navigate(['/painel']);
+          this.router.navigate([target.route]);
         }
       }, 1500);
     } else {

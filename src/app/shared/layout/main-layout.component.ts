@@ -12,6 +12,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCardModule } from '@angular/material/card';
 import { AuthService } from '../../core/services/auth.service';
 import { CompanyService } from '../../core/services/company.service';
+import { AccountService } from '../../core/services/account.service';
+import { TenantService } from '../../core/services/tenant.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { AiSearchComponent } from '../components/ai-search/ai-search.component';
 import { AiAlertsComponent } from '../components/ai-alerts/ai-alerts.component';
@@ -89,6 +91,8 @@ export class MainLayoutComponent {
     public authService: AuthService,
     public companyService: CompanyService,
     public subscriptionService: SubscriptionService,
+    public accountService: AccountService,
+    private tenant: TenantService,
     private router: Router
   ) {
     effect(() => {
@@ -120,6 +124,15 @@ export class MainLayoutComponent {
       this.companyService.setActiveCompany(company);
       this.router.navigate(['/painel']);
     }
+  }
+
+  /** Na web abre o subdomínio da outra conta; na app nativa troca no momento. */
+  async onAccountChange(accountId: string) {
+    const account = this.accountService.accounts().find(a => a.id === accountId);
+    if (!account || account.id === this.accountService.activeAccount()?.id) return;
+    const route = await this.accountService.homeRouteFor(account);
+    this.accountService.switchAccount(account, route);
+    if (!this.tenant.usesSubdomains) this.router.navigate([route]);
   }
 
   toggleMobileMenu() {

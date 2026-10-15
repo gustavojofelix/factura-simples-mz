@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../../../core/services/auth.service';
+import { AccountService } from '../../../core/services/account.service';
 
 @Component({
   selector: 'app-login-form',
@@ -44,7 +45,8 @@ export class LoginFormComponent implements OnInit {
     private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private accountService: AccountService
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -86,11 +88,12 @@ export class LoginFormComponent implements OnInit {
         panelClass: ['success-snackbar']
       });
 
-      const companies = await this.authService.getUserCompanies();
-      if (companies.length === 0) {
-        this.router.navigate(['/configurar-empresa']);
+      // Na raiz redirecciona para o subdomínio da conta (ou para a escolha de conta).
+      const target = await this.accountService.resolvePostLoginTarget();
+      if (target.kind === 'external') {
+        window.location.href = target.url;
       } else {
-        this.router.navigate(['/painel']);
+        this.router.navigate([target.route]);
       }
     } else {
       this.snackBar.open(result.error || 'Erro ao entrar', 'Fechar', {

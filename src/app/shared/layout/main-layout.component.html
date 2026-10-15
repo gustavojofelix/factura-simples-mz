@@ -10,6 +10,29 @@
         <h1 class="text-xl font-extrabold text-white tracking-wide">ISPC Fácil</h1>
       </div>
 
+      <!-- Account Selector (só quando o utilizador tem acesso a várias contas) -->
+      @if (accountService.accounts().length > 1) {
+      <div class="workspace-wrap">
+        <p class="workspace-eyebrow">Conta</p>
+        <mat-form-field appearance="outline" class="workspace-switcher w-full hide-subscript">
+          <mat-icon matPrefix class="workspace-icon">apartment</mat-icon>
+          <mat-select [value]="accountService.activeAccount()?.id" (selectionChange)="onAccountChange($event.value)" panelClass="company-select-panel">
+            @for (account of accountService.accounts(); track account.id) {
+            <mat-option [value]="account.id">
+              <span class="company-option">
+                <span class="company-option-mark">{{ (account.name || account.slug).charAt(0).toUpperCase() }}</span>
+                <span>
+                  <strong>{{ account.name || account.slug }}</strong>
+                  <small>{{ account.is_owner ? 'Titular' : 'Convidado' }}</small>
+                </span>
+              </span>
+            </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+      }
+
       <!-- Company Selector -->
       @if (companyService.companies().length > 0) {
       <div class="workspace-wrap">
@@ -133,6 +156,22 @@
             <mat-icon>close</mat-icon>
           </button>
         </div>
+
+        <!-- Account Selector Mobile -->
+        @if (accountService.accounts().length > 1) {
+        <div class="p-3 mt-3 bg-slate-100/50 rounded-xl border border-slate-200/40">
+          <p class="text-xs font-semibold text-slate-500 mb-1">Conta</p>
+          <mat-form-field appearance="outline" class="w-full !text-sm mb-0 hide-subscript">
+            <mat-select [value]="accountService.activeAccount()?.id" (selectionChange)="onAccountChange($event.value)">
+              @for (account of accountService.accounts(); track account.id) {
+              <mat-option [value]="account.id">
+                <span class="truncate font-medium">{{ account.name || account.slug }}</span>
+              </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+        }
 
         <!-- Company Selector Mobile -->
         @if (companyService.companies().length > 0) {

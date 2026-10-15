@@ -66,7 +66,7 @@ export class AuthService {
     return this.authInitialized;
   }
 
-  async signUp(email: string, password: string, fullName: string, phone?: string): Promise<AuthResponse> {
+  async signUp(email: string, password: string, fullName: string, phone?: string, accountSlug?: string): Promise<AuthResponse> {
     try {
       const { data, error } = await this.supabase.auth.signUp({
         email,
@@ -74,7 +74,9 @@ export class AuthService {
         options: {
           data: {
             full_name: fullName,
-            phone: phone
+            phone: phone,
+            // O trigger handle_new_user cria a conta (subdomínio) e o perfil.
+            account_slug: accountSlug
           }
         }
       });
@@ -84,15 +86,14 @@ export class AuthService {
       }
 
       if (data.user) {
-        await this.createProfile(data.user.id, fullName, phone);
-
         // Notify admin of new signup
         this.supabase.client.functions.invoke('notify-admin', {
           body: {
             type: 'signup',
             email,
             fullName,
-            phone
+            phone,
+            accountSlug
           }
         }).then(({ data, error }) => {
           // invoke() resolve com { error } em vez de rejeitar.
@@ -291,52 +292,6 @@ export class AuthService {
     const profile = await this.getCurrentProfile();
     this._isAdminCache = profile?.role === 'admin';
     return this._isAdminCache;
-  }
-
-  async getUserCompanies() {
-    const user = this.currentUser();
-    if (!user) return [];
-
-    try {
-      const { data: owned, error: ownedError } = await this.supabase.db
-        .from('companies')
-        .select('id, name, user_id, created_at')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (ownedError) throw ownedError;
-
-      const { data: shared, error: sharedError } = await this.supabase.db
-        .from('company_users')
-        .select('companies(id, name, user_id, created_at)')
-        .eq('user_id', user.id)
-        .neq('role', 'owner');
-
-      if (sharedError) throw sharedError;
-
-      const sharedCompanies = (shared || [])
-        .map((cu: any) => cu.companies)
-        .filter((c: any) => c !== null);
-
-      return [...(owned || []), ...sharedCompanies];
-    } catch (error) {
-      console.error('Erro ao carregar empresas:', error);
-      return [];
-    }
-  }
-
-  private async createProfile(userId: string, fullName: string, phone?: string) {
-    try {
-      await this.supabase.db
-        .from('profiles')
-        .insert({
-          id: userId,
-          full_name: fullName,
-          phone: phone
-        });
-    } catch (error) {
-      console.error('Erro ao criar perfil:', error);
-    }
   }
 
   private translateError(error: any): string {

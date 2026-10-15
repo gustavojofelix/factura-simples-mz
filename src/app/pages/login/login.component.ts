@@ -1,8 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LoginFormComponent } from '../../shared/components/login-form/login-form.component';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
+import { AccountService, PublicAccountInfo } from '../../core/services/account.service';
+import { TenantService } from '../../core/services/tenant.service';
 
 @Component({
   selector: 'app-login',
@@ -16,6 +18,24 @@ import { MatIconModule } from '@angular/material/icon';
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
 })
-export class LoginComponent {
-  // Logic moved to LoginFormComponent
+export class LoginComponent implements OnInit {
+  /** Conta do subdomínio actual (null na raiz). */
+  account = signal<PublicAccountInfo | null>(null);
+  accountNotFound = signal(false);
+
+  constructor(
+    private accountService: AccountService,
+    readonly tenant: TenantService
+  ) {}
+
+  async ngOnInit() {
+    const slug = this.tenant.currentSlug();
+    if (!slug) return;
+    const account = await this.accountService.getPublicAccount(slug);
+    if (account) {
+      this.account.set(account);
+    } else {
+      this.accountNotFound.set(true);
+    }
+  }
 }

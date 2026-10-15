@@ -1,4 +1,5 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -13,6 +14,14 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { LegalDialogComponent } from '../../shared/components/legal-dialog.component';
 import { AuthService } from '../../core/services/auth.service';
 import { LandingCmsService } from '../../core/services/landing-cms.service';
+import { AccountService } from '../../core/services/account.service';
+import {
+  accountSlugAvailableValidator,
+  accountSlugErrorMessage,
+  accountSlugFormatValidator
+} from '../../core/validators/account-slug.validator';
+import { slugifyAccount } from '../../core/utils/tenant.util';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-register',
@@ -38,6 +47,10 @@ export class RegisterComponent implements OnInit {
   isLoading = signal(false);
   hidePassword = signal(true);
   hideConfirmPassword = signal(true);
+  readonly rootDomain = environment.rootDomain;
+  /** Enquanto o utilizador não editar o endereço, ele segue o nome. */
+  private slugEditedByUser = false;
+  private destroyRef = inject(DestroyRef);
 
   constructor(
     private fb: FormBuilder,
@@ -45,10 +58,15 @@ export class RegisterComponent implements OnInit {
     private router: Router,
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
-    private cmsService: LandingCmsService
+    private cmsService: LandingCmsService,
+    private accountService: AccountService
   ) {
     this.registerForm = this.fb.group({
       fullName: ['', [Validators.required, Validators.minLength(3)]],
+      accountSlug: ['', {
+        validators: [Validators.required, accountSlugFormatValidator()],
+        asyncValidators: [accountSlugAvailableValidator(this.accountService)]
+      }],
       email: ['', [Validators.required, Validators.email]],
       phone: ['', [Validators.pattern(/^\+?258\s?\d{2}\s?\d{3}\s?\d{4}$/)]],
       password: ['', [Validators.required, Validators.minLength(6)]],
@@ -61,6 +79,22 @@ export class RegisterComponent implements OnInit {
 
   ngOnInit() {
     this.cmsService.loadAllContent().catch(() => {});
+
+    this.registerForm.get('fullName')!.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(name => {
+        if (this.slugEditedByUser) return;
+        const slugControl = this.registerForm.get('accountSlug')!;
+        slugControl.setValue(slugifyAccount(name || ''));
+        if (slugControl.value) slugControl.markAsTouched();
+      });
+  }
+
+  onSlugInput() {
+    this.slugEditedByUser = true;
+    const slugControl = this.registerForm.get('accountSlug')!;
+    const clean = (slugControl.value || '').toLowerCase().replace(/[^a-z0-9-]/g, '');
+    if (clean !== slugControl.value) slugControl.setValue(clean);
   }
 
   private passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
@@ -75,17 +109,15 @@ export class RegisterComponent implements OnInit {
   }
 
   async onSubmit() {
-    if (this.registerForm.invalid) {
+    if (this.registerForm.invalid || this.registerForm.pending) {
       this.registerForm.markAllAsTouched();
       return;
     }
 
     this.isLoading.set(true);
 
-    const { fullName, email, phone, password } = this.registerForm.value;
-    const result = await this.authService.signUp(email, password, fullName, phone);
-
-    this.isLoading.set(false);
+    const { fullName, email, phone, password, accountSlug } = this.registerForm.value;
+    const result = await this.authService.signUp(email, password, fullName, phone, accountSlug);
 
     if (result.success) {
       this.snackBar.open('Conta criada com sucesso!', 'Fechar', {
@@ -93,8 +125,16 @@ export class RegisterComponent implements OnInit {
         panelClass: ['success-snackbar']
       });
 
-      this.router.navigate(['/configurar-empresa']);
+      // O slug final pode ter recebido um sufixo se alguém o ocupou entretanto.
+      const target = await this.accountService.resolvePostLoginTarget();
+      this.isLoading.set(false);
+      if (target.kind === 'external') {
+        window.location.href = target.url;
+      } else {
+        this.router.navigate([target.route]);
+      }
     } else {
+      this.isLoading.set(false);
       this.snackBar.open(result.error || 'Erro ao criar conta', 'Fechar', {
         duration: 5000,
         panelClass: ['error-snackbar']
@@ -126,6 +166,8 @@ export class RegisterComponent implements OnInit {
   getErrorMessage(field: string): string {
     const control = this.registerForm.get(field);
     if (!control || !control.touched) return '';
+
+    if (field === 'accountSlug') return accountSlugErrorMessage(control);
 
     if (control.hasError('required')) {
       return 'Este campo é obrigatório';

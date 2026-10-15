@@ -2,7 +2,7 @@ import { Component, OnInit, computed, effect, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { SUBSCRIPTION_TAB_INDEX } from '../../core/guards/subscription.guard';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -18,6 +18,8 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CompanyService, Company } from '../../core/services/company.service';
+import { AccountService } from '../../core/services/account.service';
+import { TenantService } from '../../core/services/tenant.service';
 import { SubscriptionService, SubscriptionPlan } from '../../core/services/subscription.service';
 import { UserManagementService, UserWithCompanies } from '../../core/services/user-management.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -113,8 +115,17 @@ export class SettingsComponent implements OnInit {
     private activityService: ActivityService,
     private bankAccountService: CompanyBankAccountService,
     private route: ActivatedRoute,
-    private preferences: PreferencesService
+    private preferences: PreferencesService,
+    public accountService: AccountService,
+    private tenant: TenantService
   ) {
+    effect(() => {
+      const account = this.accountService.activeAccount();
+      if (account && !this.accountNameControl.dirty) {
+        this.accountNameControl.setValue(account.name || '', { emitEvent: false });
+      }
+    });
+
     effect(() => {
       if (this.locked() && this.selectedTab() !== SUBSCRIPTION_TAB_INDEX) {
         this.selectedTab.set(SUBSCRIPTION_TAB_INDEX);
@@ -194,6 +205,31 @@ export class SettingsComponent implements OnInit {
     }
 
     this.loading.set(false);
+  }
+
+  accountNameControl = new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.minLength(2)] });
+  savingAccountName = signal(false);
+
+  accountAddress(): string {
+    const account = this.accountService.activeAccount();
+    return account ? this.tenant.accountOrigin(account.slug) : '';
+  }
+
+  async saveAccountName() {
+    if (this.accountNameControl.invalid) return;
+    this.savingAccountName.set(true);
+    try {
+      await this.accountService.updateAccountName(this.accountNameControl.value.trim());
+      this.accountNameControl.markAsPristine();
+      this.snackBar.open('Nome da conta actualizado.', 'Fechar', { duration: 3000, panelClass: ['success-snackbar'] });
+    } catch (error) {
+      this.snackBar.open(friendlyErrorMessage(error, 'Não foi possível actualizar a conta.'), 'Fechar', {
+        duration: 5000,
+        panelClass: ['error-snackbar']
+      });
+    } finally {
+      this.savingAccountName.set(false);
+    }
   }
 
   /** As configurações do sistema só podem ser alteradas pelo proprietário da empresa. */

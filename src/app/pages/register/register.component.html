@@ -26,6 +26,34 @@
 
         <div>
           <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Endereço da conta</mat-label>
+            <input
+              matInput
+              type="text"
+              formControlName="accountSlug"
+              placeholder="minhaempresa"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+              (input)="onSlugInput()"
+            />
+            <mat-icon matPrefix class="text-gray-400">language</mat-icon>
+            <span matTextSuffix class="text-gray-500">.{{ rootDomain }}</span>
+            @if (getErrorMessage('accountSlug')) {
+              <mat-error>{{ getErrorMessage('accountSlug') }}</mat-error>
+            }
+            @if (registerForm.get('accountSlug')?.pending) {
+              <mat-hint>A verificar disponibilidade...</mat-hint>
+            } @else if (registerForm.get('accountSlug')?.valid) {
+              <mat-hint class="!text-green-700">Disponível. Vai aceder à sua conta neste endereço.</mat-hint>
+            } @else {
+              <mat-hint>Será o endereço da sua conta. Pode ter várias empresas na mesma conta.</mat-hint>
+            }
+          </mat-form-field>
+        </div>
+
+        <div>
+          <mat-form-field appearance="outline" class="w-full">
             <mat-label>Email</mat-label>
             <input
               matInput

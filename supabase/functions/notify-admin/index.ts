@@ -27,7 +27,7 @@ serve(async (req) => {
   }
 
   try {
-    const { type, email, fullName, phone } = await req.json();
+    const { type, email, fullName, phone, accountSlug } = await req.json();
 
     if (!isEmail(email)) {
       return json({ success: false, error: "Email is required" }, 400);
@@ -50,6 +50,7 @@ serve(async (req) => {
         ["Email", String(email).trim()],
         ["Nome Completo", typeof fullName === "string" ? fullName.slice(0, 200) : ""],
         ["Telefone", typeof phone === "string" ? phone.slice(0, 50) : ""],
+        ["Conta", typeof accountSlug === "string" ? accountSlug.slice(0, 40) : ""],
         ["Data/Hora", new Date().toLocaleString('pt-PT', { timeZone: 'Africa/Maputo' })],
       ])}`;
 

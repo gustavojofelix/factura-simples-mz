@@ -7,14 +7,35 @@
     <!-- Logo Section -->
     <div class="text-center mb-2 animate-fade-in flex flex-col items-center">
       <div class="p-3.5 sm:p-4 bg-white/95 backdrop-blur-md rounded-2xl border border-white/40 shadow-xl shadow-orange-500/10 ring-4 ring-white/10 mb-4 transition-transform hover:scale-[1.02] flex items-center justify-center">
-        <img src="assets/ISPC.png" alt="ISPC Fácil" class="h-12 sm:h-14 w-auto object-contain">
+        <img [src]="account()?.logo_url || 'assets/ISPC.png'" [alt]="account()?.name || 'ISPC Fácil'" class="h-12 sm:h-14 w-auto object-contain">
       </div>
-      <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Bem-vindo de volta</h2>
-      <p class="text-sm text-slate-400 mt-1.5 font-medium">Entre na sua conta para gerir a sua facturação</p>
+      @if (accountNotFound()) {
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Conta não encontrada</h2>
+        <p class="text-sm text-slate-400 mt-1.5 font-medium">
+          O endereço <strong class="text-slate-200">{{ tenant.currentSlug() }}</strong> não corresponde a nenhuma conta.
+        </p>
+      } @else {
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Bem-vindo de volta</h2>
+        <p class="text-sm text-slate-400 mt-1.5 font-medium">
+          @if (account()?.name) {
+            Entre na conta <strong class="text-slate-200">{{ account()?.name }}</strong>
+          } @else {
+            Entre na sua conta para gerir a sua facturação
+          }
+        </p>
+      }
     </div>
 
-    <!-- Login Form Component -->
-    <app-login-form></app-login-form>
+    @if (accountNotFound()) {
+      <div class="text-center">
+        <a [href]="tenant.rootUrl('/entrar')" class="inline-flex items-center font-semibold text-white bg-ispc-orange hover:bg-ispc-orange/90 py-3 px-5 rounded-xl">
+          Ir para a página principal
+        </a>
+      </div>
+    } @else {
+      <!-- Login Form Component -->
+      <app-login-form></app-login-form>
+    }
 
     <!-- Back to Landing -->
     <div class="text-center">
