@@ -84,6 +84,9 @@ export function friendlyErrorMessage(error: unknown, fallback = 'Ocorreu um erro
   const details: string = typeof err.details === 'string' ? err.details : '';
 
   if (details && DETAIL_MESSAGES[details]) return DETAIL_MESSAGES[details];
+  // Outros códigos em DETAIL (ex.: SUBSCRIPTION_INSERT_BLOCKED) vêm das nossas
+  // funções/triggers, cuja mensagem já está em português — mesmo com SQLSTATE 42501.
+  if (/^[A-Z][A-Z0-9_]+$/.test(details) && message) return message;
 
   for (const [pattern, text] of TEXT_MESSAGES) {
     if (pattern.test(message)) return text;

@@ -22,6 +22,7 @@ import { CompanyDocument } from '../../core/services/document-processing.service
 import { ActivityService, ActivityType } from '../../core/services/activity.service';
 import { CompanyService } from '../../core/services/company.service';
 import { AccountService } from '../../core/services/account.service';
+import { ErrorDialogService } from '../../core/services/error-dialog.service';
 
 
 @Component({
@@ -46,6 +47,7 @@ import { AccountService } from '../../core/services/account.service';
 })
 export class CompanySetupComponent {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly errorDialog = inject(ErrorDialogService);
   companyInfoForm: FormGroup;
   settingsForm: FormGroup;
   isLoading = signal(false);
@@ -123,7 +125,11 @@ export class CompanySetupComponent {
       this.activityTypes.set(await this.activityService.list(false));
     } catch (error) {
       console.error('Erro ao carregar catálogo de actividades:', error);
-      this.snackBar.open('Não foi possível carregar os tipos de actividades.', 'Fechar', { duration: 5000 });
+      this.errorDialog.show(error, {
+        title: 'Não foi possível carregar os tipos de actividades',
+        context: 'Configurar empresa: carregar catálogo de actividades',
+        retryLabel: 'Tentar novamente'
+      }).then(result => { if (result === 'retry') this.loadActivityCatalog(); });
     } finally {
       this.isLoadingActivities.set(false);
     }
@@ -217,7 +223,7 @@ export class CompanySetupComponent {
       this.snackBar.open('Alvará carregado com sucesso!', 'Fechar', { duration: 3000 });
     } catch (error: any) {
       console.error('Erro ao subir Alvará:', error);
-      this.snackBar.open('Erro ao carregar o Alvará', 'Fechar', { duration: 3000 });
+      this.errorDialog.show(error, { title: 'Não foi possível carregar o Alvará', context: 'Configurar empresa: upload do Alvará' });
     } finally {
       this.isUploadingAlvara.set(false);
       input.value = '';
@@ -256,7 +262,7 @@ export class CompanySetupComponent {
       }
     } catch (error: any) {
       console.error('Erro ao subir NUIT:', error);
-      this.snackBar.open('Erro ao carregar documento', 'Fechar', { duration: 3000 });
+      this.errorDialog.show(error, { title: 'Não foi possível carregar o documento NUIT', context: 'Configurar empresa: upload do NUIT' });
     } finally {
       this.isUploadingNuit.set(false);
       input.value = '';
@@ -291,7 +297,7 @@ export class CompanySetupComponent {
       }
     } catch (error: any) {
       console.error('Erro ao subir Exercício de Actividade Comercial:', error);
-      this.snackBar.open('Erro ao carregar documento', 'Fechar', { duration: 3000 });
+      this.errorDialog.show(error, { title: 'Não foi possível carregar o documento', context: 'Configurar empresa: upload do Exercício de Actividade Comercial' });
     } finally {
       this.isUploadingCommercial.set(false);
       input.value = '';
@@ -326,7 +332,7 @@ export class CompanySetupComponent {
       this.snackBar.open('Documento adicionado à lista!', 'Fechar', { duration: 3000 });
     } catch (error: any) {
       console.error('Erro ao subir documento:', error);
-      this.snackBar.open('Erro ao carregar documento', 'Fechar', { duration: 3000 });
+      this.errorDialog.show(error, { title: 'Não foi possível carregar o documento', context: `Configurar empresa: upload de "${type}"` });
     } finally {
       this.isUploadingOther.set(false);
       input.value = '';
@@ -353,6 +359,7 @@ export class CompanySetupComponent {
       this.snackBar.open('Documento removido da lista!', 'Fechar', { duration: 3000 });
     } catch (error) {
       console.error('Erro ao remover documento:', error);
+      this.errorDialog.show(error, { title: 'Não foi possível remover o documento', context: 'Configurar empresa: remover documento' });
     }
   }
 
@@ -381,7 +388,7 @@ export class CompanySetupComponent {
       this.snackBar.open('Documento removido!', 'Fechar', { duration: 3000 });
     } catch (error) {
       console.error('Erro ao remover documento:', error);
-      this.snackBar.open('Erro ao remover documento', 'Fechar', { duration: 3000 });
+      this.errorDialog.show(error, { title: 'Não foi possível remover o documento', context: 'Configurar empresa: remover documento' });
     }
   }
 
@@ -409,9 +416,9 @@ export class CompanySetupComponent {
 
     const user = (await this.supabase.auth.getUser()).data.user;
     if (!user) {
-      this.snackBar.open('Utilizador não autenticado', 'Fechar', {
-        duration: 3000,
-        panelClass: ['error-snackbar']
+      this.errorDialog.show('A sua sessão terminou. Entre novamente para configurar a empresa.', {
+        title: 'Sessão expirada',
+        context: 'Configurar empresa: criar empresa'
       });
       this.isLoading.set(false);
       return;
@@ -494,9 +501,9 @@ export class CompanySetupComponent {
       if (CompanyService.isDuplicateNuitError(error)) {
         this.flagDuplicateNuit();
       } else {
-        this.snackBar.open(error.message || 'Erro ao configurar empresa', 'Fechar', {
-          duration: 5000,
-          panelClass: ['error-snackbar']
+        this.errorDialog.show(error, {
+          title: 'Não foi possível criar a empresa',
+          context: 'Configurar empresa: criar empresa'
         });
       }
     } finally {
