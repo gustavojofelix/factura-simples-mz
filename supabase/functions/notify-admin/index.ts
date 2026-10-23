@@ -8,6 +8,7 @@ import {
   isEmail,
   sendEmail,
 } from "../_shared/email.ts";
+import { accountOrigin } from "../_shared/account-url.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,6 +19,66 @@ function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+// deno-lint-ignore no-explicit-any
+type Admin = any;
+
+/**
+ * Boas-vindas ao novo subscritor, com o endereço da sua conta.
+ * Só é enviado ao utilizador dono do JWT do pedido (nunca a um email vindo do
+ * corpo), uma única vez, e só para registos recentes.
+ */
+async function sendWelcomeEmail(db: Admin, req: Request): Promise<void> {
+  const jwt = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+  const { data: userData } = await db.auth.getUser(jwt);
+  const user = userData?.user;
+  // Sem sessão (ex.: confirmação de email activa) o Supabase já envia o seu próprio email.
+  if (!user?.email) return;
+
+  const ageMs = Date.now() - new Date(user.created_at).getTime();
+  if (!(ageMs >= 0 && ageMs < 60 * 60 * 1000)) return;
+
+  const { data: already } = await db
+    .from("email_log")
+    .select("id")
+    .eq("kind", "signup_welcome")
+    .eq("related_id", user.id)
+    .eq("status", "sent")
+    .limit(1);
+  if (already && already.length > 0) return;
+
+  const { data: account } = await db
+    .from("accounts")
+    .select("slug, name")
+    .eq("owner_user_id", user.id)
+    .maybeSingle();
+
+  const origin = accountOrigin(account?.slug);
+  const loginUrl = `${origin}/#/entrar`;
+  const fullName = typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : "";
+
+  const inner = `
+      <p>Olá${fullName ? ` ${escapeHtml(fullName)}` : ""},</p>
+      <p>A sua conta no <strong>ISPC Fácil</strong> foi criada com sucesso. Guarde o endereço abaixo: é por ele que acede sempre à sua conta.</p>
+      ${detailsTable([
+        ["Endereço da conta", origin.replace(/^https?:\/\//, "")],
+        ["Email de acesso", user.email],
+      ])}
+      <p style="text-align:center;margin:28px 0;">
+        <a href="${escapeHtml(loginUrl)}" style="background-color:#f16c39;color:#ffffff;padding:14px 28px;text-decoration:none;border-radius:8px;font-weight:bold;font-size:14px;display:inline-block;">Aceder à minha conta</a>
+      </p>
+      <p><strong>Próximo passo:</strong> configure a sua primeira empresa (nome, NUIT e dados fiscais) para começar a emitir facturas.</p>
+      <p style="font-size:12px;color:#6b7280;">Se o botão não funcionar, copie este link para o navegador:<br/>${escapeHtml(loginUrl)}</p>`;
+
+  await sendEmail(db, {
+    kind: "signup_welcome",
+    to: user.email,
+    subject: "Bem-vindo ao ISPC Fácil — a sua conta foi criada",
+    html: emailLayout("Conta criada com sucesso", inner),
+    relatedTable: "auth.users",
+    relatedId: user.id,
   });
 }
 
@@ -63,6 +124,14 @@ serve(async (req) => {
       relatedTable: "profiles",
       relatedId: String(email).trim().toLowerCase(),
     });
+
+    if (!isInvite && db) {
+      try {
+        await sendWelcomeEmail(db, req);
+      } catch (e) {
+        console.error("Failed to send welcome email:", e);
+      }
+    }
 
     if (!result.ok) {
       return json({ success: false, status: result.status, error: result.error }, result.status === "skipped" ? 200 : 500);
