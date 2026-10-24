@@ -18,6 +18,7 @@ import { SubscriptionService } from '../../core/services/subscription.service';
 import { AiSearchComponent } from '../components/ai-search/ai-search.component';
 import { AiAlertsComponent } from '../components/ai-alerts/ai-alerts.component';
 import { AiAssistantWidgetComponent } from '../components/ai-chat/ai-assistant-widget.component';
+import { LanguageSwitcherComponent } from '../components/language-switcher/language-switcher.component';
 import { effect } from '@angular/core';
 
 interface MenuItem {
@@ -40,6 +41,7 @@ interface MenuItem {
     MatIconModule,
     MatButtonModule,
     MatMenuModule,
+    LanguageSwitcherComponent,
     MatSelectModule,
     MatCardModule,
     AiSearchComponent,

@@ -1,8 +1,9 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { SupabaseService } from './supabase.service';
 import { User, AuthError } from '@supabase/supabase-js';
 import { AuditLogService } from './audit-log.service';
+import { LanguageService } from '../i18n/language.service';
 
 export interface AuthResponse {
   success: boolean;
@@ -26,6 +27,7 @@ export class AuthService {
   currentUser = signal<User | null>(null);
   isLoading = signal<boolean>(true);
 
+  private languageService = inject(LanguageService);
   private _isAdminCache: boolean | null = null;
   private _authResolved = false;
   private authInitialized = new Promise<void>((resolve) => {
@@ -126,7 +128,7 @@ export class AuthService {
         // Verificar se a conta do utilizador/subscritor foi suspensa
         const { data: profile } = await this.supabase.db
           .from('profiles')
-          .select('status')
+          .select('status, language')
           .eq('id', data.user.id)
           .maybeSingle();
 
@@ -151,6 +153,8 @@ export class AuthService {
           'auth',
           { email: data.user.email }
         );
+        // Língua do perfil: se for diferente da actual, a página recarrega já autenticada.
+        await this.languageService.syncWithProfile(data.user.id, profile?.language);
         return { success: true, user: data.user };
       }
 
