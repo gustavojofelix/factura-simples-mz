@@ -1,4 +1,25 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { type EmailLanguage, type Localized, normalizeLanguage, pick } from "../_shared/i18n.ts";
+
+// Extracção de dados (OCR, Google Vision) de documentos da empresa. Não usa
+// modelo de linguagem: os dados extraídos são devolvidos tal como aparecem no
+// documento. O corpo pode trazer `language` ('pt-MZ' | 'en-GB' | 'fr-FR'),
+// usado nas mensagens de erro.
+
+const MSG = {
+  missingFields: {
+    "pt-MZ": "Faltam campos obrigatórios (document, documentType).",
+    "en-GB": "Required fields are missing (document, documentType).",
+    "fr-FR": "Des champs obligatoires sont manquants (document, documentType).",
+  },
+  failed: {
+    "pt-MZ": "Não foi possível processar o documento.",
+    "en-GB": "Could not process the document.",
+    "fr-FR": "Impossible de traiter le document.",
+  },
+} satisfies Record<string, Localized>;
+
+class RequestError extends Error {}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,11 +44,13 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  let lang: EmailLanguage = "pt-MZ";
   try {
-    const { document, documentType, mimeType } = await req.json();
+    const { document, documentType, mimeType, language } = await req.json();
+    lang = normalizeLanguage(language);
 
     if (!document || !documentType) {
-      throw new Error("Missing required fields");
+      throw new RequestError(pick(MSG.missingFields, lang));
     }
 
     const extractedData = await extractDataFromDocument(
@@ -47,8 +70,9 @@ Deno.serve(async (req: Request) => {
     );
   } catch (error) {
     console.error("Error processing document:", error);
+    const message = error instanceof RequestError ? error.message : pick(MSG.failed, lang);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: message }),
       {
         status: 500,
         headers: {

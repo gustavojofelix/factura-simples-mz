@@ -9,6 +9,7 @@
 // SMTP_CONFIG_MISSING e é registado como tal, em vez de falhar em silêncio.
 
 import nodemailer from "npm:nodemailer@6.9.11";
+import { DEFAULT_EMAIL_FOOTER, type EmailLanguage, pick } from "./i18n.ts";
 
 /** Cliente Supabase mínimo de que este módulo precisa (evita fixar a versão do SDK). */
 // deno-lint-ignore no-explicit-any
@@ -77,14 +78,23 @@ export function sanitizeHeader(value: string): string {
   return value.replace(/[\r\n]+/g, " ").trim();
 }
 
-/** Moldura visual comum (cabeçalho laranja #f16c39). `innerHtml` já deve vir escapado. */
-export function emailLayout(title: string, innerHtml: string, footer?: string): string {
+/**
+ * Moldura visual comum (cabeçalho laranja #f16c39). `innerHtml` já deve vir escapado.
+ * `footer` substitui o rodapé por omissão; sem ele, usa-se o rodapé na língua
+ * `language` (por omissão 'pt-MZ').
+ */
+export function emailLayout(
+  title: string,
+  innerHtml: string,
+  footer?: string,
+  language: EmailLanguage = "pt-MZ",
+): string {
   return `
   <div style="font-family:sans-serif;padding:24px;max-width:600px;margin:0 auto;border:1px solid #eee;border-radius:10px;color:#1f2937;">
     <h2 style="color:#f16c39;border-bottom:2px solid #f16c39;padding-bottom:10px;margin-top:0;">${escapeHtml(title)}</h2>
     ${innerHtml}
     <hr style="border:none;border-top:1px solid #eee;margin-top:24px;"/>
-    <p style="font-size:11px;color:#888;">${footer ?? "E-mail automático do ISPC Fácil. Não responda a este e-mail."}</p>
+    <p style="font-size:11px;color:#888;">${footer ?? pick(DEFAULT_EMAIL_FOOTER, language)}</p>
   </div>`;
 }
 

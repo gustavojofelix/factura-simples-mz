@@ -4,6 +4,13 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 
 import { SYSTEM_PROMPT, buildContextBlock } from "./prompt.ts";
 import { TOOL_DEFINITIONS, executeTool, type ToolCallRecord } from "./tools.ts";
+import {
+  type EmailLanguage,
+  getUserLanguage,
+  type Localized,
+  normalizeLanguage,
+  pick,
+} from "../_shared/i18n.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -44,9 +51,96 @@ let fallbacksSupported = true;
  * saldo e chave inválida são problemas da plataforma, não do utilizador: a
  * mensagem não expõe o detalhe, que fica gravado em `ai_messages.error`.
  */
-function mensagemDeErro(err: unknown): string {
+/**
+ * Mensagens devolvidas pela própria função (não pelo modelo), na língua da
+ * interface (`language` no corpo do pedido).
+ */
+const MSG = {
+  rateLimit: {
+    "pt-MZ": "O assistente está com muitos pedidos neste momento. Tente dentro de alguns segundos.",
+    "en-GB": "The assistant is handling a lot of requests right now. Please try again in a few seconds.",
+    "fr-FR": "L'assistant reçoit beaucoup de demandes en ce moment. Veuillez réessayer dans quelques secondes.",
+  },
+  unavailable: {
+    "pt-MZ": "O assistente está temporariamente indisponível. Se o problema persistir, contacte o apoio ao cliente.",
+    "en-GB": "The assistant is temporarily unavailable. If the problem persists, please contact customer support.",
+    "fr-FR": "L'assistant est temporairement indisponible. Si le problème persiste, veuillez contacter le service client.",
+  },
+  overloaded: {
+    "pt-MZ": "O serviço de IA está sobrecarregado. Tente dentro de alguns minutos.",
+    "en-GB": "The AI service is overloaded. Please try again in a few minutes.",
+    "fr-FR": "Le service d'IA est surchargé. Veuillez réessayer dans quelques minutes.",
+  },
+  generic: {
+    "pt-MZ": "Ocorreu um erro ao consultar o assistente. Tente novamente.",
+    "en-GB": "An error occurred while contacting the assistant. Please try again.",
+    "fr-FR": "Une erreur s'est produite lors de la consultation de l'assistant. Veuillez réessayer.",
+  },
+  missingApiKey: {
+    "pt-MZ": "O assistente não está configurado neste ambiente.",
+    "en-GB": "The assistant is not configured in this environment.",
+    "fr-FR": "L'assistant n'est pas configuré dans cet environnement.",
+  },
+  unauthenticated: {
+    "pt-MZ": "Sessão não autenticada.",
+    "en-GB": "You are not signed in.",
+    "fr-FR": "Session non authentifiée.",
+  },
+  badRequest: {
+    "pt-MZ": "Pedido inválido.",
+    "en-GB": "Invalid request.",
+    "fr-FR": "Requête invalide.",
+  },
+  missingFields: {
+    "pt-MZ": "Faltam campos obrigatórios (company_id, message).",
+    "en-GB": "Required fields are missing (company_id, message).",
+    "fr-FR": "Des champs obligatoires sont manquants (company_id, message).",
+  },
+  tooLong: {
+    "pt-MZ": "A pergunta é demasiado longa. Reformule em menos de 4000 caracteres.",
+    "en-GB": "Your question is too long. Please rephrase it in fewer than 4,000 characters.",
+    "fr-FR": "Votre question est trop longue. Veuillez la reformuler en moins de 4 000 caractères.",
+  },
+  invalidSession: {
+    "pt-MZ": "Sessão inválida ou expirada.",
+    "en-GB": "Your session is invalid or has expired.",
+    "fr-FR": "Session invalide ou expirée.",
+  },
+  planDisabled: {
+    "pt-MZ": "O assistente não está disponível no seu plano.",
+    "en-GB": "The assistant is not available on your plan.",
+    "fr-FR": "L'assistant n'est pas disponible dans votre formule.",
+  },
+  planLimit: {
+    "pt-MZ": "Atingiu o limite de utilização do assistente no seu plano.",
+    "en-GB": "You have reached the assistant usage limit for your plan.",
+    "fr-FR": "Vous avez atteint la limite d'utilisation de l'assistant pour votre formule.",
+  },
+  forbidden: {
+    "pt-MZ": "Sem acesso aos dados desta empresa.",
+    "en-GB": "You do not have access to this company's data.",
+    "fr-FR": "Vous n'avez pas accès aux données de cette entreprise.",
+  },
+  conversationFailed: {
+    "pt-MZ": "Não foi possível iniciar a conversa.",
+    "en-GB": "Could not start the conversation.",
+    "fr-FR": "Impossible de démarrer la conversation.",
+  },
+  refusal: {
+    "pt-MZ": "Não consigo responder a este pedido. Reformule a pergunta ou contacte o apoio ao cliente.",
+    "en-GB": "I can't answer this request. Please rephrase your question or contact customer support.",
+    "fr-FR": "Je ne peux pas répondre à cette demande. Veuillez reformuler votre question ou contacter le service client.",
+  },
+  maxTurns: {
+    "pt-MZ": "A consulta ficou demasiado longa. Tente uma pergunta mais específica, por exemplo indicando um período concreto.",
+    "en-GB": "The query became too long. Try a more specific question, for example by giving a specific period.",
+    "fr-FR": "La requête est devenue trop longue. Essayez une question plus précise, par exemple en indiquant une période donnée.",
+  },
+} satisfies Record<string, Localized>;
+
+function mensagemDeErro(err: unknown, lang: EmailLanguage = "pt-MZ"): string {
   if (err instanceof Anthropic.RateLimitError) {
-    return "O assistente está com muitos pedidos neste momento. Tente dentro de alguns segundos.";
+    return pick(MSG.rateLimit, lang);
   }
 
   // A falta de saldo chega como 400 invalid_request_error, sem classe própria
@@ -59,14 +153,14 @@ function mensagemDeErro(err: unknown): string {
     err instanceof Anthropic.AuthenticationError ||
     err instanceof Anthropic.PermissionDeniedError
   ) {
-    return "O assistente está temporariamente indisponível. Se o problema persistir, contacte o apoio ao cliente.";
+    return pick(MSG.unavailable, lang);
   }
 
   if (err instanceof Anthropic.InternalServerError) {
-    return "O serviço de IA está sobrecarregado. Tente dentro de alguns minutos.";
+    return pick(MSG.overloaded, lang);
   }
 
-  return "Ocorreu um erro ao consultar o assistente. Tente novamente.";
+  return pick(MSG.generic, lang);
 }
 
 interface RequestBody {
@@ -74,6 +168,8 @@ interface RequestBody {
   conversation_id?: string | null;
   message?: string;
   surface?: "chat" | "search";
+  /** Língua da interface: 'pt-MZ' | 'en-GB' | 'fr-FR'. Sem ela, usa profiles.language. */
+  language?: string;
 }
 
 function sseEvent(event: string, data: unknown): Uint8Array {
@@ -125,43 +221,35 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!apiKey) {
-    return jsonError(
-      "O assistente não está configurado neste ambiente.",
-      "MISSING_API_KEY",
-      503,
-    );
-  }
-
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader) {
-    return jsonError("Sessão não autenticada.", "UNAUTHENTICATED", 401);
-  }
-
+  // O corpo é lido primeiro para as mensagens de erro já saírem na língua da
+  // interface.
   let body: RequestBody;
   try {
     body = await req.json();
   } catch {
-    return jsonError("Pedido inválido.", "BAD_REQUEST", 400);
+    return jsonError(MSG.badRequest["pt-MZ"], "BAD_REQUEST", 400);
   }
 
   const { company_id, conversation_id, message, surface = "chat" } = body;
+  const languageFromBody = typeof body.language === "string" && body.language.trim() !== "";
+  let lang: EmailLanguage = normalizeLanguage(body.language);
+
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  if (!apiKey) {
+    return jsonError(pick(MSG.missingApiKey, lang), "MISSING_API_KEY", 503);
+  }
+
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) {
+    return jsonError(pick(MSG.unauthenticated, lang), "UNAUTHENTICATED", 401);
+  }
 
   if (!company_id || !message?.trim()) {
-    return jsonError(
-      "Faltam campos obrigatórios (company_id, message).",
-      "BAD_REQUEST",
-      400,
-    );
+    return jsonError(pick(MSG.missingFields, lang), "BAD_REQUEST", 400);
   }
 
   if (message.length > 4000) {
-    return jsonError(
-      "A pergunta é demasiado longa. Reformule em menos de 4000 caracteres.",
-      "MESSAGE_TOO_LONG",
-      400,
-    );
+    return jsonError(pick(MSG.tooLong, lang), "MESSAGE_TOO_LONG", 400);
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -182,8 +270,11 @@ Deno.serve(async (req) => {
   const { data: userData, error: userError } = await userClient.auth.getUser();
   const user = userData?.user;
   if (userError || !user) {
-    return jsonError("Sessão inválida ou expirada.", "UNAUTHENTICATED", 401);
+    return jsonError(pick(MSG.invalidSession, lang), "UNAUTHENTICATED", 401);
   }
+
+  // Sem `language` no pedido, usa a língua guardada no perfil.
+  if (!languageFromBody) lang = await getUserLanguage(adminClient, user.id);
 
   // Quota e entitlement, antes de qualquer token gasto.
   const { error: quotaError } = await adminClient.rpc("ai_assert_quota", {
@@ -191,8 +282,13 @@ Deno.serve(async (req) => {
   });
   if (quotaError) {
     const limite = quotaError.message?.includes("limite");
+    // Em pt-MZ mantém-se a mensagem do SQL (mais detalhada); nas outras
+    // línguas usa-se uma mensagem fixa traduzida.
+    const mensagem = lang === "pt-MZ"
+      ? quotaError.message ?? MSG.planDisabled["pt-MZ"]
+      : pick(limite ? MSG.planLimit : MSG.planDisabled, lang);
     return jsonError(
-      quotaError.message ?? "O assistente não está disponível no seu plano.",
+      mensagem,
       limite ? "SUBSCRIPTION_LIMIT_REACHED" : "SUBSCRIPTION_FEATURE_DISABLED",
       402,
     );
@@ -205,7 +301,7 @@ Deno.serve(async (req) => {
     { p_company_id: company_id },
   );
   if (snapshotError) {
-    return jsonError("Sem acesso aos dados desta empresa.", "FORBIDDEN", 403);
+    return jsonError(pick(MSG.forbidden, lang), "FORBIDDEN", 403);
   }
 
   // --- Conversa -------------------------------------------------------------
@@ -231,7 +327,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (createError || !created) {
-      return jsonError("Não foi possível iniciar a conversa.", "DB_ERROR", 500);
+      return jsonError(pick(MSG.conversationFailed, lang), "DB_ERROR", 500);
     }
     conversationId = created.id;
   }
@@ -282,6 +378,7 @@ Deno.serve(async (req) => {
   const contexto = buildContextBlock(
     (snapshot ?? {}) as Record<string, never>,
     user.user_metadata?.full_name ?? user.email ?? "Utilizador",
+    lang,
   );
 
   const stream = new ReadableStream({
@@ -376,9 +473,7 @@ Deno.serve(async (req) => {
 
           if (resposta.stop_reason === "refusal") {
             erro = "REFUSAL";
-            textoFinal =
-              "Não consigo responder a este pedido. Reformule a pergunta ou " +
-              "contacte o apoio ao cliente.";
+            textoFinal = pick(MSG.refusal, lang);
             enviar("delta", { text: textoFinal });
             break;
           }
@@ -435,9 +530,7 @@ Deno.serve(async (req) => {
 
           if (turno === MAX_TURNS - 1) {
             erro = "MAX_TURNS";
-            textoFinal =
-              "A consulta ficou demasiado longa. Tente uma pergunta mais " +
-              "específica, por exemplo indicando um período concreto.";
+            textoFinal = pick(MSG.maxTurns, lang);
             enviar("delta", { text: textoFinal });
           }
         }
@@ -446,7 +539,7 @@ Deno.serve(async (req) => {
         console.error("ai-assistant:", mensagem);
         erro = mensagem;
 
-        const amigavel = mensagemDeErro(err);
+        const amigavel = mensagemDeErro(err, lang);
 
         enviar("error", { message: amigavel, code: "AI_ERROR" });
         textoFinal = textoFinal || amigavel;

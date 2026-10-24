@@ -7,6 +7,9 @@
 //   admin_notified_at, a não ser que `force` seja true (reenvio pelo admin).
 // - notifySubscriptionPaymentFailed: aviso só para a LTS quando a carteira
 //   móvel devolve erro. Não há e-mail no início do pagamento.
+//
+// Língua: o e-mail do cliente segue profiles.language do dono da empresa
+// (pt-MZ por omissão); os e-mails internos da LTS ficam sempre em português.
 
 import {
   adminRecipients,
@@ -23,6 +26,7 @@ import {
   formatCompanyDate,
   getCompanyNotificationSettings,
 } from "./notification-recipients.ts";
+import { type EmailLanguage, getUserLanguage, type Localized, pick } from "./i18n.ts";
 
 export type NotifySource = "webhook" | "manual" | "resend";
 
@@ -51,18 +55,20 @@ export interface NotifyResult {
 // deno-lint-ignore no-explicit-any
 type Row = Record<string, any>;
 
-export function cycleLabel(cycle: string | null | undefined): string {
-  switch (cycle) {
-    case "yearly":
-      return "Anual (1 Ano)";
-    case "semiannual":
-      return "Semestral (6 Meses)";
-    case "quarterly":
-      return "Trimestral (3 Meses)";
-    default:
-      return "Mensal (1 Mês)";
-  }
+const CYCLE_LABELS: Record<"yearly" | "semiannual" | "quarterly" | "monthly", Localized> = {
+  yearly: { "pt-MZ": "Anual (1 Ano)", "en-GB": "Annual (1 year)", "fr-FR": "Annuel (1 an)" },
+  semiannual: { "pt-MZ": "Semestral (6 Meses)", "en-GB": "Semi-annual (6 months)", "fr-FR": "Semestriel (6 mois)" },
+  quarterly: { "pt-MZ": "Trimestral (3 Meses)", "en-GB": "Quarterly (3 months)", "fr-FR": "Trimestriel (3 mois)" },
+  monthly: { "pt-MZ": "Mensal (1 Mês)", "en-GB": "Monthly (1 month)", "fr-FR": "Mensuel (1 mois)" },
+};
+
+export function cycleLabel(cycle: string | null | undefined, language: EmailLanguage = "pt-MZ"): string {
+  const key = cycle === "yearly" || cycle === "semiannual" || cycle === "quarterly" ? cycle : "monthly";
+  return pick(CYCLE_LABELS[key], language);
 }
+
+/** Locale dos números por língua (pt-MZ mantém o formato actual, pt-PT). */
+const NUMBER_LOCALE: Localized = { "pt-MZ": "pt-PT", "en-GB": "en-GB", "fr-FR": "fr-FR" };
 
 function methodLabel(method: string | null | undefined): string {
   if (method === "mpesa") return "M-Pesa";
@@ -70,9 +76,9 @@ function methodLabel(method: string | null | undefined): string {
   return method ? String(method).toUpperCase() : "—";
 }
 
-function formatAmount(amount: unknown, currency = "MZN"): string {
+function formatAmount(amount: unknown, currency = "MZN", language: EmailLanguage = "pt-MZ"): string {
   const n = Number(amount) || 0;
-  const formatted = n.toLocaleString("pt-PT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formatted = n.toLocaleString(pick(NUMBER_LOCALE, language), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return currency === "MZN" ? `${formatted} MT` : `${formatted} ${currency}`;
 }
 
@@ -106,6 +112,8 @@ async function loadPayment(db: DbClient, paymentId: string): Promise<Row | null>
 interface Owner {
   email: string | null;
   fullName: string | null;
+  /** profiles.language do dono (pt-MZ se desconhecida). */
+  language: EmailLanguage;
 }
 
 async function resolveOwner(db: DbClient, payment: Row): Promise<Owner> {
@@ -114,7 +122,7 @@ async function resolveOwner(db: DbClient, payment: Row): Promise<Owner> {
   try {
     const { data, error } = await db
       .from("company_users")
-      .select("profiles!company_users_user_id_fkey(email, full_name)")
+      .select("profiles!company_users_user_id_fkey(id, email, full_name)")
       .eq("company_id", payment.company_id)
       .eq("role", "owner")
       .limit(1)
@@ -122,7 +130,9 @@ async function resolveOwner(db: DbClient, payment: Row): Promise<Owner> {
     if (error) console.warn("[subscription-notify] owner lookup via company_users failed:", error);
     const p = data?.profiles;
     const profile = Array.isArray(p) ? p[0] : p;
-    if (profile?.email) return { email: profile.email, fullName: profile.full_name ?? null };
+    if (profile?.email) {
+      return { email: profile.email, fullName: profile.full_name ?? null, language: await getUserLanguage(db, profile.id) };
+    }
   } catch (e) {
     console.warn("[subscription-notify] owner lookup threw:", e);
   }
@@ -135,9 +145,11 @@ async function resolveOwner(db: DbClient, payment: Row): Promise<Owner> {
       .select("email, full_name")
       .eq("id", ownerId)
       .maybeSingle();
-    if (data?.email) return { email: data.email, fullName: data.full_name ?? null };
+    if (data?.email) {
+      return { email: data.email, fullName: data.full_name ?? null, language: await getUserLanguage(db, ownerId) };
+    }
   }
-  return { email: null, fullName: null };
+  return { email: null, fullName: null, language: "pt-MZ" };
 }
 
 /**
@@ -199,31 +211,80 @@ function activatedPlan(payment: Row, subscription: Row | null): { planName: stri
   };
 }
 
+/** Textos do e-mail de confirmação enviado ao cliente. */
+const CLIENT_TEXT = {
+  subject: {
+    "pt-MZ": "[ISPC Fácil] Subscrição Activada – Confirmação de Pagamento",
+    "en-GB": "[ISPC Fácil] Subscription Activated – Payment Confirmation",
+    "fr-FR": "[ISPC Fácil] Abonnement activé – Confirmation de paiement",
+  } as Localized,
+  title: {
+    "pt-MZ": "Confirmação de Pagamento de Subscrição",
+    "en-GB": "Subscription Payment Confirmation",
+    "fr-FR": "Confirmation du paiement de l'abonnement",
+  } as Localized,
+  yourCompany: { "pt-MZ": "sua empresa", "en-GB": "your company", "fr-FR": "votre entreprise" } as Localized,
+  dearClient: { "pt-MZ": "Estimado(a) Cliente", "en-GB": "Valued Client", "fr-FR": "Cher client" } as Localized,
+  hello: { "pt-MZ": "Olá", "en-GB": "Hello", "fr-FR": "Bonjour" } as Localized,
+  /** `company` já vem escapado. */
+  confirmed: {
+    "pt-MZ": (company: string) =>
+      `Confirmamos a recepção do pagamento da subscrição da empresa <strong>${company}</strong> no ISPC Fácil. A sua subscrição já está activa!`,
+    "en-GB": (company: string) =>
+      `We confirm receipt of the subscription payment for <strong>${company}</strong> on ISPC Fácil. Your subscription is now active!`,
+    "fr-FR": (company: string) =>
+      `Nous confirmons la réception du paiement de l'abonnement de l'entreprise <strong>${company}</strong> sur ISPC Fácil. Votre abonnement est désormais actif !`,
+  } as Localized<(company: string) => string>,
+  /** `current` e `requested` já vêm escapados; `requested` é " (Plano)" ou "". */
+  downgrade: {
+    "pt-MZ": (current: string, requested: string) =>
+      `Como a sua subscrição actual (<strong>${current}</strong>) ainda estava activa, não é possível mudar para um plano inferior${requested}. O período pago foi acrescentado ao plano actual.`,
+    "en-GB": (current: string, requested: string) =>
+      `As your current subscription (<strong>${current}</strong>) was still active, it is not possible to switch to a lower plan${requested}. The paid period has been added to your current plan.`,
+    "fr-FR": (current: string, requested: string) =>
+      `Votre abonnement actuel (<strong>${current}</strong>) étant encore actif, il n'est pas possible de passer à une formule inférieure${requested}. La période payée a été ajoutée à votre formule actuelle.`,
+  } as Localized<(current: string, requested: string) => string>,
+  plan: { "pt-MZ": "Plano", "en-GB": "Plan", "fr-FR": "Formule" } as Localized,
+  cycle: { "pt-MZ": "Ciclo", "en-GB": "Billing cycle", "fr-FR": "Périodicité" } as Localized,
+  amount: { "pt-MZ": "Valor", "en-GB": "Amount", "fr-FR": "Montant" } as Localized,
+  method: { "pt-MZ": "Método", "en-GB": "Payment method", "fr-FR": "Moyen de paiement" } as Localized,
+  reference: { "pt-MZ": "Referência", "en-GB": "Reference", "fr-FR": "Référence" } as Localized,
+  validUntil: { "pt-MZ": "Válida até", "en-GB": "Valid until", "fr-FR": "Valable jusqu'au" } as Localized,
+  thanks: {
+    "pt-MZ": "Agradecemos a sua preferência. Pode continuar a utilizar todas as funcionalidades sem interrupções.",
+    "en-GB": "Thank you for choosing ISPC Fácil. You can continue to use all features without interruption.",
+    "fr-FR": "Merci de votre confiance. Vous pouvez continuer à utiliser toutes les fonctionnalités sans interruption.",
+  } as Localized,
+};
+
 function clientHtml(
   payment: Row,
   ownerName: string | null,
   periodEnd: string,
   plan: ReturnType<typeof activatedPlan>,
+  language: EmailLanguage,
 ): string {
-  const companyName = payment.companies?.name || "sua empresa";
+  const t = CLIENT_TEXT;
+  const L = language;
+  const companyName = payment.companies?.name || pick(t.yourCompany, L);
   const s = sislogInfo(payment);
   const downgradeNote = plan.downgradeIgnored
-    ? `<p>Como a sua subscrição actual (<strong>${escapeHtml(plan.planName)}</strong>) ainda estava activa, não é possível mudar para um plano inferior${plan.requestedPlan ? ` (${escapeHtml(plan.requestedPlan)})` : ""}. O período pago foi acrescentado ao plano actual.</p>`
+    ? `<p>${pick(t.downgrade, L)(escapeHtml(plan.planName), plan.requestedPlan ? ` (${escapeHtml(plan.requestedPlan)})` : "")}</p>`
     : "";
   const inner = `
-    <p>Olá <strong>${escapeHtml(ownerName || "Estimado(a) Cliente")}</strong>,</p>
-    <p>Confirmamos a recepção do pagamento da subscrição da empresa <strong>${escapeHtml(companyName)}</strong> no ISPC Fácil. A sua subscrição já está activa!</p>
+    <p>${pick(t.hello, L)} <strong>${escapeHtml(ownerName || pick(t.dearClient, L))}</strong>,</p>
+    <p>${pick(t.confirmed, L)(escapeHtml(companyName))}</p>
     ${downgradeNote}
     ${detailsTable([
-      ["Plano", plan.planName],
-      ["Ciclo", cycleLabel(payment.billing_cycle)],
-      ["Valor", formatAmount(payment.amount, payment.currency || "MZN")],
-      ["Método", `${methodLabel(payment.payment_method)}${payment.phone_number ? ` (${payment.phone_number})` : ""}`],
-      ["Referência", s.reference || payment.reference_code],
-      ["Válida até", periodEnd],
+      [pick(t.plan, L), plan.planName],
+      [pick(t.cycle, L), cycleLabel(payment.billing_cycle, L)],
+      [pick(t.amount, L), formatAmount(payment.amount, payment.currency || "MZN", L)],
+      [pick(t.method, L), `${methodLabel(payment.payment_method)}${payment.phone_number ? ` (${payment.phone_number})` : ""}`],
+      [pick(t.reference, L), s.reference || payment.reference_code],
+      [pick(t.validUntil, L), periodEnd],
     ])}
-    <p>Agradecemos a sua preferência. Pode continuar a utilizar todas as funcionalidades sem interrupções.</p>`;
-  return emailLayout("Confirmação de Pagamento de Subscrição", inner);
+    <p>${pick(t.thanks, L)}</p>`;
+  return emailLayout(pick(t.title, L), inner, undefined, L);
 }
 
 function adminHtml(
@@ -329,8 +390,8 @@ export async function notifySubscriptionActivated(
           ...common,
           kind: "subscription_activated_client",
           to: clientRecipients,
-          subject: "[ISPC Fácil] Subscrição Activada – Confirmação de Pagamento",
-          html: clientHtml(payment, owner.fullName, clientPeriodEnd, plan),
+          subject: pick(CLIENT_TEXT.subject, owner.language),
+          html: clientHtml(payment, owner.fullName, clientPeriodEnd, plan, owner.language),
         }),
       );
     }

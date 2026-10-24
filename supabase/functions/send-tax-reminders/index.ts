@@ -10,11 +10,21 @@ import {
 } from "../_shared/email.ts";
 import {
   type CompanyNotificationSettings,
+  DEFAULT_NOTIFICATION_SETTINGS,
+  formatCompanyDate,
   getCompaniesNotificationSettings,
   getCompanyNotificationSettings,
   withNotificationEmail,
 } from "../_shared/notification-recipients.ts";
 import { accountUrlForCompany, accountUrlsForCompanies, siteUrl } from "../_shared/account-url.ts";
+import {
+  type EmailLanguage,
+  getUserLanguage,
+  getUsersLanguages,
+  htmlLang,
+  type Localized,
+  pick,
+} from "../_shared/i18n.ts";
 
 /**
  * Lembretes de obrigações fiscais (Modelo 30 / ISPC) por email.
@@ -40,6 +50,13 @@ import { accountUrlForCompany, accountUrlsForCompanies, siteUrl } from "../_shar
  *    data envia um lembrete de exemplo, para se poder verificar o SMTP.
  *
  * Compatibilidade: `dry_run: true` equivale a `mode: 'preview'`.
+ *
+ * Língua: cada email segue profiles.language do dono da empresa
+ * (companies.user_id; pt-MZ por omissão). Os restantes destinatários (email da
+ * empresa, "Email para Notificações") recebem a mesma mensagem. Em pt-MZ o
+ * título/texto é o gravado em tax_reminders (gerado em SQL); nas outras
+ * línguas é recomposto aqui a partir de kind/ano/trimestre/prazo, com as datas
+ * no formato das Configurações da empresa.
  */
 
 const corsHeaders = {
@@ -125,14 +142,177 @@ function json(payload: unknown, status = 200): Response {
   });
 }
 
-const KIND_STYLE: Record<Kind, { label: string; color: string; bg: string }> = {
-  qend: { label: "Fim do trimestre", color: "#1d4ed8", bg: "#eff6ff" },
-  d15: { label: "Lembrete", color: "#1d4ed8", bg: "#eff6ff" },
-  d7: { label: "Aviso", color: "#c2410c", bg: "#fff7ed" },
-  d1: { label: "Urgente", color: "#b91c1c", bg: "#fef2f2" },
-  d0: { label: "Último dia", color: "#b91c1c", bg: "#fef2f2" },
-  overdue: { label: "Incumprimento", color: "#991b1b", bg: "#fee2e2" },
+const KIND_STYLE: Record<Kind, { label: Localized; color: string; bg: string }> = {
+  qend: {
+    label: { "pt-MZ": "Fim do trimestre", "en-GB": "End of quarter", "fr-FR": "Fin du trimestre" },
+    color: "#1d4ed8",
+    bg: "#eff6ff",
+  },
+  d15: {
+    label: { "pt-MZ": "Lembrete", "en-GB": "Reminder", "fr-FR": "Rappel" },
+    color: "#1d4ed8",
+    bg: "#eff6ff",
+  },
+  d7: {
+    label: { "pt-MZ": "Aviso", "en-GB": "Notice", "fr-FR": "Avertissement" },
+    color: "#c2410c",
+    bg: "#fff7ed",
+  },
+  d1: {
+    label: { "pt-MZ": "Urgente", "en-GB": "Urgent", "fr-FR": "Urgent" },
+    color: "#b91c1c",
+    bg: "#fef2f2",
+  },
+  d0: {
+    label: { "pt-MZ": "Último dia", "en-GB": "Last day", "fr-FR": "Dernier jour" },
+    color: "#b91c1c",
+    bg: "#fef2f2",
+  },
+  overdue: {
+    label: { "pt-MZ": "Incumprimento", "en-GB": "Non-compliance", "fr-FR": "Manquement" },
+    color: "#991b1b",
+    bg: "#fee2e2",
+  },
 };
+
+/** Textos fixos do email (o título/texto de cada lembrete vem de localizeReminder). */
+const MAIL_TEXT = {
+  subjectOverdue: {
+    "pt-MZ": "Incumprimento fiscal: Modelo 30 em atraso",
+    "en-GB": "Tax non-compliance: Form 30 (Modelo 30) overdue",
+    "fr-FR": "Manquement fiscal : Formulaire 30 (Modelo 30) en retard",
+  },
+  subjectReminder: {
+    "pt-MZ": "Lembrete: prazo do Modelo 30 (ISPC)",
+    "en-GB": "Reminder: Form 30 (Modelo 30) ISPC deadline",
+    "fr-FR": "Rappel : échéance du Formulaire 30 (Modelo 30) ISPC",
+  },
+  testPrefix: { "pt-MZ": "[TESTE]", "en-GB": "[TEST]", "fr-FR": "[TEST]" },
+  header: { "pt-MZ": "Obrigações fiscais", "en-GB": "Tax obligations", "fr-FR": "Obligations fiscales" },
+  dear: { "pt-MZ": "Caro contribuinte", "en-GB": "Dear taxpayer", "fr-FR": "Cher contribuable" },
+  openTaxes: {
+    "pt-MZ": "Abrir Gestão de Impostos",
+    "en-GB": "Open Tax Management",
+    "fr-FR": "Ouvrir la gestion des impôts",
+  },
+  taxesLink: { "pt-MZ": "Gestão de Impostos", "en-GB": "Tax Management", "fr-FR": "Gestion des impôts" },
+  disclaimer1: {
+    "pt-MZ": "Se já entregou a declaração ou pagou o imposto, registe-o na área de impostos para deixar de receber estes avisos.",
+    "en-GB": "If you have already submitted the return or paid the tax, record it in the Taxes area to stop receiving these notices.",
+    "fr-FR": "Si vous avez déjà déposé la déclaration ou payé l'impôt, enregistrez-le dans la section Impôts pour ne plus recevoir ces avis.",
+  },
+  disclaimer2: {
+    "pt-MZ": "Esta mensagem é informativa e não substitui o aconselhamento de um técnico de contas.",
+    "en-GB": "This message is for information only and does not replace advice from an accountant.",
+    "fr-FR": "Ce message est fourni à titre informatif et ne remplace pas les conseils d'un expert-comptable.",
+  },
+} satisfies Record<string, Localized>;
+
+// --- Título/texto dos lembretes noutras línguas ------------------------------
+// Espelham public.tax_reminder_text e public.tax_penalty_notice (migrações
+// 20261008140000 e 20261009130000). Em pt-MZ usa-se sempre o texto do SQL.
+
+function quarterLabel(quarter: number, year: number, language: EmailLanguage): string {
+  if (language === "en-GB") {
+    const ord = ["", "1st", "2nd", "3rd", "4th"][quarter] ?? `${quarter}th`;
+    return `${ord} quarter of ${year}`;
+  }
+  if (language === "fr-FR") return `${quarter === 1 ? "1er" : `${quarter}e`} trimestre ${year}`;
+  return `${quarter}º trimestre de ${year}`;
+}
+
+const PENALTY_NOTICE: Localized = {
+  "pt-MZ": "",
+  "en-GB": "Late submission of the return and late payment of the tax are subject to fines under the General Regime " +
+    "of Tax Offences (Regime Geral das Infracções Tributárias) and to compensatory interest under the General Tax Law " +
+    "(Lei Geral Tributária), which increase the longer the delay. We recommend settling the matter immediately with " +
+    "the Tax Office (Área Fiscal) for your area: voluntary regularisation is, as a rule, more favourable than waiting " +
+    "to be notified by the Tax Authority (AT).",
+  "fr-FR": "Le dépôt tardif de la déclaration et le paiement tardif de l'impôt sont passibles des amendes prévues par " +
+    "le Régime général des infractions fiscales (Regime Geral das Infracções Tributárias) et d'intérêts compensatoires " +
+    "au titre de la Loi générale fiscale (Lei Geral Tributária), qui augmentent avec la durée du retard. Nous vous " +
+    "recommandons de régulariser immédiatement votre situation auprès du service des impôts (Área Fiscal) dont vous " +
+    "relevez : une régularisation volontaire est, en règle générale, plus favorable que d'attendre une notification " +
+    "de l'Autorité fiscale (AT).",
+};
+
+/**
+ * Título e texto do lembrete na língua pedida. Em pt-MZ devolve o lembrete tal
+ * como está (texto gerado em SQL). `referenceDate` é a data de hoje (ou a data
+ * simulada no modo 'test'), para contar os dias que faltam.
+ */
+function localizeReminder<T extends ReminderContent>(
+  r: T,
+  language: EmailLanguage,
+  referenceDate: string,
+  settings: Pick<CompanyNotificationSettings, "timezone" | "dateFormat"> = DEFAULT_NOTIFICATION_SETTINGS,
+): T {
+  if (language === "pt-MZ") return r;
+  const q = quarterLabel(r.quarter, r.year, language);
+  const due = formatCompanyDate(r.due_date, settings);
+  const days = Math.max(daysBetween(referenceDate, r.due_date), 0);
+  const dow = new Date(`${r.due_date.slice(0, 10)}T00:00:00Z`).getUTCDay(); // 0 = domingo, 6 = sábado
+  const weekend = dow === 0 || dow === 6;
+  let title: string;
+  let body: string;
+
+  if (language === "en-GB") {
+    const weekendNote = weekend
+      ? ` Note: the legal deadline (${due}) falls on a ${dow === 6 ? "Saturday" : "Sunday"}. As offices and banks may be closed, we recommend submitting the return and paying by the last working day before it.`
+      : "";
+    const daysLeft = `${days} day${days === 1 ? "" : "s"} left`;
+    switch (r.kind) {
+      case "overdue":
+        title = `Non-compliance: Form 30 (Modelo 30) for the ${q} is overdue`;
+        body = `The deadline for submitting the Form 30 (Modelo 30) ISPC return for the ${q} and paying the tax ended on ${due}. ` +
+          `Our records show neither the submission nor the payment of this return, so your company is currently in breach of its tax obligations. ` +
+          PENALTY_NOTICE["en-GB"];
+        break;
+      case "qend":
+        title = `End of the ${q}: submit Form 30 and pay ISPC by ${due}`;
+        body = `The ${q} has ended. You have until ${due} to submit this quarter's Form 30 (Modelo 30) ISPC return and pay the tax. ` +
+          `You can calculate the tax and prepare the return in the Taxes area.` + weekendNote;
+        break;
+      case "d0":
+        title = `Form 30: today is the last day (${q})`;
+        body = `Today is the last day to submit the Form 30 (Modelo 30) ISPC return for the ${q} and pay the tax. Deadline: ${due}.` +
+          weekendNote;
+        break;
+      default:
+        title = `Form 30: ${daysLeft} (${q})`;
+        body = `${daysLeft} to submit the Form 30 (Modelo 30) ISPC return for the ${q} and pay the tax. Deadline: ${due}.` +
+          weekendNote;
+    }
+  } else {
+    const weekendNote = weekend
+      ? ` Remarque : l'échéance légale (${due}) tombe un ${dow === 6 ? "samedi" : "dimanche"}. Les services et les banques pouvant être fermés, nous vous recommandons de déposer la déclaration et de payer au plus tard le dernier jour ouvrable précédent.`
+      : "";
+    const jours = `${days} jour${days === 1 ? "" : "s"}`;
+    switch (r.kind) {
+      case "overdue":
+        title = `Manquement : Formulaire 30 (Modelo 30) du ${q} en retard`;
+        body = `Le délai pour déposer la déclaration Formulaire 30 (Modelo 30, ISPC) du ${q} et payer l'impôt a expiré le ${due}. ` +
+          `Le système n'indique ni le dépôt ni le paiement de cette déclaration : votre entreprise se trouve donc en situation de manquement fiscal. ` +
+          PENALTY_NOTICE["fr-FR"];
+        break;
+      case "qend":
+        title = `Fin du ${q} : déposez le Formulaire 30 et payez l'ISPC au plus tard le ${due}`;
+        body = `Le ${q} est terminé. Vous avez jusqu'au ${due} pour déposer la déclaration Formulaire 30 (Modelo 30, ISPC) de ce trimestre et payer l'impôt. ` +
+          `Vous pouvez calculer l'impôt et préparer la déclaration dans la section Impôts.` + weekendNote;
+        break;
+      case "d0":
+        title = `Formulaire 30 : c'est aujourd'hui le dernier jour (${q})`;
+        body = `C'est aujourd'hui le dernier jour pour déposer la déclaration Formulaire 30 (Modelo 30, ISPC) du ${q} et payer l'impôt. Échéance : ${due}.` +
+          weekendNote;
+        break;
+      default:
+        title = `Formulaire 30 : plus que ${jours} (${q})`;
+        body = `Il reste ${jours} pour déposer la déclaration Formulaire 30 (Modelo 30, ISPC) du ${q} et payer l'impôt. Échéance : ${due}.` +
+          weekendNote;
+    }
+  }
+  return { ...r, title, body };
+}
 
 /** Mais urgentes primeiro. */
 const KIND_ORDER: Record<Kind, number> = { overdue: 0, d0: 1, d1: 2, d7: 3, d15: 4, qend: 5 };
@@ -141,13 +321,13 @@ function sortByUrgency<T extends { kind: Kind }>(list: T[]): T[] {
   return [...list].sort((a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind]);
 }
 
-function buildSubject(company: Company, reminders: ReminderContent[]): string {
+function buildSubject(company: Company, reminders: ReminderContent[], language: EmailLanguage = "pt-MZ"): string {
   const overdue = reminders.some((r) => r.kind === "overdue");
   const base = overdue
-    ? "Incumprimento fiscal: Modelo 30 em atraso"
+    ? pick(MAIL_TEXT.subjectOverdue, language)
     : reminders.length === 1
     ? reminders[0].title
-    : "Lembrete: prazo do Modelo 30 (ISPC)";
+    : pick(MAIL_TEXT.subjectReminder, language);
   return sanitizeHeader(`${base} — ${company.name}`);
 }
 
@@ -156,6 +336,7 @@ function buildHtml(
   reminders: ReminderContent[],
   appUrl: string,
   banner?: string,
+  language: EmailLanguage = "pt-MZ",
 ): string {
   const items = reminders
     .map((r) => {
@@ -163,7 +344,7 @@ function buildHtml(
       return `
         <tr><td style="padding:0 0 14px 0;">
           <div style="border-left:4px solid ${s.color};background:${s.bg};border-radius:6px;padding:14px 16px;">
-            <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:${s.color};margin-bottom:4px;">${escapeHtml(s.label)}</div>
+            <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:${s.color};margin-bottom:4px;">${escapeHtml(pick(s.label, language))}</div>
             <div style="font-size:15px;font-weight:700;color:#111827;margin-bottom:6px;">${escapeHtml(r.title)}</div>
             <div style="font-size:14px;line-height:1.55;color:#374151;">${escapeHtml(r.body)}</div>
           </div>
@@ -177,27 +358,27 @@ function buildHtml(
     : "";
 
   return `<!doctype html>
-<html lang="pt">
+<html lang="${htmlLang(language)}">
 <body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 12px;">
     <tr><td align="center">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:10px;overflow:hidden;">
         <tr><td style="background:#1e3a8a;padding:18px 24px;color:#ffffff;">
           <div style="font-size:18px;font-weight:700;">ISPC Fácil</div>
-          <div style="font-size:13px;opacity:.85;">Obrigações fiscais</div>
+          <div style="font-size:13px;opacity:.85;">${pick(MAIL_TEXT.header, language)}</div>
         </td></tr>
         <tr><td style="padding:24px;">
           ${bannerHtml}
           <p style="margin:0 0 16px 0;font-size:14px;color:#111827;">
-            Caro contribuinte <strong>${escapeHtml(company.name)}</strong>${company.nuit ? ` (NUIT ${escapeHtml(company.nuit)})` : ""},
+            ${pick(MAIL_TEXT.dear, language)} <strong>${escapeHtml(company.name)}</strong>${company.nuit ? ` (NUIT ${escapeHtml(company.nuit)})` : ""},
           </p>
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${items}</table>
           <p style="margin:8px 0 20px 0;">
-            <a href="${escapeHtml(link)}" style="display:inline-block;background:#1e3a8a;color:#ffffff;text-decoration:none;padding:10px 18px;border-radius:6px;font-size:14px;font-weight:600;">Abrir Gestão de Impostos</a>
+            <a href="${escapeHtml(link)}" style="display:inline-block;background:#1e3a8a;color:#ffffff;text-decoration:none;padding:10px 18px;border-radius:6px;font-size:14px;font-weight:600;">${pick(MAIL_TEXT.openTaxes, language)}</a>
           </p>
           <p style="margin:0;font-size:12px;color:#6b7280;line-height:1.5;">
-            Se já entregou a declaração ou pagou o imposto, registe-o na área de impostos para deixar de receber estes avisos.
-            Esta mensagem é informativa e não substitui o aconselhamento de um técnico de contas.
+            ${escapeHtml(pick(MAIL_TEXT.disclaimer1, language))}
+            ${escapeHtml(pick(MAIL_TEXT.disclaimer2, language))}
           </p>
         </td></tr>
       </table>
@@ -212,13 +393,14 @@ function buildText(
   reminders: ReminderContent[],
   appUrl: string,
   banner?: string,
+  language: EmailLanguage = "pt-MZ",
 ): string {
   return [
     ...(banner ? [banner, ""] : []),
-    `Caro contribuinte ${company.name},`,
+    `${pick(MAIL_TEXT.dear, language)} ${company.name},`,
     "",
     ...reminders.map((r) => `${r.title}\n${r.body}\n`),
-    `Gestão de Impostos: ${appUrl.replace(/\/$/, "")}/#/impostos`,
+    `${pick(MAIL_TEXT.taxesLink, language)}: ${appUrl.replace(/\/$/, "")}/#/impostos`,
   ].join("\n");
 }
 
@@ -480,7 +662,10 @@ async function handleTest(admin: Admin, caller: Caller, body: RequestBody) {
     sampleUsed = true;
   }
 
-  const recipients = await realRecipients(admin, company);
+  const prefs = await getCompanyNotificationSettings(admin, company.id);
+  const recipients = await realRecipients(admin, company, prefs);
+  // O teste reproduz o email real: na língua do dono da empresa.
+  const language = await getUserLanguage(admin, company.user_id);
   const smtp = getSmtpConfig();
   const base = {
     mode: "test",
@@ -507,20 +692,37 @@ async function handleTest(admin: Admin, caller: Caller, body: RequestBody) {
     return { ...base, ok: false, code: SMTP_CONFIG_MISSING, message: SMTP_MISSING_MESSAGE };
   }
 
-  const banner = [
-    `Mensagem de teste — data simulada ${referenceDate}.`,
-    sampleUsed ? "Nenhum lembrete por enviar nessa data; segue um lembrete de exemplo." : "",
-    `Destinatários reais: ${recipients.length ? recipients.join(", ") : "nenhum email configurado"}.`,
-    "Nada foi registado nem enviado ao cliente.",
-  ].filter(Boolean).join(" ");
+  const recipientList = recipients.length ? recipients.join(", ") : null;
+  const bannerParts: Localized<string[]> = {
+    "pt-MZ": [
+      `Mensagem de teste — data simulada ${referenceDate}.`,
+      sampleUsed ? "Nenhum lembrete por enviar nessa data; segue um lembrete de exemplo." : "",
+      `Destinatários reais: ${recipientList ?? "nenhum email configurado"}.`,
+      "Nada foi registado nem enviado ao cliente.",
+    ],
+    "en-GB": [
+      `Test message — simulated date ${formatCompanyDate(referenceDate, prefs)}.`,
+      sampleUsed ? "No reminders are due on that date; a sample reminder is shown below." : "",
+      `Actual recipients: ${recipientList ?? "no e-mail address configured"}.`,
+      "Nothing has been recorded or sent to the client.",
+    ],
+    "fr-FR": [
+      `Message de test — date simulée ${formatCompanyDate(referenceDate, prefs)}.`,
+      sampleUsed ? "Aucun rappel à envoyer à cette date ; voici un exemple de rappel." : "",
+      `Destinataires réels : ${recipientList ?? "aucune adresse e-mail configurée"}.`,
+      "Rien n'a été enregistré ni envoyé au client.",
+    ],
+  };
+  const banner = pick(bannerParts, language).filter(Boolean).join(" ");
+  const mailReminders = reminders.map((r) => localizeReminder(r, language, referenceDate, prefs));
 
   const appUrl = await accountUrlForCompany(admin, company.id);
   const result = await sendEmail(admin, {
     kind: "tax_reminder_test",
     to,
-    subject: `[TESTE] ${buildSubject(company, reminders)}`,
-    html: buildHtml(company, reminders, appUrl, banner),
-    text: buildText(company, reminders, appUrl, banner),
+    subject: `${pick(MAIL_TEXT.testPrefix, language)} ${buildSubject(company, mailReminders, language)}`,
+    html: buildHtml(company, mailReminders, appUrl, banner, language),
+    text: buildText(company, mailReminders, appUrl, banner, language),
     companyId: company.id,
     relatedTable: "companies",
     relatedId: company.id,
@@ -723,6 +925,8 @@ async function handleRun(admin: Admin, body: RequestBody) {
   if (companiesError) throw new HttpError(500, companiesError.message, "DB_ERROR");
   const companies = new Map(((companiesData ?? []) as Company[]).map((c) => [c.id, c]));
   const notificationSettings = await getCompaniesNotificationSettings(admin, [...byCompany.keys()]);
+  // Língua de cada email = língua do dono da empresa.
+  const ownerLanguages = await getUsersLanguages(admin, [...companies.values()].map((c) => c.user_id));
 
   // Cada email aponta para o subdomínio da conta da empresa.
   const appUrls = await accountUrlsForCompanies(admin, [...byCompany.keys()]);
@@ -768,12 +972,15 @@ async function handleRun(admin: Admin, body: RequestBody) {
       detail.recipients = recipients;
       if (recipients.length === 0) throw new Error("Sem endereço de email para a empresa.");
 
+      const language = ownerLanguages.get(company.user_id) ?? "pt-MZ";
+      const mailList = list.map((r) => localizeReminder(r, language, today, prefs));
+      const appUrl = appUrls.get(cid) ?? siteUrl();
       const result = await sendEmail(admin, {
         kind: "tax_reminder",
         to: recipients,
-        subject: buildSubject(company, list),
-        html: buildHtml(company, list, appUrls.get(cid) ?? siteUrl()),
-        text: buildText(company, list, appUrls.get(cid) ?? siteUrl()),
+        subject: buildSubject(company, mailList, language),
+        html: buildHtml(company, mailList, appUrl, undefined, language),
+        text: buildText(company, mailList, appUrl, undefined, language),
         companyId: company.id,
         relatedTable: "tax_reminders",
         relatedId: ids[0],

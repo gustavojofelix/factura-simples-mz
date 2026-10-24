@@ -1,5 +1,6 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { type Localized, normalizeLanguage, pick } from "../_shared/i18n.ts";
 
 /**
  * Geração de alertas inteligentes.
@@ -19,7 +20,40 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
  * As regras vivem todas em SQL (`generate_ai_alerts`). Esta função não chama o
  * modelo: correr um LLM por empresa e por dia seria caro e daria resultados
  * diferentes a cada execução para os mesmos dados.
+ *
+ * Língua: o corpo pode trazer `language` ('pt-MZ' | 'en-GB' | 'fr-FR'), usado
+ * nas mensagens de erro desta função. Os títulos/textos dos alertas são
+ * gerados em SQL (português); a aplicação pode traduzi-los por `rule_code` e
+ * `metric`.
  */
+
+const MSG = {
+  unauthenticated: {
+    "pt-MZ": "Sessão não autenticada.",
+    "en-GB": "You are not signed in.",
+    "fr-FR": "Session non authentifiée.",
+  },
+  badRequest: {
+    "pt-MZ": "Pedido inválido.",
+    "en-GB": "Invalid request.",
+    "fr-FR": "Requête invalide.",
+  },
+  missingCompany: {
+    "pt-MZ": "Falta company_id.",
+    "en-GB": "company_id is missing.",
+    "fr-FR": "company_id manquant.",
+  },
+  invalidSession: {
+    "pt-MZ": "Sessão inválida.",
+    "en-GB": "Invalid session.",
+    "fr-FR": "Session invalide.",
+  },
+  forbidden: {
+    "pt-MZ": "Sem acesso a esta empresa.",
+    "en-GB": "You do not have access to this company.",
+    "fr-FR": "Vous n'avez pas accès à cette entreprise.",
+  },
+} satisfies Record<string, Localized>;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -59,20 +93,22 @@ Deno.serve(async (req) => {
   }
 
   // --- Modo por empresa -----------------------------------------------------
+  let companyId: string | undefined;
+  let language: unknown;
+  try {
+    ({ company_id: companyId, language } = await req.json());
+  } catch {
+    return json({ error: MSG.badRequest["pt-MZ"], code: "BAD_REQUEST" }, 400);
+  }
+  const lang = normalizeLanguage(language);
+
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) {
-    return json({ error: "Sessão não autenticada.", code: "UNAUTHENTICATED" }, 401);
-  }
-
-  let companyId: string | undefined;
-  try {
-    ({ company_id: companyId } = await req.json());
-  } catch {
-    return json({ error: "Pedido inválido.", code: "BAD_REQUEST" }, 400);
+    return json({ error: pick(MSG.unauthenticated, lang), code: "UNAUTHENTICATED" }, 401);
   }
 
   if (!companyId) {
-    return json({ error: "Falta company_id.", code: "BAD_REQUEST" }, 400);
+    return json({ error: pick(MSG.missingCompany, lang), code: "BAD_REQUEST" }, 400);
   }
 
   const userClient = createClient(
@@ -83,7 +119,7 @@ Deno.serve(async (req) => {
 
   const { data: userData } = await userClient.auth.getUser();
   if (!userData?.user) {
-    return json({ error: "Sessão inválida.", code: "UNAUTHENTICATED" }, 401);
+    return json({ error: pick(MSG.invalidSession, lang), code: "UNAUTHENTICATED" }, 401);
   }
 
   // Fecha primeiro os alertas cujo motivo já desapareceu, para que uma factura
@@ -92,7 +128,7 @@ Deno.serve(async (req) => {
     p_company_id: companyId,
   });
   if (resolveError) {
-    return json({ error: "Sem acesso a esta empresa.", code: "FORBIDDEN" }, 403);
+    return json({ error: pick(MSG.forbidden, lang), code: "FORBIDDEN" }, 403);
   }
 
   const { data, error } = await userClient.rpc("generate_ai_alerts", {
