@@ -13,7 +13,7 @@
       <!-- Account Selector (só quando o utilizador tem acesso a várias contas) -->
       @if (accountService.accounts().length > 1) {
       <div class="workspace-wrap">
-        <p class="workspace-eyebrow">Conta</p>
+        <p class="workspace-eyebrow">{{ 'layout.workspace.account' | t }}</p>
         <mat-form-field appearance="outline" class="workspace-switcher w-full hide-subscript">
           <mat-icon matPrefix class="workspace-icon">apartment</mat-icon>
           <mat-select [value]="accountService.activeAccount()?.id" (selectionChange)="onAccountChange($event.value)" panelClass="company-select-panel">
@@ -23,7 +23,7 @@
                 <span class="company-option-mark">{{ (account.name || account.slug).charAt(0).toUpperCase() }}</span>
                 <span>
                   <strong>{{ account.name || account.slug }}</strong>
-                  <small>{{ account.is_owner ? 'Titular' : 'Convidado' }}</small>
+                  <small>{{ (account.is_owner ? 'layout.workspace.owner' : 'layout.workspace.guest') | t }}</small>
                 </span>
               </span>
             </mat-option>
@@ -36,15 +36,15 @@
       <!-- Company Selector -->
       @if (companyService.companies().length > 0) {
       <div class="workspace-wrap">
-        <p class="workspace-eyebrow">Workspace activo</p>
+        <p class="workspace-eyebrow">{{ 'layout.workspace.activeWorkspace' | t }}</p>
         <mat-form-field appearance="outline" class="workspace-switcher w-full hide-subscript">
           <mat-icon matPrefix class="workspace-icon">business</mat-icon>
           <mat-select [value]="companyService.activeCompany()?.id" (selectionChange)="onCompanyChange($event.value)" panelClass="company-select-panel">
             <mat-select-trigger>
               <span class="workspace-trigger">
-                <span class="workspace-trigger-name">{{ companyService.activeCompany()?.name || 'Seleccionar empresa' }}</span>
+                <span class="workspace-trigger-name">{{ companyService.activeCompany()?.name || ('layout.workspace.selectCompany' | t) }}</span>
                 <span class="workspace-trigger-caption">
-                  {{ companyService.isCompanySuspended() ? 'Empresa Suspensa' : 'Empresa activa' }}
+                  {{ (companyService.isCompanySuspended() ? 'layout.workspace.companySuspended' : 'layout.workspace.companyActive') | t }}
                 </span>
               </span>
             </mat-select-trigger>
@@ -54,7 +54,7 @@
                 <span class="company-option-mark" [class.!bg-red-500]="company.status === 'suspended'">{{ company.name.charAt(0).toUpperCase() }}</span>
                 <span>
                   <strong>{{ company.name }}</strong>
-                  <small [class.!text-red-500]="company.status === 'suspended'">{{ company.status === 'suspended' ? 'Suspenso' : 'Empresa' }}</small>
+                  <small [class.!text-red-500]="company.status === 'suspended'">{{ (company.status === 'suspended' ? 'common.status.suspended' : 'layout.workspace.company') | t }}</small>
                 </span>
               </span>
             </mat-option>
@@ -82,20 +82,20 @@
 
       <!-- User Menu -->
       <div class="p-3 border-t border-slate-100 bg-slate-50/50">
-        <button mat-button [matMenuTriggerFor]="userMenu" aria-label="Abrir perfil e opções da conta"
+        <button mat-button [matMenuTriggerFor]="userMenu" [attr.aria-label]="'layout.profile.openMenu' | t"
           class="profile-chip w-full !justify-start !text-right !items-center !flex !flex-row !h-14 !px-2 rounded-xl hover:!bg-white">
           <span class="profile-avatar mr-3 shrink-0">{{ userInitials() }}<span class="profile-online-dot"></span></span>
-          <p class="text-[10px] text-slate-500 font-medium">{{ userRoleLabel() }} · Ver perfil</p>
+          <p class="text-[10px] text-slate-500 font-medium">{{ userRoleLabel() }} · {{ 'layout.profile.viewProfile' | t }}</p>
         </button>
 
         <mat-menu #userMenu="matMenu">
           <button mat-menu-item routerLink="/perfil">
             <mat-icon>account_circle</mat-icon>
-            <span>Perfil</span>
+            <span>{{ 'layout.profile.profile' | t }}</span>
           </button>
           <button mat-menu-item (click)="logout()">
             <mat-icon class="text-red-500">logout</mat-icon>
-            <span class="text-red-600 font-medium">Sair</span>
+            <span class="text-red-600 font-medium">{{ 'common.actions.logout' | t }}</span>
           </button>
         </mat-menu>
       </div>
@@ -123,14 +123,14 @@
     <!-- Mobile Header -->
     <header class="md:hidden bg-white/70 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-30 px-2">
       <div class="flex items-center justify-between h-16">
-        <button mat-icon-button (click)="toggleMobileMenu()" class="!w-12 !h-12">
+        <button mat-icon-button (click)="toggleMobileMenu()" class="!w-12 !h-12" [attr.aria-label]="'layout.mobile.openMenu' | t">
           <mat-icon class="text-slate-700">menu</mat-icon>
         </button>
         <h1 class="text-lg font-bold bg-gradient-to-r from-ispc-orange to-orange-500 bg-clip-text text-transparent">ISPC Fácil</h1>
         <div class="flex items-center gap-1">
           <app-language-switcher [compact]="true" />
           <app-ai-alerts />
-          <button mat-icon-button [matMenuTriggerFor]="mobileUserMenu" class="!w-12 !h-12">
+          <button mat-icon-button [matMenuTriggerFor]="mobileUserMenu" class="!w-12 !h-12" [attr.aria-label]="'layout.profile.openMenu' | t">
             <mat-icon class="text-slate-700">account_circle</mat-icon>
           </button>
         </div>
@@ -145,11 +145,11 @@
       <mat-menu #mobileUserMenu="matMenu">
         <button mat-menu-item routerLink="/perfil">
           <mat-icon>account_circle</mat-icon>
-          <span>Perfil</span>
+          <span>{{ 'layout.profile.profile' | t }}</span>
         </button>
         <button mat-menu-item (click)="logout()">
           <mat-icon class="text-red-500">logout</mat-icon>
-          <span class="text-red-600 font-medium">Sair</span>
+          <span class="text-red-600 font-medium">{{ 'common.actions.logout' | t }}</span>
         </button>
       </mat-menu>
     </header>
@@ -160,8 +160,8 @@
       <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300" (click)="toggleMobileMenu()"></div>
       <div class="relative flex flex-col w-72 h-full bg-white/85 backdrop-blur-xl border-r border-white/20 shadow-2xl p-4 transition-all duration-300">
         <div class="flex items-center justify-between h-16 px-2 border-b border-slate-200/60">
-          <h1 class="text-lg font-bold text-ispc-orange">Menu</h1>
-          <button mat-icon-button (click)="toggleMobileMenu()" class="!w-12 !h-12">
+          <h1 class="text-lg font-bold text-ispc-orange">{{ 'layout.mobile.menu' | t }}</h1>
+          <button mat-icon-button (click)="toggleMobileMenu()" class="!w-12 !h-12" [attr.aria-label]="'common.actions.close' | t">
             <mat-icon>close</mat-icon>
           </button>
         </div>
@@ -169,7 +169,7 @@
         <!-- Account Selector Mobile -->
         @if (accountService.accounts().length > 1) {
         <div class="p-3 mt-3 bg-slate-100/50 rounded-xl border border-slate-200/40">
-          <p class="text-xs font-semibold text-slate-500 mb-1">Conta</p>
+          <p class="text-xs font-semibold text-slate-500 mb-1">{{ 'layout.workspace.account' | t }}</p>
           <mat-form-field appearance="outline" class="w-full !text-sm mb-0 hide-subscript">
             <mat-select [value]="accountService.activeAccount()?.id" (selectionChange)="onAccountChange($event.value)">
               @for (account of accountService.accounts(); track account.id) {
@@ -190,7 +190,7 @@
               @for (company of companyService.companies(); track company.id) {
               <mat-option [value]="company.id">
                 <span class="truncate font-medium" [class.!text-red-600]="company.status === 'suspended'">
-                  {{ company.name }} {{ company.status === 'suspended' ? '(Suspenso)' : '' }}
+                  {{ company.name }} {{ company.status === 'suspended' ? ('layout.workspace.suspendedSuffix' | t) : '' }}
                 </span>
               </mat-option>
               }
@@ -227,23 +227,23 @@
             </div>
             
             <span class="inline-block px-3 py-1 bg-red-100 text-red-700 text-xs font-extrabold uppercase tracking-widest rounded-full mb-3">
-              Acesso Bloqueado
+              {{ 'layout.suspended.badge' | t }}
             </span>
 
             <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 font-serif">
-              Contribuinte Suspenso
+              {{ 'layout.suspended.title' | t }}
             </h2>
 
             <p class="text-gray-600 text-sm sm:text-base max-w-xl mx-auto mb-8 leading-relaxed">
-              O acesso às operações da empresa <strong>{{ companyService.activeCompany()?.name }}</strong> (NUIT: {{ companyService.activeCompany()?.nuit || '—' }}) 
-              foi suspenso pela administração. A emissão de facturas, gestão de clientes e outras funcionalidades estão temporariamente indisponíveis.
+              {{ 'layout.suspended.bodyBefore' | t }} <strong>{{ companyService.activeCompany()?.name }}</strong>
+              {{ 'layout.suspended.bodyAfter' | t: { nuit: companyService.activeCompany()?.nuit || '—' } }}
             </p>
 
             @if (nonSuspendedCompanies().length > 0) {
               <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200/80 max-w-md mx-auto mb-8 text-left">
                 <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center">
                   <mat-icon class="!w-4 !h-4 !text-base mr-1.5 text-gray-400">sync_alt</mat-icon>
-                  Mudar para outro contribuinte activo:
+                  {{ 'layout.suspended.switchTo' | t }}
                 </p>
                 <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
                   @for (c of nonSuspendedCompanies(); track c.id) {
@@ -253,7 +253,7 @@
                         <p class="text-xs text-gray-400">NUIT: {{ c.nuit }}</p>
                       </div>
                       <span class="text-xs text-orange-600 font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center">
-                        Aceder &rarr;
+                        {{ 'layout.suspended.access' | t }} &rarr;
                       </span>
                     </button>
                   }
@@ -264,10 +264,10 @@
             <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
               <a href="mailto:suporte@ispc.co.mz" class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 shadow-lg shadow-red-200 transition-all text-sm">
                 <mat-icon class="mr-2 !text-lg">support_agent</mat-icon>
-                Contactar Apoio ao Cliente
+                {{ 'layout.suspended.contactSupport' | t }}
               </a>
               <button mat-button (click)="logout()" class="w-full sm:w-auto !text-gray-500 hover:!text-gray-800 !text-sm">
-                Terminar Sessão
+                {{ 'layout.suspended.signOut' | t }}
               </button>
             </div>
           </div>
@@ -284,15 +284,13 @@
                 </mat-icon>
                 <div class="flex-1">
                   <h3 class="font-bold text-slate-900 mb-1 text-base">
-                    Período de Teste - {{ subscriptionService.getDaysRemainingInTrial() }}
-                    {{ subscriptionService.getDaysRemainingInTrial() === 1 ? 'dia restante' : 'dias restantes' }}
+                    {{ 'layout.subscription.trialTitle' | t: { count: subscriptionService.getDaysRemainingInTrial() } }}
                   </h3>
                   <p class="text-sm text-slate-600 mb-3 leading-relaxed">
-                    O seu período de teste termina em breve. Escolha um plano para continuar a utilizar todas as
-                    funcionalidades.
+                    {{ 'layout.subscription.trialBody' | t }}
                   </p>
                   <button mat-raised-button routerLink="/configuracoes" class="!bg-ispc-orange !text-white !h-10">
-                    Ver Planos
+                    {{ 'layout.subscription.viewPlans' | t }}
                   </button>
                 </div>
               </div>
@@ -307,13 +305,13 @@
                 <mat-icon class="mr-3 !text-2xl text-red-600">lock</mat-icon>
                 <div class="flex-1">
                   <h3 class="font-bold text-red-900 mb-1 text-base">
-                    {{ subscriptionService.isTrialing() ? 'Período de Teste Expirado' : 'Subscrição Expirada' }}
+                    {{ (subscriptionService.isTrialing() ? 'layout.subscription.trialExpired' : 'layout.subscription.subscriptionExpired') | t }}
                   </h3>
                   <p class="text-sm text-red-700 mb-3 leading-relaxed">
-                    O sistema está bloqueado até subscrever um plano. Os seus dados estão guardados e voltam a ficar disponíveis assim que o pagamento for confirmado.
+                    {{ 'layout.subscription.expiredBody' | t }}
                   </p>
                   <button mat-raised-button routerLink="/configuracoes" [queryParams]="{ tab: 'subscricao' }" color="warn" class="!h-10">
-                    Escolher Plano
+                    {{ 'layout.subscription.choosePlan' | t }}
                   </button>
                 </div>
               </div>

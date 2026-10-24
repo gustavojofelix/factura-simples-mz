@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 
 import { AiAssistantService, AiSearchResult } from '../../../core/services/ai-assistant.service';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 /**
  * Pesquisa inteligente da barra superior.
@@ -18,7 +19,7 @@ import { AiAssistantService, AiSearchResult } from '../../../core/services/ai-as
 @Component({
   selector: 'app-ai-search',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, MatButtonModule],
+  imports: [CommonModule, FormsModule, MatIconModule, MatButtonModule, TranslatePipe],
   template: `
     <div class="ai-search" [class.ai-search--active]="aberto()">
       <mat-icon class="ai-search__icon">search</mat-icon>
@@ -26,17 +27,17 @@ import { AiAssistantService, AiSearchResult } from '../../../core/services/ai-as
       <input
         type="text"
         class="ai-search__input"
-        placeholder="Procurar ou perguntar…"
+        [placeholder]="'ai.search.placeholder' | t"
         autocomplete="off"
         [ngModel]="termo()"
         (ngModelChange)="aoEscrever($event)"
         (focus)="aberto.set(true)"
         (keydown.enter)="aoEnter()"
         (keydown.escape)="fechar()"
-        aria-label="Pesquisar clientes, produtos e facturas" />
+        [attr.aria-label]="'ai.search.ariaLabel' | t" />
 
       @if (termo()) {
-        <button mat-icon-button class="!w-7 !h-7 shrink-0" aria-label="Limpar" (click)="limpar()">
+        <button mat-icon-button class="!w-7 !h-7 shrink-0" [attr.aria-label]="'ai.search.clear' | t" (click)="limpar()">
           <mat-icon class="!text-[16px] !w-4 !h-4 text-slate-400">close</mat-icon>
         </button>
       }
@@ -50,7 +51,7 @@ import { AiAssistantService, AiSearchResult } from '../../../core/services/ai-as
                 <mat-icon class="!text-[15px] !w-[15px] !h-[15px]">auto_awesome</mat-icon>
               </span>
               <span class="flex-1 text-left min-w-0">
-                <span class="block text-[11px] text-slate-400 leading-tight">Perguntar ao assistente</span>
+                <span class="block text-[11px] text-slate-400 leading-tight">{{ 'ai.search.askAssistant' | t }}</span>
                 <span class="block text-[13px] text-slate-800 font-medium truncate">{{ termo() }}</span>
               </span>
               <mat-icon class="!text-[16px] !w-4 !h-4 text-slate-300 shrink-0">arrow_forward</mat-icon>
@@ -58,16 +59,16 @@ import { AiAssistantService, AiSearchResult } from '../../../core/services/ai-as
           }
 
           @if (aProcurar()) {
-            <p class="ai-search__empty">A procurar…</p>
+            <p class="ai-search__empty">{{ 'ai.search.searching' | t }}</p>
           } @else if (resultados().length === 0) {
-            <p class="ai-search__empty">Sem resultados para “{{ termo() }}”.</p>
+            <p class="ai-search__empty">{{ 'ai.search.noResults' | t: { term: termo() } }}</p>
             @if (!aParecerPergunta()) {
               <button class="ai-search__ask" (click)="perguntarAoAssistente()">
                 <span class="ai-search__ask-icon">
                   <mat-icon class="!text-[15px] !w-[15px] !h-[15px]">auto_awesome</mat-icon>
                 </span>
                 <span class="flex-1 text-left text-[13px] text-slate-700">
-                  Perguntar ao assistente
+                  {{ 'ai.search.askAssistant' | t }}
                 </span>
               </button>
             }
@@ -225,10 +226,11 @@ export class AiSearchComponent {
    * cliente são uma ou duas palavras; perguntar são quatro ou mais.
    */
   aParecerPergunta(): boolean {
-    const t = this.termo().trim().toLowerCase();
-    if (t.includes('?')) return true;
-    if (t.split(/\s+/).length >= 4) return true;
-    return /^(quanto|quantos|quantas|qual|quais|quem|quando|onde|porque|porquê|como|o que)\b/.test(t);
+    const texto = this.termo().trim().toLowerCase();
+    if (texto.includes('?')) return true;
+    if (texto.split(/\s+/).length >= 4) return true;
+    // Palavras interrogativas em português, inglês e francês (as línguas da interface).
+    return /^(quanto|quantos|quantas|qual|quais|quem|quando|onde|porque|porquê|como|o que|how|what|which|who|when|where|why|combien|quel|quelle|quels|quelles|qui|quand|où|pourquoi|comment|qu'est-ce)(?=\s|$|')/.test(texto);
   }
 
   aoEscrever(valor: string): void {

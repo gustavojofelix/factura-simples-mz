@@ -28,15 +28,17 @@ import { PdfService } from '../../../core/services/pdf.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { AiMarkdownPipe } from './markdown.pipe';
 import { AppDatePipe } from '../../pipes/app-date.pipe';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
+import { currentLocale, t } from '../../../core/i18n/i18n';
 
-/** Perguntas de arranque, mostradas apenas numa conversa vazia. */
+/** Perguntas de arranque, mostradas apenas numa conversa vazia (chaves de tradução). */
 const SUGESTOES = [
-  { icon: 'receipt_long', texto: 'Quantas facturas emiti este mês?' },
-  { icon: 'payments', texto: 'Qual é o total pendente por receber?' },
-  { icon: 'trending_up', texto: 'Qual é o meu produto mais vendido?' },
-  { icon: 'person_off', texto: 'Que clientes deixaram de comprar?' },
-  { icon: 'description', texto: 'O que é o Modelo 30?' },
-  { icon: 'event', texto: 'Quando devo pagar o ISPC?' }
+  { icon: 'receipt_long', chave: 'ai.suggestions.invoicesThisMonth' },
+  { icon: 'payments', chave: 'ai.suggestions.pendingTotal' },
+  { icon: 'trending_up', chave: 'ai.suggestions.bestSellingProduct' },
+  { icon: 'person_off', chave: 'ai.suggestions.lapsedClients' },
+  { icon: 'description', chave: 'ai.suggestions.whatIsModelo30' },
+  { icon: 'event', chave: 'ai.suggestions.whenPayIspc' }
 ];
 
 @Component({
@@ -52,7 +54,8 @@ const SUGESTOES = [
     MatTooltipModule,
     MatProgressSpinnerModule,
     AiMarkdownPipe,
-    AppDatePipe
+    AppDatePipe,
+    TranslatePipe
   ],
   templateUrl: './ai-chat.component.html',
   styleUrls: ['./ai-chat.component.css']
@@ -72,7 +75,7 @@ export class AiChatComponent {
   rascunho = signal('');
   mostrarHistorico = signal(false);
 
-  sugestoes = SUGESTOES;
+  sugestoes = SUGESTOES.map(s => ({ icon: s.icon, texto: t(s.chave) }));
   toolLabel = toolLabel;
 
   conversaVazia = computed(() => this.ai.messages().length === 0);
@@ -161,7 +164,7 @@ export class AiChatComponent {
     if (!anexo.linhas?.length) return;
     const nome = this.nomeFicheiro(anexo);
     this.exportService.exportToExcel(anexo.linhas, nome, anexo.titulo.slice(0, 30));
-    this.toast.success('Relatório exportado', `${nome}.xlsx`);
+    this.toast.success(t('ai.chat.reportExported'), `${nome}.xlsx`);
   }
 
   async exportarPdf(anexo: AiAttachment, indice: number): Promise<void> {
@@ -169,14 +172,14 @@ export class AiChatComponent {
     try {
       const blob = await this.pdfService.generatePdf(elementId, this.nomeFicheiro(anexo));
       this.pdfService.downloadPdf(blob, this.nomeFicheiro(anexo));
-      this.toast.success('Relatório exportado', 'PDF gerado com sucesso.');
+      this.toast.success(t('ai.chat.reportExported'), t('ai.chat.pdfGenerated'));
     } catch {
-      this.toast.error('Não foi possível gerar o PDF', 'Tente exportar para Excel.');
+      this.toast.error(t('ai.chat.pdfError'), t('ai.chat.pdfErrorHint'));
     }
   }
 
   private nomeFicheiro(anexo: AiAttachment): string {
-    const empresa = this.companyService.activeCompany()?.name ?? 'relatorio';
+    const empresa = this.companyService.activeCompany()?.name ?? t('ai.chat.reportFileName');
     const data = new Date().toISOString().slice(0, 10);
     return `${empresa}-${anexo.titulo}-${data}`
       .toLowerCase()
@@ -190,7 +193,7 @@ export class AiChatComponent {
   formatarCelula(valor: unknown): string {
     if (valor === null || valor === undefined || valor === '') return '—';
     if (typeof valor === 'number') {
-      return valor.toLocaleString('pt-MZ', {
+      return valor.toLocaleString(currentLocale(), {
         minimumFractionDigits: Number.isInteger(valor) ? 0 : 2,
         maximumFractionDigits: 2
       });

@@ -2,6 +2,7 @@ import { Injectable, signal, computed } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { CompanyService } from './company.service';
 import { environment } from '../../../environments/environment';
+import { currentLanguage, t } from '../i18n/i18n';
 
 export interface AiAttachment {
   tipo: 'tabela';
@@ -60,22 +61,22 @@ export interface AiSearchResult {
   estado?: string;
 }
 
-/** Nomes técnicos das ferramentas traduzidos para o que a UI mostra. */
+/** Nomes técnicos das ferramentas → chave de tradução do que a UI mostra. */
 const TOOL_LABELS: Record<string, string> = {
-  estatisticas_facturacao: 'A somar as facturas do período',
-  evolucao_vendas: 'A analisar a evolução das vendas',
-  produtos_mais_vendidos: 'A ordenar os produtos mais vendidos',
-  melhores_clientes: 'A ordenar os clientes por facturação',
-  clientes_inactivos: 'A procurar clientes sem compras recentes',
-  contas_a_receber: 'A calcular o valor por receber',
-  posicao_fiscal: 'A consultar as declarações de ISPC',
-  listar_facturas: 'A listar as facturas',
-  pesquisar: 'A pesquisar nos seus registos',
-  consultar_base_fiscal: 'A consultar a base de conhecimento fiscal'
+  estatisticas_facturacao: 'ai.tools.estatisticas_facturacao',
+  evolucao_vendas: 'ai.tools.evolucao_vendas',
+  produtos_mais_vendidos: 'ai.tools.produtos_mais_vendidos',
+  melhores_clientes: 'ai.tools.melhores_clientes',
+  clientes_inactivos: 'ai.tools.clientes_inactivos',
+  contas_a_receber: 'ai.tools.contas_a_receber',
+  posicao_fiscal: 'ai.tools.posicao_fiscal',
+  listar_facturas: 'ai.tools.listar_facturas',
+  pesquisar: 'ai.tools.pesquisar',
+  consultar_base_fiscal: 'ai.tools.consultar_base_fiscal'
 };
 
 export function toolLabel(nome: string): string {
-  return TOOL_LABELS[nome] ?? 'A consultar os seus dados';
+  return t(TOOL_LABELS[nome] ?? 'ai.tools.default');
 }
 
 @Injectable({ providedIn: 'root' })
@@ -177,7 +178,7 @@ export class AiAssistantService {
         role: m.role,
         content: m.content,
         attachments: (m.attachments ?? []) as AiAttachment[],
-        tools: ((m.tool_calls ?? []) as { nome: string }[]).map(t => t.nome),
+        tools: ((m.tool_calls ?? []) as { nome: string }[]).map(tool => tool.nome),
         created_at: m.created_at,
         error: m.error
       }))
@@ -250,7 +251,9 @@ export class AiAssistantService {
             company_id: company.id,
             conversation_id: this.activeConversationId(),
             message: texto,
-            surface
+            surface,
+            // Língua da interface, para o assistente responder na mesma língua.
+            language: currentLanguage()
           }),
           signal: this.abortController.signal
         }
@@ -259,7 +262,7 @@ export class AiAssistantService {
       if (!resposta.ok) {
         const erro = await resposta.json().catch(() => null);
         actualizarResposta({
-          content: erro?.error ?? 'Não foi possível contactar o assistente.',
+          content: erro?.error ?? t('ai.errors.unreachable'),
           streaming: false,
           error: erro?.code ?? 'HTTP_' + resposta.status
         });
@@ -272,7 +275,7 @@ export class AiAssistantService {
         actualizarResposta({ streaming: false });
       } else {
         actualizarResposta({
-          content: 'Ocorreu um erro de ligação. Verifique a Internet e tente novamente.',
+          content: t('ai.errors.network'),
           streaming: false,
           error: 'NETWORK'
         });
@@ -430,7 +433,7 @@ export class AiAssistantService {
     if (!company) return;
 
     await this.supabase.client.functions.invoke('ai-alerts', {
-      body: { company_id: company.id }
+      body: { company_id: company.id, language: currentLanguage() }
     });
     await this.loadAlerts();
   }

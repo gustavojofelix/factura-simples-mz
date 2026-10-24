@@ -8,6 +8,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { AiAssistantService, AiAlert } from '../../../core/services/ai-assistant.service';
 import { CompanyService } from '../../../core/services/company.service';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
+import { t } from '../../../core/i18n/i18n';
 
 /**
  * Sino de alertas inteligentes.
@@ -19,15 +21,15 @@ import { CompanyService } from '../../../core/services/company.service';
 @Component({
   selector: 'app-ai-alerts',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatButtonModule, MatMenuModule, MatTooltipModule],
+  imports: [CommonModule, MatIconModule, MatButtonModule, MatMenuModule, MatTooltipModule, TranslatePipe],
   template: `
     @if (ai.quota()?.alerts_enabled) {
       <button
         mat-icon-button
         class="relative !w-10 !h-10"
         [matMenuTriggerFor]="menu"
-        matTooltip="Alertas inteligentes"
-        aria-label="Alertas inteligentes">
+        [matTooltip]="'ai.alerts.title' | t"
+        [attr.aria-label]="'ai.alerts.title' | t">
         <mat-icon class="!text-[21px] !w-[21px] !h-[21px] text-slate-500">notifications</mat-icon>
         @if (ai.unreadAlerts().length > 0) {
           <span class="ai-alerts__badge"
@@ -40,8 +42,8 @@ import { CompanyService } from '../../../core/services/company.service';
       <mat-menu #menu="matMenu" class="ai-alerts__menu" xPosition="before">
         <div class="ai-alerts" (click)="$event.stopPropagation()">
           <header class="ai-alerts__header">
-            <span class="text-[13px] font-bold text-slate-900">Alertas inteligentes</span>
-            <button mat-icon-button class="!w-8 !h-8" matTooltip="Actualizar"
+            <span class="text-[13px] font-bold text-slate-900">{{ 'ai.alerts.title' | t }}</span>
+            <button mat-icon-button class="!w-8 !h-8" [matTooltip]="'common.actions.refresh' | t"
                     [disabled]="aActualizar()" (click)="actualizar()">
               <mat-icon class="!text-[16px] !w-4 !h-4 text-slate-400"
                         [class.ai-alerts__spin]="aActualizar()">refresh</mat-icon>
@@ -52,9 +54,9 @@ import { CompanyService } from '../../../core/services/company.service';
             @if (ai.alerts().length === 0) {
               <div class="ai-alerts__empty">
                 <mat-icon class="!text-[28px] !w-7 !h-7 text-emerald-400 mb-2">check_circle</mat-icon>
-                <p class="text-[13px] font-medium text-slate-700">Está tudo em ordem</p>
+                <p class="text-[13px] font-medium text-slate-700">{{ 'ai.alerts.emptyTitle' | t }}</p>
                 <p class="text-[11.5px] text-slate-400 mt-0.5 leading-snug">
-                  Sem facturas vencidas, prazos próximos ou quedas de vendas a assinalar.
+                  {{ 'ai.alerts.emptyBody' | t }}
                 </p>
               </div>
             }
@@ -70,12 +72,12 @@ import { CompanyService } from '../../../core/services/company.service';
                   <div class="flex items-center gap-2.5 mt-2">
                     @if (a.action_route) {
                       <button class="ai-alerts__action" (click)="irPara(a)">
-                        {{ a.action_label || 'Ver' }}
+                        {{ a.action_label || ('common.actions.view' | t) }}
                       </button>
                     }
-                    <button class="ai-alerts__link" (click)="explicar(a)">Perguntar ao assistente</button>
+                    <button class="ai-alerts__link" (click)="explicar(a)">{{ 'ai.alerts.askAssistant' | t }}</button>
                     <button class="ai-alerts__link ai-alerts__link--muted"
-                            (click)="ai.dismissAlert(a.id)">Dispensar</button>
+                            (click)="ai.dismissAlert(a.id)">{{ 'ai.alerts.dismiss' | t }}</button>
                   </div>
                 </div>
               </article>
@@ -204,7 +206,7 @@ export class AiAlertsComponent {
   explicar(a: AiAlert): void {
     this.ai.markAlertRead(a.id);
     this.router.navigate(['/assistente'], {
-      queryParams: { q: `Explique-me este alerta: ${a.title}. ${a.body}` }
+      queryParams: { q: t('ai.alerts.explainPrompt', { title: a.title, body: a.body }) }
     });
   }
 }

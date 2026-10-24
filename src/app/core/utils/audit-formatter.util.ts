@@ -1,3 +1,5 @@
+import { currentLocale, t } from '../i18n/i18n';
+
 export interface FormattedAuditItem {
   label: string;
   value: string;
@@ -6,119 +8,119 @@ export interface FormattedAuditItem {
   newValue?: string;
 }
 
-const KEY_LABELS: Record<string, string> = {
-  records_count: 'Total de Registos Afectados',
-  count: 'Quantidade',
-  is_active: 'Estado de Activação',
-  status: 'Estado',
-  new_status: 'Novo Estado',
-  name: 'Nome',
-  full_name: 'Nome Completo',
-  email: 'E-mail',
-  phone: 'Contacto Telefónico',
-  nuit: 'NUIT',
-  code: 'Código',
-  price: 'Preço Unitário',
-  stock: 'Quantidade em Stock',
-  unit: 'Unidade de Medida',
-  type: 'Tipo',
-  company_id: 'ID do Contribuinte',
-  company_name: 'Nome da Empresa / Contribuinte',
-  subscriber_id: 'ID do Subscritor',
-  invoice_number: 'Número da Factura',
-  receipt_number: 'Número do Recibo',
-  selected_clients: 'Clientes Seleccionados',
-  invoice_id: 'ID da Factura',
-  client_name: 'Nome do Cliente',
-  client_id: 'ID do Cliente',
-  amount: 'Valor / Montante',
-  total: 'Valor Total',
-  subtotal: 'Subtotal',
-  tax_amount: 'Valor do Imposto',
-  method: 'Método de Pagamento',
-  payment_method: 'Método de Pagamento',
-  billing_cycle: 'Ciclo de Facturação',
-  plan_name: 'Plano',
-  plan: 'Plano',
-  scope: 'Âmbito de Aplicação',
-  discount_percent: 'Percentagem de Desconto',
-  valid_until: 'Data de Validade',
-  notes: 'Observações / Notas',
-  reason: 'Motivo',
-  role: 'Função / Papel',
-  tax_rate: 'Taxa de Imposto (%)',
-  address: 'Endereço',
-  currency: 'Moeda',
-  description: 'Descrição',
-  document_number: 'Número do Documento',
-  due_date: 'Data de Vencimento',
-  issue_date: 'Data de Emissão',
-  start_date: 'Data Inicial',
-  end_date: 'Data Final',
-  payment_date: 'Data de Pagamento',
-  next_billing_date: 'Próxima Data de Cobrança',
-  created_at: 'Data de Criação',
-  updated_at: 'Data de Actualização',
-  old_total: 'Total Anterior',
-  new_total: 'Novo Total',
-  old_role: 'Função Anterior',
-  target_user_id: 'ID do Utilizador',
-  payment_id: 'ID do Pagamento',
-  reference: 'Referência',
-  reference_code: 'Código de Referência',
-  items_count: 'Total de Itens',
-  user_email: 'E-mail do Utilizador',
-  period: 'Período',
-  category: 'Categoria',
-  ip_address: 'Endereço IP',
-  invoice_total: 'Total da Factura',
-  amount_paid: 'Total Pago',
-  amount_pending: 'Valor Pendente',
-  ispc_amount: 'Valor do Imposto (ISPC)',
-  user_name: 'Nome do Utilizador'
-};
+/** Campos de 'details' com rótulo traduzido em audit.fields.<campo>. */
+const KNOWN_FIELDS = new Set([
+  'records_count',
+  'count',
+  'is_active',
+  'status',
+  'new_status',
+  'name',
+  'full_name',
+  'email',
+  'phone',
+  'nuit',
+  'code',
+  'price',
+  'stock',
+  'unit',
+  'type',
+  'company_id',
+  'company_name',
+  'subscriber_id',
+  'invoice_number',
+  'receipt_number',
+  'selected_clients',
+  'invoice_id',
+  'client_name',
+  'client_id',
+  'amount',
+  'total',
+  'subtotal',
+  'tax_amount',
+  'method',
+  'payment_method',
+  'billing_cycle',
+  'plan_name',
+  'plan',
+  'scope',
+  'discount_percent',
+  'valid_until',
+  'notes',
+  'reason',
+  'role',
+  'tax_rate',
+  'address',
+  'currency',
+  'description',
+  'document_number',
+  'due_date',
+  'issue_date',
+  'start_date',
+  'end_date',
+  'payment_date',
+  'next_billing_date',
+  'created_at',
+  'updated_at',
+  'old_total',
+  'new_total',
+  'old_role',
+  'target_user_id',
+  'payment_id',
+  'reference',
+  'reference_code',
+  'items_count',
+  'user_email',
+  'period',
+  'category',
+  'ip_address',
+  'invoice_total',
+  'amount_paid',
+  'amount_pending',
+  'ispc_amount',
+  'user_name'
+]);
 
-const VALUE_TRANSLATIONS: Record<string, string> = {
-  'true': 'Activo / Sim',
-  'false': 'Desactivado / Não',
-  'active': 'Activo',
-  'suspended': 'Suspenso',
-  'inactive': 'Inactivo',
-  'trial': 'Período de Teste',
-  'servico': 'Serviço',
-  'produto': 'Produto',
-  'monthly': 'Mensal',
-  'yearly': 'Anual',
-  'quarterly': 'Trimestral',
-  'semiannual': 'Semestral',
-  'admin': 'Administrador',
-  'manager': 'Gestor',
-  'user': 'Utilizador',
-  'cash': 'Numerário (Dinheiro)',
-  'mpesa': 'M-Pesa',
-  'emola': 'e-Mola',
-  'bank_transfer': 'Transferência Bancária',
-  'pos': 'POS / Cartão',
-  'draft': 'Rascunho',
-  'issued': 'Emitida',
-  'paid': 'Paga',
-  'cancelled': 'Cancelada',
-  'password_reset_recovery': 'Recuperação por E-mail',
-  // Invoice / declaration statuses
-  'rascunho': 'Rascunho',
-  'pendente': 'Pendente',
-  'paga': 'Paga',
-  'vencida': 'Vencida',
-  'anulada': 'Anulada',
-  'submetida': 'Submetida',
-  'atrasada': 'Atrasada',
-  // Invoice payment methods
-  'dinheiro': 'Dinheiro',
-  'transferencia': 'Transferência Bancária',
-  'cheque': 'Cheque',
-  'carteira_movel': 'Carteira Móvel',
-  'outro': 'Outro'
-};
+/** Valores com tradução em audit.values.<valor> (os valores em si vêm da base de dados). */
+const KNOWN_VALUES = new Set([
+  'true',
+  'false',
+  'active',
+  'suspended',
+  'inactive',
+  'trial',
+  'servico',
+  'produto',
+  'monthly',
+  'yearly',
+  'quarterly',
+  'semiannual',
+  'admin',
+  'manager',
+  'user',
+  'cash',
+  'mpesa',
+  'emola',
+  'bank_transfer',
+  'pos',
+  'draft',
+  'issued',
+  'paid',
+  'cancelled',
+  'password_reset_recovery',
+  'rascunho',
+  'pendente',
+  'paga',
+  'vencida',
+  'anulada',
+  'submetida',
+  'atrasada',
+  'dinheiro',
+  'transferencia',
+  'cheque',
+  'carteira_movel',
+  'outro'
+]);
 
 const CURRENCY_KEYS = [
   'price', 'amount', 'total', 'subtotal', 'tax_amount', 'old_total', 'new_total',
@@ -141,9 +143,9 @@ export function formatAuditValue(key: string, val: any, formatDate?: AuditDateFo
 
   if (typeof val === 'boolean') {
     if (normalizedKey === 'is_active') {
-      return val ? 'Activo' : 'Desactivado';
+      return t(val ? 'common.status.active' : 'audit.values.deactivated');
     }
-    return val ? 'Sim' : 'Não';
+    return t(val ? 'common.actions.yes' : 'common.actions.no');
   }
 
   // Monetary values may arrive as numeric strings (e.g. "1500.00" from older entries)
@@ -153,7 +155,7 @@ export function formatAuditValue(key: string, val: any, formatDate?: AuditDateFo
 
   if (typeof val === 'number') {
     if (CURRENCY_KEYS.includes(normalizedKey)) {
-      return new Intl.NumberFormat('pt-MZ', {
+      return new Intl.NumberFormat(currentLocale(), {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       }).format(val) + ' MZN';
@@ -162,7 +164,7 @@ export function formatAuditValue(key: string, val: any, formatDate?: AuditDateFo
       return `${val}%`;
     }
     if (normalizedKey === 'records_count') {
-      return val === 1 ? '1 registo' : `${val} registos`;
+      return t('audit.formatter.recordsCount', { count: val });
     }
     return val.toString();
   }
@@ -170,15 +172,15 @@ export function formatAuditValue(key: string, val: any, formatDate?: AuditDateFo
   const str = String(val).trim();
   const lower = str.toLowerCase();
 
-  if (VALUE_TRANSLATIONS[lower]) {
-    return VALUE_TRANSLATIONS[lower];
+  if (KNOWN_VALUES.has(lower)) {
+    return t(`audit.values.${lower}`);
   }
 
   // Check if ISO Date format
   if (/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2})?/.test(str)) {
     const d = new Date(str);
     if (!isNaN(d.getTime())) {
-      return formatDate ? formatDate(str) : d.toLocaleDateString('pt-MZ');
+      return formatDate ? formatDate(str) : d.toLocaleDateString(currentLocale());
     }
   }
 
@@ -187,7 +189,9 @@ export function formatAuditValue(key: string, val: any, formatDate?: AuditDateFo
 
 export function formatAuditLabel(key: string): string {
   const normalizedKey = normalizeAuditKey(key);
-  return KEY_LABELS[key] || KEY_LABELS[normalizedKey] || normalizedKey.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  if (KNOWN_FIELDS.has(key)) return t(`audit.fields.${key}`);
+  if (KNOWN_FIELDS.has(normalizedKey)) return t(`audit.fields.${normalizedKey}`);
+  return normalizedKey.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
 export function formatAuditDetails(rawDetails: any, formatDate?: AuditDateFormatter): FormattedAuditItem[] {
@@ -198,12 +202,12 @@ export function formatAuditDetails(rawDetails: any, formatDate?: AuditDateFormat
     try {
       details = JSON.parse(details);
     } catch {
-      return [{ label: 'Detalhes', value: details }];
+      return [{ label: t('audit.formatter.details'), value: details }];
     }
   }
 
   if (typeof details !== 'object' || details === null) {
-    return [{ label: 'Detalhes', value: String(details) }];
+    return [{ label: t('audit.formatter.details'), value: String(details) }];
   }
 
   const items: FormattedAuditItem[] = [];
@@ -218,7 +222,10 @@ export function formatAuditDetails(rawDetails: any, formatDate?: AuditDateFormat
       if (oldVal !== undefined) {
         items.push({
           label: formatAuditLabel(key),
-          value: `De "${formatAuditValue(key, oldVal, formatDate)}" para "${formatAuditValue(key, newVal, formatDate)}"`,
+          value: t('audit.formatter.changeFromTo', {
+            old: formatAuditValue(key, oldVal, formatDate),
+            new: formatAuditValue(key, newVal, formatDate)
+          }),
           isChange: true,
           oldValue: formatAuditValue(key, oldVal, formatDate),
           newValue: formatAuditValue(key, newVal, formatDate)
@@ -265,23 +272,21 @@ export interface AuditCategory {
   label: string;
 }
 
-export const AUDIT_CATEGORIES: AuditCategory[] = [
-  { id: 'auth', label: 'Login e Logout' },
-  { id: 'clients', label: 'Clientes' },
-  { id: 'products', label: 'Produtos e Serviços' },
-  { id: 'invoices', label: 'Facturas' },
-  { id: 'reports', label: 'Relatórios' },
-  { id: 'declarations', label: 'Declarações Fiscais' },
-  { id: 'payments', label: 'Pagamentos' },
-  { id: 'settings', label: 'Configurações' },
-  { id: 'users', label: 'Utilizadores' },
-  { id: 'subscriptions', label: 'Subscrições' },
-  { id: 'system', label: 'Sistema' }
-];
+/** Categorias gravadas em audit_logs.category; o rótulo está em audit.categories.<id>. */
+export const AUDIT_CATEGORY_IDS = [
+  'auth', 'clients', 'products', 'invoices', 'reports', 'declarations',
+  'payments', 'settings', 'users', 'subscriptions', 'system'
+] as const;
+
+/** Categorias com o rótulo na língua da interface (chamar em tempo de execução). */
+export function getAuditCategories(): AuditCategory[] {
+  return AUDIT_CATEGORY_IDS.map(id => ({ id, label: t(`audit.categories.${id}`) }));
+}
 
 export function getAuditCategoryLabel(category: string): string {
-  const found = AUDIT_CATEGORIES.find(c => c.id === category);
-  return found ? found.label : category;
+  return (AUDIT_CATEGORY_IDS as readonly string[]).includes(category)
+    ? t(`audit.categories.${category}`)
+    : category;
 }
 
 export function getAuditCategoryBadge(category: string): string {

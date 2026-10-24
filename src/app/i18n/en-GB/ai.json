@@ -1,1 +1,88 @@
-{}
+{
+  "widget": {
+    "title": "Virtual assistant",
+    "close": "Close assistant"
+  },
+  "page": {
+    "badge": "AI",
+    "intro": "Ask about invoicing, clients, products and taxes. Answers use the active company's real data; tax questions are answered from the ISPC Fácil knowledge base."
+  },
+  "chat": {
+    "noActiveCompany": "No active company",
+    "history": "Previous conversations",
+    "newConversation": "New conversation",
+    "noConversations": "You don't have any saved conversations yet.",
+    "lockedTitle": "Assistant not included in your plan",
+    "lockedBody": "Ask questions about your business in plain language and get answers about ISPC and Form 30 (Modelo 30).",
+    "viewPlans": "View plans",
+    "welcome": "Ask me anything about your invoices, clients and taxes. I'll answer with your company's real figures.",
+    "thinking": "Thinking…",
+    "exportExcel": "Export to Excel",
+    "exportPdf": "Export to PDF",
+    "showingRows": "Showing {shown} of {total} rows. Export to see everything.",
+    "sources": {
+      "one": "{count} query of your data",
+      "other": "{count} queries of your data"
+    },
+    "quotaReached": "You've reached this month's question limit.",
+    "inputPlaceholder": "Ask about invoices, clients or taxes…",
+    "stop": "Stop",
+    "quotaRemaining": {
+      "zero": "{count} questions left this month",
+      "one": "{count} question left this month",
+      "other": "{count} questions left this month"
+    },
+    "disclaimer": "Guidance only; not a substitute for professional tax advice.",
+    "reportExported": "Report exported",
+    "pdfGenerated": "PDF generated successfully.",
+    "pdfError": "Could not generate the PDF",
+    "pdfErrorHint": "Try exporting to Excel.",
+    "reportFileName": "report"
+  },
+  "suggestions": {
+    "invoicesThisMonth": "How many invoices have I issued this month?",
+    "pendingTotal": "What is the total outstanding amount to collect?",
+    "bestSellingProduct": "What is my best-selling product?",
+    "lapsedClients": "Which clients have stopped buying?",
+    "whatIsModelo30": "What is Form 30 (Modelo 30)?",
+    "whenPayIspc": "When do I have to pay ISPC?"
+  },
+  "tools": {
+    "estatisticas_facturacao": "Adding up the period's invoices",
+    "evolucao_vendas": "Analysing sales trends",
+    "produtos_mais_vendidos": "Ranking best-selling products",
+    "melhores_clientes": "Ranking clients by revenue",
+    "clientes_inactivos": "Looking for clients with no recent purchases",
+    "contas_a_receber": "Calculating the amount receivable",
+    "posicao_fiscal": "Checking ISPC returns",
+    "listar_facturas": "Listing invoices",
+    "pesquisar": "Searching your records",
+    "consultar_base_fiscal": "Checking the tax knowledge base",
+    "default": "Checking your data"
+  },
+  "alerts": {
+    "title": "Smart alerts",
+    "emptyTitle": "All in order",
+    "emptyBody": "No overdue invoices, upcoming deadlines or sales drops to report.",
+    "askAssistant": "Ask the assistant",
+    "dismiss": "Dismiss",
+    "explainPrompt": "Explain this alert to me: {title}. {body}"
+  },
+  "search": {
+    "placeholder": "Search or ask…",
+    "ariaLabel": "Search clients, products and invoices",
+    "clear": "Clear",
+    "askAssistant": "Ask the assistant",
+    "searching": "Searching…",
+    "noResults": "No results for “{term}”."
+  },
+  "errors": {
+    "unreachable": "Could not reach the assistant.",
+    "network": "A connection error occurred. Check your internet connection and try again."
+  },
+  "documents": {
+    "bucketMissing": "The \"company-documents\" storage bucket does not exist in Supabase. Please create it in the Dashboard.",
+    "uploadError": "Upload error: {message}",
+    "updateError": "Error updating documents: {message}"
+  }
+}

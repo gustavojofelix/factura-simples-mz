@@ -10,27 +10,29 @@ import { AppDatePipe } from '../../shared/pipes/app-date.pipe';
 import {
   formatAuditDetails,
   FormattedAuditItem,
-  AUDIT_CATEGORIES,
+  getAuditCategories,
   getAuditCategoryLabel,
   getAuditCategoryBadge
 } from '../../core/utils/audit-formatter.util';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { t } from '../../core/i18n/i18n';
 
 @Component({
   selector: 'app-audit-logs',
   standalone: true,
-  imports: [CommonModule, FormsModule, PaginationComponent, AppDatePipe],
+  imports: [CommonModule, FormsModule, PaginationComponent, AppDatePipe, TranslatePipe],
   template: `
     <div class="p-6 max-w-7xl mx-auto space-y-6">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Registo de Auditoria</h1>
-          <p class="text-slate-500 text-sm mt-1">Historial de atividades críticas do sistema para as suas empresas</p>
+          <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">{{ 'audit.page.title' | t }}</h1>
+          <p class="text-slate-500 text-sm mt-1">{{ 'audit.page.subtitle' | t }}</p>
         </div>
         <button (click)="exportToCSV()" class="flex items-center space-x-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-all font-semibold shadow-sm text-sm">
           <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
-          <span>Exportar CSV</span>
+          <span>{{ 'audit.page.exportCsv' | t }}</span>
         </button>
       </div>
 
@@ -39,34 +41,34 @@ import {
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <!-- Company Selector -->
           <div class="flex flex-col space-y-1">
-            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Empresa</label>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ 'audit.filters.company' | t }}</label>
             <select [(ngModel)]="selectedCompanyId" (change)="loadLogs()"
               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-orange-500 outline-none">
-              <option value="all">Todas as Empresas</option>
+              <option value="all">{{ 'audit.filters.allCompanies' | t }}</option>
               <option *ngFor="let comp of companyService.companies()" [value]="comp.id">{{ comp.name }}</option>
             </select>
           </div>
 
           <!-- Category Filter -->
           <div class="flex flex-col space-y-1">
-            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Categoria</label>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ 'audit.filters.category' | t }}</label>
             <select [ngModel]="selectedCategory()" (ngModelChange)="onCategoryChange($event)"
               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-orange-500 outline-none">
-              <option value="all">Todas as Categorias</option>
+              <option value="all">{{ 'audit.filters.allCategories' | t }}</option>
               <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.label }}</option>
             </select>
           </div>
 
           <!-- Start Date -->
           <div class="flex flex-col space-y-1">
-            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Data Inicial</label>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ 'audit.filters.startDate' | t }}</label>
             <input type="date" [(ngModel)]="startDate" (change)="loadLogs()"
               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-orange-500 outline-none">
           </div>
 
           <!-- End Date -->
           <div class="flex flex-col space-y-1">
-            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Data Final</label>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ 'audit.filters.endDate' | t }}</label>
             <input type="date" [(ngModel)]="endDate" (change)="loadLogs()"
               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-orange-500 outline-none">
           </div>
@@ -75,11 +77,11 @@ import {
         <div class="flex items-center gap-4">
           <!-- Text Search -->
           <div class="flex-1">
-            <input type="text" [ngModel]="searchTerm()" (ngModelChange)="onSearchInput($event)" placeholder="Pesquisar por acção, utilizador ou detalhes..."
+            <input type="text" [ngModel]="searchTerm()" (ngModelChange)="onSearchInput($event)" [placeholder]="'audit.filters.searchPlaceholder' | t"
               class="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
           </div>
           <button (click)="clearFilters()" class="text-xs font-semibold text-slate-500 hover:text-orange-500 transition-colors uppercase tracking-wider">
-            Limpar Filtros
+            {{ 'audit.filters.clear' | t }}
           </button>
         </div>
       </div>
@@ -87,7 +89,7 @@ import {
       <!-- Loading Spinner -->
       <div *ngIf="isLoading()" class="bg-white rounded-2xl border border-slate-100 p-12 flex flex-col items-center justify-center space-y-4">
         <div class="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-        <p class="text-slate-500 text-xs tracking-wider animate-pulse">A CARREGAR REGISTOS...</p>
+        <p class="text-slate-500 text-xs tracking-wider animate-pulse">{{ 'audit.page.loading' | t }}</p>
       </div>
 
       <!-- Logs Table -->
@@ -96,12 +98,12 @@ import {
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="bg-slate-50 text-slate-400 text-[10px] font-bold uppercase tracking-wider border-b border-slate-100">
-                <th class="px-6 py-4 w-44">Data/Hora</th>
-                <th class="px-6 py-4 w-52">Utilizador</th>
-                <th class="px-6 py-4">Acção</th>
-                <th class="px-6 py-4 w-44">Categoria</th>
-                <th class="px-6 py-4 w-40">Detalhes</th>
-                <th class="px-6 py-4 w-20 text-center">Histórico</th>
+                <th class="px-6 py-4 w-44">{{ 'audit.columns.dateTime' | t }}</th>
+                <th class="px-6 py-4 w-52">{{ 'audit.columns.user' | t }}</th>
+                <th class="px-6 py-4">{{ 'audit.columns.action' | t }}</th>
+                <th class="px-6 py-4 w-44">{{ 'audit.columns.category' | t }}</th>
+                <th class="px-6 py-4 w-40">{{ 'audit.columns.details' | t }}</th>
+                <th class="px-6 py-4 w-20 text-center">{{ 'audit.columns.history' | t }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 text-slate-700 text-sm">
@@ -125,13 +127,13 @@ import {
                 </td>
                 <td class="px-6 py-4 text-center">
                   <button (click)="viewDetails(log)" class="text-orange-500 hover:text-orange-700 font-bold transition-all text-xs focus:outline-none">
-                    Ver
+                    {{ 'common.actions.view' | t }}
                   </button>
                 </td>
               </tr>
               <tr *ngIf="filteredLogs().length === 0">
                 <td colspan="6" class="px-6 py-12 text-center text-slate-400">
-                  Nenhum registo de auditoria encontrado.
+                  {{ 'audit.page.empty' | t }}
                 </td>
               </tr>
             </tbody>
@@ -155,7 +157,7 @@ import {
       <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
         <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <div>
-            <h3 class="text-lg font-bold text-slate-800">Histórico da Actividade</h3>
+            <h3 class="text-lg font-bold text-slate-800">{{ 'audit.detail.title' | t }}</h3>
             <p class="text-xs text-slate-500 font-medium">{{ selectedLog.created_at | appDate:'datetime-seconds' }}</p>
           </div>
           <button (click)="closeDetails()" class="text-slate-400 hover:text-slate-600 focus:outline-none">
@@ -168,19 +170,19 @@ import {
         <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
           <div class="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span class="text-[10px] font-bold text-slate-400 uppercase">Utilizador</span>
+              <span class="text-[10px] font-bold text-slate-400 uppercase">{{ 'audit.columns.user' | t }}</span>
               <p class="font-semibold text-slate-800 mt-0.5 truncate">{{ getUserName(selectedLog) }}</p>
             </div>
             <div>
-              <span class="text-[10px] font-bold text-slate-400 uppercase">E-mail</span>
+              <span class="text-[10px] font-bold text-slate-400 uppercase">{{ 'common.fields.email' | t }}</span>
               <p class="font-semibold text-slate-800 mt-0.5 truncate" [title]="selectedLog.user_email || ''">{{ selectedLog.user_email || '—' }}</p>
             </div>
             <div>
-              <span class="text-[10px] font-bold text-slate-400 uppercase">Endereço IP</span>
+              <span class="text-[10px] font-bold text-slate-400 uppercase">{{ 'audit.detail.ipAddress' | t }}</span>
               <p class="font-semibold text-slate-800 mt-0.5">{{ selectedLog.ip_address || '—' }}</p>
             </div>
             <div>
-              <span class="text-[10px] font-bold text-slate-400 uppercase">Categoria</span>
+              <span class="text-[10px] font-bold text-slate-400 uppercase">{{ 'audit.columns.category' | t }}</span>
               <p class="mt-0.5">
                 <span class="px-2 py-0.5 text-[10px] font-bold rounded-full border" [ngClass]="getCategoryBadge(selectedLog.category)">
                   {{ getCategoryLabel(selectedLog.category) }}
@@ -188,24 +190,24 @@ import {
               </p>
             </div>
             <div>
-              <span class="text-[10px] font-bold text-slate-400 uppercase">Acção Realizada</span>
+              <span class="text-[10px] font-bold text-slate-400 uppercase">{{ 'audit.detail.actionPerformed' | t }}</span>
               <p class="font-semibold text-slate-800 mt-0.5">{{ selectedLog.action }}</p>
             </div>
             <div *ngIf="selectedLog.entity_name">
-              <span class="text-[10px] font-bold text-slate-400 uppercase">Detalhes</span>
+              <span class="text-[10px] font-bold text-slate-400 uppercase">{{ 'audit.columns.details' | t }}</span>
               <p class="font-semibold text-slate-800 mt-0.5 font-mono text-xs">{{ selectedLog.entity_name }}</p>
             </div>
             <div *ngIf="selectedLog.entity_id">
-              <span class="text-[10px] font-bold text-slate-400 uppercase">ID da Entidade</span>
+              <span class="text-[10px] font-bold text-slate-400 uppercase">{{ 'audit.detail.entityId' | t }}</span>
               <p class="font-semibold text-slate-800 mt-0.5 font-mono text-[10px] truncate" [title]="selectedLog.entity_id">{{ selectedLog.entity_id }}</p>
             </div>
           </div>
 
           <div class="border-t border-slate-100 pt-4 space-y-3">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Dados da Atividade</span>
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ 'audit.detail.activityData' | t }}</span>
 
             <div *ngIf="getFormattedDetails(selectedLog.details).length === 0" class="text-xs text-slate-500 italic bg-slate-50 p-4 rounded-xl border border-slate-100">
-              Nenhum detalhe adicional registado para esta acção.
+              {{ 'audit.detail.noDetails' | t }}
             </div>
 
             <div *ngIf="getFormattedDetails(selectedLog.details).length > 0" class="bg-slate-50 rounded-xl border border-slate-100 divide-y divide-slate-100 overflow-hidden text-sm">
@@ -223,7 +225,7 @@ import {
             <!-- Collapsible JSON for technical diagnostics -->
             <details *ngIf="selectedLog.details" class="mt-3 group">
               <summary class="text-[11px] font-medium text-slate-400 hover:text-slate-600 cursor-pointer select-none transition-colors">
-                Ver dados técnicos brutos (JSON)
+                {{ 'audit.detail.rawJson' | t }}
               </summary>
               <pre class="mt-2 bg-slate-900 text-green-400 p-3 rounded-xl text-[11px] font-mono overflow-x-auto whitespace-pre-wrap">{{ selectedLog.details | json }}</pre>
             </details>
@@ -232,7 +234,7 @@ import {
 
         <div class="p-6 bg-slate-50 border-t border-slate-100 flex justify-end">
           <button (click)="closeDetails()" class="px-6 py-2 bg-slate-200 text-slate-700 rounded-xl hover:bg-slate-300 font-semibold text-sm transition-all focus:outline-none">
-            Fechar
+            {{ 'common.actions.close' | t }}
           </button>
         </div>
       </div>
@@ -262,7 +264,7 @@ export class AuditLogsComponent implements OnInit {
   // Dialog details
   selectedLog: any = null;
 
-  categories = AUDIT_CATEGORIES;
+  categories = getAuditCategories();
 
   filteredLogs = computed(() => {
     let list = this.logs();
@@ -395,9 +397,9 @@ export class AuditLogsComponent implements OnInit {
   }
 
   getUserName(log: any): string {
-    if (!log) return 'Sistema';
+    if (!log) return t('audit.common.system');
     const profile = log.user_id ? this.userProfiles()[log.user_id] : undefined;
-    return profile?.full_name || log.user_email || 'Sistema';
+    return profile?.full_name || log.user_email || t('audit.common.system');
   }
 
   onCategoryChange(category: string) {
@@ -444,7 +446,17 @@ export class AuditLogsComponent implements OnInit {
     const data = this.filteredLogs();
     if (data.length === 0) return;
 
-    const headers = ['Data/Hora', 'Utilizador', 'E-mail', 'Acção', 'Categoria', 'Detalhes', 'ID Entidade', 'IP', 'Histórico'];
+    const headers = [
+      t('audit.columns.dateTime'),
+      t('audit.columns.user'),
+      t('common.fields.email'),
+      t('audit.columns.action'),
+      t('audit.columns.category'),
+      t('audit.columns.details'),
+      t('audit.export.entityId'),
+      t('audit.export.ip'),
+      t('audit.columns.history')
+    ];
 
     const rows = data.map(l => [
       `"${this.preferences.formatDateTime(l.created_at, true)}"`,
@@ -468,7 +480,7 @@ export class AuditLogsComponent implements OnInit {
 
     const timestamp = new Date().toISOString().split('T')[0];
     link.setAttribute('href', url);
-    link.setAttribute('download', `auditoria_${timestamp}.csv`);
+    link.setAttribute('download', `${t('audit.export.fileName')}_${timestamp}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();

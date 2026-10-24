@@ -1,1 +1,88 @@
-{}
+{
+  "widget": {
+    "title": "Assistant virtuel",
+    "close": "Fermer l'assistant"
+  },
+  "page": {
+    "badge": "IA",
+    "intro": "Posez vos questions sur la facturation, les clients, les produits et les impôts. Les réponses utilisent les données réelles de l'entreprise active ; les questions fiscales sont traitées à partir de la base de connaissances d'ISPC Fácil."
+  },
+  "chat": {
+    "noActiveCompany": "Aucune entreprise active",
+    "history": "Conversations précédentes",
+    "newConversation": "Nouvelle conversation",
+    "noConversations": "Vous n'avez encore aucune conversation enregistrée.",
+    "lockedTitle": "Assistant non inclus dans votre formule",
+    "lockedBody": "Posez des questions sur votre activité en langage naturel et obtenez des réponses sur l'ISPC et le Formulaire 30 (Modelo 30).",
+    "viewPlans": "Voir les formules",
+    "welcome": "Posez-moi toutes vos questions sur vos factures, vos clients et vos impôts. Je réponds avec les chiffres réels de votre entreprise.",
+    "thinking": "Réflexion…",
+    "exportExcel": "Exporter vers Excel",
+    "exportPdf": "Exporter en PDF",
+    "showingRows": "Affichage de {shown} lignes sur {total}. Exportez pour tout voir.",
+    "sources": {
+      "one": "{count} requête sur vos données",
+      "other": "{count} requêtes sur vos données"
+    },
+    "quotaReached": "Vous avez atteint la limite de questions de ce mois.",
+    "inputPlaceholder": "Posez une question sur les factures, les clients ou les impôts…",
+    "stop": "Arrêter",
+    "quotaRemaining": {
+      "zero": "{count} question restante ce mois-ci",
+      "one": "{count} question restante ce mois-ci",
+      "other": "{count} questions restantes ce mois-ci"
+    },
+    "disclaimer": "Aide à l'interprétation ; ne remplace pas un conseil fiscal.",
+    "reportExported": "Rapport exporté",
+    "pdfGenerated": "PDF généré avec succès.",
+    "pdfError": "Impossible de générer le PDF",
+    "pdfErrorHint": "Essayez d'exporter vers Excel.",
+    "reportFileName": "rapport"
+  },
+  "suggestions": {
+    "invoicesThisMonth": "Combien de factures ai-je émises ce mois-ci ?",
+    "pendingTotal": "Quel est le montant total restant à encaisser ?",
+    "bestSellingProduct": "Quel est mon produit le plus vendu ?",
+    "lapsedClients": "Quels clients ont cessé d'acheter ?",
+    "whatIsModelo30": "Qu'est-ce que le Formulaire 30 (Modelo 30) ?",
+    "whenPayIspc": "Quand dois-je payer l'ISPC ?"
+  },
+  "tools": {
+    "estatisticas_facturacao": "Calcul du total des factures de la période",
+    "evolucao_vendas": "Analyse de l'évolution des ventes",
+    "produtos_mais_vendidos": "Classement des produits les plus vendus",
+    "melhores_clientes": "Classement des clients par chiffre d'affaires",
+    "clientes_inactivos": "Recherche des clients sans achats récents",
+    "contas_a_receber": "Calcul du montant à encaisser",
+    "posicao_fiscal": "Consultation des déclarations d'ISPC",
+    "listar_facturas": "Liste des factures",
+    "pesquisar": "Recherche dans vos données",
+    "consultar_base_fiscal": "Consultation de la base de connaissances fiscales",
+    "default": "Consultation de vos données"
+  },
+  "alerts": {
+    "title": "Alertes intelligentes",
+    "emptyTitle": "Tout est en ordre",
+    "emptyBody": "Aucune facture en retard, échéance proche ou baisse des ventes à signaler.",
+    "askAssistant": "Demander à l'assistant",
+    "dismiss": "Ignorer",
+    "explainPrompt": "Expliquez-moi cette alerte : {title}. {body}"
+  },
+  "search": {
+    "placeholder": "Rechercher ou demander…",
+    "ariaLabel": "Rechercher des clients, des produits et des factures",
+    "clear": "Effacer",
+    "askAssistant": "Demander à l'assistant",
+    "searching": "Recherche…",
+    "noResults": "Aucun résultat pour « {term} »."
+  },
+  "errors": {
+    "unreachable": "Impossible de joindre l'assistant.",
+    "network": "Une erreur de connexion est survenue. Vérifiez votre connexion Internet et réessayez."
+  },
+  "documents": {
+    "bucketMissing": "Le bucket de stockage « company-documents » n'existe pas dans Supabase. Veuillez le créer dans le Dashboard.",
+    "uploadError": "Erreur lors de l'envoi : {message}",
+    "updateError": "Erreur lors de la mise à jour des documents : {message}"
+  }
+}

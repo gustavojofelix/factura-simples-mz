@@ -1,1 +1,67 @@
-{}
+{
+  "workspace": {
+    "account": "Conta",
+    "owner": "Titular",
+    "guest": "Convidado",
+    "activeWorkspace": "Workspace activo",
+    "selectCompany": "Seleccionar empresa",
+    "companySuspended": "Empresa Suspensa",
+    "companyActive": "Empresa activa",
+    "company": "Empresa",
+    "suspendedSuffix": "(Suspenso)"
+  },
+  "nav": {
+    "dashboard": "Painel",
+    "assistant": "Assistente",
+    "invoices": "Facturas",
+    "clients": "Clientes",
+    "products": "Produtos e Serviços",
+    "taxes": "Impostos",
+    "reports": "Relatórios",
+    "settings": "Configurações",
+    "audit": "Auditoria"
+  },
+  "navGroups": {
+    "overview": "Visão geral",
+    "operations": "Operações",
+    "tax": "Fiscalidade",
+    "system": "Sistema"
+  },
+  "profile": {
+    "openMenu": "Abrir perfil e opções da conta",
+    "viewProfile": "Ver perfil",
+    "profile": "Perfil",
+    "user": "Utilizador"
+  },
+  "roles": {
+    "owner": "Administrador",
+    "manager": "Gestor",
+    "user": "Vendedor"
+  },
+  "mobile": {
+    "openMenu": "Abrir menu",
+    "menu": "Menu"
+  },
+  "suspended": {
+    "badge": "Acesso Bloqueado",
+    "title": "Contribuinte Suspenso",
+    "bodyBefore": "O acesso às operações da empresa",
+    "bodyAfter": "(NUIT: {nuit}) foi suspenso pela administração. A emissão de facturas, gestão de clientes e outras funcionalidades estão temporariamente indisponíveis.",
+    "switchTo": "Mudar para outro contribuinte activo:",
+    "access": "Aceder",
+    "contactSupport": "Contactar Apoio ao Cliente",
+    "signOut": "Terminar Sessão"
+  },
+  "subscription": {
+    "trialTitle": {
+      "one": "Período de Teste - {count} dia restante",
+      "other": "Período de Teste - {count} dias restantes"
+    },
+    "trialBody": "O seu período de teste termina em breve. Escolha um plano para continuar a utilizar todas as funcionalidades.",
+    "viewPlans": "Ver Planos",
+    "trialExpired": "Período de Teste Expirado",
+    "subscriptionExpired": "Subscrição Expirada",
+    "expiredBody": "O sistema está bloqueado até subscrever um plano. Os seus dados estão guardados e voltam a ficar disponíveis assim que o pagamento for confirmado.",
+    "choosePlan": "Escolher Plano"
+  }
+}

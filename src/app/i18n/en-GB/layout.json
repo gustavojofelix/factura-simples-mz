@@ -1,1 +1,67 @@
-{}
+{
+  "workspace": {
+    "account": "Account",
+    "owner": "Owner",
+    "guest": "Guest",
+    "activeWorkspace": "Active workspace",
+    "selectCompany": "Select company",
+    "companySuspended": "Company suspended",
+    "companyActive": "Active company",
+    "company": "Company",
+    "suspendedSuffix": "(Suspended)"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "assistant": "Assistant",
+    "invoices": "Invoices",
+    "clients": "Clients",
+    "products": "Products & Services",
+    "taxes": "Taxes",
+    "reports": "Reports",
+    "settings": "Settings",
+    "audit": "Audit log"
+  },
+  "navGroups": {
+    "overview": "Overview",
+    "operations": "Operations",
+    "tax": "Tax",
+    "system": "System"
+  },
+  "profile": {
+    "openMenu": "Open profile and account options",
+    "viewProfile": "View profile",
+    "profile": "Profile",
+    "user": "User"
+  },
+  "roles": {
+    "owner": "Administrator",
+    "manager": "Manager",
+    "user": "Salesperson"
+  },
+  "mobile": {
+    "openMenu": "Open menu",
+    "menu": "Menu"
+  },
+  "suspended": {
+    "badge": "Access blocked",
+    "title": "Taxpayer suspended",
+    "bodyBefore": "Access to the operations of",
+    "bodyAfter": "(NUIT: {nuit}) has been suspended by the administration. Issuing invoices, managing clients and other features are temporarily unavailable.",
+    "switchTo": "Switch to another active taxpayer:",
+    "access": "Open",
+    "contactSupport": "Contact customer support",
+    "signOut": "Sign out"
+  },
+  "subscription": {
+    "trialTitle": {
+      "one": "Free trial - {count} day left",
+      "other": "Free trial - {count} days left"
+    },
+    "trialBody": "Your free trial ends soon. Choose a plan to keep using all features.",
+    "viewPlans": "View plans",
+    "trialExpired": "Free trial expired",
+    "subscriptionExpired": "Subscription expired",
+    "expiredBody": "The system is locked until you subscribe to a plan. Your data is saved and will be available again as soon as payment is confirmed.",
+    "choosePlan": "Choose a plan"
+  }
+}

@@ -1,1 +1,67 @@
-{}
+{
+  "workspace": {
+    "account": "Compte",
+    "owner": "Titulaire",
+    "guest": "Invité",
+    "activeWorkspace": "Espace de travail actif",
+    "selectCompany": "Sélectionner une entreprise",
+    "companySuspended": "Entreprise suspendue",
+    "companyActive": "Entreprise active",
+    "company": "Entreprise",
+    "suspendedSuffix": "(Suspendue)"
+  },
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "assistant": "Assistant",
+    "invoices": "Factures",
+    "clients": "Clients",
+    "products": "Produits et services",
+    "taxes": "Impôts",
+    "reports": "Rapports",
+    "settings": "Paramètres",
+    "audit": "Journal d'audit"
+  },
+  "navGroups": {
+    "overview": "Vue d'ensemble",
+    "operations": "Opérations",
+    "tax": "Fiscalité",
+    "system": "Système"
+  },
+  "profile": {
+    "openMenu": "Ouvrir le profil et les options du compte",
+    "viewProfile": "Voir le profil",
+    "profile": "Profil",
+    "user": "Utilisateur"
+  },
+  "roles": {
+    "owner": "Administrateur",
+    "manager": "Gestionnaire",
+    "user": "Vendeur"
+  },
+  "mobile": {
+    "openMenu": "Ouvrir le menu",
+    "menu": "Menu"
+  },
+  "suspended": {
+    "badge": "Accès bloqué",
+    "title": "Contribuable suspendu",
+    "bodyBefore": "L'accès aux opérations de l'entreprise",
+    "bodyAfter": "(NUIT : {nuit}) a été suspendu par l'administration. L'émission de factures, la gestion des clients et les autres fonctionnalités sont temporairement indisponibles.",
+    "switchTo": "Passer à un autre contribuable actif :",
+    "access": "Accéder",
+    "contactSupport": "Contacter le service client",
+    "signOut": "Se déconnecter"
+  },
+  "subscription": {
+    "trialTitle": {
+      "one": "Essai gratuit - {count} jour restant",
+      "other": "Essai gratuit - {count} jours restants"
+    },
+    "trialBody": "Votre essai gratuit se termine bientôt. Choisissez une formule pour continuer à utiliser toutes les fonctionnalités.",
+    "viewPlans": "Voir les formules",
+    "trialExpired": "Essai gratuit expiré",
+    "subscriptionExpired": "Abonnement expiré",
+    "expiredBody": "Le système est bloqué jusqu'à ce que vous souscriviez une formule. Vos données sont conservées et redeviendront disponibles dès que le paiement sera confirmé.",
+    "choosePlan": "Choisir une formule"
+  }
+}

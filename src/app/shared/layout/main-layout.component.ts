@@ -20,6 +20,8 @@ import { AiAlertsComponent } from '../components/ai-alerts/ai-alerts.component';
 import { AiAssistantWidgetComponent } from '../components/ai-chat/ai-assistant-widget.component';
 import { LanguageSwitcherComponent } from '../components/language-switcher/language-switcher.component';
 import { effect } from '@angular/core';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { t } from '../../core/i18n/i18n';
 
 interface MenuItem {
   icon: string;
@@ -46,7 +48,8 @@ interface MenuItem {
     MatCardModule,
     AiSearchComponent,
     AiAlertsComponent,
-    AiAssistantWidgetComponent
+    AiAssistantWidgetComponent,
+    TranslatePipe
   ],
   templateUrl: './main-layout.component.html',
   styleUrls: ['./main-layout.component.css']
@@ -55,15 +58,15 @@ export class MainLayoutComponent {
   isMobileMenuOpen = signal(false);
 
   menuItems: MenuItem[] = [
-    { icon: 'fa-house', label: 'Painel', route: '/painel' },
-    { icon: 'fa-headset', label: 'Assistente', route: '/assistente' },
-    { icon: 'fa-file-invoice-dollar', label: 'Facturas', route: '/facturas' },
-    { icon: 'fa-address-book', label: 'Clientes', route: '/clientes' },
-    { icon: 'fa-boxes-stacked', label: 'Produtos e Serviços', route: '/produtos' },
-    { icon: 'fa-landmark', label: 'Impostos', route: '/impostos' },
-    { icon: 'fa-chart-column', label: 'Relatórios', route: '/relatorios' },
-    { icon: 'fa-sliders', label: 'Configurações', route: '/configuracoes' },
-    { icon: 'fa-clipboard-check', label: 'Auditoria', route: '/auditoria' }
+    { icon: 'fa-house', label: t('layout.nav.dashboard'), route: '/painel' },
+    { icon: 'fa-headset', label: t('layout.nav.assistant'), route: '/assistente' },
+    { icon: 'fa-file-invoice-dollar', label: t('layout.nav.invoices'), route: '/facturas' },
+    { icon: 'fa-address-book', label: t('layout.nav.clients'), route: '/clientes' },
+    { icon: 'fa-boxes-stacked', label: t('layout.nav.products'), route: '/produtos' },
+    { icon: 'fa-landmark', label: t('layout.nav.taxes'), route: '/impostos' },
+    { icon: 'fa-chart-column', label: t('layout.nav.reports'), route: '/relatorios' },
+    { icon: 'fa-sliders', label: t('layout.nav.settings'), route: '/configuracoes' },
+    { icon: 'fa-clipboard-check', label: t('layout.nav.audit'), route: '/auditoria' }
   ];
 
   filteredMenuItems = computed(() => {
@@ -156,15 +159,19 @@ export class MainLayoutComponent {
   });
 
   navGroups = computed(() => {
+    const overview = t('layout.navGroups.overview');
+    const operations = t('layout.navGroups.operations');
+    const tax = t('layout.navGroups.tax');
+    const system = t('layout.navGroups.system');
     const groupNames: Record<string, string> = {
-      '/painel': 'Visão geral', '/assistente': 'Visão geral',
-      '/facturas': 'Operações', '/clientes': 'Operações',
-      '/produtos': 'Operações', '/impostos': 'Fiscalidade', '/relatorios': 'Fiscalidade',
-      '/configuracoes': 'Sistema', '/auditoria': 'Sistema'
+      '/painel': overview, '/assistente': overview,
+      '/facturas': operations, '/clientes': operations,
+      '/produtos': operations, '/impostos': tax, '/relatorios': tax,
+      '/configuracoes': system, '/auditoria': system
     };
     const groups: { label: string; items: MenuItem[] }[] = [];
     for (const item of this.filteredMenuItems()) {
-      const label = groupNames[item.route] || 'Menu';
+      const label = groupNames[item.route] || t('layout.mobile.menu');
       let group = groups.find(candidate => candidate.label === label);
       if (!group) { group = { label, items: [] }; groups.push(group); }
       group.items.push(item);
@@ -174,11 +181,11 @@ export class MainLayoutComponent {
 
   userDisplayName = computed(() => {
     const user = this.authService.currentUser();
-    return user?.user_metadata?.['full_name'] || user?.email?.split('@')[0] || 'Utilizador';
+    return user?.user_metadata?.['full_name'] || user?.email?.split('@')[0] || t('layout.profile.user');
   });
 
   userRoleLabel = computed(() => {
     const role = this.companyService.activeRole();
-    return role === 'owner' ? 'Administrador' : role === 'manager' ? 'Gestor' : 'Vendedor';
+    return t(role === 'owner' ? 'layout.roles.owner' : role === 'manager' ? 'layout.roles.manager' : 'layout.roles.user');
   });
 }

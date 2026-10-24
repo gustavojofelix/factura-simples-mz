@@ -7,19 +7,19 @@
         <mat-icon class="!text-[20px] !w-5 !h-5">auto_awesome</mat-icon>
       </span>
       <div class="min-w-0">
-        <p class="text-sm font-bold text-slate-900 leading-tight truncate">Assistente Virtual</p>
+        <p class="text-sm font-bold text-slate-900 leading-tight truncate">{{ 'ai.widget.title' | t }}</p>
         <p class="text-[11px] text-slate-500 leading-tight truncate">
-          {{ companyService.activeCompany()?.name || 'Sem empresa activa' }}
+          {{ companyService.activeCompany()?.name || ('ai.chat.noActiveCompany' | t) }}
         </p>
       </div>
     </div>
 
     <div class="flex items-center gap-0.5">
-      <button mat-icon-button class="!w-9 !h-9" matTooltip="Conversas anteriores"
+      <button mat-icon-button class="!w-9 !h-9" [matTooltip]="'ai.chat.history' | t"
               (click)="mostrarHistorico.set(!mostrarHistorico())">
         <mat-icon class="!text-[20px] !w-5 !h-5 text-slate-500">history</mat-icon>
       </button>
-      <button mat-icon-button class="!w-9 !h-9" matTooltip="Nova conversa" (click)="novaConversa()">
+      <button mat-icon-button class="!w-9 !h-9" [matTooltip]="'ai.chat.newConversation' | t" (click)="novaConversa()">
         <mat-icon class="!text-[20px] !w-5 !h-5 text-slate-500">add_comment</mat-icon>
       </button>
     </div>
@@ -29,7 +29,7 @@
   @if (mostrarHistorico()) {
     <div class="ai-chat__history">
       @if (ai.conversations().length === 0) {
-        <p class="px-4 py-3 text-xs text-slate-400">Ainda não tem conversas guardadas.</p>
+        <p class="px-4 py-3 text-xs text-slate-400">{{ 'ai.chat.noConversations' | t }}</p>
       }
       @for (c of ai.conversations(); track c.id) {
         <button class="ai-chat__history-item" (click)="abrirConversa(c.id)">
@@ -49,13 +49,12 @@
       <div class="w-14 h-14 rounded-2xl bg-gold/10 text-gold flex items-center justify-center mb-4">
         <mat-icon class="!text-[28px] !w-7 !h-7">lock</mat-icon>
       </div>
-      <h3 class="text-base font-bold text-slate-900 mb-1.5">Assistente não incluído no seu plano</h3>
+      <h3 class="text-base font-bold text-slate-900 mb-1.5">{{ 'ai.chat.lockedTitle' | t }}</h3>
       <p class="text-sm text-slate-500 leading-relaxed mb-5 max-w-xs">
-        Faça perguntas sobre o seu negócio em linguagem natural e tire dúvidas sobre o ISPC
-        e o Modelo 30.
+        {{ 'ai.chat.lockedBody' | t }}
       </p>
       <a routerLink="/configuracoes" mat-raised-button class="!bg-ispc-orange !text-white !h-10 !px-5 !rounded-xl">
-        Ver planos
+        {{ 'ai.chat.viewPlans' | t }}
       </a>
     </div>
   } @else {
@@ -66,8 +65,7 @@
       @if (conversaVazia()) {
         <div class="ai-chat__welcome">
           <p class="text-sm text-slate-600 leading-relaxed mb-4">
-            Pergunte o que quiser sobre as suas facturas, clientes e impostos.
-            Respondo com os números reais da sua empresa.
+            {{ 'ai.chat.welcome' | t }}
           </p>
           <div class="grid gap-2">
             @for (s of sugestoes; track s.texto) {
@@ -102,7 +100,7 @@
                 <div class="ai-msg__thinking">
                   <span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span>
                   <span class="text-xs text-slate-500 ml-1.5">
-                    {{ ai.currentTool() ? toolLabel(ai.currentTool()!) + '…' : 'A pensar…' }}
+                    {{ ai.currentTool() ? toolLabel(ai.currentTool()!) + '…' : ('ai.chat.thinking' | t) }}
                   </span>
                 </div>
               }
@@ -114,11 +112,11 @@
                     <div class="ai-attachment__bar">
                       <span class="ai-attachment__title">{{ rotularColuna(anexo.titulo) }}</span>
                       <span class="flex items-center gap-0.5">
-                        <button mat-icon-button class="!w-8 !h-8" matTooltip="Exportar para Excel"
+                        <button mat-icon-button class="!w-8 !h-8" [matTooltip]="'ai.chat.exportExcel' | t"
                                 (click)="exportarExcel(anexo)">
                           <mat-icon class="!text-[16px] !w-4 !h-4 text-emerald-600">table_view</mat-icon>
                         </button>
-                        <button mat-icon-button class="!w-8 !h-8" matTooltip="Exportar para PDF"
+                        <button mat-icon-button class="!w-8 !h-8" [matTooltip]="'ai.chat.exportPdf' | t"
                                 (click)="exportarPdf(anexo, ai_i)">
                           <mat-icon class="!text-[16px] !w-4 !h-4 text-red-500">picture_as_pdf</mat-icon>
                         </button>
@@ -146,7 +144,7 @@
                       </table>
                       @if (anexo.linhas.length > 25) {
                         <p class="px-3 py-2 text-[11px] text-slate-400">
-                          A mostrar 25 de {{ anexo.linhas.length }} linhas. Exporte para ver tudo.
+                          {{ 'ai.chat.showingRows' | t: { shown: 25, total: anexo.linhas.length } }}
                         </p>
                       }
                     </div>
@@ -158,7 +156,7 @@
               @if (!m.streaming && m.tools?.length) {
                 <p class="ai-msg__sources">
                   <mat-icon class="!text-[13px] !w-[13px] !h-[13px]">database</mat-icon>
-                  {{ m.tools!.length }} consulta(s) aos seus dados
+                  {{ 'ai.chat.sources' | t: { count: m.tools!.length } }}
                 </p>
               }
             </div>
@@ -172,15 +170,15 @@
       @if (quotaEsgotada()) {
         <div class="ai-chat__quota-block">
           <mat-icon class="!text-[18px] !w-[18px] !h-[18px] text-amber-600 shrink-0">info</mat-icon>
-          <span class="flex-1">Atingiu o limite de perguntas deste mês.</span>
-          <a routerLink="/configuracoes" class="font-bold text-ispc-orange whitespace-nowrap">Ver planos</a>
+          <span class="flex-1">{{ 'ai.chat.quotaReached' | t }}</span>
+          <a routerLink="/configuracoes" class="font-bold text-ispc-orange whitespace-nowrap">{{ 'ai.chat.viewPlans' | t }}</a>
         </div>
       } @else {
         <div class="ai-chat__input-row">
           <textarea
             rows="1"
             class="ai-chat__input"
-            placeholder="Pergunte sobre facturas, clientes ou impostos…"
+            [placeholder]="'ai.chat.inputPlaceholder' | t"
             [ngModel]="rascunho()"
             (ngModelChange)="rascunho.set($event)"
             (keydown)="aoTeclar($event)"
@@ -188,11 +186,11 @@
 
           @if (ai.isStreaming()) {
             <button mat-icon-button class="ai-chat__send ai-chat__send--stop"
-                    matTooltip="Parar" (click)="ai.stop()">
+                    [matTooltip]="'ai.chat.stop' | t" (click)="ai.stop()">
               <mat-icon class="!text-[18px] !w-[18px] !h-[18px]">stop</mat-icon>
             </button>
           } @else {
-            <button mat-icon-button class="ai-chat__send" [disabled]="!podeEnviar()" (click)="enviar()">
+            <button mat-icon-button class="ai-chat__send" [disabled]="!podeEnviar()" (click)="enviar()" [attr.aria-label]="'common.actions.send' | t">
               <mat-icon class="!text-[18px] !w-[18px] !h-[18px]">arrow_upward</mat-icon>
             </button>
           }
@@ -200,9 +198,9 @@
 
         <p class="ai-chat__footnote">
           @if (ai.quotaRemaining() !== null) {
-            {{ ai.quotaRemaining() }} pergunta(s) restante(s) este mês ·
+            {{ 'ai.chat.quotaRemaining' | t: { count: ai.quotaRemaining() ?? 0 } }} ·
           }
-          Apoio à interpretação, não substitui aconselhamento fiscal.
+          {{ 'ai.chat.disclaimer' | t }}
         </p>
       }
     </footer>

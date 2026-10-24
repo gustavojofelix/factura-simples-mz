@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
+import { t } from '../i18n/i18n';
 
 export interface AuditLogEntry {
   id: string;
@@ -114,7 +115,7 @@ export class AuditLogService {
 
     return rows.map(l => ({
       ...l,
-      user_name: (l.user_id && names[l.user_id]?.full_name) || l.user_email || 'Sistema'
+      user_name: (l.user_id && names[l.user_id]?.full_name) || l.user_email || t('audit.common.system')
     }));
   }
 

@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
+import { currentLanguage, t } from '../i18n/i18n';
 
 export interface ExtractedCompanyData {
   nuit?: string;
@@ -49,9 +50,9 @@ export class DocumentProcessingService {
 
     if (error) {
       if (error.message === 'Bucket not found') {
-        throw new Error('O sistema de arquivos (bucket) "company-documents" não existe no Supabase. Por favor, crie-o no Dashboard.');
+        throw new Error(t('ai.documents.bucketMissing'));
       }
-      throw new Error(`Erro ao fazer upload: ${error.message}`);
+      throw new Error(t('ai.documents.uploadError', { message: error.message }));
     }
 
     const { data: urlData } = this.supabase.client.storage
@@ -81,7 +82,9 @@ export class DocumentProcessingService {
         body: {
           document: base64,
           documentType,
-          mimeType: file.type
+          mimeType: file.type,
+          // Língua da interface, para mensagens devolvidas pela função.
+          language: currentLanguage()
         }
       });
 
@@ -202,7 +205,7 @@ export class DocumentProcessingService {
       .eq('id', companyId);
 
     if (error) {
-      throw new Error(`Erro ao atualizar documentos: ${error.message}`);
+      throw new Error(t('ai.documents.updateError', { message: error.message }));
     }
   }
 

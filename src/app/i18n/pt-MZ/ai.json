@@ -1,1 +1,88 @@
-{}
+{
+  "widget": {
+    "title": "Assistente Virtual",
+    "close": "Fechar assistente"
+  },
+  "page": {
+    "badge": "IA",
+    "intro": "Pergunte sobre facturação, clientes, produtos e impostos. As respostas usam os dados reais da empresa activa; as questões fiscais são respondidas a partir da base de conhecimento do ISPC Fácil."
+  },
+  "chat": {
+    "noActiveCompany": "Sem empresa activa",
+    "history": "Conversas anteriores",
+    "newConversation": "Nova conversa",
+    "noConversations": "Ainda não tem conversas guardadas.",
+    "lockedTitle": "Assistente não incluído no seu plano",
+    "lockedBody": "Faça perguntas sobre o seu negócio em linguagem natural e tire dúvidas sobre o ISPC e o Modelo 30.",
+    "viewPlans": "Ver planos",
+    "welcome": "Pergunte o que quiser sobre as suas facturas, clientes e impostos. Respondo com os números reais da sua empresa.",
+    "thinking": "A pensar…",
+    "exportExcel": "Exportar para Excel",
+    "exportPdf": "Exportar para PDF",
+    "showingRows": "A mostrar {shown} de {total} linhas. Exporte para ver tudo.",
+    "sources": {
+      "one": "{count} consulta(s) aos seus dados",
+      "other": "{count} consulta(s) aos seus dados"
+    },
+    "quotaReached": "Atingiu o limite de perguntas deste mês.",
+    "inputPlaceholder": "Pergunte sobre facturas, clientes ou impostos…",
+    "stop": "Parar",
+    "quotaRemaining": {
+      "zero": "{count} pergunta(s) restante(s) este mês",
+      "one": "{count} pergunta(s) restante(s) este mês",
+      "other": "{count} pergunta(s) restante(s) este mês"
+    },
+    "disclaimer": "Apoio à interpretação, não substitui aconselhamento fiscal.",
+    "reportExported": "Relatório exportado",
+    "pdfGenerated": "PDF gerado com sucesso.",
+    "pdfError": "Não foi possível gerar o PDF",
+    "pdfErrorHint": "Tente exportar para Excel.",
+    "reportFileName": "relatorio"
+  },
+  "suggestions": {
+    "invoicesThisMonth": "Quantas facturas emiti este mês?",
+    "pendingTotal": "Qual é o total pendente por receber?",
+    "bestSellingProduct": "Qual é o meu produto mais vendido?",
+    "lapsedClients": "Que clientes deixaram de comprar?",
+    "whatIsModelo30": "O que é o Modelo 30?",
+    "whenPayIspc": "Quando devo pagar o ISPC?"
+  },
+  "tools": {
+    "estatisticas_facturacao": "A somar as facturas do período",
+    "evolucao_vendas": "A analisar a evolução das vendas",
+    "produtos_mais_vendidos": "A ordenar os produtos mais vendidos",
+    "melhores_clientes": "A ordenar os clientes por facturação",
+    "clientes_inactivos": "A procurar clientes sem compras recentes",
+    "contas_a_receber": "A calcular o valor por receber",
+    "posicao_fiscal": "A consultar as declarações de ISPC",
+    "listar_facturas": "A listar as facturas",
+    "pesquisar": "A pesquisar nos seus registos",
+    "consultar_base_fiscal": "A consultar a base de conhecimento fiscal",
+    "default": "A consultar os seus dados"
+  },
+  "alerts": {
+    "title": "Alertas inteligentes",
+    "emptyTitle": "Está tudo em ordem",
+    "emptyBody": "Sem facturas vencidas, prazos próximos ou quedas de vendas a assinalar.",
+    "askAssistant": "Perguntar ao assistente",
+    "dismiss": "Dispensar",
+    "explainPrompt": "Explique-me este alerta: {title}. {body}"
+  },
+  "search": {
+    "placeholder": "Procurar ou perguntar…",
+    "ariaLabel": "Pesquisar clientes, produtos e facturas",
+    "clear": "Limpar",
+    "askAssistant": "Perguntar ao assistente",
+    "searching": "A procurar…",
+    "noResults": "Sem resultados para “{term}”."
+  },
+  "errors": {
+    "unreachable": "Não foi possível contactar o assistente.",
+    "network": "Ocorreu um erro de ligação. Verifique a Internet e tente novamente."
+  },
+  "documents": {
+    "bucketMissing": "O sistema de arquivos (bucket) \"company-documents\" não existe no Supabase. Por favor, crie-o no Dashboard.",
+    "uploadError": "Erro ao fazer upload: {message}",
+    "updateError": "Erro ao atualizar documentos: {message}"
+  }
+}

@@ -10,6 +10,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { AiChatComponent } from './ai-chat.component';
 import { AiAssistantService } from '../../../core/services/ai-assistant.service';
 import { CompanyService } from '../../../core/services/company.service';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 /**
  * Lançador flutuante do assistente.
@@ -21,14 +22,14 @@ import { CompanyService } from '../../../core/services/company.service';
 @Component({
   selector: 'app-ai-assistant-widget',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatButtonModule, MatTooltipModule, AiChatComponent],
+  imports: [CommonModule, MatIconModule, MatButtonModule, MatTooltipModule, AiChatComponent, TranslatePipe],
   template: `
     @if (!companyService.isCompanySuspended() && !naPaginaDoAssistente()) {
       @if (aberto()) {
         <div class="ai-widget__backdrop md:hidden" (click)="fechar()"></div>
 
-        <div class="ai-widget__panel" role="dialog" aria-label="Assistente Virtual">
-          <button mat-icon-button class="ai-widget__close" aria-label="Fechar" (click)="fechar()">
+        <div class="ai-widget__panel" role="dialog" [attr.aria-label]="'ai.widget.title' | t">
+          <button mat-icon-button class="ai-widget__close" [attr.aria-label]="'common.actions.close' | t" (click)="fechar()">
             <mat-icon class="!text-[20px] !w-5 !h-5">close</mat-icon>
           </button>
           <app-ai-chat variant="widget" />
@@ -38,10 +39,10 @@ import { CompanyService } from '../../../core/services/company.service';
       <button
         class="ai-widget__fab"
         [class.ai-widget__fab--open]="aberto()"
-        [matTooltip]="aberto() ? 'Fechar assistente' : 'Assistente Virtual'"
+        [matTooltip]="(aberto() ? 'ai.widget.close' : 'ai.widget.title') | t"
         matTooltipPosition="left"
         [attr.aria-expanded]="aberto()"
-        aria-label="Assistente Virtual"
+        [attr.aria-label]="'ai.widget.title' | t"
         (click)="alternar()">
         <mat-icon class="!text-[24px] !w-6 !h-6">
           {{ aberto() ? 'close' : 'auto_awesome' }}

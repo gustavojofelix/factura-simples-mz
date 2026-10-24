@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 
 import { AiChatComponent } from '../../shared/components/ai-chat/ai-chat.component';
 import { AiAssistantService } from '../../core/services/ai-assistant.service';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 /**
  * Página inteira do assistente.
@@ -17,20 +18,18 @@ import { AiAssistantService } from '../../core/services/ai-assistant.service';
 @Component({
   selector: 'app-assistant',
   standalone: true,
-  imports: [CommonModule, MatIconModule, AiChatComponent],
+  imports: [CommonModule, MatIconModule, AiChatComponent, TranslatePipe],
   template: `
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <header class="mb-5 shrink-0">
         <div class="flex items-center gap-2 mb-1.5">
-          <h1 class="text-2xl font-bold text-slate-900">Assistente Virtual</h1>
+          <h1 class="text-2xl font-bold text-slate-900">{{ 'ai.widget.title' | t }}</h1>
           <span class="px-2 py-0.5 rounded-full bg-gold/15 text-gold text-[10px] font-extrabold uppercase tracking-wider">
-            IA
+            {{ 'ai.page.badge' | t }}
           </span>
         </div>
         <p class="text-sm text-slate-500 leading-relaxed">
-          Pergunte sobre facturação, clientes, produtos e impostos. As respostas usam
-          os dados reais da empresa activa; as questões fiscais são respondidas a
-          partir da base de conhecimento do ISPC Fácil.
+          {{ 'ai.page.intro' | t }}
         </p>
       </header>
 
