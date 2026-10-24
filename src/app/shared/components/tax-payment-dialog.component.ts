@@ -9,6 +9,8 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatSelectModule } from '@angular/material/select';
 import { TaxDeclaration } from '../../core/services/tax.service';
+import { t, currentLocale } from '../../core/i18n/i18n';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 @Component({
   selector: 'app-tax-payment-dialog',
@@ -22,20 +24,21 @@ import { TaxDeclaration } from '../../core/services/tax.service';
     MatButtonModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    MatSelectModule
+    MatSelectModule,
+    TranslatePipe
   ],
   template: `
-    <h2 mat-dialog-title>Registar Pagamento de ISPC</h2>
+    <h2 mat-dialog-title>{{ 'taxes.paymentDialog.title' | t }}</h2>
     <mat-dialog-content class="min-w-[500px]">
       <div class="mb-4 p-4 bg-gray-50 rounded">
-        <p class="text-sm text-gray-600">Declaração</p>
-        <p class="font-semibold">{{ getPeriodLabel() }} de {{ data.declaration.year }}</p>
-        <p class="text-sm text-gray-600 mt-2">Valor Total</p>
+        <p class="text-sm text-gray-600">{{ 'taxes.paymentDialog.declaration' | t }}</p>
+        <p class="font-semibold">{{ 'taxes.calculator.periodOfYear' | t: { period: getPeriodLabel(), year: data.declaration.year } }}</p>
+        <p class="text-sm text-gray-600 mt-2">{{ 'taxes.paymentDialog.totalAmount' | t }}</p>
         <p class="font-semibold text-lg">{{ formatCurrency(data.declaration.ispc_amount) }}</p>
       </div>
 
       <mat-form-field appearance="outline" class="w-full">
-        <mat-label>Valor Pago</mat-label>
+        <mat-label>{{ 'taxes.paymentDialog.amountPaid' | t }}</mat-label>
         <input
           matInput
           type="number"
@@ -46,7 +49,7 @@ import { TaxDeclaration } from '../../core/services/tax.service';
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="w-full">
-        <mat-label>Data de Pagamento</mat-label>
+        <mat-label>{{ 'taxes.paymentDialog.paymentDate' | t }}</mat-label>
         <input
           matInput
           [matDatepicker]="picker"
@@ -57,50 +60,50 @@ import { TaxDeclaration } from '../../core/services/tax.service';
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="w-full">
-        <mat-label>Método de Pagamento</mat-label>
+        <mat-label>{{ 'taxes.paymentDialog.paymentMethod' | t }}</mat-label>
         <mat-select [(ngModel)]="paymentMethod">
-          <mat-option value="transferencia">Transferência Bancária</mat-option>
-          <mat-option value="cheque">Cheque</mat-option>
-          <mat-option value="dinheiro">Dinheiro</mat-option>
-          <mat-option value="carteira_movel">Carteira Móvel</mat-option>
-          <mat-option value="outro">Outro</mat-option>
+          <mat-option value="transferencia">{{ 'taxes.paymentDialog.methods.transferencia' | t }}</mat-option>
+          <mat-option value="cheque">{{ 'taxes.paymentDialog.methods.cheque' | t }}</mat-option>
+          <mat-option value="dinheiro">{{ 'taxes.paymentDialog.methods.dinheiro' | t }}</mat-option>
+          <mat-option value="carteira_movel">{{ 'taxes.paymentDialog.methods.carteira_movel' | t }}</mat-option>
+          <mat-option value="outro">{{ 'taxes.paymentDialog.methods.outro' | t }}</mat-option>
         </mat-select>
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="w-full">
-        <mat-label>Referência</mat-label>
+        <mat-label>{{ 'taxes.paymentDialog.reference' | t }}</mat-label>
         <input
           matInput
           [(ngModel)]="reference"
-          placeholder="Número de referência do pagamento">
+          [placeholder]="'taxes.paymentDialog.referencePlaceholder' | t">
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="w-full">
-        <mat-label>URL do Comprovativo</mat-label>
+        <mat-label>{{ 'taxes.paymentDialog.receiptUrl' | t }}</mat-label>
         <input
           matInput
           [(ngModel)]="receiptUrl"
           placeholder="https://...">
-        <mat-hint>Link para o comprovativo de pagamento</mat-hint>
+        <mat-hint>{{ 'taxes.paymentDialog.receiptUrlHint' | t }}</mat-hint>
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="w-full">
-        <mat-label>Notas</mat-label>
+        <mat-label>{{ 'taxes.paymentDialog.notes' | t }}</mat-label>
         <textarea
           matInput
           [(ngModel)]="notes"
           rows="3"
-          placeholder="Observações adicionais"></textarea>
+          [placeholder]="'taxes.paymentDialog.notesPlaceholder' | t"></textarea>
       </mat-form-field>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
-      <button mat-button (click)="cancel()">Cancelar</button>
+      <button mat-button (click)="cancel()">{{ 'common.actions.cancel' | t }}</button>
       <button
         mat-raised-button
         color="primary"
         (click)="save()"
         [disabled]="!isValid()">
-        Guardar
+        {{ 'common.actions.save' | t }}
       </button>
     </mat-dialog-actions>
   `,
@@ -128,7 +131,7 @@ export class TaxPaymentDialogComponent {
   }
 
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('pt-MZ', {
+    return new Intl.NumberFormat(currentLocale(), {
       style: 'decimal',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
@@ -137,7 +140,7 @@ export class TaxPaymentDialogComponent {
 
   getPeriodLabel(): string {
     const period = this.data.declaration.period;
-    return `${period}º Trimestre`;
+    return t('taxes.periodName', { period });
   }
 
   cancel() {

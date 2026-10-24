@@ -20,6 +20,8 @@ import { ClientService } from '../../core/services/client.service';
 import { AuditLogService } from '../../core/services/audit-log.service';
 import { toIsoDate } from '../../core/utils/date.util';
 import { ReportsNavComponent } from './reports-nav.component';
+import { t, currentLocale } from '../../core/i18n/i18n';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 interface SalesReport {
   totalSales: number;
@@ -62,13 +64,14 @@ interface SalesReport {
     MatProgressSpinnerModule,
     MatTabsModule,
     MatSelectModule,
-    ReportsNavComponent
+    ReportsNavComponent,
+    TranslatePipe
   ],
   template: `
     <div class="p-6 max-w-7xl mx-auto">
       <div class="mb-6">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">Relatórios</h1>
-        <p class="text-gray-600">Análise detalhada de vendas e faturamento</p>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ 'reports.page.title' | t }}</h1>
+        <p class="text-gray-600">{{ 'reports.page.subtitle' | t }}</p>
       </div>
 
       <app-reports-nav></app-reports-nav>
@@ -94,39 +97,39 @@ interface SalesReport {
                   </mat-select>
                 </mat-form-field> -->
                 <mat-form-field appearance="outline">
-                  <mat-label>Data Inicial</mat-label>
+                  <mat-label>{{ 'reports.filters.startDate' | t }}</mat-label>
                   <input matInput [matDatepicker]="startPicker" formControlName="startDate">
                   <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
                   <mat-datepicker #startPicker></mat-datepicker>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline">
-                  <mat-label>Data Final</mat-label>
+                  <mat-label>{{ 'reports.filters.endDate' | t }}</mat-label>
                   <input matInput [matDatepicker]="endPicker" formControlName="endDate">
                   <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
                   <mat-datepicker #endPicker></mat-datepicker>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline">
-                  <mat-label>Trimestre</mat-label>
+                  <mat-label>{{ 'reports.filters.quarter' | t }}</mat-label>
                   <mat-select formControlName="quarter" (selectionChange)="onQuarterChange()">
-                    <mat-option value="all">Todos os trimestres</mat-option>
-                    <mat-option value="1">1º Trimestre (Jan–Mar)</mat-option>
-                    <mat-option value="2">2º Trimestre (Abr–Jun)</mat-option>
-                    <mat-option value="3">3º Trimestre (Jul–Set)</mat-option>
-                    <mat-option value="4">4º Trimestre (Out–Dez)</mat-option>
+                    <mat-option value="all">{{ 'reports.filters.allQuarters' | t }}</mat-option>
+                    <mat-option value="1">{{ 'reports.filters.q1' | t }}</mat-option>
+                    <mat-option value="2">{{ 'reports.filters.q2' | t }}</mat-option>
+                    <mat-option value="3">{{ 'reports.filters.q3' | t }}</mat-option>
+                    <mat-option value="4">{{ 'reports.filters.q4' | t }}</mat-option>
                   </mat-select>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline">
-                  <mat-label>Ano</mat-label>
+                  <mat-label>{{ 'reports.filters.year' | t }}</mat-label>
                   <input matInput type="number" min="2000" formControlName="year" (change)="onQuarterChange()">
                 </mat-form-field>
 
               <mat-form-field appearance="outline">
-                <mat-label>Cliente</mat-label>
+                <mat-label>{{ 'reports.filters.client' | t }}</mat-label>
                 <mat-select formControlName="clientId">
-                  <mat-option value="all">Todos os Clientes</mat-option>
+                  <mat-option value="all">{{ 'reports.filters.allClients' | t }}</mat-option>
                   @for (client of clients(); track client.id) {
                     <mat-option [value]="client.id">{{ client.name }}</mat-option>
                   }
@@ -140,7 +143,7 @@ interface SalesReport {
                 [disabled]="isLoading() || filterForm.invalid"
               >
                 <mat-icon>assessment</mat-icon>
-                Gerar Relatório
+                {{ 'reports.filters.generate' | t }}
               </button>
             </div>
           </form>
@@ -157,7 +160,7 @@ interface SalesReport {
             <mat-card-content class="!pt-6">
               <div class="flex items-start justify-between">
                 <div>
-                  <p class="text-sm text-gray-600 mb-1">Total de Vendas</p>
+                  <p class="text-sm text-gray-600 mb-1">{{ 'reports.sales.totalSales' | t }}</p>
                   <h3 class="text-2xl font-bold text-gray-900">
                     {{ formatCurrency(report()!.totalSales) }}
                   </h3>
@@ -173,7 +176,7 @@ interface SalesReport {
             <mat-card-content class="!pt-6">
               <div class="flex items-start justify-between">
                 <div>
-                  <p class="text-sm text-gray-600 mb-1">Total de Facturas</p>
+                  <p class="text-sm text-gray-600 mb-1">{{ 'reports.sales.totalInvoices' | t }}</p>
                   <h3 class="text-2xl font-bold text-gray-900">
                     {{ report()!.totalInvoices }}
                   </h3>
@@ -189,7 +192,7 @@ interface SalesReport {
             <mat-card-content class="!pt-6">
               <div class="flex items-start justify-between">
                 <div>
-                  <p class="text-sm text-gray-600 mb-1">Valor Recebido</p>
+                  <p class="text-sm text-gray-600 mb-1">{{ 'reports.sales.paidAmount' | t }}</p>
                   <h3 class="text-2xl font-bold text-green-600">
                     {{ formatCurrency(report()!.paidAmount) }}
                   </h3>
@@ -205,7 +208,7 @@ interface SalesReport {
             <mat-card-content class="!pt-6">
               <div class="flex items-start justify-between">
                 <div>
-                  <p class="text-sm text-gray-600 mb-1">Valor Pendente</p>
+                  <p class="text-sm text-gray-600 mb-1">{{ 'reports.sales.pendingAmount' | t }}</p>
                   <h3 class="text-2xl font-bold text-orange-600">
                     {{ formatCurrency(report()!.pendingAmount) }}
                   </h3>
@@ -220,13 +223,13 @@ interface SalesReport {
 
         <mat-card class="mb-6">
           <mat-card-header class="!pt-6">
-            <mat-card-title>Análise por Status</mat-card-title>
+            <mat-card-title>{{ 'reports.sales.byStatus' | t }}</mat-card-title>
           </mat-card-header>
           <mat-card-content class="!pt-4">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div class="border border-gray-200 rounded-lg p-4">
                 <div class="flex items-center justify-between mb-2">
-                  <span class="text-sm text-gray-600">Pendentes</span>
+                  <span class="text-sm text-gray-600">{{ 'reports.sales.statusPending' | t }}</span>
                   <mat-icon class="!text-yellow-600">schedule</mat-icon>
                 </div>
                 <p class="text-2xl font-bold text-gray-900">
@@ -236,7 +239,7 @@ interface SalesReport {
 
               <div class="border border-gray-200 rounded-lg p-4">
                 <div class="flex items-center justify-between mb-2">
-                  <span class="text-sm text-gray-600">Pagas</span>
+                  <span class="text-sm text-gray-600">{{ 'reports.sales.statusPaid' | t }}</span>
                   <mat-icon class="!text-green-600">check_circle</mat-icon>
                 </div>
                 <p class="text-2xl font-bold text-gray-900">
@@ -246,7 +249,7 @@ interface SalesReport {
 
               <div class="border border-gray-200 rounded-lg p-4">
                   <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm text-gray-600">Vencidas</span>
+                    <span class="text-sm text-gray-600">{{ 'reports.sales.statusOverdue' | t }}</span>
                     <mat-icon class="!text-red-600">error</mat-icon>
                   </div>
                   <p class="text-2xl font-bold text-gray-900">
@@ -256,7 +259,7 @@ interface SalesReport {
 
                 <div class="border border-red-200 rounded-lg p-4 bg-red-50/40">
                   <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm text-gray-600">Anuladas</span>
+                    <span class="text-sm text-gray-600">{{ 'reports.sales.statusCancelled' | t }}</span>
                     <mat-icon class="!text-red-700">block</mat-icon>
                   </div>
                   <p class="text-2xl font-bold text-red-700">
@@ -270,26 +273,26 @@ interface SalesReport {
         @if (report()!.topClients.length > 0) {
           <mat-card class="mb-6">
             <mat-card-header class="!pt-6">
-              <mat-card-title>Top Clientes</mat-card-title>
+              <mat-card-title>{{ 'reports.sales.topClients' | t }}</mat-card-title>
             </mat-card-header>
             <mat-card-content class="!pt-4">
               <table mat-table [dataSource]="report()!.topClients" class="w-full">
                 <ng-container matColumnDef="client">
-                  <th mat-header-cell *matHeaderCellDef>Cliente</th>
+                  <th mat-header-cell *matHeaderCellDef>{{ 'reports.sales.client' | t }}</th>
                   <td mat-cell *matCellDef="let item" class="font-medium">
                     {{ item.clientName }}
                   </td>
                 </ng-container>
 
                 <ng-container matColumnDef="invoices">
-                  <th mat-header-cell *matHeaderCellDef class="!text-center">Faturas</th>
+                  <th mat-header-cell *matHeaderCellDef class="!text-center">{{ 'reports.sales.invoices' | t }}</th>
                   <td mat-cell *matCellDef="let item" class="!text-center">
                     {{ item.invoiceCount }}
                   </td>
                 </ng-container>
 
                 <ng-container matColumnDef="total">
-                  <th mat-header-cell *matHeaderCellDef class="!text-right">Total</th>
+                  <th mat-header-cell *matHeaderCellDef class="!text-right">{{ 'common.fields.total' | t }}</th>
                   <td mat-cell *matCellDef="let item" class="!text-right font-semibold">
                     {{ formatCurrency(item.totalAmount) }}
                   </td>
@@ -305,26 +308,26 @@ interface SalesReport {
         @if (report()!.dailySales.length > 0) {
           <mat-card class="mb-6">
             <mat-card-header class="!pt-6">
-              <mat-card-title>Vendas Diárias</mat-card-title>
+              <mat-card-title>{{ 'reports.sales.dailySales' | t }}</mat-card-title>
             </mat-card-header>
             <mat-card-content class="!pt-4">
               <table mat-table [dataSource]="report()!.dailySales" class="w-full">
                 <ng-container matColumnDef="date">
-                  <th mat-header-cell *matHeaderCellDef>Data</th>
+                  <th mat-header-cell *matHeaderCellDef>{{ 'common.fields.date' | t }}</th>
                   <td mat-cell *matCellDef="let item">
                     {{ formatDate(item.date) }}
                   </td>
                 </ng-container>
 
                 <ng-container matColumnDef="invoices">
-                  <th mat-header-cell *matHeaderCellDef class="!text-center">Faturas</th>
+                  <th mat-header-cell *matHeaderCellDef class="!text-center">{{ 'reports.sales.invoices' | t }}</th>
                   <td mat-cell *matCellDef="let item" class="!text-center">
                     {{ item.invoiceCount }}
                   </td>
                 </ng-container>
 
                 <ng-container matColumnDef="amount">
-                  <th mat-header-cell *matHeaderCellDef class="!text-right">Total</th>
+                  <th mat-header-cell *matHeaderCellDef class="!text-right">{{ 'common.fields.total' | t }}</th>
                   <td mat-cell *matCellDef="let item" class="!text-right font-semibold">
                     {{ formatCurrency(item.amount) }}
                   </td>
@@ -340,15 +343,15 @@ interface SalesReport {
         <div class="flex justify-end gap-4">
           <button mat-stroked-button (click)="exportToExcel()" [disabled]="isLoading()">
             <mat-icon>table_view</mat-icon>
-            Exportar Excel
+            {{ 'reports.sales.exportExcel' | t }}
           </button>
           <button mat-stroked-button (click)="exportToCSV()">
             <mat-icon>download</mat-icon>
-            Exportar CSV
+            {{ 'reports.sales.exportCsv' | t }}
           </button>
           <button mat-stroked-button (click)="printReport()">
             <mat-icon>print</mat-icon>
-            Imprimir
+            {{ 'common.actions.print' | t }}
           </button>
         </div>
       }
@@ -523,7 +526,7 @@ export class ReportsComponent implements OnInit {
 
       const clientsMap = new Map<string, { name: string; total: number; count: number }>();
       filteredInvoices.forEach(inv => {
-        const clientName = inv.client?.name || 'Cliente Desconhecido';
+        const clientName = inv.client?.name || t('reports.sales.unknownClient');
         const existing = clientsMap.get(clientName) || { name: clientName, total: 0, count: 0 };
         existing.total += inv.total;
         existing.count += 1;
@@ -592,7 +595,7 @@ export class ReportsComponent implements OnInit {
   }
 
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('pt-MZ', {
+    return new Intl.NumberFormat(currentLocale(), {
       style: 'decimal',
       currency: 'MZN',
       minimumFractionDigits: 2,
@@ -613,21 +616,21 @@ export class ReportsComponent implements OnInit {
       company?.id
     );
 
-    let csv = 'Relatório de Vendas\n\n';
-    csv += 'Resumo\n';
-    csv += 'Total de Vendas,' + report.totalSales + '\n';
-    csv += 'Total de Faturas,' + report.totalInvoices + '\n';
-    csv += 'Valor Recebido,' + report.paidAmount + '\n';
-    csv += 'Valor Pendente,' + report.pendingAmount + '\n\n';
+    let csv = t('reports.export.salesReport') + '\n\n';
+    csv += t('reports.export.summary') + '\n';
+    csv += t('reports.sales.totalSales') + ',' + report.totalSales + '\n';
+    csv += t('reports.export.totalInvoices') + ',' + report.totalInvoices + '\n';
+    csv += t('reports.sales.paidAmount') + ',' + report.paidAmount + '\n';
+    csv += t('reports.sales.pendingAmount') + ',' + report.pendingAmount + '\n\n';
 
-    csv += 'Top Clientes\n';
-    csv += 'Cliente,Faturas,Total\n';
+    csv += t('reports.sales.topClients') + '\n';
+    csv += [t('reports.sales.client'), t('reports.sales.invoices'), t('common.fields.total')].join(',') + '\n';
     report.topClients.forEach(client => {
       csv += `${client.clientName},${client.invoiceCount},${client.totalAmount}\n`;
     });
 
-    csv += '\nVendas Diárias\n';
-    csv += 'Data,Faturas,Total\n';
+    csv += '\n' + t('reports.sales.dailySales') + '\n';
+    csv += [t('common.fields.date'), t('reports.sales.invoices'), t('common.fields.total')].join(',') + '\n';
     report.dailySales.forEach(day => {
       csv += `${this.formatDate(day.date)},${day.invoiceCount},${day.amount}\n`;
     });
@@ -669,18 +672,20 @@ export class ReportsComponent implements OnInit {
       });
 
       if (!detailedInvoices || detailedInvoices.length === 0) {
-        alert('Nenhum dado encontrado para o período seleccionado.');
+        alert(t('reports.export.noData'));
         return;
       }
 
+      const colNumber = t('reports.export.invoiceNumber');
+      const colTotal = t('reports.export.invoiceTotal');
       const exportData = detailedInvoices.map(inv => {
         return {
-          'Nº Factura': inv.invoice_number,
-          'Data': this.formatDate(inv.date),
-          'Cliente': inv.client?.name || '-',
+          [colNumber]: inv.invoice_number,
+          [t('common.fields.date')]: this.formatDate(inv.date),
+          [t('reports.sales.client')]: inv.client?.name || '-',
           'NUIT': inv.client?.nuit || '-',
-          'Tipo': this.getInvoiceType(inv),
-          'Total Factura': this.formatCurrency(inv.total)
+          [t('common.fields.type')]: this.getInvoiceType(inv),
+          [colTotal]: this.formatCurrency(inv.total)
         };
       });
 
@@ -698,12 +703,12 @@ export class ReportsComponent implements OnInit {
         {}, // Spacer row 1
         {}, // Spacer row 2
         {
-          'Nº Factura': 'TOTAL DE VENDAS',
-          'Total Factura': this.formatCurrency(totalVendas)
+          [colNumber]: t('reports.export.salesTotal'),
+          [colTotal]: this.formatCurrency(totalVendas)
         }
       ];
 
-      this.exportService.exportToExcel(finalExportData, fileName, 'Vendas');
+      this.exportService.exportToExcel(finalExportData, fileName, t('reports.export.salesSheet'));
     } catch (error) {
       console.error('Erro ao exportar para Excel:', error);
     } finally {
@@ -714,8 +719,8 @@ export class ReportsComponent implements OnInit {
   private getInvoiceType(invoice: { items?: Array<{ product?: { type?: string } }> }): string {
     const types = new Set(invoice.items?.map(item => item.product?.type).filter(Boolean));
     const labels: string[] = [];
-    if (types.has('produto')) labels.push('Produto');
-    if (types.has('servico')) labels.push('Serviço');
+    if (types.has('produto')) labels.push(t('reports.export.typeProduct'));
+    if (types.has('servico')) labels.push(t('reports.export.typeService'));
     return labels.join(' / ') || '-';
   }
 

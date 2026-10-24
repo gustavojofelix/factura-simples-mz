@@ -10,27 +10,29 @@ import { Model30ExcelService } from '../../core/services/model30-excel.service';
 import {
   computeModel30Fields, getModel30Month, isModel30BensRate, isModel30ServicosRate, getModel30PaymentMethodLabel, MODEL30_RATE_LABELS
 } from '../../core/utils/model30-fields';
+import { t } from '../../core/i18n/i18n';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 @Component({
   selector: 'app-model30',
   standalone: true,
-  imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule],
+  imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule, TranslatePipe],
   template: `
     <!-- Toolbar (no-print) -->
     <div class="no-print toolbar">
       <div style="display:flex; align-items:center; gap:12px;">
         <mat-icon style="color:#f16c39;">description</mat-icon>
-        <h2 style="margin:0; font-size:16px; font-weight:700;">Modelo 30 — Declaração Periódica ISPC</h2>
-        <span style="font-size:12px; color:#666; margin-left:4px;">{{ data.declaration.period }}º Trimestre {{ data.declaration.year }}</span>
+        <h2 style="margin:0; font-size:16px; font-weight:700;">{{ 'taxes.model30.title' | t }}</h2>
+        <span style="font-size:12px; color:#666; margin-left:4px;">{{ 'taxes.model30.periodLine' | t: { period: data.declaration.period, year: data.declaration.year } }}</span>
       </div>
       <div style="display:flex; gap:8px; align-items:center;">
         <button mat-stroked-button (click)="downloadExcel()" [disabled]="isGeneratingExcel()" style="gap:6px;">
-          <mat-icon>table_view</mat-icon> {{ isGeneratingExcel() ? 'A gerar Excel...' : 'Descarregar Excel' }}
+          <mat-icon>table_view</mat-icon> {{ (isGeneratingExcel() ? 'taxes.model30.generatingExcel' : 'taxes.model30.downloadExcel') | t }}
         </button>
         <button mat-stroked-button (click)="downloadPdf()" [disabled]="isGeneratingPdf()" style="gap:6px;">
-          <mat-icon>picture_as_pdf</mat-icon> {{ isGeneratingPdf() ? 'A gerar PDF...' : 'Descarregar PDF' }}
+          <mat-icon>picture_as_pdf</mat-icon> {{ (isGeneratingPdf() ? 'taxes.model30.generatingPdf' : 'taxes.model30.downloadPdf') | t }}
         </button>
-        <button mat-icon-button (click)="close()" style="color:#666;"><mat-icon>close</mat-icon></button>
+        <button mat-icon-button (click)="close()" style="color:#666;" [attr.aria-label]="'common.actions.close' | t"><mat-icon>close</mat-icon></button>
       </div>
     </div>
 
@@ -923,7 +925,7 @@ export class Model30Component implements OnInit {
       this.pdfService.downloadPdf(blob, `Modelo_30_${year}_T${period}`);
     } catch (error) {
       console.error('Erro ao gerar o PDF do Modelo 30:', error);
-      window.alert('Não foi possível gerar o PDF. Por favor, tente novamente.');
+      window.alert(t('taxes.model30.pdfError'));
     } finally {
       this.isGeneratingPdf.set(false);
     }
@@ -939,7 +941,7 @@ export class Model30Component implements OnInit {
       await this.model30Excel.exportModel30(this.data.declaration, company);
     } catch (error) {
       console.error('Erro ao gerar o Excel do Modelo 30:', error);
-      window.alert('Não foi possível gerar o Excel. Por favor, tente novamente.');
+      window.alert(t('taxes.declarations.excelError'));
     } finally {
       this.isGeneratingExcel.set(false);
     }

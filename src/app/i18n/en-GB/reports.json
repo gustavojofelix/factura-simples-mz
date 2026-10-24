@@ -1,1 +1,211 @@
-{}
+{
+  "page": {
+    "title": "Reports",
+    "subtitle": "Detailed sales and billing analysis"
+  },
+  "nav": {
+    "sales": "Sales",
+    "clientStatements": "Client statements",
+    "saft": "SAF-T file"
+  },
+  "filters": {
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "quarter": "Quarter",
+    "allQuarters": "All quarters",
+    "q1": "Q1 (Jan–Mar)",
+    "q2": "Q2 (Apr–Jun)",
+    "q3": "Q3 (Jul–Sep)",
+    "q4": "Q4 (Oct–Dec)",
+    "year": "Year",
+    "client": "Client",
+    "allClients": "All Clients",
+    "generate": "Generate Report"
+  },
+  "sales": {
+    "totalSales": "Total Sales",
+    "totalInvoices": "Total Invoices",
+    "paidAmount": "Amount Received",
+    "pendingAmount": "Amount Outstanding",
+    "byStatus": "Breakdown by Status",
+    "statusPending": "Pending",
+    "statusPaid": "Paid",
+    "statusOverdue": "Overdue",
+    "statusCancelled": "Cancelled",
+    "topClients": "Top Clients",
+    "client": "Client",
+    "invoices": "Invoices",
+    "dailySales": "Daily Sales",
+    "exportExcel": "Export to Excel",
+    "exportCsv": "Export to CSV",
+    "unknownClient": "Unknown Client"
+  },
+  "export": {
+    "salesReport": "Sales Report",
+    "summary": "Summary",
+    "totalInvoices": "Total Invoices",
+    "noData": "No data found for the selected period.",
+    "invoiceNumber": "Invoice No.",
+    "invoiceTotal": "Invoice Total",
+    "salesTotal": "TOTAL SALES",
+    "salesSheet": "Sales",
+    "typeProduct": "Product",
+    "typeService": "Service",
+    "defaultSheet": "Data"
+  },
+  "saft": {
+    "subtitle": "SAF-T file for {company}",
+    "noticeTitle": "Informational file — not certified",
+    "noticeText": "The file follows the SAF-T structure (PT 1.04_01) adapted for Mozambique. The documents have no digital signature (Hash = 0) and the software is not yet certified by the Tax Authority, so the file is for reference and internal audit only, not for official submission. Invoices under the ISPC regime are exported as VAT-exempt.",
+    "lockedBefore": "The SAF-T file requires the",
+    "lockedAfter": " feature, which is not included in your plan.",
+    "period": "Period",
+    "monthly": "Monthly",
+    "quarterly": "Quarterly",
+    "annual": "Annual",
+    "month": "Month",
+    "fiscalYear": "Fiscal year",
+    "periodLabel": "Period:",
+    "periodTo": "to",
+    "generating": "Generating...",
+    "generate": "Generate SAF-T",
+    "invoices": "Invoices",
+    "annulledInvoices": {
+      "one": "{count} cancelled",
+      "other": "{count} cancelled"
+    },
+    "invoicedTotal": "Total invoiced",
+    "excludingCancelled": "excluding cancelled invoices",
+    "receipts": "Receipts",
+    "annulledReceipts": {
+      "one": "{count} cancelled",
+      "other": "{count} cancelled"
+    },
+    "receivedTotal": "Total received",
+    "customersAndProducts": "{customers} client(s) · {products} item(s)",
+    "warnings": "Warnings ({count})",
+    "downloadCsv": "Download CSV (.zip)",
+    "downloadExcel": "Download Excel",
+    "downloadXml": "Download XML",
+    "downloadHint": "Excel and CSV contain the same data as the XML, one sheet/file per section (Cabecalho, Totais, Clientes, Artigos, Impostos, Facturas, Linhas, Recibos — header, totals, clients, items, taxes, invoices, lines, receipts). The CSV uses ';' as the separator and a decimal point.",
+    "generateError": "The SAF-T file could not be generated.",
+    "downloadError": "The SAF-T file could not be downloaded.",
+    "errors": {
+      "singleFiscalYear": "The SAF-T period must fall within a single fiscal year.",
+      "notInPlan": "The SAF-T file is not available on your plan (requires Reports)."
+    }
+  },
+  "statements": {
+    "subtitle": "Client account statements for {company}",
+    "startDate": "Start date",
+    "endDate": "End date",
+    "customPeriod": "Custom period",
+    "clients": "Clients",
+    "allClients": "All clients",
+    "selectedClients": {
+      "one": "{count} client selected",
+      "other": "{count} clients selected"
+    },
+    "clearSelection": "Clear selection",
+    "clientsHint": "Leave empty to include all clients",
+    "notes": "Notes (optional)",
+    "notesPlaceholder": "Shown on the PDF statement",
+    "generate": "Generate statement",
+    "totalInvoiced": "Total invoiced",
+    "totalPaid": "Total paid",
+    "outstandingBalance": "Outstanding balance",
+    "includesOpening": "Includes opening balance of {amount}",
+    "clientsWithBalance": "Clients with a balance",
+    "withOverdue": {
+      "one": "{count} with overdue invoices",
+      "other": "{count} with overdue invoices"
+    },
+    "listTitle": "Client statements",
+    "listPeriod": "Period: {start} to {end} · click a client to see their transactions",
+    "pdfPrint": "PDF / Print",
+    "searchLabel": "Search by name, ID or NUIT",
+    "filterWithBalance": "With outstanding balance",
+    "filterOwing": "Owing (not overdue)",
+    "hideInactive": "Hide clients with no transactions",
+    "id": "ID",
+    "totalRow": "TOTAL",
+    "clientCount": {
+      "one": "{count} client",
+      "other": "{count} clients"
+    },
+    "openingBalance": "Opening balance",
+    "balance": "Balance",
+    "viewStatementOf": "View statement for {name}",
+    "noMatch": "No clients match the filters.",
+    "status": {
+      "pago": "Paid",
+      "em_divida": "Owing",
+      "vencido": "Overdue"
+    },
+    "paymentMethods": {
+      "dinheiro": "Cash",
+      "transferencia": "Bank transfer",
+      "cheque": "Cheque",
+      "carteira_movel": "Mobile wallet",
+      "outro": "Other"
+    },
+    "movement": {
+      "payment": "Payment for {invoice}",
+      "paymentWithMethod": "Payment for {invoice} · {method}",
+      "sale": "Sale",
+      "itemAndMore": "{item} and {count} more item(s)"
+    },
+    "messages": {
+      "invalidRange": "The start date cannot be after the end date.",
+      "generateError": "The statement could not be generated.",
+      "clientGenerateError": "The statement for this client could not be generated."
+    },
+    "excel": {
+      "openingBalance": "Opening balance (MZN)",
+      "totalInvoiced": "Total invoiced (MZN)",
+      "totalPaid": "Total paid (MZN)",
+      "balance": "Balance (MZN)",
+      "invoiced": "Invoiced (MZN)",
+      "paid": "Paid (MZN)",
+      "client": "Client: {name}",
+      "company": "Company: {name}",
+      "period": "Period: {start} to {end}",
+      "notes": "Notes: {notes}",
+      "summarySheet": "Summary statement",
+      "clientSheet": "Statement"
+    },
+    "detail": {
+      "subtitle": "Account statement for a client",
+      "back": "Back to summary statement",
+      "phone": "Tel.: {phone}",
+      "before": "Before {date}",
+      "asOf": "As at {date}",
+      "movementsTitle": "Transactions in the period",
+      "range": "{start} to {end}",
+      "movementType": "Transaction type",
+      "balanceHidden": "The balance column is hidden when only invoices or only receipts are shown. The outstanding balance always includes all transactions.",
+      "document": "Document",
+      "invoiced": "Invoiced",
+      "paid": "Paid",
+      "viewReceipt": "View receipt {document}",
+      "viewInvoice": "View invoice {document}",
+      "noMovements": "No transactions in the period."
+    }
+  },
+  "preview": {
+    "clientTitle": "Client Statement",
+    "summaryTitle": "Client Statements",
+    "generatingPdf": "Generating PDF...",
+    "downloadPdf": "Download PDF",
+    "sendTo": "Send to {email}",
+    "noEmailTooltip": "The client has no email on file",
+    "sendEmail": "Send by email",
+    "pdfError": "The PDF statement could not be generated.",
+    "printBlocked": "The print window could not be opened. Check whether your browser is blocking pop-ups.",
+    "printError": "Printing could not be prepared.",
+    "noEmail": "This client has no email address.",
+    "sendRejected": "The send was rejected.",
+    "sent": "Statement sent to {email}.",
+    "sendError": "The statement could not be sent."
+  }
+}

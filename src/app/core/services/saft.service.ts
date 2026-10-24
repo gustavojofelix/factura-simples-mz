@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { SAFT_CONFIG, SAFT_PAYMENT_MECHANISMS } from '../constants/saft';
 import { toIsoDate } from '../utils/date.util';
+import { t } from '../i18n/i18n';
 
 // ---------------------------------------------------------------------------
 // Dados de entrada do gerador (independentes do Supabase, para testes)
@@ -731,10 +732,10 @@ export class SaftService {
   /** Gera o SAF-T da empresa para o período [startDate, endDate] (AAAA-MM-DD). */
   async generate(company: SaftCompany & { id: string }, startDate: string, endDate: string): Promise<SaftResult> {
     if (startDate.substring(0, 4) !== endDate.substring(0, 4)) {
-      throw new Error('O período do SAF-T tem de estar dentro de um único ano fiscal.');
+      throw new Error(t('reports.saft.errors.singleFiscalYear'));
     }
     if (!(await this.isEnabled(company.id))) {
-      throw new Error('O ficheiro SAF-T não está disponível no seu plano (requer Relatórios).');
+      throw new Error(t('reports.saft.errors.notInPlan'));
     }
 
     const [invoiceRows, paymentRows] = await Promise.all([

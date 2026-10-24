@@ -1,1 +1,106 @@
-{}
+{
+  "page": {
+    "title": "Tax Management (ISPC)",
+    "subtitle": "Calculate, declare and manage your taxes on sales of goods or provision of services"
+  },
+  "summary": {
+    "yearToDate": "ISPC Year to Date",
+    "totalPaid": "Total Paid",
+    "overdue": "Overdue",
+    "pendingDeclarations": "Pending Returns"
+  },
+  "reminders": {
+    "title": "Tax obligations",
+    "testTooltip": "Sends a sample Form 30 (Modelo 30) reminder to your email to confirm that emails are arriving.",
+    "sending": "Sending...",
+    "sendTest": "Send me a test reminder",
+    "empty": "No reminders at the moment. You will receive an email at the end of each quarter, 15, 7 and 1 day before the deadline, and on the deadline itself.",
+    "meta": "Deadline: {due} · Issued on {created}",
+    "emailed": "Sent by email",
+    "notEmailed": "Not sent by email",
+    "testSent": "Test reminder sent to your email.",
+    "testError": "The test reminder could not be sent."
+  },
+  "tabs": {
+    "calculator": "Calculator",
+    "declarations": "Returns"
+  },
+  "quarters": {
+    "q1": "Q1 (Jan-Mar)",
+    "q2": "Q2 (Apr-Jun)",
+    "q3": "Q3 (Jul-Sep)",
+    "q4": "Q4 (Oct-Dec)"
+  },
+  "periodName": "Q{period}",
+  "calculator": {
+    "title": "Calculate ISPC for Period",
+    "year": "Year",
+    "quarter": "Quarter",
+    "calculating": "Calculating...",
+    "calculate": "Calculate",
+    "result": "Calculation Result",
+    "period": "Period",
+    "periodOfYear": "{period} {year}",
+    "dates": "Dates",
+    "totalSales": "Total Sales",
+    "invoiceCount": "Number of Invoices",
+    "totalTaxableBase": "Total Taxable Base",
+    "averageRate": "Average ISPC Rate",
+    "baseSplit": "Taxable Base ({rate}%)",
+    "excessSplit": "ISPC Limit Excess",
+    "tax": "Tax",
+    "totalPayable": "Total ISPC Payable",
+    "createDeclaration": "Create Return"
+  },
+  "declarations": {
+    "empty": "No returns found",
+    "emptyHint": "Use the calculator to create your first return",
+    "paid": "Paid: {amount}",
+    "pending": "Outstanding: {amount}",
+    "late": "Late",
+    "dueDate": "Due date",
+    "generateModel30": "Generate Form 30 (Modelo 30)",
+    "generatingExcel": "Generating Excel...",
+    "exportExcel": "Export Form 30 (Excel)",
+    "markSubmitted": "Mark as Submitted",
+    "recordPayment": "Record Payment",
+    "excelError": "The Excel file could not be generated. Please try again."
+  },
+  "status": {
+    "rascunho": "Draft",
+    "pendente": "Pending",
+    "submetida": "Submitted",
+    "paga": "Paid",
+    "atrasada": "Overdue"
+  },
+  "paymentDialog": {
+    "title": "Record ISPC Payment",
+    "declaration": "Return",
+    "totalAmount": "Total Amount",
+    "amountPaid": "Amount Paid",
+    "paymentDate": "Payment Date",
+    "paymentMethod": "Payment Method",
+    "methods": {
+      "transferencia": "Bank Transfer",
+      "cheque": "Cheque",
+      "dinheiro": "Cash",
+      "carteira_movel": "Mobile Wallet",
+      "outro": "Other"
+    },
+    "reference": "Reference",
+    "referencePlaceholder": "Payment reference number",
+    "receiptUrl": "Proof of Payment URL",
+    "receiptUrlHint": "Link to the proof of payment",
+    "notes": "Notes",
+    "notesPlaceholder": "Additional notes"
+  },
+  "model30": {
+    "title": "Form 30 (Modelo 30) — ISPC Periodic Return",
+    "periodLine": "Q{period} {year}",
+    "generatingExcel": "Generating Excel...",
+    "downloadExcel": "Download Excel",
+    "generatingPdf": "Generating PDF...",
+    "downloadPdf": "Download PDF",
+    "pdfError": "The PDF could not be generated. Please try again."
+  }
+}

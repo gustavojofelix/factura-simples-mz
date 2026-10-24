@@ -1,1 +1,81 @@
-{}
+{
+  "header": {
+    "overview": "Vue d'ensemble",
+    "title": "{greeting}, voici votre activité",
+    "summaryBefore": "Résumé de",
+    "summaryAfter": "· tout ce dont vous avez besoin au même endroit."
+  },
+  "greeting": {
+    "morning": "Bonjour",
+    "afternoon": "Bon après-midi",
+    "evening": "Bonsoir"
+  },
+  "context": {
+    "currentSession": "Session en cours",
+    "company": "Entreprise",
+    "currentQuarter": "Trimestre en cours",
+    "dataUpdated": "Données mises à jour",
+    "userFallback": "Utilisateur",
+    "syncing": "Synchronisation",
+    "todayAt": "Aujourd'hui, {time}"
+  },
+  "roles": {
+    "loading": "Chargement…",
+    "owner": "Administrateur",
+    "manager": "Gestionnaire",
+    "seller": "Vendeur"
+  },
+  "kpi": {
+    "quarterSales": "Ventes du trimestre",
+    "positiveTrend": "Tendance positive",
+    "inQuarter": "ce trimestre",
+    "ispcToPay": "ISPC à payer",
+    "quarterEstimate": "Estimation du trimestre",
+    "pendingInvoices": "Factures en attente",
+    "allUpToDate": "Tout est à jour",
+    "activeClients": "Clients actifs",
+    "clientsWithActivity": "Clients ayant une activité"
+  },
+  "quickActions": {
+    "newInvoice": "Nouvelle facture",
+    "newInvoiceHint": "Émettre une nouvelle facture",
+    "viewInvoices": "Voir les factures",
+    "viewInvoicesHint": "Gérer toutes les factures",
+    "manageClients": "Gérer les clients",
+    "manageClientsHint": "Ajouter et modifier des clients",
+    "viewProducts": "Voir les produits",
+    "viewProductsHint": "Catalogue de produits"
+  },
+  "viewAll": "Tout voir",
+  "columns": {
+    "number": "N°",
+    "client": "Client",
+    "user": "Utilisateur",
+    "when": "Quand",
+    "action": "Action"
+  },
+  "recentInvoices": {
+    "title": "Factures récentes",
+    "empty": "Vous n'avez encore aucune facture",
+    "showing": {
+      "one": "Affichage de {count} facture récente",
+      "other": "Affichage de {count} factures récentes"
+    },
+    "openAll": "Ouvrir la gestion des factures →"
+  },
+  "recentActivities": {
+    "title": "Activités récentes",
+    "empty": "Aucune activité enregistrée pour le moment",
+    "showing": {
+      "one": "Affichage de {count} activité récente",
+      "other": "Affichage de {count} activités récentes"
+    },
+    "openAll": "Ouvrir le journal d'audit →"
+  },
+  "relativeTime": {
+    "justNow": "À l'instant",
+    "minutesAgo": "il y a {minutes} min",
+    "hoursAgo": "il y a {hours} h",
+    "yesterdayAt": "Hier, {time}"
+  }
+}

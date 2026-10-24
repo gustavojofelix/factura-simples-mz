@@ -1,7 +1,7 @@
 <div class="p-6 max-w-7xl mx-auto">
   <div class="mb-6">
-    <h1 class="text-3xl font-bold text-gray-900">Gestão de Impostos (ISPC)</h1>
-    <p class="text-gray-600 mt-1">Calcule, declare e gerencie seus impostos sobre venda de produtos ou prestação de serviços</p>
+    <h1 class="text-3xl font-bold text-gray-900">{{ 'taxes.page.title' | t }}</h1>
+    <p class="text-gray-600 mt-1">{{ 'taxes.page.subtitle' | t }}</p>
   </div>
 
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -9,7 +9,7 @@
       <mat-card-content>
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-600">ISPC Acumulado (Ano)</p>
+            <p class="text-sm text-gray-600">{{ 'taxes.summary.yearToDate' | t }}</p>
             <p class="text-2xl font-bold text-blue-600">{{ formatCurrency(summary().yearToDate) }}</p>
           </div>
           <mat-icon class="text-blue-600 text-4xl">account_balance</mat-icon>
@@ -21,7 +21,7 @@
       <mat-card-content>
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-600">Total Pago</p>
+            <p class="text-sm text-gray-600">{{ 'taxes.summary.totalPaid' | t }}</p>
             <p class="text-2xl font-bold text-green-600">{{ formatCurrency(summary().totalPaid) }}</p>
           </div>
           <mat-icon class="text-green-600 text-4xl">check_circle</mat-icon>
@@ -33,7 +33,7 @@
       <mat-card-content>
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-600">Em Atraso</p>
+            <p class="text-sm text-gray-600">{{ 'taxes.summary.overdue' | t }}</p>
             <p class="text-2xl font-bold text-red-600">{{ formatCurrency(summary().overdue) }}</p>
           </div>
           <mat-icon class="text-red-600 text-4xl">error</mat-icon>
@@ -45,7 +45,7 @@
       <mat-card-content>
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-600">Declarações Pendentes</p>
+            <p class="text-sm text-gray-600">{{ 'taxes.summary.pendingDeclarations' | t }}</p>
             <p class="text-2xl font-bold text-orange-600">{{ summary().pendingDeclarations }}</p>
           </div>
           <mat-icon class="text-orange-600 text-4xl">pending_actions</mat-icon>
@@ -60,22 +60,22 @@
         <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
           <div class="flex items-center gap-2">
             <mat-icon class="text-gray-600">notifications_active</mat-icon>
-            <h2 class="text-lg font-semibold text-gray-900">Obrigações fiscais</h2>
+            <h2 class="text-lg font-semibold text-gray-900">{{ 'taxes.reminders.title' | t }}</h2>
           </div>
           @if (canSendTestReminder()) {
             <button
               mat-stroked-button
               [disabled]="isSendingTestReminder()"
-              [matTooltip]="'Envia para o seu email um exemplo do lembrete do Modelo 30, para confirmar que os emails chegam.'"
+              [matTooltip]="'taxes.reminders.testTooltip' | t"
               (click)="sendTestReminder()">
               <mat-icon>forward_to_inbox</mat-icon>
-              {{ isSendingTestReminder() ? 'A enviar...' : 'Enviar lembrete de teste para mim' }}
+              {{ (isSendingTestReminder() ? 'taxes.reminders.sending' : 'taxes.reminders.sendTest') | t }}
             </button>
           }
         </div>
         @if (reminders().length === 0) {
           <p class="text-sm text-gray-500">
-            Sem lembretes de momento. Receberá um email no fim de cada trimestre, 15, 7 e 1 dia antes do prazo e no próprio dia do prazo.
+            {{ 'taxes.reminders.empty' | t }}
           </p>
         }
         <div class="space-y-2">
@@ -86,11 +86,11 @@
                 <p class="text-sm font-semibold text-gray-900">{{ r.title }}</p>
                 <p class="text-sm text-gray-700 mt-1">{{ r.body }}</p>
                 <p class="text-xs text-gray-500 mt-1">
-                  Prazo: {{ formatDate(r.due_date) }} · Emitido a {{ formatDate(r.created_at) }}
+                  {{ 'taxes.reminders.meta' | t: { due: formatDate(r.due_date), created: formatDate(r.created_at) } }}
                   @if (r.emailed_at) {
-                    · Enviado por email
+                    · {{ 'taxes.reminders.emailed' | t }}
                   } @else if (r.cancelled_at) {
-                    · Sem envio por email
+                    · {{ 'taxes.reminders.notEmailed' | t }}
                   }
                 </p>
               </div>
@@ -102,16 +102,16 @@
   }
 
   <mat-tab-group class="segmented-tabs mb-6" [(selectedIndex)]="selectedTabIndex">
-    <mat-tab label="Calculadora">
+    <mat-tab [label]="'taxes.tabs.calculator' | t">
       <div class="py-6">
         <mat-card>
           <mat-card-header>
-            <mat-card-title>Calcular ISPC para Período</mat-card-title>
+            <mat-card-title>{{ 'taxes.calculator.title' | t }}</mat-card-title>
           </mat-card-header>
           <mat-card-content>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Ano</mat-label>
+                <mat-label>{{ 'taxes.calculator.year' | t }}</mat-label>
                 <mat-select [(ngModel)]="selectedYear" [value]="selectedYear()">
                   @for (year of years; track year) {
                     <mat-option [value]="year">{{ year }}</mat-option>
@@ -120,10 +120,10 @@
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Trimestre</mat-label>
+                <mat-label>{{ 'taxes.calculator.quarter' | t }}</mat-label>
                 <mat-select [(ngModel)]="selectedPeriod" [value]="selectedPeriod()">
                   @for (period of periods; track period.value) {
-                    <mat-option [value]="period.value">{{ period.label }}</mat-option>
+                    <mat-option [value]="period.value">{{ period.label | t }}</mat-option>
                   }
                 </mat-select>
               </mat-form-field>
@@ -136,57 +136,57 @@
               [disabled]="isCalculating()">
               <mat-icon>calculate</mat-icon>
               @if (isCalculating()) {
-                Calculando...
+                {{ 'taxes.calculator.calculating' | t }}
               } @else {
-                Calcular
+                {{ 'taxes.calculator.calculate' | t }}
               }
             </button>
 
             @if (calculation()) {
               <div class="mt-6 p-4 bg-gray-50 rounded-lg">
-                <h3 class="font-semibold text-lg mb-4">Resultado do Cálculo</h3>
+                <h3 class="font-semibold text-lg mb-4">{{ 'taxes.calculator.result' | t }}</h3>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
-                    <p class="text-sm text-gray-600">Período</p>
-                    <p class="font-semibold">{{ getPeriodLabel(calculation()!.period) }} de {{ calculation()!.year }}</p>
+                    <p class="text-sm text-gray-600">{{ 'taxes.calculator.period' | t }}</p>
+                    <p class="font-semibold">{{ 'taxes.calculator.periodOfYear' | t: { period: getPeriodLabel(calculation()!.period), year: calculation()!.year } }}</p>
                   </div>
                   <div>
-                    <p class="text-sm text-gray-600">Datas</p>
+                    <p class="text-sm text-gray-600">{{ 'taxes.calculator.dates' | t }}</p>
                     <p class="font-semibold">{{ formatDate(calculation()!.startDate) }} - {{ formatDate(calculation()!.endDate) }}</p>
                   </div>
                   <div>
-                    <p class="text-sm text-gray-600">Total de Vendas</p>
+                    <p class="text-sm text-gray-600">{{ 'taxes.calculator.totalSales' | t }}</p>
                     <p class="font-semibold text-lg">{{ formatCurrency(calculation()!.totalSales) }}</p>
                   </div>
                   <div>
-                    <p class="text-sm text-gray-600">Número de Facturas</p>
+                    <p class="text-sm text-gray-600">{{ 'taxes.calculator.invoiceCount' | t }}</p>
                     <p class="font-semibold">{{ calculation()!.invoiceCount }}</p>
                   </div>
                   <div>
-                    <p class="text-sm text-gray-600">Base Tributável Total</p>
+                    <p class="text-sm text-gray-600">{{ 'taxes.calculator.totalTaxableBase' | t }}</p>
                     <p class="font-semibold text-lg">{{ formatCurrency(calculation()!.ispcBase) }}</p>
                   </div>
                   <div>
-                    <p class="text-sm text-gray-600">Taxa ISPC Médio</p>
+                    <p class="text-sm text-gray-600">{{ 'taxes.calculator.averageRate' | t }}</p>
                     <p class="font-semibold">{{ calculation()!.ispcRate }}%</p>
                   </div>
 
                   @if (calculation()!.ispcSplits.length > 1) {
                     <div class="col-span-full border-t border-gray-200 pt-4 mt-2">
-                      <p class="text-sm font-semibold text-gray-900 mb-3">Detalhes</p>
+                      <p class="text-sm font-semibold text-gray-900 mb-3">{{ 'common.actions.details' | t }}</p>
                       <div class="space-y-3">
                         @for (split of calculation()!.ispcSplits; track $index) {
                           <div class="flex items-center justify-between p-3 bg-white rounded-md border border-gray-100 shadow-sm">
                             <div>
-                              <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">{{ split.label }}</p>
+                              <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">{{ splitLabel(split) }}</p>
                               <div class="flex items-center gap-2">
                                 <span class="text-sm font-bold text-gray-900">{{ formatCurrency(split.base) }}</span>
                                 <span class="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">{{ split.rate }}%</span>
                               </div>
                             </div>
                             <div class="text-right">
-                              <p class="text-xs text-gray-500 mb-1">Imposto</p>
+                              <p class="text-xs text-gray-500 mb-1">{{ 'taxes.calculator.tax' | t }}</p>
                               <p class="text-sm font-bold text-blue-600">{{ formatCurrency(split.amount) }}</p>
                             </div>
                           </div>
@@ -197,7 +197,7 @@
                 </div>
 
                 <div class="p-4 bg-blue-100 rounded-lg mb-4 mt-2">
-                  <p class="text-sm text-gray-700">ISPC Total a Pagar</p>
+                  <p class="text-sm text-gray-700">{{ 'taxes.calculator.totalPayable' | t }}</p>
                   <p class="text-3xl font-bold text-blue-700">{{ formatCurrency(calculation()!.ispcAmount) }}</p>
                 </div>
 
@@ -206,7 +206,7 @@
                   color="accent"
                   (click)="createDeclaration()">
                   <mat-icon>add</mat-icon>
-                  Criar Declaração
+                  {{ 'taxes.calculator.createDeclaration' | t }}
                 </button>
               </div>
             }
@@ -215,7 +215,7 @@
       </div>
     </mat-tab>
 
-    <mat-tab label="Declarações">
+    <mat-tab [label]="'taxes.tabs.declarations' | t">
       <div class="py-6">
         @if (taxService.isLoading()) {
           <div class="flex justify-center py-8">
@@ -225,8 +225,8 @@
           <mat-card>
             <mat-card-content class="text-center py-8">
               <mat-icon class="text-6xl text-gray-400 mb-4">receipt_long</mat-icon>
-              <p class="text-gray-600">Nenhuma declaração encontrada</p>
-              <p class="text-sm text-gray-500 mt-2">Use a calculadora para criar sua primeira declaração</p>
+              <p class="text-gray-600">{{ 'taxes.declarations.empty' | t }}</p>
+              <p class="text-sm text-gray-500 mt-2">{{ 'taxes.declarations.emptyHint' | t }}</p>
             </mat-card-content>
           </mat-card>
         } @else {
@@ -235,7 +235,7 @@
               <div class="overflow-x-auto">
                 <table mat-table [dataSource]="taxService.declarations()" class="w-full">
                   <ng-container matColumnDef="period">
-                    <th mat-header-cell *matHeaderCellDef class="font-semibold">Período</th>
+                    <th mat-header-cell *matHeaderCellDef class="font-semibold">{{ 'taxes.calculator.period' | t }}</th>
                     <td mat-cell *matCellDef="let declaration">
                       <div>
                         <p class="font-medium">{{ getPeriodLabel(declaration.period) }}</p>
@@ -245,7 +245,7 @@
                   </ng-container>
 
                   <ng-container matColumnDef="dates">
-                    <th mat-header-cell *matHeaderCellDef class="font-semibold">Datas</th>
+                    <th mat-header-cell *matHeaderCellDef class="font-semibold">{{ 'taxes.calculator.dates' | t }}</th>
                     <td mat-cell *matCellDef="let declaration">
                       <p class="text-sm">{{ formatDate(declaration.start_date) }}</p>
                       <p class="text-sm">{{ formatDate(declaration.end_date) }}</p>
@@ -253,22 +253,22 @@
                   </ng-container>
 
                   <ng-container matColumnDef="amount">
-                    <th mat-header-cell *matHeaderCellDef class="font-semibold">Valor</th>
+                    <th mat-header-cell *matHeaderCellDef class="font-semibold">{{ 'common.fields.amount' | t }}</th>
                     <td mat-cell *matCellDef="let declaration">
                       <div>
                         <p class="font-semibold">{{ formatCurrency(declaration.ispc_amount) }}</p>
                         @if (getTotalPaid(declaration) > 0) {
-                          <p class="text-sm text-green-600">Pago: {{ formatCurrency(getTotalPaid(declaration)) }}</p>
+                          <p class="text-sm text-green-600">{{ 'taxes.declarations.paid' | t: { amount: formatCurrency(getTotalPaid(declaration)) } }}</p>
                         }
                         @if (getAmountPending(declaration) > 0) {
-                          <p class="text-sm text-orange-600">Pendente: {{ formatCurrency(getAmountPending(declaration)) }}</p>
+                          <p class="text-sm text-orange-600">{{ 'taxes.declarations.pending' | t: { amount: formatCurrency(getAmountPending(declaration)) } }}</p>
                         }
                       </div>
                     </td>
                   </ng-container>
 
                   <ng-container matColumnDef="status">
-                    <th mat-header-cell *matHeaderCellDef class="font-semibold">Estado</th>
+                    <th mat-header-cell *matHeaderCellDef class="font-semibold">{{ 'common.fields.status' | t }}</th>
                     <td mat-cell *matCellDef="let declaration">
                       <mat-chip [color]="getStatusColor(declaration.status)">
                         {{ getStatusLabel(declaration.status) }}
@@ -276,14 +276,14 @@
                       @if (isOverdue(declaration)) {
                         <mat-chip color="error" class="ml-2">
                           <mat-icon class="text-sm">warning</mat-icon>
-                          Atrasado
+                          {{ 'taxes.declarations.late' | t }}
                         </mat-chip>
                       }
                     </td>
                   </ng-container>
 
                   <ng-container matColumnDef="due_date">
-                    <th mat-header-cell *matHeaderCellDef class="font-semibold">Vencimento</th>
+                    <th mat-header-cell *matHeaderCellDef class="font-semibold">{{ 'taxes.declarations.dueDate' | t }}</th>
                     <td mat-cell *matCellDef="let declaration">
                       <p [class.text-red-600]="isOverdue(declaration)">
                         {{ formatDate(declaration.due_date) }}
@@ -292,19 +292,19 @@
                   </ng-container>
 
                   <ng-container matColumnDef="actions">
-                    <th mat-header-cell *matHeaderCellDef class="font-semibold">Acções</th>
+                    <th mat-header-cell *matHeaderCellDef class="font-semibold">{{ 'common.fields.actions' | t }}</th>
                     <td mat-cell *matCellDef="let declaration">
                       <div class="flex gap-2">
                         <button
                           mat-icon-button
-                          [matTooltip]="'Gerar Modelo 30'"
+                          [matTooltip]="'taxes.declarations.generateModel30' | t"
                           (click)="openModel30(declaration)">
                           <mat-icon>description</mat-icon>
                         </button>
 
                         <button
                           mat-icon-button
-                          [matTooltip]="exportingExcelId() === declaration.id ? 'A gerar Excel...' : 'Exportar Modelo 30 (Excel)'"
+                          [matTooltip]="(exportingExcelId() === declaration.id ? 'taxes.declarations.generatingExcel' : 'taxes.declarations.exportExcel') | t"
                           [disabled]="!!exportingExcelId()"
                           (click)="exportModel30Excel(declaration)">
                           <mat-icon>{{ exportingExcelId() === declaration.id ? 'hourglass_empty' : 'table_view' }}</mat-icon>
@@ -314,7 +314,7 @@
                           <button
                             mat-icon-button
                             color="primary"
-                            [matTooltip]="'Marcar como Submetida'"
+                            [matTooltip]="'taxes.declarations.markSubmitted' | t"
                             (click)="submitDeclaration(declaration)">
                             <mat-icon>send</mat-icon>
                           </button>
@@ -324,7 +324,7 @@
                           <button
                             mat-icon-button
                             color="accent"
-                            [matTooltip]="'Registar Pagamento'"
+                            [matTooltip]="'taxes.declarations.recordPayment' | t"
                             (click)="openPaymentDialog(declaration)">
                             <mat-icon>payment</mat-icon>
                           </button>

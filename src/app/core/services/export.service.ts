@@ -1,19 +1,20 @@
 import { Injectable } from '@angular/core';
 import * as XLSX from 'xlsx';
+import { t } from '../i18n/i18n';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ExportService {
 
-  exportToExcel(data: any[], fileName: string, sheetName: string = 'Dados') {
+  exportToExcel(data: any[], fileName: string, sheetName?: string) {
     if (!data || !data.length) {
       console.warn('Sem dados para exportar');
       return;
     }
     const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(data);
     const wb: XLSX.WorkBook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    XLSX.utils.book_append_sheet(wb, ws, sheetName || t('reports.export.defaultSheet'));
     XLSX.writeFile(wb, `${fileName}.xlsx`);
   }
 

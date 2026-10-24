@@ -2,26 +2,26 @@
   <!-- Header -->
   <div class="mb-8 flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
     <div class="pt-1">
-      <p class="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-orange-500">Visão geral</p>
-      <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-2">{{ greeting() }}, veja o seu negócio</h1>
+      <p class="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-orange-500">{{ 'dashboard.header.overview' | t }}</p>
+      <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-2">{{ 'dashboard.header.title' | t: { greeting: greeting() } }}</h1>
       <p class="text-sm sm:text-base text-slate-500 font-medium">
-        Resumo de <span class="text-orange-600 font-semibold">{{ companyService.activeCompany()?.name }}</span> · tudo o que precisa num só lugar.
+        {{ 'dashboard.header.summaryBefore' | t }} <span class="text-orange-600 font-semibold">{{ companyService.activeCompany()?.name }}</span> {{ 'dashboard.header.summaryAfter' | t }}
       </p>
     </div>
     <aside class="dashboard-context-card">
       <div class="dashboard-identity">
         <span class="dashboard-identity-avatar">{{ userName().slice(0, 1).toUpperCase() }}</span>
         <div class="min-w-0">
-          <p class="dashboard-context-label">Sessão actual</p>
+          <p class="dashboard-context-label">{{ 'dashboard.context.currentSession' | t }}</p>
           <p class="dashboard-context-name">{{ userName() }}</p>
           <span class="dashboard-role-badge">{{ userRole() }}</span>
         </div>
       </div>
       <div class="dashboard-context-divider"></div>
       <div class="dashboard-context-grid">
-        <div><span>Empresa</span><strong>{{ companyService.activeCompany()?.name || '—' }}</strong></div>
-        <div><span>Trimestre actual</span><strong>{{ quarterPeriod() }}</strong></div>
-        <div><span>Dados actualizados</span><strong>{{ formatLastUpdated() }}</strong></div>
+        <div><span>{{ 'dashboard.context.company' | t }}</span><strong>{{ companyService.activeCompany()?.name || '—' }}</strong></div>
+        <div><span>{{ 'dashboard.context.currentQuarter' | t }}</span><strong>{{ quarterPeriod() }}</strong></div>
+        <div><span>{{ 'dashboard.context.dataUpdated' | t }}</span><strong>{{ formatLastUpdated() }}</strong></div>
       </div>
     </aside>
   </div>
@@ -38,9 +38,9 @@
         <mat-card-content class="p-5 sm:p-6">
           <div class="flex items-center justify-between">
             <div class="min-w-0">
-              <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 truncate">Vendas do Trimestre</p>
+              <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 truncate">{{ 'dashboard.kpi.quarterSales' | t }}</p>
               <p class="kpi-value font-bold text-slate-900"><span>{{ formatAmount(metrics().quarterSales) }}</span><span class="ml-1 text-xs font-semibold tracking-normal text-slate-400">MZN</span></p>
-              <p class="mt-2 flex items-center gap-1 text-xs font-semibold text-emerald-600"><mat-icon class="!h-4 !w-4 !text-sm">trending_up</mat-icon> Tendência positiva <span class="font-normal text-slate-400">no trimestre</span></p>
+              <p class="mt-2 flex items-center gap-1 text-xs font-semibold text-emerald-600"><mat-icon class="!h-4 !w-4 !text-sm">trending_up</mat-icon> {{ 'dashboard.kpi.positiveTrend' | t }} <span class="font-normal text-slate-400">{{ 'dashboard.kpi.inQuarter' | t }}</span></p>
             </div>
             <div class="w-12 h-12 bg-emerald-100/80 backdrop-blur-sm rounded-xl flex items-center justify-center shrink-0">
               <mat-icon class="!text-emerald-600">trending_up</mat-icon>
@@ -54,9 +54,9 @@
         <mat-card-content class="p-5 sm:p-6">
           <div class="flex items-center justify-between">
             <div class="min-w-0">
-              <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 truncate">ISPC a Pagar</p>
+              <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 truncate">{{ 'dashboard.kpi.ispcToPay' | t }}</p>
               <p class="kpi-value font-bold text-slate-900"><span>{{ formatAmount(metrics().ispcToPay) }}</span><span class="ml-1 text-xs font-semibold tracking-normal text-slate-400">MZN</span></p>
-              <p class="mt-2 text-xs font-medium text-slate-400">Estimativa do trimestre</p>
+              <p class="mt-2 text-xs font-medium text-slate-400">{{ 'dashboard.kpi.quarterEstimate' | t }}</p>
             </div>
             <div class="w-12 h-12 bg-amber-100/80 backdrop-blur-sm rounded-xl flex items-center justify-center shrink-0">
               <mat-icon class="!text-amber-600">account_balance</mat-icon>
@@ -70,9 +70,9 @@
         <mat-card-content class="p-5 sm:p-6">
           <div class="flex items-center justify-between">
             <div class="min-w-0">
-              <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 truncate">Facturas Pendentes</p>
+              <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 truncate">{{ 'dashboard.kpi.pendingInvoices' | t }}</p>
               <p class="kpi-value font-bold text-slate-900">{{ metrics().pendingInvoices }}</p>
-              <p class="mt-2 flex items-center gap-1 text-xs font-semibold text-emerald-600"><mat-icon class="!h-4 !w-4 !text-sm">check_circle</mat-icon> Tudo em dia</p>
+              <p class="mt-2 flex items-center gap-1 text-xs font-semibold text-emerald-600"><mat-icon class="!h-4 !w-4 !text-sm">check_circle</mat-icon> {{ 'dashboard.kpi.allUpToDate' | t }}</p>
             </div>
             <div class="w-12 h-12 bg-orange-100/80 backdrop-blur-sm rounded-xl flex items-center justify-center shrink-0">
               <mat-icon class="!text-orange-600">receipt_long</mat-icon>
@@ -86,9 +86,9 @@
         <mat-card-content class="p-5 sm:p-6">
           <div class="flex items-center justify-between">
             <div class="min-w-0">
-              <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 truncate">Clientes Activos</p>
+              <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 truncate">{{ 'dashboard.kpi.activeClients' | t }}</p>
               <p class="kpi-value font-bold text-slate-900">{{ metrics().activeClients }}</p>
-              <p class="mt-2 text-xs font-medium text-slate-400">Clientes com actividade</p>
+              <p class="mt-2 text-xs font-medium text-slate-400">{{ 'dashboard.kpi.clientsWithActivity' | t }}</p>
             </div>
             <div class="w-12 h-12 bg-sky-100/80 backdrop-blur-sm rounded-xl flex items-center justify-center shrink-0">
               <mat-icon class="!text-sky-600">people</mat-icon>
@@ -103,7 +103,7 @@
       <button mat-raised-button (click)="openNewInvoiceDialog()" class="group !h-20 !bg-orange-500 hover:!bg-orange-600 !text-white !shadow-sm hover:!shadow-md border border-orange-500 !rounded-2xl transition-all duration-200">
         <div class="flex items-center">
           <span class="mr-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/15"><mat-icon class="transition-transform group-hover:translate-x-1">add</mat-icon></span>
-          <div class="text-left"><div class="font-bold">Nova Factura</div><div class="text-xs text-orange-100 mt-0.5">Emitir uma nova factura</div></div>
+          <div class="text-left"><div class="font-bold">{{ 'dashboard.quickActions.newInvoice' | t }}</div><div class="text-xs text-orange-100 mt-0.5">{{ 'dashboard.quickActions.newInvoiceHint' | t }}</div></div>
         </div>
       </button>
       <button
@@ -114,8 +114,8 @@
         <div class="flex items-center">
           <mat-icon class="mr-3 !text-ispc-orange transition-transform group-hover:translate-x-1">receipt_long</mat-icon>
           <div class="text-left">
-            <div class="font-bold text-slate-800">Ver Facturas</div>
-            <div class="text-xs text-slate-500 mt-0.5">Gerir todas as facturas</div>
+            <div class="font-bold text-slate-800">{{ 'dashboard.quickActions.viewInvoices' | t }}</div>
+            <div class="text-xs text-slate-500 mt-0.5">{{ 'dashboard.quickActions.viewInvoicesHint' | t }}</div>
           </div>
         </div>
       </button>
@@ -128,8 +128,8 @@
         <div class="flex items-center">
           <mat-icon class="mr-3 !text-ispc-orange transition-transform group-hover:translate-x-1">people</mat-icon>
           <div class="text-left">
-            <div class="font-bold text-slate-800">Gerir Clientes</div>
-            <div class="text-xs text-slate-500 mt-0.5">Adicionar e editar clientes</div>
+            <div class="font-bold text-slate-800">{{ 'dashboard.quickActions.manageClients' | t }}</div>
+            <div class="text-xs text-slate-500 mt-0.5">{{ 'dashboard.quickActions.manageClientsHint' | t }}</div>
           </div>
         </div>
       </button>
@@ -142,8 +142,8 @@
         <div class="flex items-center">
           <mat-icon class="mr-3 !text-ispc-orange transition-transform group-hover:translate-x-1">inventory_2</mat-icon>
           <div class="text-left">
-            <div class="font-bold text-slate-800">Ver Produtos</div>
-            <div class="text-xs text-slate-500 mt-0.5">Catálogo de produtos</div>
+            <div class="font-bold text-slate-800">{{ 'dashboard.quickActions.viewProducts' | t }}</div>
+            <div class="text-xs text-slate-500 mt-0.5">{{ 'dashboard.quickActions.viewProductsHint' | t }}</div>
           </div>
         </div>
       </button>
@@ -156,10 +156,10 @@
         <mat-card-header class="!p-6 !border-b !border-slate-100">
           <div class="flex items-center justify-between w-full">
             <mat-card-title class="!text-lg !font-bold !text-slate-800">
-              Facturas Recentes
+              {{ 'dashboard.recentInvoices.title' | t }}
             </mat-card-title>
             <button mat-stroked-button routerLink="/facturas" class="!rounded-xl !border-slate-200 hover:!bg-orange-50 !text-slate-700">
-              Ver todas
+              {{ 'dashboard.viewAll' | t }}
               <mat-icon class="ml-2">arrow_forward</mat-icon>
             </button>
           </div>
@@ -168,25 +168,25 @@
           @if (recentInvoices().length === 0) {
             <div class="p-12 text-center">
               <mat-icon class="!text-6xl text-slate-300 mb-4">receipt_long</mat-icon>
-              <p class="text-slate-500 mb-4 font-medium">Ainda não tem facturas</p>
+              <p class="text-slate-500 mb-4 font-medium">{{ 'dashboard.recentInvoices.empty' | t }}</p>
             </div>
           } @else {
             <div class="overflow-x-auto custom-scrollbar">
               <table mat-table [dataSource]="recentInvoices()" class="w-full">
                 <ng-container matColumnDef="invoice_number">
-                  <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-800">Nº</th>
+                  <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-800">{{ 'dashboard.columns.number' | t }}</th>
                   <td mat-cell *matCellDef="let invoice">
                     <span class="font-semibold text-slate-800">{{ invoice.invoice_number }}</span>
                   </td>
                 </ng-container>
 
                 <ng-container matColumnDef="client">
-                  <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-800">Cliente</th>
+                  <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-800">{{ 'dashboard.columns.client' | t }}</th>
                   <td mat-cell *matCellDef="let invoice" class="max-w-[150px] truncate text-truncate-safe">{{ invoice.client_name }}</td>
                 </ng-container>
 
                 <ng-container matColumnDef="issuer_name">
-                  <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-800 !hidden md:!table-cell">Utilizador</th>
+                  <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-800 !hidden md:!table-cell">{{ 'dashboard.columns.user' | t }}</th>
                   <td mat-cell *matCellDef="let invoice" class="!hidden md:!table-cell">
                     <div class="flex items-center text-sm text-slate-500">
                       <mat-icon class="!text-[12px] !w-3 !h-3 !mr-1">person</mat-icon>
@@ -196,19 +196,19 @@
                 </ng-container>
 
                 <ng-container matColumnDef="date">
-                  <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-800 !hidden sm:!table-cell">Data</th>
+                  <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-800 !hidden sm:!table-cell">{{ 'common.fields.date' | t }}</th>
                   <td mat-cell *matCellDef="let invoice" class="!hidden sm:!table-cell text-slate-500">{{ formatDate(invoice.date) }}</td>
                 </ng-container>
 
                 <ng-container matColumnDef="total">
-                  <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-800">Total</th>
+                  <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-800">{{ 'common.fields.total' | t }}</th>
                   <td mat-cell *matCellDef="let invoice">
                     <span class="font-bold text-slate-900">{{ formatCurrency(invoice.total) }}</span>
                   </td>
                 </ng-container>
 
                 <ng-container matColumnDef="status">
-                  <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-800">Estado</th>
+                  <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-800">{{ 'common.fields.status' | t }}</th>
                   <td mat-cell *matCellDef="let invoice">
                     <span 
                       [class]="getStatusColor(invoice.status)"
@@ -227,7 +227,7 @@
               </table>
             </div>
             <div class="border-t border-slate-100 px-6 py-3 text-xs font-medium text-slate-400">
-              A mostrar {{ recentInvoices().length }} factura(s) recentes · <a routerLink="/facturas" class="font-semibold text-orange-600 hover:text-orange-700">Abrir gestão de facturas →</a>
+              {{ 'dashboard.recentInvoices.showing' | t: { count: recentInvoices().length } }} · <a routerLink="/facturas" class="font-semibold text-orange-600 hover:text-orange-700">{{ 'dashboard.recentInvoices.openAll' | t }}</a>
             </div>
           }
         </mat-card-content>
@@ -239,10 +239,10 @@
           <mat-card-header class="!p-6 !border-b !border-slate-100">
             <div class="flex items-center justify-between w-full">
               <mat-card-title class="!text-lg !font-bold !text-slate-800">
-                Actividades Recentes
+                {{ 'dashboard.recentActivities.title' | t }}
               </mat-card-title>
               <button mat-stroked-button routerLink="/auditoria" class="!rounded-xl !border-slate-200 hover:!bg-orange-50 !text-slate-700">
-                Ver todas
+                {{ 'dashboard.viewAll' | t }}
                 <mat-icon class="ml-2">arrow_forward</mat-icon>
               </button>
             </div>
@@ -251,13 +251,13 @@
             @if (recentActivities().length === 0) {
               <div class="p-12 text-center">
                 <mat-icon class="!text-6xl text-slate-300 mb-4">history</mat-icon>
-                <p class="text-slate-500 mb-4 font-medium">Ainda não há actividades registadas</p>
+                <p class="text-slate-500 mb-4 font-medium">{{ 'dashboard.recentActivities.empty' | t }}</p>
               </div>
             } @else {
               <div class="overflow-x-auto custom-scrollbar">
                 <table mat-table [dataSource]="recentActivities()" class="w-full">
                   <ng-container matColumnDef="when">
-                    <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-800">Quando</th>
+                    <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-800">{{ 'dashboard.columns.when' | t }}</th>
                     <td mat-cell *matCellDef="let log">
                       <span class="text-xs font-medium text-slate-500 whitespace-nowrap" [title]="formatFullTimestamp(log.created_at)">
                         {{ formatRelativeTime(log.created_at) }}
@@ -266,7 +266,7 @@
                   </ng-container>
 
                   <ng-container matColumnDef="action">
-                    <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-800">Acção</th>
+                    <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-800">{{ 'dashboard.columns.action' | t }}</th>
                     <td mat-cell *matCellDef="let log">
                       <div class="flex items-center gap-3 py-2">
                         <div class="w-8 h-8 shrink-0 rounded-lg border flex items-center justify-center" [ngClass]="categoryBadge(log.category)" [title]="categoryLabel(log.category)">
@@ -281,7 +281,7 @@
                   </ng-container>
 
                   <ng-container matColumnDef="user">
-                    <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-800 !hidden md:!table-cell">Utilizador</th>
+                    <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-800 !hidden md:!table-cell">{{ 'dashboard.columns.user' | t }}</th>
                     <td mat-cell *matCellDef="let log" class="!hidden md:!table-cell">
                       <div class="flex items-center text-sm text-slate-500 max-w-[160px] truncate">
                         <mat-icon class="!text-[12px] !w-3 !h-3 !mr-1">person</mat-icon>
@@ -297,7 +297,7 @@
                 </table>
               </div>
               <div class="border-t border-slate-100 px-6 py-3 text-xs font-medium text-slate-400">
-                A mostrar {{ recentActivities().length }} actividade(s) recentes · <a routerLink="/auditoria" class="font-semibold text-orange-600 hover:text-orange-700">Abrir registo de auditoria →</a>
+                {{ 'dashboard.recentActivities.showing' | t: { count: recentActivities().length } }} · <a routerLink="/auditoria" class="font-semibold text-orange-600 hover:text-orange-700">{{ 'dashboard.recentActivities.openAll' | t }}</a>
               </div>
             }
           </mat-card-content>

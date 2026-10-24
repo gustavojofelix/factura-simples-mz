@@ -24,6 +24,8 @@ import {
 import { toIsoDate } from '../../core/utils/date.util';
 import { SummaryStatementDocumentComponent } from './documents/summary-statement-document.component';
 import { ClientStatementDocumentComponent } from './documents/client-statement-document.component';
+import { t } from '../../core/i18n/i18n';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 export interface SummaryStatementPreviewData {
   kind: 'summary';
@@ -61,12 +63,13 @@ export type StatementPreviewData = SummaryStatementPreviewData | ClientStatement
     MatProgressSpinnerModule,
     MatSnackBarModule,
     SummaryStatementDocumentComponent,
-    ClientStatementDocumentComponent
+    ClientStatementDocumentComponent,
+    TranslatePipe
   ],
   template: `
     <h2 mat-dialog-title class="flex items-center justify-between">
-      <span>{{ data.kind === 'client' ? 'Extracto do Cliente' : 'Extracto dos Clientes' }}</span>
-      <button mat-icon-button (click)="close()">
+      <span>{{ (data.kind === 'client' ? 'reports.preview.clientTitle' : 'reports.preview.summaryTitle') | t }}</span>
+      <button mat-icon-button (click)="close()" [attr.aria-label]="'common.actions.close' | t">
         <mat-icon>close</mat-icon>
       </button>
     </h2>
@@ -75,14 +78,14 @@ export type StatementPreviewData = SummaryStatementPreviewData | ClientStatement
       @if (isLoading()) {
         <div class="text-center py-8">
           <mat-spinner diameter="36" class="mx-auto mb-3"></mat-spinner>
-          <p class="text-gray-500">A carregar...</p>
+          <p class="text-gray-500">{{ 'common.status.loading' | t }}</p>
         </div>
       } @else {
         <div id="statement-document" class="bg-white relative">
           @if (isGeneratingPdf()) {
             <div class="absolute inset-0 bg-white/80 z-50 flex flex-col items-center justify-center">
               <mat-spinner diameter="36" class="mb-2"></mat-spinner>
-              <p class="text-sm font-medium text-gray-600">A gerar PDF...</p>
+              <p class="text-sm font-medium text-gray-600">{{ 'reports.preview.generatingPdf' | t }}</p>
             </div>
           }
           @if (data.kind === 'client') {
@@ -117,18 +120,18 @@ export type StatementPreviewData = SummaryStatementPreviewData | ClientStatement
     <mat-dialog-actions align="end" class="!gap-2 !px-6 !pb-4">
       <button mat-stroked-button (click)="download()" [disabled]="isLoading() || isGeneratingPdf()">
         <mat-icon>picture_as_pdf</mat-icon>
-        Descarregar PDF
+        {{ 'reports.preview.downloadPdf' | t }}
       </button>
       <button mat-stroked-button (click)="print()" [disabled]="isLoading() || isGeneratingPdf()">
         <mat-icon>print</mat-icon>
-        Imprimir
+        {{ 'common.actions.print' | t }}
       </button>
       @if (data.kind === 'client') {
         <button mat-stroked-button (click)="sendEmail()"
           [disabled]="isLoading() || isGeneratingPdf() || !data.statement.client.email"
-          [title]="data.statement.client.email ? 'Enviar para ' + data.statement.client.email : 'O cliente não tem e-mail registado'">
+          [title]="data.statement.client.email ? ('reports.preview.sendTo' | t: { email: data.statement.client.email }) : ('reports.preview.noEmailTooltip' | t)">
           <mat-icon>email</mat-icon>
-          Enviar por e-mail
+          {{ 'reports.preview.sendEmail' | t }}
         </button>
       }
     </mat-dialog-actions>
@@ -214,7 +217,7 @@ export class StatementPreviewDialogComponent implements OnInit {
       this.logExport('PDF');
     } catch (error) {
       console.error('Erro ao gerar o extracto em PDF:', error);
-      this.snackBar.open('Não foi possível gerar o extracto em PDF.', 'Fechar', { duration: 4000 });
+      this.snackBar.open(t('reports.preview.pdfError'), t('common.actions.close'), { duration: 4000 });
     } finally {
       this.isGeneratingPdf.set(false);
     }
@@ -232,14 +235,14 @@ export class StatementPreviewDialogComponent implements OnInit {
         this.logExport('Impressão');
       } else {
         this.snackBar.open(
-          'Não foi possível abrir a janela de impressão. Verifique se o navegador está a bloquear janelas.',
-          'Fechar',
+          t('reports.preview.printBlocked'),
+          t('common.actions.close'),
           { duration: 5000 }
         );
       }
     } catch (error) {
       console.error('Erro ao preparar a impressão do extracto:', error);
-      this.snackBar.open('Não foi possível preparar a impressão.', 'Fechar', { duration: 4000 });
+      this.snackBar.open(t('reports.preview.printError'), t('common.actions.close'), { duration: 4000 });
     } finally {
       this.isGeneratingPdf.set(false);
     }
@@ -255,7 +258,7 @@ export class StatementPreviewDialogComponent implements OnInit {
 
     const email = data.statement.client.email;
     if (!email) {
-      this.snackBar.open('Este cliente não tem endereço de e-mail.', 'Fechar', { duration: 4000 });
+      this.snackBar.open(t('reports.preview.noEmail'), t('common.actions.close'), { duration: 4000 });
       return;
     }
 
@@ -281,7 +284,7 @@ export class StatementPreviewDialogComponent implements OnInit {
       });
 
       if (error) throw new Error(await this.errorMessage(error));
-      if (result && result.success === false) throw new Error(result.error || 'O envio foi recusado.');
+      if (result && result.success === false) throw new Error(result.error || t('reports.preview.sendRejected'));
 
       this.auditLogService.log(
         'Enviou Extracto do Cliente por E-mail',
@@ -292,11 +295,11 @@ export class StatementPreviewDialogComponent implements OnInit {
         data.company.id
       );
 
-      this.snackBar.open(`Extracto enviado para ${email}.`, 'Fechar', { duration: 5000 });
+      this.snackBar.open(t('reports.preview.sent', { email }), t('common.actions.close'), { duration: 5000 });
     } catch (error) {
       console.error('Erro ao enviar o extracto:', error);
-      const message = error instanceof Error && error.message ? error.message : 'Não foi possível enviar o extracto.';
-      this.snackBar.open(message, 'Fechar', { duration: 6000 });
+      const message = error instanceof Error && error.message ? error.message : t('reports.preview.sendError');
+      this.snackBar.open(message, t('common.actions.close'), { duration: 6000 });
     } finally {
       this.isGeneratingPdf.set(false);
     }
@@ -313,7 +316,7 @@ export class StatementPreviewDialogComponent implements OnInit {
         // Sem corpo JSON: fica a mensagem genérica.
       }
     }
-    return error instanceof Error && error.message ? error.message : 'Não foi possível enviar o extracto.';
+    return error instanceof Error && error.message ? error.message : t('reports.preview.sendError');
   }
 
   close() {

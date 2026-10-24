@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from './supabase.service';
+import { t, currentLocale } from '../i18n/i18n';
 
 export type StatementStatus = 'pago' | 'em_divida' | 'vencido';
 
@@ -36,7 +37,12 @@ export interface StatementMovement {
   kind: MovementKind;
   date: string;
   document: string;
+  /** Descrição em português, usada no documento do extracto (PDF). */
   description: string;
+  /** Dados de origem da descrição, para a mostrar na língua da interface. */
+  first_item?: string | null;
+  item_count?: number;
+  payment_method?: string | null;
   invoice_id: string;
   invoice_number: string;
   payment_id: string | null;
@@ -128,6 +134,9 @@ export class StatementService {
         date: m.date,
         document: m.document || '',
         description: this.describeMovement(m),
+        first_item: m.first_item ?? null,
+        item_count: Number(m.item_count) || 0,
+        payment_method: m.payment_method ?? null,
         invoice_id: m.invoice_id,
         invoice_number: m.invoice_number,
         payment_id: m.payment_id,
@@ -138,6 +147,25 @@ export class StatementService {
     });
 
     return { client: data.client, opening_balance: opening, movements };
+  }
+
+  /** Descrição do movimento na língua da interface (o PDF usa `description`, sempre em português). */
+  movementLabel(m: StatementMovement): string {
+    if (m.kind === 'recibo') {
+      const method = m.payment_method
+        ? (['dinheiro', 'transferencia', 'cheque', 'carteira_movel', 'outro'].includes(m.payment_method)
+          ? t('reports.statements.paymentMethods.' + m.payment_method)
+          : m.payment_method)
+        : '';
+      return method
+        ? t('reports.statements.movement.paymentWithMethod', { invoice: m.invoice_number, method })
+        : t('reports.statements.movement.payment', { invoice: m.invoice_number });
+    }
+    const count = m.item_count || 0;
+    if (!m.first_item) return t('reports.statements.movement.sale');
+    return count > 1
+      ? t('reports.statements.movement.itemAndMore', { item: m.first_item, count: count - 1 })
+      : m.first_item;
   }
 
   private describeMovement(m: any): string {
@@ -187,16 +215,13 @@ export class StatementService {
   }
 
   getStatusLabel(status: StatementStatus): string {
-    const labels: Record<StatementStatus, string> = {
-      pago: 'Pago',
-      em_divida: 'Em dívida',
-      vencido: 'Vencido'
-    };
-    return labels[status] || status;
+    return ['pago', 'em_divida', 'vencido'].includes(status)
+      ? t('reports.statements.status.' + status)
+      : status;
   }
 
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('pt-MZ', {
+    return new Intl.NumberFormat(currentLocale(), {
       style: 'decimal',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2

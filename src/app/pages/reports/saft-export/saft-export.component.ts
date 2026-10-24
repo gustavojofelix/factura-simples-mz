@@ -15,14 +15,20 @@ import { AuditLogService } from '../../../core/services/audit-log.service';
 import { SaftCompany, SaftResult, SaftService } from '../../../core/services/saft.service';
 import { formatIsoDate, quarterRange, toIsoDate } from '../../../core/utils/date.util';
 import { ReportsNavComponent } from '../reports-nav.component';
+import { t, currentLocale } from '../../../core/i18n/i18n';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 type PeriodMode = 'mensal' | 'trimestral' | 'anual';
 type SaftFormat = 'xml' | 'xlsx' | 'csv';
 
-const MONTHS = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-];
+/** Nomes dos meses na língua da interface (com maiúscula inicial). */
+function monthNames(): string[] {
+  const fmt = new Intl.DateTimeFormat(currentLocale(), { month: 'long' });
+  return Array.from({ length: 12 }, (_, i) => {
+    const name = fmt.format(new Date(2000, i, 1));
+    return name.charAt(0).toLocaleUpperCase(currentLocale()) + name.slice(1);
+  });
+}
 
 /** Exportação do ficheiro SAF-T (MZ) da empresa activa para um período. */
 @Component({
@@ -39,13 +45,14 @@ const MONTHS = [
     MatSelectModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
-    ReportsNavComponent
+    ReportsNavComponent,
+    TranslatePipe
   ],
   template: `
     <div class="p-4 sm:p-6 max-w-7xl mx-auto">
       <div class="mb-4">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">Relatórios</h1>
-        <p class="text-gray-600">Ficheiro SAF-T de {{ companyService.activeCompany()?.name }}</p>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ 'reports.page.title' | t }}</h1>
+        <p class="text-gray-600">{{ 'reports.saft.subtitle' | t: { company: companyService.activeCompany()?.name } }}</p>
       </div>
 
       <app-reports-nav></app-reports-nav>
@@ -53,12 +60,9 @@ const MONTHS = [
       <div class="mb-6 flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-900">
         <mat-icon class="shrink-0 text-amber-600">info</mat-icon>
         <div class="text-sm">
-          <p class="font-semibold mb-1">Ficheiro informativo — não certificado</p>
+          <p class="font-semibold mb-1">{{ 'reports.saft.noticeTitle' | t }}</p>
           <p>
-            O ficheiro segue a estrutura SAF-T (PT 1.04_01) adaptada a Moçambique. Os documentos não têm
-            assinatura digital (Hash = 0) e o software ainda não está certificado pela Autoridade Tributária,
-            pelo que o ficheiro serve para consulta e auditoria interna, não como submissão oficial.
-            As facturas do regime ISPC são exportadas como isentas de IVA.
+            {{ 'reports.saft.noticeText' | t }}
           </p>
         </div>
       </div>
@@ -67,7 +71,7 @@ const MONTHS = [
         <mat-card class="mb-6">
           <mat-card-content class="!pt-6 text-center text-gray-600">
             <mat-icon class="!text-[40px] !w-10 !h-10 text-gray-400">lock</mat-icon>
-            <p class="mt-2">O ficheiro SAF-T requer a funcionalidade <strong>Relatórios</strong>, que não está incluída no seu plano.</p>
+            <p class="mt-2">{{ 'reports.saft.lockedBefore' | t }} <strong>{{ 'reports.page.title' | t }}</strong>{{ 'reports.saft.lockedAfter' | t }}</p>
           </mat-card-content>
         </mat-card>
       } @else {
@@ -75,17 +79,17 @@ const MONTHS = [
           <mat-card-content class="!pt-6">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <mat-form-field appearance="outline">
-                <mat-label>Período</mat-label>
+                <mat-label>{{ 'reports.saft.period' | t }}</mat-label>
                 <mat-select [ngModel]="mode()" (ngModelChange)="setMode($event)">
-                  <mat-option value="mensal">Mensal</mat-option>
-                  <mat-option value="trimestral">Trimestral</mat-option>
-                  <mat-option value="anual">Anual</mat-option>
+                  <mat-option value="mensal">{{ 'reports.saft.monthly' | t }}</mat-option>
+                  <mat-option value="trimestral">{{ 'reports.saft.quarterly' | t }}</mat-option>
+                  <mat-option value="anual">{{ 'reports.saft.annual' | t }}</mat-option>
                 </mat-select>
               </mat-form-field>
 
               @if (mode() === 'mensal') {
                 <mat-form-field appearance="outline">
-                  <mat-label>Mês</mat-label>
+                  <mat-label>{{ 'reports.saft.month' | t }}</mat-label>
                   <mat-select [ngModel]="month()" (ngModelChange)="month.set($event); reset()">
                     @for (name of months; track $index) {
                       <mat-option [value]="$index + 1">{{ name }}</mat-option>
@@ -94,18 +98,18 @@ const MONTHS = [
                 </mat-form-field>
               } @else if (mode() === 'trimestral') {
                 <mat-form-field appearance="outline">
-                  <mat-label>Trimestre</mat-label>
+                  <mat-label>{{ 'reports.filters.quarter' | t }}</mat-label>
                   <mat-select [ngModel]="quarter()" (ngModelChange)="quarter.set($event); reset()">
-                    <mat-option [value]="1">1º Trimestre (Jan–Mar)</mat-option>
-                    <mat-option [value]="2">2º Trimestre (Abr–Jun)</mat-option>
-                    <mat-option [value]="3">3º Trimestre (Jul–Set)</mat-option>
-                    <mat-option [value]="4">4º Trimestre (Out–Dez)</mat-option>
+                    <mat-option [value]="1">{{ 'reports.filters.q1' | t }}</mat-option>
+                    <mat-option [value]="2">{{ 'reports.filters.q2' | t }}</mat-option>
+                    <mat-option [value]="3">{{ 'reports.filters.q3' | t }}</mat-option>
+                    <mat-option [value]="4">{{ 'reports.filters.q4' | t }}</mat-option>
                   </mat-select>
                 </mat-form-field>
               }
 
               <mat-form-field appearance="outline">
-                <mat-label>Ano fiscal</mat-label>
+                <mat-label>{{ 'reports.saft.fiscalYear' | t }}</mat-label>
                 <mat-select [ngModel]="year()" (ngModelChange)="year.set($event); reset()">
                   @for (y of years; track y) {
                     <mat-option [value]="y">{{ y }}</mat-option>
@@ -116,7 +120,7 @@ const MONTHS = [
 
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-2">
               <p class="text-sm text-gray-600">
-                Período: <strong>{{ formatIsoDate(range().start) }}</strong> a <strong>{{ formatIsoDate(range().end) }}</strong>
+                {{ 'reports.saft.periodLabel' | t }} <strong>{{ formatIsoDate(range().start) }}</strong> {{ 'reports.saft.periodTo' | t }} <strong>{{ formatIsoDate(range().end) }}</strong>
               </p>
               <button mat-raised-button type="button" class="!bg-ispc-orange !text-white"
                 [disabled]="isGenerating() || !companyService.activeCompany()" (click)="generate()">
@@ -125,7 +129,7 @@ const MONTHS = [
                 } @else {
                   <mat-icon>settings</mat-icon>
                 }
-                {{ isGenerating() ? 'A gerar...' : 'Gerar SAF-T' }}
+                {{ (isGenerating() ? 'reports.saft.generating' : 'reports.saft.generate') | t }}
               </button>
             </div>
           </mat-card-content>
@@ -136,31 +140,31 @@ const MONTHS = [
             <mat-card-content class="!pt-6">
               <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <div class="rounded-lg bg-gray-50 p-4">
-                  <p class="text-xs uppercase text-gray-500">Facturas</p>
+                  <p class="text-xs uppercase text-gray-500">{{ 'reports.saft.invoices' | t }}</p>
                   <p class="text-2xl font-bold text-gray-900">{{ res.summary.invoices }}</p>
-                  <p class="text-xs text-gray-500">{{ res.summary.annulledInvoices }} anulada(s)</p>
+                  <p class="text-xs text-gray-500">{{ 'reports.saft.annulledInvoices' | t: { count: res.summary.annulledInvoices } }}</p>
                 </div>
                 <div class="rounded-lg bg-gray-50 p-4">
-                  <p class="text-xs uppercase text-gray-500">Total facturado</p>
+                  <p class="text-xs uppercase text-gray-500">{{ 'reports.saft.invoicedTotal' | t }}</p>
                   <p class="text-2xl font-bold text-gray-900">{{ formatCurrency(res.summary.invoicesTotal) }}</p>
-                  <p class="text-xs text-gray-500">sem facturas anuladas</p>
+                  <p class="text-xs text-gray-500">{{ 'reports.saft.excludingCancelled' | t }}</p>
                 </div>
                 <div class="rounded-lg bg-gray-50 p-4">
-                  <p class="text-xs uppercase text-gray-500">Recibos</p>
+                  <p class="text-xs uppercase text-gray-500">{{ 'reports.saft.receipts' | t }}</p>
                   <p class="text-2xl font-bold text-gray-900">{{ res.summary.payments }}</p>
-                  <p class="text-xs text-gray-500">{{ res.summary.annulledPayments }} anulado(s)</p>
+                  <p class="text-xs text-gray-500">{{ 'reports.saft.annulledReceipts' | t: { count: res.summary.annulledPayments } }}</p>
                 </div>
                 <div class="rounded-lg bg-gray-50 p-4">
-                  <p class="text-xs uppercase text-gray-500">Total recebido</p>
+                  <p class="text-xs uppercase text-gray-500">{{ 'reports.saft.receivedTotal' | t }}</p>
                   <p class="text-2xl font-bold text-gray-900">{{ formatCurrency(res.summary.paymentsTotal) }}</p>
-                  <p class="text-xs text-gray-500">{{ res.summary.customers }} cliente(s) · {{ res.summary.products }} artigo(s)</p>
+                  <p class="text-xs text-gray-500">{{ 'reports.saft.customersAndProducts' | t: { customers: res.summary.customers, products: res.summary.products } }}</p>
                 </div>
               </div>
 
               @if (res.warnings.length) {
                 <div class="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
                   <p class="font-semibold text-yellow-900 mb-2 flex items-center gap-2">
-                    <mat-icon class="text-yellow-600">warning</mat-icon> Avisos ({{ res.warnings.length }})
+                    <mat-icon class="text-yellow-600">warning</mat-icon> {{ 'reports.saft.warnings' | t: { count: res.warnings.length } }}
                   </p>
                   <ul class="list-disc pl-6 text-sm text-yellow-900 space-y-1">
                     @for (warning of res.warnings; track $index) {
@@ -172,19 +176,17 @@ const MONTHS = [
 
               <div class="flex flex-col sm:flex-row sm:justify-end gap-3">
                 <button mat-stroked-button type="button" [disabled]="isDownloading()" (click)="download('csv')">
-                  <mat-icon>table_rows</mat-icon> Descarregar CSV (.zip)
+                  <mat-icon>table_rows</mat-icon> {{ 'reports.saft.downloadCsv' | t }}
                 </button>
                 <button mat-stroked-button type="button" [disabled]="isDownloading()" (click)="download('xlsx')">
-                  <mat-icon>grid_on</mat-icon> Descarregar Excel
+                  <mat-icon>grid_on</mat-icon> {{ 'reports.saft.downloadExcel' | t }}
                 </button>
                 <button mat-raised-button color="primary" type="button" [disabled]="isDownloading()" (click)="download('xml')">
-                  <mat-icon>download</mat-icon> Descarregar XML
+                  <mat-icon>download</mat-icon> {{ 'reports.saft.downloadXml' | t }}
                 </button>
               </div>
               <p class="mt-3 text-xs text-gray-500 sm:text-right">
-                Excel e CSV contêm os mesmos dados do XML, uma folha/ficheiro por secção
-                (Cabeçalho, Totais, Clientes, Artigos, Impostos, Facturas, Linhas, Recibos).
-                O CSV usa ';' como separador e ponto decimal.
+                {{ 'reports.saft.downloadHint' | t }}
               </p>
             </mat-card-content>
           </mat-card>
@@ -200,7 +202,7 @@ export class SaftExportComponent {
   private saftService = inject(SaftService);
   companyService = inject(CompanyService);
 
-  readonly months = MONTHS;
+  readonly months = monthNames();
   readonly formatIsoDate = formatIsoDate;
 
   private readonly today = new Date();
@@ -286,7 +288,7 @@ export class SaftExportComponent {
       this.resultContext = { start, end, company };
     } catch (error: any) {
       console.error('Erro ao gerar SAF-T:', error);
-      this.snackBar.open(error?.message || 'Não foi possível gerar o ficheiro SAF-T.', 'Fechar', { duration: 5000 });
+      this.snackBar.open(error?.message || t('reports.saft.generateError'), t('common.actions.close'), { duration: 5000 });
     } finally {
       this.isGenerating.set(false);
     }
@@ -313,7 +315,7 @@ export class SaftExportComponent {
       }
     } catch (error) {
       console.error('Erro ao descarregar SAF-T:', error);
-      this.snackBar.open('Não foi possível descarregar o ficheiro SAF-T.', 'Fechar', { duration: 5000 });
+      this.snackBar.open(t('reports.saft.downloadError'), t('common.actions.close'), { duration: 5000 });
       return;
     } finally {
       this.isDownloading.set(false);
@@ -337,7 +339,7 @@ export class SaftExportComponent {
   }
 
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('pt-MZ', {
+    return new Intl.NumberFormat(currentLocale(), {
       style: 'decimal',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2

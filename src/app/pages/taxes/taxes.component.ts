@@ -14,7 +14,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { TaxService, TaxCalculation, TaxDeclaration, TaxSummary } from '../../core/services/tax.service';
+import { TaxService, TaxCalculation, TaxDeclaration, TaxSummary, IspcSplit } from '../../core/services/tax.service';
 import { CompanyService } from '../../core/services/company.service';
 import { TaxPaymentDialogComponent } from '../../shared/components/tax-payment-dialog.component';
 import { Model30Component } from '../../shared/components/model30.component';
@@ -22,6 +22,8 @@ import { Model30ExcelService } from '../../core/services/model30-excel.service';
 import { AuditLogService } from '../../core/services/audit-log.service';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { friendlyFunctionError } from '../../core/utils/error-message';
+import { t, currentLocale } from '../../core/i18n/i18n';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 /** Lembrete de obrigação fiscal gerado por generate_tax_reminders(). */
 export interface TaxReminder {
@@ -54,7 +56,8 @@ export interface TaxReminder {
     MatDialogModule,
     MatProgressSpinnerModule,
     MatTabsModule,
-    MatTooltipModule
+    MatTooltipModule,
+    TranslatePipe
   ],
   templateUrl: './taxes.component.html',
   styleUrls: ['./taxes.component.css']
@@ -79,10 +82,10 @@ export class TaxesComponent implements OnInit {
 
   years: number[] = [];
   periods = [
-    { value: 1, label: '1º Trimestre (Jan-Mar)' },
-    { value: 2, label: '2º Trimestre (Abr-Jun)' },
-    { value: 3, label: '3º Trimestre (Jul-Set)' },
-    { value: 4, label: '4º Trimestre (Out-Dez)' }
+    { value: 1, label: 'taxes.quarters.q1' },
+    { value: 2, label: 'taxes.quarters.q2' },
+    { value: 3, label: 'taxes.quarters.q3' },
+    { value: 4, label: 'taxes.quarters.q4' }
   ];
 
   displayedColumns = ['period', 'dates', 'amount', 'status', 'due_date', 'actions'];
@@ -177,11 +180,11 @@ export class TaxesComponent implements OnInit {
       if (error) throw error;
       window.alert(
         data?.message ||
-        (data?.ok ? 'Lembrete de teste enviado para o seu email.' : 'Não foi possível enviar o lembrete de teste.')
+        (data?.ok ? t('taxes.reminders.testSent') : t('taxes.reminders.testError'))
       );
     } catch (error) {
       console.error('Erro ao enviar lembrete de teste:', error);
-      window.alert(await friendlyFunctionError(error, 'Não foi possível enviar o lembrete de teste.'));
+      window.alert(await friendlyFunctionError(error, t('taxes.reminders.testError')));
     } finally {
       this.isSendingTestReminder.set(false);
     }
@@ -278,14 +281,14 @@ export class TaxesComponent implements OnInit {
       await this.model30Excel.exportModel30(declaration, company);
     } catch (error) {
       console.error('Erro ao gerar o Excel do Modelo 30:', error);
-      window.alert('Não foi possível gerar o Excel. Por favor, tente novamente.');
+      window.alert(t('taxes.declarations.excelError'));
     } finally {
       this.exportingExcelId.set(null);
     }
   }
 
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('pt-MZ', {
+    return new Intl.NumberFormat(currentLocale(), {
       style: 'decimal',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
@@ -299,6 +302,13 @@ export class TaxesComponent implements OnInit {
 
   getPeriodLabel(period: number): string {
     return this.taxService.getPeriodName(period);
+  }
+
+  /** Rótulo do escalão na língua da interface (o `label` guardado fica em português). */
+  splitLabel(split: IspcSplit): string {
+    return split.isExcess
+      ? t('taxes.calculator.excessSplit')
+      : t('taxes.calculator.baseSplit', { rate: split.rate });
   }
 
   getStatusLabel(status: string): string {

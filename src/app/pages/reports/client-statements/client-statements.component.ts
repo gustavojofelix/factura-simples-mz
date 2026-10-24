@@ -28,6 +28,8 @@ import {
 import { formatIsoDate, parseIsoDate, quarterRange, toIsoDate } from '../../../core/utils/date.util';
 import { PreferencesService } from '../../../core/services/preferences.service';
 import { ReportsNavComponent } from '../reports-nav.component';
+import { t, currentLocale } from '../../../core/i18n/i18n';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import {
   StatementPreviewDialogComponent,
   StatementPreviewData
@@ -60,7 +62,8 @@ type SortKey = 'client_code' | 'client_name' | 'opening_balance' | 'total_invoic
     MatProgressSpinnerModule,
     MatDialogModule,
     MatSnackBarModule,
-    ReportsNavComponent
+    ReportsNavComponent,
+    TranslatePipe
   ],
   templateUrl: './client-statements.component.html'
 })
@@ -125,7 +128,7 @@ export class ClientStatementsComponent implements OnInit {
       const va = a[key];
       const vb = b[key];
       if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * factor;
-      return String(va ?? '').localeCompare(String(vb ?? ''), 'pt', { numeric: true }) * factor;
+      return String(va ?? '').localeCompare(String(vb ?? ''), currentLocale(), { numeric: true }) * factor;
     });
   });
 
@@ -178,7 +181,7 @@ export class ClientStatementsComponent implements OnInit {
     const start = toIsoDate(this.filterForm.value.startDate);
     const end = toIsoDate(this.filterForm.value.endDate);
     if (start > end) {
-      this.snackBar.open('A data inicial não pode ser posterior à data final.', 'Fechar', { duration: 4000 });
+      this.snackBar.open(t('reports.statements.messages.invalidRange'), t('common.actions.close'), { duration: 4000 });
       return;
     }
 
@@ -200,7 +203,7 @@ export class ClientStatementsComponent implements OnInit {
       );
     } catch (error) {
       console.error('Erro ao gerar o extracto geral:', error);
-      this.snackBar.open('Não foi possível gerar o extracto.', 'Fechar', { duration: 4000 });
+      this.snackBar.open(t('reports.statements.messages.generateError'), t('common.actions.close'), { duration: 4000 });
     } finally {
       this.isLoading.set(false);
     }
@@ -239,36 +242,45 @@ export class ClientStatementsComponent implements OnInit {
     if (!company || !period || rows.length === 0) return;
 
     const totals = this.totals();
+    const col = {
+      id: t('reports.statements.id'),
+      client: t('reports.sales.client'),
+      opening: t('reports.statements.excel.openingBalance'),
+      invoiced: t('reports.statements.excel.totalInvoiced'),
+      paid: t('reports.statements.excel.totalPaid'),
+      balance: t('reports.statements.excel.balance'),
+      status: t('common.fields.status')
+    };
     const data: Record<string, string | number>[] = rows.map(row => ({
-      'ID': row.client_code || '',
-      'Cliente': row.client_name,
+      [col.id]: row.client_code || '',
+      [col.client]: row.client_name,
       'NUIT': row.client_nuit || '',
-      'Saldo anterior (MZN)': row.opening_balance,
-      'Total facturado (MZN)': row.total_invoiced,
-      'Total pago (MZN)': row.total_paid,
-      'Saldo (MZN)': row.balance,
-      'Estado': this.statementService.getStatusLabel(row.status)
+      [col.opening]: row.opening_balance,
+      [col.invoiced]: row.total_invoiced,
+      [col.paid]: row.total_paid,
+      [col.balance]: row.balance,
+      [col.status]: this.statementService.getStatusLabel(row.status)
     }));
 
     data.push({});
     data.push({
-      'Cliente': 'TOTAL',
-      'Saldo anterior (MZN)': totals.opening_balance,
-      'Total facturado (MZN)': totals.total_invoiced,
-      'Total pago (MZN)': totals.total_paid,
-      'Saldo (MZN)': totals.balance
+      [col.client]: t('reports.statements.totalRow'),
+      [col.opening]: totals.opening_balance,
+      [col.invoiced]: totals.total_invoiced,
+      [col.paid]: totals.total_paid,
+      [col.balance]: totals.balance
     });
     data.push({});
-    data.push({ 'ID': `Empresa: ${company.name}` });
-    data.push({ 'ID': `Período: ${formatIsoDate(period.start, this.preferences.dateFormat())} a ${formatIsoDate(period.end, this.preferences.dateFormat())}` });
+    data.push({ [col.id]: t('reports.statements.excel.company', { name: company.name }) });
+    data.push({ [col.id]: t('reports.statements.excel.period', { start: formatIsoDate(period.start, this.preferences.dateFormat()), end: formatIsoDate(period.end, this.preferences.dateFormat()) }) });
     if (this.notes().trim()) {
-      data.push({ 'ID': `Observações: ${this.notes().trim()}` });
+      data.push({ [col.id]: t('reports.statements.excel.notes', { notes: this.notes().trim() }) });
     }
 
     this.exportService.exportToExcel(
       data,
       `Extracto_Clientes_${period.start}_a_${period.end}`,
-      'Extracto geral'
+      t('reports.statements.excel.summarySheet')
     );
 
     this.auditLogService.log(

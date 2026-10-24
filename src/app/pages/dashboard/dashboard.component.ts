@@ -18,6 +18,8 @@ import { AuthService } from '../../core/services/auth.service';
 import { AuditLogService, AuditLogEntry } from '../../core/services/audit-log.service';
 import { PreferencesService } from '../../core/services/preferences.service';
 import { getAuditCategoryLabel, getAuditCategoryBadge, getAuditCategoryIcon } from '../../core/utils/audit-formatter.util';
+import { t, currentLocale } from '../../core/i18n/i18n';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 interface DashboardMetrics {
   quarterSales: number;
@@ -48,7 +50,8 @@ interface RecentInvoice {
     MatTableModule,
     MatChipsModule,
     MatProgressSpinnerModule,
-    MatDialogModule
+    MatDialogModule,
+    TranslatePipe
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
@@ -57,18 +60,18 @@ export class DashboardComponent implements OnInit {
   readonly lastUpdatedAt = signal<Date | null>(null);
   readonly greeting = computed(() => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Bom dia';
-    if (hour < 18) return 'Boa tarde';
-    return 'Boa noite';
+    if (hour < 12) return t('dashboard.greeting.morning');
+    if (hour < 18) return t('dashboard.greeting.afternoon');
+    return t('dashboard.greeting.evening');
   });
   readonly userName = computed(() => {
     const user = this.authService.currentUser();
-    return user?.user_metadata?.['full_name'] || user?.email?.split('@')[0] || 'Utilizador';
+    return user?.user_metadata?.['full_name'] || user?.email?.split('@')[0] || t('dashboard.context.userFallback');
   });
   readonly userRole = computed(() => {
     const role = this.companyService.activeRole();
-    if (!role) return 'A carregar…';
-    return role === 'owner' ? 'Administrador' : role === 'manager' ? 'Gestor' : 'Vendedor';
+    if (!role) return t('dashboard.roles.loading');
+    return role === 'owner' ? t('dashboard.roles.owner') : role === 'manager' ? t('dashboard.roles.manager') : t('dashboard.roles.seller');
   });
   readonly quarterPeriod = computed(() => {
     const now = new Date();
@@ -263,7 +266,7 @@ export class DashboardComponent implements OnInit {
         data.map(inv => ({
           id: inv.id,
           invoice_number: inv.invoice_number,
-          client_name: (inv.clients as any)?.name || 'Cliente',
+          client_name: (inv.clients as any)?.name || t('dashboard.columns.client'),
           date: inv.date,
           total: inv.total,
           status: this.calculateRecentInvoiceStatus(inv),
@@ -300,7 +303,7 @@ export class DashboardComponent implements OnInit {
 
   formatCurrency(value: number): string {
     const safeValue = Number.isFinite(Number(value)) ? Number(value) : 0;
-    return new Intl.NumberFormat('pt-MZ', {
+    return new Intl.NumberFormat(currentLocale(), {
       style: 'decimal',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
@@ -309,17 +312,17 @@ export class DashboardComponent implements OnInit {
 
   formatAmount(value: number): string {
     const safeValue = Number.isFinite(Number(value)) ? Number(value) : 0;
-    return new Intl.NumberFormat('pt-MZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(safeValue);
+    return new Intl.NumberFormat(currentLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(safeValue);
   }
 
   formatShortDate(date: Date): string {
-    return new Intl.DateTimeFormat('pt-MZ', { day: '2-digit', month: 'short' }).format(date).replace('.', '');
+    return new Intl.DateTimeFormat(currentLocale(), { day: '2-digit', month: 'short' }).format(date).replace('.', '');
   }
 
   formatLastUpdated(): string {
     const value = this.lastUpdatedAt();
-    if (!value) return 'A sincronizar';
-    return `Hoje, ${this.preferences.formatTime(value)}`;
+    if (!value) return t('dashboard.context.syncing');
+    return t('dashboard.context.todayAt', { time: this.preferences.formatTime(value) });
   }
 
   formatDate(dateString: string): string {
@@ -353,13 +356,13 @@ export class DashboardComponent implements OnInit {
     const minutes = Math.floor(diffMs / 60000);
     const time = this.preferences.formatTime(date);
 
-    if (minutes < 1) return 'Agora mesmo';
-    if (minutes < 60) return `há ${minutes} min`;
+    if (minutes < 1) return t('dashboard.relativeTime.justNow');
+    if (minutes < 60) return t('dashboard.relativeTime.minutesAgo', { minutes });
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `há ${hours} h`;
+    if (hours < 24) return t('dashboard.relativeTime.hoursAgo', { hours });
 
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    if (this.preferences.formatDate(date) === this.preferences.formatDate(yesterday)) return `Ontem, ${time}`;
+    if (this.preferences.formatDate(date) === this.preferences.formatDate(yesterday)) return t('dashboard.relativeTime.yesterdayAt', { time });
 
     return `${this.formatDate(iso)} ${time}`;
   }

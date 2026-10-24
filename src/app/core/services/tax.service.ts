@@ -3,6 +3,7 @@ import { SupabaseService } from './supabase.service';
 import { CompanyService } from './company.service';
 import { AuditLogService } from './audit-log.service';
 import { ActivityService } from './activity.service';
+import { t } from '../i18n/i18n';
 
 export interface TaxDeclaration {
   id: string;
@@ -665,19 +666,16 @@ export class TaxService {
     return dueDates[period - 1];
   }
 
+  /** Nome do trimestre na língua da interface. */
   getPeriodName(period: number): string {
-    return `${period}º Trimestre`;
+    return t('taxes.periodName', { period });
   }
 
+  /** Estado da declaração na língua da interface. */
   getStatusLabel(status: string): string {
-    const labels: { [key: string]: string } = {
-      'rascunho': 'Rascunho',
-      'pendente': 'Pendente',
-      'submetida': 'Submetida',
-      'paga': 'Paga',
-      'atrasada': 'Em Atraso'
-    };
-    return labels[status] || status;
+    return ['rascunho', 'pendente', 'submetida', 'paga', 'atrasada'].includes(status)
+      ? t('taxes.status.' + status)
+      : status;
   }
 
   getStatusColor(status: string): string {

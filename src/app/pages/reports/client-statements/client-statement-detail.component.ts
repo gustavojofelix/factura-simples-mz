@@ -27,6 +27,8 @@ import {
 import { formatIsoDate, parseIsoDate, quarterRange, toIsoDate } from '../../../core/utils/date.util';
 import { PreferencesService } from '../../../core/services/preferences.service';
 import { ReportsNavComponent } from '../reports-nav.component';
+import { t } from '../../../core/i18n/i18n';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import {
   StatementPreviewDialogComponent,
   StatementPreviewData
@@ -59,7 +61,8 @@ import { ReceiptDetailComponent } from '../../../shared/components/receipt-detai
     MatProgressSpinnerModule,
     MatDialogModule,
     MatSnackBarModule,
-    ReportsNavComponent
+    ReportsNavComponent,
+    TranslatePipe
   ],
   templateUrl: './client-statement-detail.component.html'
 })
@@ -167,7 +170,7 @@ export class ClientStatementDetailComponent implements OnInit {
     const start = toIsoDate(this.filterForm.value.startDate);
     const end = toIsoDate(this.filterForm.value.endDate);
     if (start > end) {
-      this.snackBar.open('A data inicial não pode ser posterior à data final.', 'Fechar', { duration: 4000 });
+      this.snackBar.open(t('reports.statements.messages.invalidRange'), t('common.actions.close'), { duration: 4000 });
       return;
     }
 
@@ -189,7 +192,7 @@ export class ClientStatementDetailComponent implements OnInit {
     } catch (error) {
       console.error('Erro ao gerar o extracto do cliente:', error);
       this.statement.set(null);
-      this.errorMessage.set('Não foi possível gerar o extracto deste cliente.');
+      this.errorMessage.set(t('reports.statements.messages.clientGenerateError'));
     } finally {
       this.isLoading.set(false);
     }
@@ -247,42 +250,50 @@ export class ClientStatementDetailComponent implements OnInit {
 
     const showBalance = this.showBalance();
     const totals = this.totals();
+    const col = {
+      date: t('common.fields.date'),
+      document: t('reports.statements.detail.document'),
+      description: t('common.fields.description'),
+      invoiced: t('reports.statements.excel.invoiced'),
+      paid: t('reports.statements.excel.paid'),
+      balance: t('reports.statements.excel.balance')
+    };
     const data: Record<string, string | number>[] = [];
     if (showBalance) {
       data.push({
-        'Data': formatIsoDate(period.start, this.preferences.dateFormat()),
-        'Documento': '',
-        'Descrição': 'Saldo anterior',
-        'Facturado (MZN)': '',
-        'Pago (MZN)': '',
-        'Saldo (MZN)': statement.opening_balance
+        [col.date]: formatIsoDate(period.start, this.preferences.dateFormat()),
+        [col.document]: '',
+        [col.description]: t('reports.statements.openingBalance'),
+        [col.invoiced]: '',
+        [col.paid]: '',
+        [col.balance]: statement.opening_balance
       });
     }
 
     for (const m of this.visibleMovements()) {
       const line: Record<string, string | number> = {
-        'Data': formatIsoDate(m.date, this.preferences.dateFormat()),
-        'Documento': m.document,
-        'Descrição': m.description,
-        'Facturado (MZN)': m.invoiced || '',
-        'Pago (MZN)': m.paid || ''
+        [col.date]: formatIsoDate(m.date, this.preferences.dateFormat()),
+        [col.document]: m.document,
+        [col.description]: this.statementService.movementLabel(m),
+        [col.invoiced]: m.invoiced || '',
+        [col.paid]: m.paid || ''
       };
-      if (showBalance) line['Saldo (MZN)'] = m.balance;
+      if (showBalance) line[col.balance] = m.balance;
       data.push(line);
     }
 
     data.push({});
-    data.push({ 'Descrição': 'Total facturado', 'Facturado (MZN)': totals.invoiced });
-    data.push({ 'Descrição': 'Total pago', 'Pago (MZN)': totals.paid });
-    data.push({ 'Descrição': 'Saldo em dívida', [showBalance ? 'Saldo (MZN)' : 'Pago (MZN)']: totals.balance });
+    data.push({ [col.description]: t('reports.statements.totalInvoiced'), [col.invoiced]: totals.invoiced });
+    data.push({ [col.description]: t('reports.statements.totalPaid'), [col.paid]: totals.paid });
+    data.push({ [col.description]: t('reports.statements.outstandingBalance'), [showBalance ? col.balance : col.paid]: totals.balance });
     data.push({});
-    data.push({ 'Data': `Cliente: ${statement.client.client_code || ''} ${statement.client.name}`.trim() });
-    data.push({ 'Data': `Empresa: ${company.name}` });
-    data.push({ 'Data': `Período: ${formatIsoDate(period.start, this.preferences.dateFormat())} a ${formatIsoDate(period.end, this.preferences.dateFormat())}` });
-    if (this.notes().trim()) data.push({ 'Data': `Observações: ${this.notes().trim()}` });
+    data.push({ [col.date]: t('reports.statements.excel.client', { name: `${statement.client.client_code || ''} ${statement.client.name}`.trim() }) });
+    data.push({ [col.date]: t('reports.statements.excel.company', { name: company.name }) });
+    data.push({ [col.date]: t('reports.statements.excel.period', { start: formatIsoDate(period.start, this.preferences.dateFormat()), end: formatIsoDate(period.end, this.preferences.dateFormat()) }) });
+    if (this.notes().trim()) data.push({ [col.date]: t('reports.statements.excel.notes', { notes: this.notes().trim() }) });
 
     const id = (statement.client.client_code || statement.client.name).replace(/[^\w-]+/g, '_');
-    this.exportService.exportToExcel(data, `Extracto_${id}_${period.start}_a_${period.end}`, 'Extracto');
+    this.exportService.exportToExcel(data, `Extracto_${id}_${period.start}_a_${period.end}`, t('reports.statements.excel.clientSheet'));
 
     this.auditLogService.log(
       'Exportou Extracto do Cliente para Excel',

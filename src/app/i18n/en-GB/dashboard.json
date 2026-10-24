@@ -1,1 +1,81 @@
-{}
+{
+  "header": {
+    "overview": "Overview",
+    "title": "{greeting}, here's your business",
+    "summaryBefore": "Summary for",
+    "summaryAfter": "· everything you need in one place."
+  },
+  "greeting": {
+    "morning": "Good morning",
+    "afternoon": "Good afternoon",
+    "evening": "Good evening"
+  },
+  "context": {
+    "currentSession": "Current session",
+    "company": "Company",
+    "currentQuarter": "Current quarter",
+    "dataUpdated": "Data updated",
+    "userFallback": "User",
+    "syncing": "Syncing",
+    "todayAt": "Today, {time}"
+  },
+  "roles": {
+    "loading": "Loading…",
+    "owner": "Administrator",
+    "manager": "Manager",
+    "seller": "Salesperson"
+  },
+  "kpi": {
+    "quarterSales": "Quarter Sales",
+    "positiveTrend": "Positive trend",
+    "inQuarter": "this quarter",
+    "ispcToPay": "ISPC Payable",
+    "quarterEstimate": "Quarter estimate",
+    "pendingInvoices": "Pending Invoices",
+    "allUpToDate": "All up to date",
+    "activeClients": "Active Clients",
+    "clientsWithActivity": "Clients with activity"
+  },
+  "quickActions": {
+    "newInvoice": "New Invoice",
+    "newInvoiceHint": "Issue a new invoice",
+    "viewInvoices": "View Invoices",
+    "viewInvoicesHint": "Manage all invoices",
+    "manageClients": "Manage Clients",
+    "manageClientsHint": "Add and edit clients",
+    "viewProducts": "View Products",
+    "viewProductsHint": "Product catalogue"
+  },
+  "viewAll": "View all",
+  "columns": {
+    "number": "No.",
+    "client": "Client",
+    "user": "User",
+    "when": "When",
+    "action": "Action"
+  },
+  "recentInvoices": {
+    "title": "Recent Invoices",
+    "empty": "You don't have any invoices yet",
+    "showing": {
+      "one": "Showing {count} recent invoice",
+      "other": "Showing {count} recent invoices"
+    },
+    "openAll": "Open invoice management →"
+  },
+  "recentActivities": {
+    "title": "Recent Activity",
+    "empty": "No activity recorded yet",
+    "showing": {
+      "one": "Showing {count} recent activity",
+      "other": "Showing {count} recent activities"
+    },
+    "openAll": "Open audit log →"
+  },
+  "relativeTime": {
+    "justNow": "Just now",
+    "minutesAgo": "{minutes} min ago",
+    "hoursAgo": "{hours} h ago",
+    "yesterdayAt": "Yesterday, {time}"
+  }
+}

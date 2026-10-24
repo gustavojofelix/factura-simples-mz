@@ -1,1 +1,211 @@
-{}
+{
+  "page": {
+    "title": "Relatórios",
+    "subtitle": "Análise detalhada de vendas e faturamento"
+  },
+  "nav": {
+    "sales": "Vendas",
+    "clientStatements": "Extracto de clientes",
+    "saft": "Ficheiro SAF-T"
+  },
+  "filters": {
+    "startDate": "Data Inicial",
+    "endDate": "Data Final",
+    "quarter": "Trimestre",
+    "allQuarters": "Todos os trimestres",
+    "q1": "1º Trimestre (Jan–Mar)",
+    "q2": "2º Trimestre (Abr–Jun)",
+    "q3": "3º Trimestre (Jul–Set)",
+    "q4": "4º Trimestre (Out–Dez)",
+    "year": "Ano",
+    "client": "Cliente",
+    "allClients": "Todos os Clientes",
+    "generate": "Gerar Relatório"
+  },
+  "sales": {
+    "totalSales": "Total de Vendas",
+    "totalInvoices": "Total de Facturas",
+    "paidAmount": "Valor Recebido",
+    "pendingAmount": "Valor Pendente",
+    "byStatus": "Análise por Status",
+    "statusPending": "Pendentes",
+    "statusPaid": "Pagas",
+    "statusOverdue": "Vencidas",
+    "statusCancelled": "Anuladas",
+    "topClients": "Top Clientes",
+    "client": "Cliente",
+    "invoices": "Faturas",
+    "dailySales": "Vendas Diárias",
+    "exportExcel": "Exportar Excel",
+    "exportCsv": "Exportar CSV",
+    "unknownClient": "Cliente Desconhecido"
+  },
+  "export": {
+    "salesReport": "Relatório de Vendas",
+    "summary": "Resumo",
+    "totalInvoices": "Total de Faturas",
+    "noData": "Nenhum dado encontrado para o período seleccionado.",
+    "invoiceNumber": "Nº Factura",
+    "invoiceTotal": "Total Factura",
+    "salesTotal": "TOTAL DE VENDAS",
+    "salesSheet": "Vendas",
+    "typeProduct": "Produto",
+    "typeService": "Serviço",
+    "defaultSheet": "Dados"
+  },
+  "saft": {
+    "subtitle": "Ficheiro SAF-T de {company}",
+    "noticeTitle": "Ficheiro informativo — não certificado",
+    "noticeText": "O ficheiro segue a estrutura SAF-T (PT 1.04_01) adaptada a Moçambique. Os documentos não têm assinatura digital (Hash = 0) e o software ainda não está certificado pela Autoridade Tributária, pelo que o ficheiro serve para consulta e auditoria interna, não como submissão oficial. As facturas do regime ISPC são exportadas como isentas de IVA.",
+    "lockedBefore": "O ficheiro SAF-T requer a funcionalidade",
+    "lockedAfter": ", que não está incluída no seu plano.",
+    "period": "Período",
+    "monthly": "Mensal",
+    "quarterly": "Trimestral",
+    "annual": "Anual",
+    "month": "Mês",
+    "fiscalYear": "Ano fiscal",
+    "periodLabel": "Período:",
+    "periodTo": "a",
+    "generating": "A gerar...",
+    "generate": "Gerar SAF-T",
+    "invoices": "Facturas",
+    "annulledInvoices": {
+      "one": "{count} anulada(s)",
+      "other": "{count} anulada(s)"
+    },
+    "invoicedTotal": "Total facturado",
+    "excludingCancelled": "sem facturas anuladas",
+    "receipts": "Recibos",
+    "annulledReceipts": {
+      "one": "{count} anulado(s)",
+      "other": "{count} anulado(s)"
+    },
+    "receivedTotal": "Total recebido",
+    "customersAndProducts": "{customers} cliente(s) · {products} artigo(s)",
+    "warnings": "Avisos ({count})",
+    "downloadCsv": "Descarregar CSV (.zip)",
+    "downloadExcel": "Descarregar Excel",
+    "downloadXml": "Descarregar XML",
+    "downloadHint": "Excel e CSV contêm os mesmos dados do XML, uma folha/ficheiro por secção (Cabeçalho, Totais, Clientes, Artigos, Impostos, Facturas, Linhas, Recibos). O CSV usa ';' como separador e ponto decimal.",
+    "generateError": "Não foi possível gerar o ficheiro SAF-T.",
+    "downloadError": "Não foi possível descarregar o ficheiro SAF-T.",
+    "errors": {
+      "singleFiscalYear": "O período do SAF-T tem de estar dentro de um único ano fiscal.",
+      "notInPlan": "O ficheiro SAF-T não está disponível no seu plano (requer Relatórios)."
+    }
+  },
+  "statements": {
+    "subtitle": "Extracto de movimentos dos clientes de {company}",
+    "startDate": "Data inicial",
+    "endDate": "Data final",
+    "customPeriod": "Período personalizado",
+    "clients": "Clientes",
+    "allClients": "Todos os clientes",
+    "selectedClients": {
+      "one": "{count} cliente(s) seleccionado(s)",
+      "other": "{count} cliente(s) seleccionado(s)"
+    },
+    "clearSelection": "Limpar selecção",
+    "clientsHint": "Deixe vazio para incluir todos os clientes",
+    "notes": "Observações (opcional)",
+    "notesPlaceholder": "Aparece no extracto em PDF",
+    "generate": "Gerar extracto",
+    "totalInvoiced": "Total facturado",
+    "totalPaid": "Total pago",
+    "outstandingBalance": "Saldo em dívida",
+    "includesOpening": "Inclui saldo anterior de {amount}",
+    "clientsWithBalance": "Clientes com saldo",
+    "withOverdue": {
+      "one": "{count} com facturas vencidas",
+      "other": "{count} com facturas vencidas"
+    },
+    "listTitle": "Extracto dos clientes",
+    "listPeriod": "Período: {start} a {end} · clique num cliente para ver os movimentos",
+    "pdfPrint": "PDF / Imprimir",
+    "searchLabel": "Pesquisar por nome, ID ou NUIT",
+    "filterWithBalance": "Com saldo em dívida",
+    "filterOwing": "Em dívida (não vencido)",
+    "hideInactive": "Ocultar clientes sem movimentos",
+    "id": "ID",
+    "totalRow": "TOTAL",
+    "clientCount": {
+      "one": "{count} cliente(s)",
+      "other": "{count} cliente(s)"
+    },
+    "openingBalance": "Saldo anterior",
+    "balance": "Saldo",
+    "viewStatementOf": "Ver extracto de {name}",
+    "noMatch": "Nenhum cliente corresponde aos filtros.",
+    "status": {
+      "pago": "Pago",
+      "em_divida": "Em dívida",
+      "vencido": "Vencido"
+    },
+    "paymentMethods": {
+      "dinheiro": "Dinheiro",
+      "transferencia": "Transferência",
+      "cheque": "Cheque",
+      "carteira_movel": "Carteira móvel",
+      "outro": "Outro"
+    },
+    "movement": {
+      "payment": "Pagamento da {invoice}",
+      "paymentWithMethod": "Pagamento da {invoice} · {method}",
+      "sale": "Venda",
+      "itemAndMore": "{item} e mais {count} item(s)"
+    },
+    "messages": {
+      "invalidRange": "A data inicial não pode ser posterior à data final.",
+      "generateError": "Não foi possível gerar o extracto.",
+      "clientGenerateError": "Não foi possível gerar o extracto deste cliente."
+    },
+    "excel": {
+      "openingBalance": "Saldo anterior (MZN)",
+      "totalInvoiced": "Total facturado (MZN)",
+      "totalPaid": "Total pago (MZN)",
+      "balance": "Saldo (MZN)",
+      "invoiced": "Facturado (MZN)",
+      "paid": "Pago (MZN)",
+      "client": "Cliente: {name}",
+      "company": "Empresa: {name}",
+      "period": "Período: {start} a {end}",
+      "notes": "Observações: {notes}",
+      "summarySheet": "Extracto geral",
+      "clientSheet": "Extracto"
+    },
+    "detail": {
+      "subtitle": "Extracto de movimentos de um cliente",
+      "back": "Voltar ao extracto geral",
+      "phone": "Tel.: {phone}",
+      "before": "Antes de {date}",
+      "asOf": "Em {date}",
+      "movementsTitle": "Movimentos do período",
+      "range": "{start} a {end}",
+      "movementType": "Tipo de movimento",
+      "balanceHidden": "A coluna de saldo fica oculta quando se mostram só facturas ou só recibos. O saldo em dívida conta sempre com todos os movimentos.",
+      "document": "Documento",
+      "invoiced": "Facturado",
+      "paid": "Pago",
+      "viewReceipt": "Ver recibo {document}",
+      "viewInvoice": "Ver factura {document}",
+      "noMovements": "Sem movimentos no período."
+    }
+  },
+  "preview": {
+    "clientTitle": "Extracto do Cliente",
+    "summaryTitle": "Extracto dos Clientes",
+    "generatingPdf": "A gerar PDF...",
+    "downloadPdf": "Descarregar PDF",
+    "sendTo": "Enviar para {email}",
+    "noEmailTooltip": "O cliente não tem e-mail registado",
+    "sendEmail": "Enviar por e-mail",
+    "pdfError": "Não foi possível gerar o extracto em PDF.",
+    "printBlocked": "Não foi possível abrir a janela de impressão. Verifique se o navegador está a bloquear janelas.",
+    "printError": "Não foi possível preparar a impressão.",
+    "noEmail": "Este cliente não tem endereço de e-mail.",
+    "sendRejected": "O envio foi recusado.",
+    "sent": "Extracto enviado para {email}.",
+    "sendError": "Não foi possível enviar o extracto."
+  }
+}

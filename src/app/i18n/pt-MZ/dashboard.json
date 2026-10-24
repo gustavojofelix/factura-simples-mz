@@ -1,1 +1,81 @@
-{}
+{
+  "header": {
+    "overview": "Visão geral",
+    "title": "{greeting}, veja o seu negócio",
+    "summaryBefore": "Resumo de",
+    "summaryAfter": "· tudo o que precisa num só lugar."
+  },
+  "greeting": {
+    "morning": "Bom dia",
+    "afternoon": "Boa tarde",
+    "evening": "Boa noite"
+  },
+  "context": {
+    "currentSession": "Sessão actual",
+    "company": "Empresa",
+    "currentQuarter": "Trimestre actual",
+    "dataUpdated": "Dados actualizados",
+    "userFallback": "Utilizador",
+    "syncing": "A sincronizar",
+    "todayAt": "Hoje, {time}"
+  },
+  "roles": {
+    "loading": "A carregar…",
+    "owner": "Administrador",
+    "manager": "Gestor",
+    "seller": "Vendedor"
+  },
+  "kpi": {
+    "quarterSales": "Vendas do Trimestre",
+    "positiveTrend": "Tendência positiva",
+    "inQuarter": "no trimestre",
+    "ispcToPay": "ISPC a Pagar",
+    "quarterEstimate": "Estimativa do trimestre",
+    "pendingInvoices": "Facturas Pendentes",
+    "allUpToDate": "Tudo em dia",
+    "activeClients": "Clientes Activos",
+    "clientsWithActivity": "Clientes com actividade"
+  },
+  "quickActions": {
+    "newInvoice": "Nova Factura",
+    "newInvoiceHint": "Emitir uma nova factura",
+    "viewInvoices": "Ver Facturas",
+    "viewInvoicesHint": "Gerir todas as facturas",
+    "manageClients": "Gerir Clientes",
+    "manageClientsHint": "Adicionar e editar clientes",
+    "viewProducts": "Ver Produtos",
+    "viewProductsHint": "Catálogo de produtos"
+  },
+  "viewAll": "Ver todas",
+  "columns": {
+    "number": "Nº",
+    "client": "Cliente",
+    "user": "Utilizador",
+    "when": "Quando",
+    "action": "Acção"
+  },
+  "recentInvoices": {
+    "title": "Facturas Recentes",
+    "empty": "Ainda não tem facturas",
+    "showing": {
+      "one": "A mostrar {count} factura(s) recentes",
+      "other": "A mostrar {count} factura(s) recentes"
+    },
+    "openAll": "Abrir gestão de facturas →"
+  },
+  "recentActivities": {
+    "title": "Actividades Recentes",
+    "empty": "Ainda não há actividades registadas",
+    "showing": {
+      "one": "A mostrar {count} actividade(s) recentes",
+      "other": "A mostrar {count} actividade(s) recentes"
+    },
+    "openAll": "Abrir registo de auditoria →"
+  },
+  "relativeTime": {
+    "justNow": "Agora mesmo",
+    "minutesAgo": "há {minutes} min",
+    "hoursAgo": "há {hours} h",
+    "yesterdayAt": "Ontem, {time}"
+  }
+}

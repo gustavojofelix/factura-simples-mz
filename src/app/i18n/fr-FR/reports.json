@@ -1,1 +1,211 @@
-{}
+{
+  "page": {
+    "title": "Rapports",
+    "subtitle": "Analyse détaillée des ventes et de la facturation"
+  },
+  "nav": {
+    "sales": "Ventes",
+    "clientStatements": "Relevés clients",
+    "saft": "Fichier SAF-T"
+  },
+  "filters": {
+    "startDate": "Date de début",
+    "endDate": "Date de fin",
+    "quarter": "Trimestre",
+    "allQuarters": "Tous les trimestres",
+    "q1": "1er trimestre (janv.–mars)",
+    "q2": "2e trimestre (avr.–juin)",
+    "q3": "3e trimestre (juil.–sept.)",
+    "q4": "4e trimestre (oct.–déc.)",
+    "year": "Année",
+    "client": "Client",
+    "allClients": "Tous les clients",
+    "generate": "Générer le rapport"
+  },
+  "sales": {
+    "totalSales": "Total des ventes",
+    "totalInvoices": "Total des factures",
+    "paidAmount": "Montant encaissé",
+    "pendingAmount": "Montant en attente",
+    "byStatus": "Répartition par statut",
+    "statusPending": "En attente",
+    "statusPaid": "Payées",
+    "statusOverdue": "En retard",
+    "statusCancelled": "Annulées",
+    "topClients": "Meilleurs clients",
+    "client": "Client",
+    "invoices": "Factures",
+    "dailySales": "Ventes quotidiennes",
+    "exportExcel": "Exporter vers Excel",
+    "exportCsv": "Exporter en CSV",
+    "unknownClient": "Client inconnu"
+  },
+  "export": {
+    "salesReport": "Rapport des ventes",
+    "summary": "Résumé",
+    "totalInvoices": "Total des factures",
+    "noData": "Aucune donnée trouvée pour la période sélectionnée.",
+    "invoiceNumber": "N° de facture",
+    "invoiceTotal": "Total de la facture",
+    "salesTotal": "TOTAL DES VENTES",
+    "salesSheet": "Ventes",
+    "typeProduct": "Produit",
+    "typeService": "Service",
+    "defaultSheet": "Données"
+  },
+  "saft": {
+    "subtitle": "Fichier SAF-T de {company}",
+    "noticeTitle": "Fichier informatif — non certifié",
+    "noticeText": "Le fichier suit la structure SAF-T (PT 1.04_01) adaptée au Mozambique. Les documents n'ont pas de signature numérique (Hash = 0) et le logiciel n'est pas encore certifié par l'Autorité fiscale : le fichier sert donc à la consultation et à l'audit interne, et non à une soumission officielle. Les factures du régime ISPC sont exportées comme exonérées de TVA.",
+    "lockedBefore": "Le fichier SAF-T nécessite la fonctionnalité",
+    "lockedAfter": ", qui n'est pas incluse dans votre formule.",
+    "period": "Période",
+    "monthly": "Mensuel",
+    "quarterly": "Trimestriel",
+    "annual": "Annuel",
+    "month": "Mois",
+    "fiscalYear": "Exercice fiscal",
+    "periodLabel": "Période :",
+    "periodTo": "au",
+    "generating": "Génération...",
+    "generate": "Générer le SAF-T",
+    "invoices": "Factures",
+    "annulledInvoices": {
+      "one": "{count} annulée",
+      "other": "{count} annulées"
+    },
+    "invoicedTotal": "Total facturé",
+    "excludingCancelled": "hors factures annulées",
+    "receipts": "Reçus",
+    "annulledReceipts": {
+      "one": "{count} annulé",
+      "other": "{count} annulés"
+    },
+    "receivedTotal": "Total encaissé",
+    "customersAndProducts": "{customers} client(s) · {products} article(s)",
+    "warnings": "Avertissements ({count})",
+    "downloadCsv": "Télécharger CSV (.zip)",
+    "downloadExcel": "Télécharger Excel",
+    "downloadXml": "Télécharger XML",
+    "downloadHint": "Excel et CSV contiennent les mêmes données que le XML, une feuille/un fichier par section (Cabecalho, Totais, Clientes, Artigos, Impostos, Facturas, Linhas, Recibos — en-tête, totaux, clients, articles, taxes, factures, lignes, reçus). Le CSV utilise « ; » comme séparateur et le point comme séparateur décimal.",
+    "generateError": "Impossible de générer le fichier SAF-T.",
+    "downloadError": "Impossible de télécharger le fichier SAF-T.",
+    "errors": {
+      "singleFiscalYear": "La période du SAF-T doit être comprise dans un seul exercice fiscal.",
+      "notInPlan": "Le fichier SAF-T n'est pas disponible dans votre formule (nécessite Rapports)."
+    }
+  },
+  "statements": {
+    "subtitle": "Relevés de compte des clients de {company}",
+    "startDate": "Date de début",
+    "endDate": "Date de fin",
+    "customPeriod": "Période personnalisée",
+    "clients": "Clients",
+    "allClients": "Tous les clients",
+    "selectedClients": {
+      "one": "{count} client sélectionné",
+      "other": "{count} clients sélectionnés"
+    },
+    "clearSelection": "Effacer la sélection",
+    "clientsHint": "Laissez vide pour inclure tous les clients",
+    "notes": "Observations (facultatif)",
+    "notesPlaceholder": "Apparaît sur le relevé PDF",
+    "generate": "Générer le relevé",
+    "totalInvoiced": "Total facturé",
+    "totalPaid": "Total payé",
+    "outstandingBalance": "Solde dû",
+    "includesOpening": "Inclut un solde antérieur de {amount}",
+    "clientsWithBalance": "Clients avec solde",
+    "withOverdue": {
+      "one": "{count} avec des factures en retard",
+      "other": "{count} avec des factures en retard"
+    },
+    "listTitle": "Relevé des clients",
+    "listPeriod": "Période : du {start} au {end} · cliquez sur un client pour voir ses mouvements",
+    "pdfPrint": "PDF / Imprimer",
+    "searchLabel": "Rechercher par nom, ID ou NUIT",
+    "filterWithBalance": "Avec solde dû",
+    "filterOwing": "Dû (non échu)",
+    "hideInactive": "Masquer les clients sans mouvement",
+    "id": "ID",
+    "totalRow": "TOTAL",
+    "clientCount": {
+      "one": "{count} client",
+      "other": "{count} clients"
+    },
+    "openingBalance": "Solde antérieur",
+    "balance": "Solde",
+    "viewStatementOf": "Voir le relevé de {name}",
+    "noMatch": "Aucun client ne correspond aux filtres.",
+    "status": {
+      "pago": "Payé",
+      "em_divida": "Dû",
+      "vencido": "En retard"
+    },
+    "paymentMethods": {
+      "dinheiro": "Espèces",
+      "transferencia": "Virement",
+      "cheque": "Chèque",
+      "carteira_movel": "Portefeuille mobile",
+      "outro": "Autre"
+    },
+    "movement": {
+      "payment": "Paiement de la {invoice}",
+      "paymentWithMethod": "Paiement de la {invoice} · {method}",
+      "sale": "Vente",
+      "itemAndMore": "{item} et {count} autre(s) article(s)"
+    },
+    "messages": {
+      "invalidRange": "La date de début ne peut pas être postérieure à la date de fin.",
+      "generateError": "Impossible de générer le relevé.",
+      "clientGenerateError": "Impossible de générer le relevé de ce client."
+    },
+    "excel": {
+      "openingBalance": "Solde antérieur (MZN)",
+      "totalInvoiced": "Total facturé (MZN)",
+      "totalPaid": "Total payé (MZN)",
+      "balance": "Solde (MZN)",
+      "invoiced": "Facturé (MZN)",
+      "paid": "Payé (MZN)",
+      "client": "Client : {name}",
+      "company": "Entreprise : {name}",
+      "period": "Période : du {start} au {end}",
+      "notes": "Observations : {notes}",
+      "summarySheet": "Relevé général",
+      "clientSheet": "Relevé"
+    },
+    "detail": {
+      "subtitle": "Relevé de compte d'un client",
+      "back": "Retour au relevé général",
+      "phone": "Tél. : {phone}",
+      "before": "Avant le {date}",
+      "asOf": "Au {date}",
+      "movementsTitle": "Mouvements de la période",
+      "range": "du {start} au {end}",
+      "movementType": "Type de mouvement",
+      "balanceHidden": "La colonne du solde est masquée lorsque seules les factures ou seuls les reçus sont affichés. Le solde dû tient toujours compte de tous les mouvements.",
+      "document": "Document",
+      "invoiced": "Facturé",
+      "paid": "Payé",
+      "viewReceipt": "Voir le reçu {document}",
+      "viewInvoice": "Voir la facture {document}",
+      "noMovements": "Aucun mouvement sur la période."
+    }
+  },
+  "preview": {
+    "clientTitle": "Relevé du client",
+    "summaryTitle": "Relevé des clients",
+    "generatingPdf": "Génération du PDF...",
+    "downloadPdf": "Télécharger le PDF",
+    "sendTo": "Envoyer à {email}",
+    "noEmailTooltip": "Le client n'a pas d'e-mail enregistré",
+    "sendEmail": "Envoyer par e-mail",
+    "pdfError": "Impossible de générer le relevé en PDF.",
+    "printBlocked": "Impossible d'ouvrir la fenêtre d'impression. Vérifiez si votre navigateur bloque les fenêtres contextuelles.",
+    "printError": "Impossible de préparer l'impression.",
+    "noEmail": "Ce client n'a pas d'adresse e-mail.",
+    "sendRejected": "L'envoi a été refusé.",
+    "sent": "Relevé envoyé à {email}.",
+    "sendError": "Impossible d'envoyer le relevé."
+  }
+}

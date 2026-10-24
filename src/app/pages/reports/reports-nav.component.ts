@@ -2,12 +2,13 @@ import { Component } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatIconModule } from '@angular/material/icon';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 /** Separadores de navegação entre os relatórios. */
 @Component({
   selector: 'app-reports-nav',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, MatTabsModule, MatIconModule],
+  imports: [RouterLink, RouterLinkActive, MatTabsModule, MatIconModule, TranslatePipe],
   template: `
     <nav mat-tab-nav-bar [tabPanel]="tabPanel" class="mb-6">
       @for (link of links; track link.route) {
@@ -20,7 +21,7 @@ import { MatIconModule } from '@angular/material/icon';
           [active]="rla.isActive"
         >
           <mat-icon class="mr-2 !text-[20px]">{{ link.icon }}</mat-icon>
-          {{ link.label }}
+          {{ link.label | t }}
         </a>
       }
     </nav>
@@ -29,8 +30,8 @@ import { MatIconModule } from '@angular/material/icon';
 })
 export class ReportsNavComponent {
   links = [
-    { label: 'Vendas', icon: 'assessment', route: '/relatorios', exact: true },
-    { label: 'Extracto de clientes', icon: 'account_balance_wallet', route: '/relatorios/extractos', exact: false },
-    { label: 'Ficheiro SAF-T', icon: 'description', route: '/relatorios/saft', exact: false }
+    { label: 'reports.nav.sales', icon: 'assessment', route: '/relatorios', exact: true },
+    { label: 'reports.nav.clientStatements', icon: 'account_balance_wallet', route: '/relatorios/extractos', exact: false },
+    { label: 'reports.nav.saft', icon: 'description', route: '/relatorios/saft', exact: false }
   ];
 }

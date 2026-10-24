@@ -1,1 +1,106 @@
-{}
+{
+  "page": {
+    "title": "Gestion des impôts (ISPC)",
+    "subtitle": "Calculez, déclarez et gérez vos impôts sur la vente de produits ou la prestation de services"
+  },
+  "summary": {
+    "yearToDate": "ISPC cumulé (année)",
+    "totalPaid": "Total payé",
+    "overdue": "En retard",
+    "pendingDeclarations": "Déclarations en attente"
+  },
+  "reminders": {
+    "title": "Obligations fiscales",
+    "testTooltip": "Envoie à votre adresse e-mail un exemple de rappel du Formulaire 30 (Modelo 30), pour vérifier que les e-mails arrivent bien.",
+    "sending": "Envoi...",
+    "sendTest": "M'envoyer un rappel de test",
+    "empty": "Aucun rappel pour le moment. Vous recevrez un e-mail à la fin de chaque trimestre, 15, 7 et 1 jour avant l'échéance, ainsi que le jour de l'échéance.",
+    "meta": "Échéance : {due} · Émis le {created}",
+    "emailed": "Envoyé par e-mail",
+    "notEmailed": "Non envoyé par e-mail",
+    "testSent": "Rappel de test envoyé à votre adresse e-mail.",
+    "testError": "Impossible d'envoyer le rappel de test."
+  },
+  "tabs": {
+    "calculator": "Calculatrice",
+    "declarations": "Déclarations"
+  },
+  "quarters": {
+    "q1": "1er trimestre (janv.-mars)",
+    "q2": "2e trimestre (avr.-juin)",
+    "q3": "3e trimestre (juil.-sept.)",
+    "q4": "4e trimestre (oct.-déc.)"
+  },
+  "periodName": "T{period}",
+  "calculator": {
+    "title": "Calculer l'ISPC pour une période",
+    "year": "Année",
+    "quarter": "Trimestre",
+    "calculating": "Calcul en cours...",
+    "calculate": "Calculer",
+    "result": "Résultat du calcul",
+    "period": "Période",
+    "periodOfYear": "{period} {year}",
+    "dates": "Dates",
+    "totalSales": "Total des ventes",
+    "invoiceCount": "Nombre de factures",
+    "totalTaxableBase": "Base imposable totale",
+    "averageRate": "Taux moyen d'ISPC",
+    "baseSplit": "Base imposable ({rate} %)",
+    "excessSplit": "Dépassement du plafond ISPC",
+    "tax": "Impôt",
+    "totalPayable": "Total ISPC à payer",
+    "createDeclaration": "Créer la déclaration"
+  },
+  "declarations": {
+    "empty": "Aucune déclaration trouvée",
+    "emptyHint": "Utilisez la calculatrice pour créer votre première déclaration",
+    "paid": "Payé : {amount}",
+    "pending": "En attente : {amount}",
+    "late": "En retard",
+    "dueDate": "Échéance",
+    "generateModel30": "Générer le Formulaire 30 (Modelo 30)",
+    "generatingExcel": "Génération de l'Excel...",
+    "exportExcel": "Exporter le Formulaire 30 (Excel)",
+    "markSubmitted": "Marquer comme soumise",
+    "recordPayment": "Enregistrer un paiement",
+    "excelError": "Impossible de générer le fichier Excel. Veuillez réessayer."
+  },
+  "status": {
+    "rascunho": "Brouillon",
+    "pendente": "En attente",
+    "submetida": "Soumise",
+    "paga": "Payée",
+    "atrasada": "En retard"
+  },
+  "paymentDialog": {
+    "title": "Enregistrer un paiement d'ISPC",
+    "declaration": "Déclaration",
+    "totalAmount": "Montant total",
+    "amountPaid": "Montant payé",
+    "paymentDate": "Date de paiement",
+    "paymentMethod": "Mode de paiement",
+    "methods": {
+      "transferencia": "Virement bancaire",
+      "cheque": "Chèque",
+      "dinheiro": "Espèces",
+      "carteira_movel": "Portefeuille mobile",
+      "outro": "Autre"
+    },
+    "reference": "Référence",
+    "referencePlaceholder": "Numéro de référence du paiement",
+    "receiptUrl": "URL du justificatif",
+    "receiptUrlHint": "Lien vers le justificatif de paiement",
+    "notes": "Notes",
+    "notesPlaceholder": "Observations supplémentaires"
+  },
+  "model30": {
+    "title": "Formulaire 30 (Modelo 30) — Déclaration périodique ISPC",
+    "periodLine": "T{period} {year}",
+    "generatingExcel": "Génération de l'Excel...",
+    "downloadExcel": "Télécharger l'Excel",
+    "generatingPdf": "Génération du PDF...",
+    "downloadPdf": "Télécharger le PDF",
+    "pdfError": "Impossible de générer le PDF. Veuillez réessayer."
+  }
+}

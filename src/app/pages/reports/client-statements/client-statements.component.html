@@ -1,7 +1,7 @@
 <div class="p-4 sm:p-6 max-w-7xl mx-auto">
   <div class="mb-4">
-    <h1 class="text-3xl font-bold text-gray-900 mb-2">Relatórios</h1>
-    <p class="text-gray-600">Extracto de movimentos dos clientes de {{ companyService.activeCompany()?.name }}</p>
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ 'reports.page.title' | t }}</h1>
+    <p class="text-gray-600">{{ 'reports.statements.subtitle' | t: { company: companyService.activeCompany()?.name } }}</p>
   </div>
 
   <app-reports-nav></app-reports-nav>
@@ -12,45 +12,45 @@
       <form [formGroup]="filterForm" (ngSubmit)="generate()">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <mat-form-field appearance="outline">
-            <mat-label>Data inicial</mat-label>
+            <mat-label>{{ 'reports.statements.startDate' | t }}</mat-label>
             <input matInput [matDatepicker]="startPicker" formControlName="startDate" (dateChange)="onDateChange()">
             <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
             <mat-datepicker #startPicker></mat-datepicker>
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Data final</mat-label>
+            <mat-label>{{ 'reports.statements.endDate' | t }}</mat-label>
             <input matInput [matDatepicker]="endPicker" formControlName="endDate" (dateChange)="onDateChange()">
             <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
             <mat-datepicker #endPicker></mat-datepicker>
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Trimestre</mat-label>
+            <mat-label>{{ 'reports.filters.quarter' | t }}</mat-label>
             <mat-select formControlName="quarter" (selectionChange)="onQuarterChange()">
-              <mat-option value="none">Período personalizado</mat-option>
-              <mat-option value="1">1º Trimestre (Jan–Mar)</mat-option>
-              <mat-option value="2">2º Trimestre (Abr–Jun)</mat-option>
-              <mat-option value="3">3º Trimestre (Jul–Set)</mat-option>
-              <mat-option value="4">4º Trimestre (Out–Dez)</mat-option>
+              <mat-option value="none">{{ 'reports.statements.customPeriod' | t }}</mat-option>
+              <mat-option value="1">{{ 'reports.filters.q1' | t }}</mat-option>
+              <mat-option value="2">{{ 'reports.filters.q2' | t }}</mat-option>
+              <mat-option value="3">{{ 'reports.filters.q3' | t }}</mat-option>
+              <mat-option value="4">{{ 'reports.filters.q4' | t }}</mat-option>
             </mat-select>
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Ano</mat-label>
+            <mat-label>{{ 'reports.filters.year' | t }}</mat-label>
             <input matInput type="number" min="2000" formControlName="year" (change)="onQuarterChange()">
           </mat-form-field>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <mat-form-field appearance="outline">
-            <mat-label>Clientes</mat-label>
-            <mat-select formControlName="clientIds" multiple placeholder="Todos os clientes">
+            <mat-label>{{ 'reports.statements.clients' | t }}</mat-label>
+            <mat-select formControlName="clientIds" multiple [placeholder]="'reports.statements.allClients' | t">
               <mat-select-trigger>
                 @if ((filterForm.value.clientIds || []).length === 0) {
-                  Todos os clientes
+                  {{ 'reports.statements.allClients' | t }}
                 } @else {
-                  {{ (filterForm.value.clientIds || []).length }} cliente(s) seleccionado(s)
+                  {{ 'reports.statements.selectedClients' | t: { count: (filterForm.value.clientIds || []).length } }}
                 }
               </mat-select-trigger>
               @for (client of clientService.clients(); track client.id) {
@@ -61,17 +61,17 @@
             </mat-select>
             @if ((filterForm.value.clientIds || []).length > 0) {
               <button mat-icon-button matSuffix type="button" (click)="clearClientSelection(); $event.stopPropagation()"
-                aria-label="Limpar selecção">
+                [attr.aria-label]="'reports.statements.clearSelection' | t">
                 <mat-icon>close</mat-icon>
               </button>
             }
-            <mat-hint>Deixe vazio para incluir todos os clientes</mat-hint>
+            <mat-hint>{{ 'reports.statements.clientsHint' | t }}</mat-hint>
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Observações (opcional)</mat-label>
+            <mat-label>{{ 'reports.statements.notes' | t }}</mat-label>
             <textarea matInput rows="2" maxlength="500" [ngModel]="notes()" (ngModelChange)="notes.set($event)"
-              [ngModelOptions]="{ standalone: true }" placeholder="Aparece no extracto em PDF"></textarea>
+              [ngModelOptions]="{ standalone: true }" [placeholder]="'reports.statements.notesPlaceholder' | t"></textarea>
             <mat-hint align="end">{{ notes().length }}/500</mat-hint>
           </mat-form-field>
         </div>
@@ -80,7 +80,7 @@
           <button mat-raised-button type="submit" class="!bg-ispc-orange !text-white"
             [disabled]="isLoading() || filterForm.invalid">
             <mat-icon>account_balance_wallet</mat-icon>
-            Gerar extracto
+            {{ 'reports.statements.generate' | t }}
           </button>
         </div>
       </form>
@@ -96,28 +96,28 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <mat-card>
         <mat-card-content class="!pt-6">
-          <p class="text-sm text-gray-600 mb-1">Total facturado</p>
+          <p class="text-sm text-gray-600 mb-1">{{ 'reports.statements.totalInvoiced' | t }}</p>
           <h3 class="text-2xl font-bold text-gray-900">{{ formatCurrency(totals().total_invoiced) }}</h3>
         </mat-card-content>
       </mat-card>
       <mat-card>
         <mat-card-content class="!pt-6">
-          <p class="text-sm text-gray-600 mb-1">Total pago</p>
+          <p class="text-sm text-gray-600 mb-1">{{ 'reports.statements.totalPaid' | t }}</p>
           <h3 class="text-2xl font-bold text-green-600">{{ formatCurrency(totals().total_paid) }}</h3>
         </mat-card-content>
       </mat-card>
       <mat-card>
         <mat-card-content class="!pt-6">
-          <p class="text-sm text-gray-600 mb-1">Saldo em dívida</p>
+          <p class="text-sm text-gray-600 mb-1">{{ 'reports.statements.outstandingBalance' | t }}</p>
           <h3 class="text-2xl font-bold text-red-600">{{ formatCurrency(totals().balance) }}</h3>
-          <p class="text-xs text-gray-500 mt-1">Inclui saldo anterior de {{ formatCurrency(totals().opening_balance) }}</p>
+          <p class="text-xs text-gray-500 mt-1">{{ 'reports.statements.includesOpening' | t: { amount: formatCurrency(totals().opening_balance) } }}</p>
         </mat-card-content>
       </mat-card>
       <mat-card>
         <mat-card-content class="!pt-6">
-          <p class="text-sm text-gray-600 mb-1">Clientes com saldo</p>
+          <p class="text-sm text-gray-600 mb-1">{{ 'reports.statements.clientsWithBalance' | t }}</p>
           <h3 class="text-2xl font-bold text-gray-900">{{ debtorCount() }}</h3>
-          <p class="text-xs text-gray-500 mt-1">{{ overdueCount() }} com facturas vencidas</p>
+          <p class="text-xs text-gray-500 mt-1">{{ 'reports.statements.withOverdue' | t: { count: overdueCount() } }}</p>
         </mat-card-content>
       </mat-card>
     </div>
@@ -126,17 +126,17 @@
       <mat-card-content class="!pt-6">
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
           <div>
-            <h2 class="text-lg font-semibold text-gray-900">Extracto dos clientes</h2>
-            <p class="text-sm text-gray-500">Período: {{ formatDate(period()!.start) }} a {{ formatDate(period()!.end) }} · clique num cliente para ver os movimentos</p>
+            <h2 class="text-lg font-semibold text-gray-900">{{ 'reports.statements.listTitle' | t }}</h2>
+            <p class="text-sm text-gray-500">{{ 'reports.statements.listPeriod' | t: { start: formatDate(period()!.start), end: formatDate(period()!.end) } }}</p>
           </div>
           <div class="flex flex-wrap gap-2">
             <button mat-stroked-button (click)="openPreview()" [disabled]="visibleRows().length === 0">
               <mat-icon>picture_as_pdf</mat-icon>
-              PDF / Imprimir
+              {{ 'reports.statements.pdfPrint' | t }}
             </button>
             <button mat-stroked-button (click)="exportExcel()" [disabled]="visibleRows().length === 0">
               <mat-icon>table_view</mat-icon>
-              Exportar Excel
+              {{ 'reports.sales.exportExcel' | t }}
             </button>
           </div>
         </div>
@@ -144,24 +144,24 @@
         <!-- Pesquisa e filtros sobre o resultado -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Pesquisar por nome, ID ou NUIT</mat-label>
+            <mat-label>{{ 'reports.statements.searchLabel' | t }}</mat-label>
             <mat-icon matPrefix class="text-gray-400">search</mat-icon>
             <input matInput [ngModel]="search()" (ngModelChange)="search.set($event)">
           </mat-form-field>
 
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Estado</mat-label>
+            <mat-label>{{ 'common.fields.status' | t }}</mat-label>
             <mat-select [value]="statusFilter()" (selectionChange)="statusFilter.set($event.value)">
-              <mat-option value="all">Todos</mat-option>
-              <mat-option value="com_saldo">Com saldo em dívida</mat-option>
-              <mat-option value="em_divida">Em dívida (não vencido)</mat-option>
-              <mat-option value="vencido">Vencido</mat-option>
-              <mat-option value="pago">Pago</mat-option>
+              <mat-option value="all">{{ 'common.status.all' | t }}</mat-option>
+              <mat-option value="com_saldo">{{ 'reports.statements.filterWithBalance' | t }}</mat-option>
+              <mat-option value="em_divida">{{ 'reports.statements.filterOwing' | t }}</mat-option>
+              <mat-option value="vencido">{{ 'reports.statements.status.vencido' | t }}</mat-option>
+              <mat-option value="pago">{{ 'reports.statements.status.pago' | t }}</mat-option>
             </mat-select>
           </mat-form-field>
 
           <mat-slide-toggle [checked]="hideInactive()" (change)="hideInactive.set($event.checked)">
-            Ocultar clientes sem movimentos
+            {{ 'reports.statements.hideInactive' | t }}
           </mat-slide-toggle>
         </div>
 
@@ -171,43 +171,43 @@
             (matSortChange)="sort.set($event)" class="w-full">
 
             <ng-container matColumnDef="client_code">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ 'reports.statements.id' | t }}</th>
               <td mat-cell *matCellDef="let row" class="whitespace-nowrap">{{ row.client_code || '-' }}</td>
-              <td mat-footer-cell *matFooterCellDef class="font-bold">TOTAL</td>
+              <td mat-footer-cell *matFooterCellDef class="font-bold">{{ 'reports.statements.totalRow' | t }}</td>
             </ng-container>
 
             <ng-container matColumnDef="client_name">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header>Cliente</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ 'reports.sales.client' | t }}</th>
               <td mat-cell *matCellDef="let row" class="font-medium">{{ row.client_name }}</td>
-              <td mat-footer-cell *matFooterCellDef>{{ visibleRows().length }} cliente(s)</td>
+              <td mat-footer-cell *matFooterCellDef>{{ 'reports.statements.clientCount' | t: { count: visibleRows().length } }}</td>
             </ng-container>
 
             <ng-container matColumnDef="opening_balance">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header arrowPosition="before" class="!text-right">Saldo anterior</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header arrowPosition="before" class="!text-right">{{ 'reports.statements.openingBalance' | t }}</th>
               <td mat-cell *matCellDef="let row" class="!text-right whitespace-nowrap">{{ formatCurrency(row.opening_balance) }}</td>
               <td mat-footer-cell *matFooterCellDef class="!text-right font-bold whitespace-nowrap">{{ formatCurrency(totals().opening_balance) }}</td>
             </ng-container>
 
             <ng-container matColumnDef="total_invoiced">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header arrowPosition="before" class="!text-right">Total facturado</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header arrowPosition="before" class="!text-right">{{ 'reports.statements.totalInvoiced' | t }}</th>
               <td mat-cell *matCellDef="let row" class="!text-right whitespace-nowrap">{{ formatCurrency(row.total_invoiced) }}</td>
               <td mat-footer-cell *matFooterCellDef class="!text-right font-bold whitespace-nowrap">{{ formatCurrency(totals().total_invoiced) }}</td>
             </ng-container>
 
             <ng-container matColumnDef="total_paid">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header arrowPosition="before" class="!text-right">Total pago</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header arrowPosition="before" class="!text-right">{{ 'reports.statements.totalPaid' | t }}</th>
               <td mat-cell *matCellDef="let row" class="!text-right whitespace-nowrap text-green-700">{{ formatCurrency(row.total_paid) }}</td>
               <td mat-footer-cell *matFooterCellDef class="!text-right font-bold whitespace-nowrap">{{ formatCurrency(totals().total_paid) }}</td>
             </ng-container>
 
             <ng-container matColumnDef="balance">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header arrowPosition="before" class="!text-right">Saldo</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header arrowPosition="before" class="!text-right">{{ 'reports.statements.balance' | t }}</th>
               <td mat-cell *matCellDef="let row" class="!text-right whitespace-nowrap font-semibold">{{ formatCurrency(row.balance) }}</td>
               <td mat-footer-cell *matFooterCellDef class="!text-right font-bold whitespace-nowrap">{{ formatCurrency(totals().balance) }}</td>
             </ng-container>
 
             <ng-container matColumnDef="status">
-              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <th mat-header-cell *matHeaderCellDef>{{ 'common.fields.status' | t }}</th>
               <td mat-cell *matCellDef="let row">
                 <span class="px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap" [class]="statusClass(row.status)">
                   {{ statementService.getStatusLabel(row.status) }}
@@ -219,12 +219,12 @@
             <tr mat-header-row *matHeaderRowDef="columns"></tr>
             <tr mat-row *matRowDef="let row; columns: columns;" class="hover:bg-gray-50 cursor-pointer"
               (click)="openClient(row)" (keydown.enter)="openClient(row)" tabindex="0"
-              [attr.aria-label]="'Ver extracto de ' + row.client_name"></tr>
+              [attr.aria-label]="'reports.statements.viewStatementOf' | t: { name: row.client_name }"></tr>
             <tr mat-footer-row *matFooterRowDef="columns" class="bg-gray-50"></tr>
 
             <tr class="mat-row" *matNoDataRow>
               <td class="mat-cell p-6 text-center text-gray-500" [attr.colspan]="columns.length">
-                Nenhum cliente corresponde aos filtros.
+                {{ 'reports.statements.noMatch' | t }}
               </td>
             </tr>
           </table>
