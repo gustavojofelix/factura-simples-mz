@@ -1,1 +1,324 @@
-{}
+{
+  "nav": {
+    "ariaLabel": "Main navigation",
+    "homeAriaLabel": "ISPC Fácil, home page",
+    "features": "Features",
+    "about": "About us",
+    "pricing": "Pricing",
+    "faq": "FAQ",
+    "contact": "Contact",
+    "signIn": "Sign in",
+    "signUp": "Create free account",
+    "openMenu": "Open menu"
+  },
+  "hero": {
+    "proofFallback": "Used by businesses in Maputo, Beira, Nampula and across the country",
+    "formTitle": "Access your account",
+    "formSubtitle": "Sign in to your account or create a new one"
+  },
+  "features": {
+    "badge": "Features",
+    "titleStart": "What ISPC Fácil",
+    "titleHighlight": "does for you",
+    "titleEnd": "",
+    "subtitle": "Designed around the ISPC rules and the way business is done in Mozambique."
+  },
+  "about": {
+    "badge": "About us",
+    "titleStart": "We were born to",
+    "titleHighlight": "simplify",
+    "titleEnd": "your business",
+    "lead": "We are a Mozambican team who believe technology should serve every business, whatever its size. We created ISPC Fácil because we know the real challenges of the local market.",
+    "illustration": {
+      "dailySummary": "Daily summary",
+      "amount": "2,480 MZN",
+      "weekGrowth": "+18% on last week",
+      "secureData": "100% secure data"
+    }
+  },
+  "common": {
+    "madeInMozambique": "Made in Mozambique"
+  },
+  "pricing": {
+    "badge": "Pricing",
+    "titleStart": "How much does it",
+    "titleHighlight": "cost",
+    "titleEnd": "?",
+    "subtitle": "Prices in meticais, with no hidden costs. Try it for 14 days before you decide.",
+    "cycle": {
+      "monthly": "Monthly",
+      "monthlySub": "1 Month",
+      "quarterly": "Quarterly",
+      "quarterlySub": "3 Months",
+      "semiannual": "Half-yearly",
+      "semiannualSub": "6 Months",
+      "yearly": "Yearly",
+      "yearlySub": "1 Year"
+    },
+    "period": {
+      "monthly": "month",
+      "quarterly": "3 months",
+      "semiannual": "6 months",
+      "yearly": "year"
+    },
+    "mostPopular": "Most popular",
+    "startWith": "Start with {plan}",
+    "guaranteeFallback": "14-day guarantee. Try it risk-free, no credit card required."
+  },
+  "defaultPlans": {
+    "common": {
+      "unlimitedClients": "Unlimited clients",
+      "ispcCalculation": "Automatic ISPC calculation",
+      "emailSending": "Email sending"
+    },
+    "essential": {
+      "name": "Essential",
+      "description": "Ideal for sole traders and micro-businesses",
+      "price": "2,500",
+      "features": {
+        "invoices": "Up to 100 invoices/month",
+        "companies": "1 company",
+        "support": "Email support"
+      }
+    },
+    "professional": {
+      "name": "Professional",
+      "description": "For fast-growing SMEs",
+      "price": "5,000",
+      "features": {
+        "invoices": "Unlimited invoices",
+        "companies": "Up to 5 companies",
+        "reports": "Advanced reports",
+        "support": "24/7 priority support",
+        "export": "Export to PDF/Excel"
+      }
+    }
+  },
+  "faq": {
+    "badge": "FAQ",
+    "titleStart": "Frequently asked",
+    "titleHighlight": "questions",
+    "titleEnd": "",
+    "subtitle": "The questions we are asked most often."
+  },
+  "contact": {
+    "badge": "Contact",
+    "titleStart": "Get in",
+    "titleHighlight": "touch",
+    "titleEnd": "",
+    "lead": "Our team is here to help. Send us a message and we will reply as soon as possible.",
+    "email": "Email",
+    "phoneWhatsapp": "Phone / WhatsApp",
+    "location": "Location",
+    "form": {
+      "name": "Full name",
+      "namePlaceholder": "E.g.: John Smith",
+      "subject": "Subject",
+      "subjectPlaceholder": "How can we help?",
+      "message": "Message",
+      "messagePlaceholder": "Describe your question or request...",
+      "sending": "Sending...",
+      "send": "Send message"
+    },
+    "success": {
+      "title": "Message sent",
+      "text": "Thank you for getting in touch. Our team will reply shortly.",
+      "sendAnother": "Send another message"
+    },
+    "errors": {
+      "required": "This field is required.",
+      "email": "Enter a valid email address.",
+      "minLength": "At least {min} characters."
+    }
+  },
+  "footer": {
+    "tagline": "Invoicing and ISPC for small Mozambican businesses, without the hassle.",
+    "comingSoon": "{network} coming soon",
+    "product": "Product",
+    "company": "Company",
+    "support": "Support",
+    "legal": "Legal",
+    "terms": "Terms of use",
+    "privacy": "Privacy policy",
+    "cookies": "Cookies",
+    "rights": "All rights reserved."
+  },
+  "legal": {
+    "eyebrow": "Legal & transparency",
+    "closePrivacy": "Close privacy policy",
+    "closeTerms": "Close terms of use",
+    "lastUpdated": "Last updated: {year}",
+    "termsTitle": "Terms of Use",
+    "privacyTitle": "Privacy Policy"
+  },
+  "cookies": {
+    "ariaLabel": "Cookie preferences",
+    "bannerTitle": "We respect your privacy",
+    "bannerText": "We use cookies that are necessary for the site to work and, with your consent, analytics cookies to improve your experience.",
+    "learnMore": "Learn more",
+    "reject": "Reject",
+    "customise": "Customise",
+    "accept": "Accept",
+    "eyebrow": "Privacy",
+    "preferencesTitle": "Customise cookies",
+    "preferencesSubtitle": "Choose which types of cookies you allow on this device.",
+    "closePreferences": "Close cookie preferences",
+    "necessaryTitle": "Necessary cookies",
+    "required": "Required",
+    "necessaryText": "Essential for security, navigation and the basic operation of the platform. They cannot be disabled.",
+    "necessaryAlwaysOn": "Necessary cookies always on",
+    "analyticsTitle": "Analytics cookies",
+    "analyticsText": "They help us understand how the site is used so we can improve performance and your experience.",
+    "toggleAnalytics": "Turn analytics cookies on or off",
+    "viewPrivacy": "Read the privacy policy",
+    "savePreferences": "Save preferences"
+  },
+  "cms": {
+    "hero": {
+      "badge": "Invoicing Platform in Mozambique",
+      "title": "Simple, fast invoicing that complies with ISPC",
+      "highlightWord": "ISPC",
+      "subtitle": "Issue professional invoices in under 60 seconds. Ideal for small and medium-sized businesses, freelancers and service providers.",
+      "primaryCtaText": "Try 14 Days Free",
+      "secondaryCtaText": "See Features",
+      "guaranteeText": "14-day no-obligation trial • No credit card",
+      "proofText": "Hundreds of Mozambican businesses trust us"
+    },
+    "stats": {
+      "activeCompanies": "Active companies",
+      "invoicesIssued": "Invoices issued",
+      "uptime": "Uptime",
+      "issueTime": "To issue an invoice"
+    },
+    "features": {
+      "fastInvoicing": {
+        "title": "Fast invoicing",
+        "description": "Create and send professional invoices in under 60 seconds with a simple, clear workflow."
+      },
+      "ispcCalculation": {
+        "title": "Automatic ISPC calculation",
+        "description": "The system automatically calculates ISPC tax based on current Mozambican categories and rates."
+      },
+      "clientManagement": {
+        "title": "Client management",
+        "description": "Keep your clients organised with smart search and transaction history."
+      },
+      "productCatalogue": {
+        "title": "Product catalogue",
+        "description": "Add products and services once and reuse them on every invoice."
+      },
+      "autoSending": {
+        "title": "Automatic sending",
+        "description": "Issue and email invoices to your clients automatically with a single click."
+      },
+      "multiCompany": {
+        "title": "Multiple companies",
+        "description": "Manage several companies in a single account. Ideal for accountants and people running multiple businesses."
+      }
+    },
+    "values": {
+      "mission": {
+        "title": "Mission",
+        "desc": "To make professional invoicing tools accessible to every Mozambican business."
+      },
+      "vision": {
+        "title": "Vision",
+        "desc": "To be the leading business management platform in the Portuguese-speaking African market."
+      },
+      "values": {
+        "title": "Values",
+        "desc": "Simplicity, trust, innovation and commitment to our clients' success."
+      }
+    },
+    "faqs": {
+      "noInstall": {
+        "question": "Do I need to install any software?",
+        "answer": "No. ISPC Fácil is a 100% web-based platform. All you need is internet access to issue invoices on any device, whether a computer, tablet or smartphone."
+      },
+      "ispcUpToDate": {
+        "question": "Is the ISPC calculation up to date?",
+        "answer": "Yes. We keep ISPC rates and categories up to date in line with current Mozambican regulations."
+      },
+      "freeTrial": {
+        "question": "Can I try it before paying?",
+        "answer": "Absolutely. We offer a 14-day free trial, with no credit card required."
+      },
+      "dataSecurity": {
+        "question": "Is my data secure?",
+        "answer": "Yes. We use end-to-end SSL/TLS encryption, automatic backups and data security best practices."
+      },
+      "cancelAnytime": {
+        "question": "Can I cancel at any time?",
+        "answer": "Yes, with no commitment. You can cancel your subscription at any time, with no additional fees."
+      },
+      "localSupport": {
+        "question": "Is support available in Mozambican Portuguese?",
+        "answer": "Yes. Our support team is Mozambican and available in Mozambican Portuguese by email, chat and WhatsApp."
+      }
+    },
+    "contact": {
+      "address": "Maputo, Mozambique",
+      "workHours": "Monday to Friday, 08:00 - 17:00"
+    },
+    "terms": {
+      "title": "Terms of Use",
+      "subtitle": "The rules for using ISPC Fácil safely and transparently.",
+      "intro": "By creating an account or using ISPC Fácil, you confirm that you have read and accept these terms of use.",
+      "lastUpdatedText": "Last updated: 2026",
+      "sections": {
+        "acceptance": {
+          "title": "1. Acceptance of the terms",
+          "content": "These terms govern access to and use of the ISPC Fácil platform. If you do not agree with any condition, you should not use the service."
+        },
+        "service": {
+          "title": "2. Description of the service",
+          "content": "ISPC Fácil is a tool that supports invoicing, financial management and ISPC calculation for entrepreneurs and businesses in Mozambique."
+        },
+        "userResponsibilities": {
+          "title": "3. User responsibilities",
+          "content": "The user undertakes to provide true and up-to-date information, to protect their credentials and to use the platform in accordance with applicable law."
+        },
+        "liability": {
+          "title": "4. Limitation of liability",
+          "content": "The platform is a support tool. Final responsibility for the accuracy of information, invoices, tax returns and payments lies with the user."
+        },
+        "changes": {
+          "title": "5. Availability and changes",
+          "content": "We may update, improve or change features of the service. We may also update these terms, communicating relevant changes through the platform."
+        },
+        "contact": {
+          "title": "6. Contact",
+          "content": "For questions about these terms or the use of the service, please use the contact channels provided on the platform."
+        }
+      }
+    },
+    "privacy": {
+      "title": "Privacy Policy",
+      "subtitle": "How ISPC Fácil collects, uses and protects your data.",
+      "intro": "Your privacy matters to us. This policy clearly explains what data we collect and the purposes for which we use it.",
+      "lastUpdatedText": "Last updated: 2026",
+      "sections": {
+        "dataCollected": {
+          "title": "1. Data we collect",
+          "content": "We may collect your name, email address, phone number and information about your company when you create an account, use the platform or contact us."
+        },
+        "dataUse": {
+          "title": "2. How we use your data",
+          "content": "We use this information to provide the invoicing services, calculate ISPC, manage your account, provide support and communicate important information about the service."
+        },
+        "protection": {
+          "title": "3. Protection and retention",
+          "content": "We apply technical and organisational measures to protect your data against unauthorised access, alteration or disclosure. We keep data only for as long as necessary to fulfil the purposes described and applicable legal obligations."
+        },
+        "sharing": {
+          "title": "4. Sharing of information",
+          "content": "We do not sell your personal data. We only share it with providers essential to the operation of the platform or when required by law, including by the competent authorities."
+        },
+        "rights": {
+          "title": "5. Your rights",
+          "content": "You may request access to, rectification or deletion of your data, and ask any questions about this policy, through the contact channels provided on the platform."
+        }
+      }
+    }
+  }
+}

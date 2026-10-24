@@ -1,1 +1,324 @@
-{}
+{
+  "nav": {
+    "ariaLabel": "Navigation principale",
+    "homeAriaLabel": "ISPC Fácil, page d'accueil",
+    "features": "Fonctionnalités",
+    "about": "À propos",
+    "pricing": "Tarifs",
+    "faq": "FAQ",
+    "contact": "Contact",
+    "signIn": "Se connecter",
+    "signUp": "Créer un compte gratuit",
+    "openMenu": "Ouvrir le menu"
+  },
+  "hero": {
+    "proofFallback": "Utilisé par des entreprises à Maputo, Beira, Nampula et dans tout le pays",
+    "formTitle": "Accéder au compte",
+    "formSubtitle": "Connectez-vous à votre compte ou créez-en un nouveau"
+  },
+  "features": {
+    "badge": "Fonctionnalités",
+    "titleStart": "Ce que ISPC Fácil",
+    "titleHighlight": "fait pour vous",
+    "titleEnd": "",
+    "subtitle": "Conçu pour les règles de l'ISPC et pour la façon de travailler au Mozambique."
+  },
+  "about": {
+    "badge": "À propos",
+    "titleStart": "Nous sommes nés pour",
+    "titleHighlight": "simplifier",
+    "titleEnd": "votre activité",
+    "lead": "Nous sommes une équipe mozambicaine convaincue que la technologie doit être au service de toutes les entreprises, quelle que soit leur taille. Nous avons créé ISPC Fácil parce que nous connaissons les vrais défis du marché local.",
+    "illustration": {
+      "dailySummary": "Résumé quotidien",
+      "amount": "2 480 MZN",
+      "weekGrowth": "+18 % par rapport à la semaine dernière",
+      "secureData": "Données 100 % sécurisées"
+    }
+  },
+  "common": {
+    "madeInMozambique": "Fait au Mozambique"
+  },
+  "pricing": {
+    "badge": "Tarifs",
+    "titleStart": "Combien ça",
+    "titleHighlight": "coûte",
+    "titleEnd": " ?",
+    "subtitle": "Prix en meticais, sans frais cachés. Essayez pendant 14 jours avant de décider.",
+    "cycle": {
+      "monthly": "Mensuel",
+      "monthlySub": "1 mois",
+      "quarterly": "Trimestriel",
+      "quarterlySub": "3 mois",
+      "semiannual": "Semestriel",
+      "semiannualSub": "6 mois",
+      "yearly": "Annuel",
+      "yearlySub": "1 an"
+    },
+    "period": {
+      "monthly": "mois",
+      "quarterly": "3 mois",
+      "semiannual": "6 mois",
+      "yearly": "an"
+    },
+    "mostPopular": "Le plus populaire",
+    "startWith": "Commencer avec {plan}",
+    "guaranteeFallback": "Garantie de 14 jours. Essayez sans risque, sans carte de crédit."
+  },
+  "defaultPlans": {
+    "common": {
+      "unlimitedClients": "Clients illimités",
+      "ispcCalculation": "Calcul automatique de l'ISPC",
+      "emailSending": "Envoi par e-mail"
+    },
+    "essential": {
+      "name": "Essentielle",
+      "description": "Idéale pour les indépendants et les microentreprises",
+      "price": "2 500",
+      "features": {
+        "invoices": "Jusqu'à 100 factures/mois",
+        "companies": "1 entreprise",
+        "support": "Support par e-mail"
+      }
+    },
+    "professional": {
+      "name": "Professionnelle",
+      "description": "Pour les PME en forte croissance",
+      "price": "5 000",
+      "features": {
+        "invoices": "Factures illimitées",
+        "companies": "Jusqu'à 5 entreprises",
+        "reports": "Rapports avancés",
+        "support": "Support prioritaire 24h/24, 7j/7",
+        "export": "Export PDF/Excel"
+      }
+    }
+  },
+  "faq": {
+    "badge": "FAQ",
+    "titleStart": "Questions",
+    "titleHighlight": "fréquentes",
+    "titleEnd": "",
+    "subtitle": "Les questions que l'on nous pose le plus souvent."
+  },
+  "contact": {
+    "badge": "Contact",
+    "titleStart": "Restons en",
+    "titleHighlight": "contact",
+    "titleEnd": "",
+    "lead": "Notre équipe est à votre disposition. Envoyez-nous un message et nous vous répondrons dans les plus brefs délais.",
+    "email": "E-mail",
+    "phoneWhatsapp": "Téléphone / WhatsApp",
+    "location": "Adresse",
+    "form": {
+      "name": "Nom complet",
+      "namePlaceholder": "Ex. : Jean Dupont",
+      "subject": "Objet",
+      "subjectPlaceholder": "Comment pouvons-nous vous aider ?",
+      "message": "Message",
+      "messagePlaceholder": "Décrivez votre question ou votre demande...",
+      "sending": "Envoi...",
+      "send": "Envoyer le message"
+    },
+    "success": {
+      "title": "Message envoyé",
+      "text": "Merci de nous avoir contactés. Notre équipe vous répondra très bientôt.",
+      "sendAnother": "Envoyer un autre message"
+    },
+    "errors": {
+      "required": "Ce champ est obligatoire.",
+      "email": "Saisissez une adresse e-mail valide.",
+      "minLength": "Au moins {min} caractères."
+    }
+  },
+  "footer": {
+    "tagline": "Facturation et ISPC pour les petites entreprises mozambicaines, sans complications.",
+    "comingSoon": "{network} bientôt disponible",
+    "product": "Produit",
+    "company": "Entreprise",
+    "support": "Support",
+    "legal": "Mentions légales",
+    "terms": "Conditions d'utilisation",
+    "privacy": "Politique de confidentialité",
+    "cookies": "Cookies",
+    "rights": "Tous droits réservés."
+  },
+  "legal": {
+    "eyebrow": "Mentions légales & transparence",
+    "closePrivacy": "Fermer la politique de confidentialité",
+    "closeTerms": "Fermer les conditions d'utilisation",
+    "lastUpdated": "Dernière mise à jour : {year}",
+    "termsTitle": "Conditions d'utilisation",
+    "privacyTitle": "Politique de confidentialité"
+  },
+  "cookies": {
+    "ariaLabel": "Préférences en matière de cookies",
+    "bannerTitle": "Nous respectons votre vie privée",
+    "bannerText": "Nous utilisons des cookies nécessaires au fonctionnement du site et, avec votre accord, des cookies analytiques pour améliorer votre expérience.",
+    "learnMore": "En savoir plus",
+    "reject": "Refuser",
+    "customise": "Personnaliser",
+    "accept": "Accepter",
+    "eyebrow": "Confidentialité",
+    "preferencesTitle": "Personnaliser les cookies",
+    "preferencesSubtitle": "Choisissez les types de cookies que vous autorisez sur cet appareil.",
+    "closePreferences": "Fermer les préférences en matière de cookies",
+    "necessaryTitle": "Cookies nécessaires",
+    "required": "Obligatoires",
+    "necessaryText": "Indispensables à la sécurité, à la navigation et au fonctionnement de base de la plateforme. Ils ne peuvent pas être désactivés.",
+    "necessaryAlwaysOn": "Cookies nécessaires toujours actifs",
+    "analyticsTitle": "Cookies analytiques",
+    "analyticsText": "Ils nous aident à comprendre comment le site est utilisé afin d'améliorer ses performances et votre expérience.",
+    "toggleAnalytics": "Activer ou désactiver les cookies analytiques",
+    "viewPrivacy": "Consulter la politique de confidentialité",
+    "savePreferences": "Enregistrer les préférences"
+  },
+  "cms": {
+    "hero": {
+      "badge": "Plateforme de facturation au Mozambique",
+      "title": "Une facturation simple, rapide et conforme à l'ISPC",
+      "highlightWord": "ISPC",
+      "subtitle": "Émettez des factures professionnelles en moins de 60 secondes. Idéal pour les petites et moyennes entreprises, les indépendants et les prestataires de services.",
+      "primaryCtaText": "Essayer gratuitement pendant 14 jours",
+      "secondaryCtaText": "Voir les fonctionnalités",
+      "guaranteeText": "14 jours d'essai sans engagement • Sans carte de crédit",
+      "proofText": "Des centaines d'entreprises mozambicaines nous font confiance"
+    },
+    "stats": {
+      "activeCompanies": "Entreprises actives",
+      "invoicesIssued": "Factures émises",
+      "uptime": "Disponibilité",
+      "issueTime": "Pour émettre une facture"
+    },
+    "features": {
+      "fastInvoicing": {
+        "title": "Facturation rapide",
+        "description": "Créez et envoyez des factures professionnelles en moins de 60 secondes grâce à un parcours simple et clair."
+      },
+      "ispcCalculation": {
+        "title": "Calcul automatique de l'ISPC",
+        "description": "Le système calcule automatiquement l'impôt ISPC selon les catégories et les taux mozambicains en vigueur."
+      },
+      "clientManagement": {
+        "title": "Gestion des clients",
+        "description": "Gardez vos clients organisés grâce à la recherche intelligente et à l'historique des transactions."
+      },
+      "productCatalogue": {
+        "title": "Catalogue de produits",
+        "description": "Ajoutez vos produits et services une seule fois et réutilisez-les dans toutes vos factures."
+      },
+      "autoSending": {
+        "title": "Envoi automatique",
+        "description": "Émettez et envoyez automatiquement vos factures par e-mail à vos clients en un seul clic."
+      },
+      "multiCompany": {
+        "title": "Plusieurs entreprises",
+        "description": "Gérez plusieurs entreprises dans un seul compte. Idéal pour les comptables et les gestionnaires de plusieurs activités."
+      }
+    },
+    "values": {
+      "mission": {
+        "title": "Mission",
+        "desc": "Démocratiser l'accès aux outils de facturation professionnelle pour toutes les entreprises mozambicaines."
+      },
+      "vision": {
+        "title": "Vision",
+        "desc": "Être la plateforme de référence en gestion d'entreprise sur le marché africain lusophone."
+      },
+      "values": {
+        "title": "Valeurs",
+        "desc": "Simplicité, confiance, innovation et engagement envers la réussite de nos clients."
+      }
+    },
+    "faqs": {
+      "noInstall": {
+        "question": "Dois-je installer un logiciel ?",
+        "answer": "Non. ISPC Fácil est une plateforme 100 % web. Il suffit d'un accès à internet pour émettre des factures sur n'importe quel appareil : ordinateur, tablette ou smartphone."
+      },
+      "ispcUpToDate": {
+        "question": "Le calcul de l'ISPC est-il à jour ?",
+        "answer": "Oui. Nous maintenons les taux et catégories de l'ISPC à jour conformément à la réglementation mozambicaine en vigueur."
+      },
+      "freeTrial": {
+        "question": "Puis-je essayer avant de payer ?",
+        "answer": "Absolument. Nous proposons un essai gratuit de 14 jours, sans carte de crédit."
+      },
+      "dataSecurity": {
+        "question": "Mes données sont-elles en sécurité ?",
+        "answer": "Oui. Nous utilisons un chiffrement SSL/TLS de bout en bout, des sauvegardes automatiques et les bonnes pratiques de sécurité des données."
+      },
+      "cancelAnytime": {
+        "question": "Puis-je résilier à tout moment ?",
+        "answer": "Oui, sans engagement. Vous pouvez résilier votre abonnement à tout moment, sans aucun frais supplémentaire."
+      },
+      "localSupport": {
+        "question": "Le support est-il disponible en portugais du Mozambique ?",
+        "answer": "Oui. Notre équipe de support est mozambicaine et disponible en portugais du Mozambique par e-mail, chat et WhatsApp."
+      }
+    },
+    "contact": {
+      "address": "Maputo, Mozambique",
+      "workHours": "Du lundi au vendredi, 08h00 - 17h00"
+    },
+    "terms": {
+      "title": "Conditions d'utilisation",
+      "subtitle": "Les règles pour utiliser ISPC Fácil de manière sûre et transparente.",
+      "intro": "En créant un compte ou en utilisant ISPC Fácil, vous confirmez avoir lu et accepté les présentes conditions d'utilisation.",
+      "lastUpdatedText": "Dernière mise à jour : 2026",
+      "sections": {
+        "acceptance": {
+          "title": "1. Acceptation des conditions",
+          "content": "Les présentes conditions régissent l'accès à la plateforme ISPC Fácil et son utilisation. Si vous n'acceptez pas l'une de ces conditions, vous ne devez pas utiliser le service."
+        },
+        "service": {
+          "title": "2. Description du service",
+          "content": "ISPC Fácil est un outil d'aide à la facturation, à la gestion financière et au calcul de l'ISPC pour les entrepreneurs et les entreprises au Mozambique."
+        },
+        "userResponsibilities": {
+          "title": "3. Responsabilités de l'utilisateur",
+          "content": "L'utilisateur s'engage à fournir des informations exactes et à jour, à protéger ses identifiants et à utiliser la plateforme conformément à la législation applicable."
+        },
+        "liability": {
+          "title": "4. Limitation de responsabilité",
+          "content": "La plateforme est un outil d'aide. La responsabilité finale de l'exactitude des informations, des factures, des déclarations fiscales et des paiements incombe à l'utilisateur."
+        },
+        "changes": {
+          "title": "5. Disponibilité et modifications",
+          "content": "Nous pouvons mettre à jour, améliorer ou modifier les fonctionnalités du service. Nous pouvons également mettre à jour les présentes conditions, en communiquant les modifications importantes via la plateforme."
+        },
+        "contact": {
+          "title": "6. Contact",
+          "content": "Pour toute question sur les présentes conditions ou sur l'utilisation du service, utilisez les canaux de contact mis à disposition sur la plateforme."
+        }
+      }
+    },
+    "privacy": {
+      "title": "Politique de confidentialité",
+      "subtitle": "Comment ISPC Fácil collecte, utilise et protège vos données.",
+      "intro": "Votre vie privée est importante pour nous. Cette politique explique clairement quelles données nous collectons et à quelles fins nous les utilisons.",
+      "lastUpdatedText": "Dernière mise à jour : 2026",
+      "sections": {
+        "dataCollected": {
+          "title": "1. Données que nous collectons",
+          "content": "Nous pouvons collecter votre nom, votre adresse e-mail, votre numéro de téléphone et des informations sur votre entreprise lorsque vous créez un compte, utilisez la plateforme ou nous contactez."
+        },
+        "dataUse": {
+          "title": "2. Comment nous utilisons vos données",
+          "content": "Nous utilisons ces informations pour fournir les services de facturation, calculer l'ISPC, gérer votre compte, assurer le support et vous communiquer des informations importantes sur le service."
+        },
+        "protection": {
+          "title": "3. Protection et conservation",
+          "content": "Nous appliquons des mesures techniques et organisationnelles pour protéger vos données contre tout accès, modification ou divulgation non autorisés. Nous conservons les données uniquement pendant la durée nécessaire aux finalités décrites et au respect des obligations légales applicables."
+        },
+        "sharing": {
+          "title": "4. Partage des informations",
+          "content": "Nous ne vendons pas vos données personnelles. Nous les partageons uniquement avec des prestataires indispensables au fonctionnement de la plateforme ou lorsque la loi l'exige, y compris à la demande des autorités compétentes."
+        },
+        "rights": {
+          "title": "5. Vos droits",
+          "content": "Vous pouvez demander l'accès, la rectification ou la suppression de vos données, ainsi que poser vos questions sur cette politique, via les canaux de contact mis à disposition sur la plateforme."
+        }
+      }
+    }
+  }
+}

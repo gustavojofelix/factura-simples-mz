@@ -22,6 +22,9 @@ import {
 } from '../../core/validators/account-slug.validator';
 import { slugifyAccount } from '../../core/utils/tenant.util';
 import { environment } from '../../../environments/environment';
+import { t } from '../../core/i18n/i18n';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { LanguageSwitcherComponent } from '../../shared/components/language-switcher/language-switcher.component';
 
 @Component({
   selector: 'app-register',
@@ -37,7 +40,9 @@ import { environment } from '../../../environments/environment';
     MatCheckboxModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
-    MatDialogModule
+    MatDialogModule,
+    TranslatePipe,
+    LanguageSwitcherComponent
   ],
   templateUrl: './register.component.html',
   styleUrls: ['./register.component.css']
@@ -120,7 +125,7 @@ export class RegisterComponent implements OnInit {
     const result = await this.authService.signUp(email, password, fullName, phone, accountSlug);
 
     if (result.success) {
-      this.snackBar.open('Conta criada com sucesso!', 'Fechar', {
+      this.snackBar.open(t('auth.messages.accountCreated'), t('common.actions.close'), {
         duration: 3000,
         panelClass: ['success-snackbar']
       });
@@ -135,7 +140,7 @@ export class RegisterComponent implements OnInit {
       }
     } else {
       this.isLoading.set(false);
-      this.snackBar.open(result.error || 'Erro ao criar conta', 'Fechar', {
+      this.snackBar.open(result.error || t('auth.messages.signUpError'), t('common.actions.close'), {
         duration: 5000,
         panelClass: ['error-snackbar']
       });
@@ -170,20 +175,20 @@ export class RegisterComponent implements OnInit {
     if (field === 'accountSlug') return accountSlugErrorMessage(control);
 
     if (control.hasError('required')) {
-      return 'Este campo é obrigatório';
+      return t('auth.validation.requiredShort');
     }
     if (control.hasError('email')) {
-      return 'Email inválido';
+      return t('auth.validation.emailInvalidShort');
     }
     if (control.hasError('minlength')) {
       const minLength = control.getError('minlength').requiredLength;
-      return `Mínimo de ${minLength} caracteres`;
+      return t('auth.validation.minLength', { min: minLength });
     }
     if (control.hasError('pattern') && field === 'phone') {
-      return 'Formato: +258 XX XXX XXXX';
+      return t('auth.validation.phoneFormat');
     }
     if (field === 'confirmPassword' && this.registerForm.hasError('passwordMismatch')) {
-      return 'As palavras-passe não coincidem';
+      return t('auth.validation.passwordMismatch');
     }
     return '';
   }
@@ -196,7 +201,7 @@ export class RegisterComponent implements OnInit {
       height: '100vh',
       panelClass: 'full-screen-dialog',
       data: {
-        title: this.cmsService.terms().title || 'Termos de Uso',
+        title: this.cmsService.localizedTerms().title || t('landing.legal.termsTitle'),
         content: this.cmsService.getTermsHtml()
       }
     });
@@ -210,7 +215,7 @@ export class RegisterComponent implements OnInit {
       height: '100vh',
       panelClass: 'full-screen-dialog',
       data: {
-        title: this.cmsService.privacy().title || 'Política de Privacidade',
+        title: this.cmsService.localizedPrivacy().title || t('landing.legal.privacyTitle'),
         content: this.cmsService.getPrivacyHtml()
       }
     });

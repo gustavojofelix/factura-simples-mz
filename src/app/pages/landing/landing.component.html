@@ -1,34 +1,38 @@
 <div class="landing-page">
   <header class="landing-header" [class.scrolled]="isScrolled">
-    <nav class="container-xl" aria-label="Navegação principal">
+    <nav class="container-xl" [attr.aria-label]="'landing.nav.ariaLabel' | t">
       <div class="nav-inner">
-        <a routerLink="/" class="nav-logo" aria-label="ISPC Fácil, página inicial">
+        <a routerLink="/" class="nav-logo" [attr.aria-label]="'landing.nav.homeAriaLabel' | t">
           <img src="assets/ispc-facil-logo-wide.png" alt="ISPC Fácil" class="nav-logo-img">
         </a>
 
         <div class="nav-links" id="mobile-nav" [class.open]="mobileMenuOpen">
-          <a href="#funcionalidades" class="nav-link" [class.active]="activeSection === 'funcionalidades'" (click)="scrollToSection('funcionalidades', $event)">Funcionalidades</a>
-          <a href="#sobre-nos" class="nav-link" [class.active]="activeSection === 'sobre-nos'" (click)="scrollToSection('sobre-nos', $event)">Sobre nós</a>
-          <a href="#precos" class="nav-link" [class.active]="activeSection === 'precos'" (click)="scrollToSection('precos', $event)">Preços</a>
-          <a href="#faq" class="nav-link" [class.active]="activeSection === 'faq'" (click)="scrollToSection('faq', $event)">FAQ</a>
-          <a href="#contacto" class="nav-link" [class.active]="activeSection === 'contacto'" (click)="scrollToSection('contacto', $event)">Contacto</a>
+          <a href="#funcionalidades" class="nav-link" [class.active]="activeSection === 'funcionalidades'" (click)="scrollToSection('funcionalidades', $event)">{{ 'landing.nav.features' | t }}</a>
+          <a href="#sobre-nos" class="nav-link" [class.active]="activeSection === 'sobre-nos'" (click)="scrollToSection('sobre-nos', $event)">{{ 'landing.nav.about' | t }}</a>
+          <a href="#precos" class="nav-link" [class.active]="activeSection === 'precos'" (click)="scrollToSection('precos', $event)">{{ 'landing.nav.pricing' | t }}</a>
+          <a href="#faq" class="nav-link" [class.active]="activeSection === 'faq'" (click)="scrollToSection('faq', $event)">{{ 'landing.nav.faq' | t }}</a>
+          <a href="#contacto" class="nav-link" [class.active]="activeSection === 'contacto'" (click)="scrollToSection('contacto', $event)">{{ 'landing.nav.contact' | t }}</a>
           <div class="nav-cta-group">
-            <a routerLink="/entrar" class="btn-outline-nav" (click)="mobileMenuOpen=false">Entrar</a>
-            <a routerLink="/registar" class="btn-primary-nav" (click)="mobileMenuOpen=false">Criar conta grátis</a>
+            <a routerLink="/entrar" class="btn-outline-nav" (click)="mobileMenuOpen=false">{{ 'landing.nav.signIn' | t }}</a>
+            <a routerLink="/registar" class="btn-primary-nav" (click)="mobileMenuOpen=false">{{ 'landing.nav.signUp' | t }}</a>
           </div>
         </div>
 
-        <button
-          type="button"
-          class="hamburger"
-          (click)="mobileMenuOpen=!mobileMenuOpen"
-          [class.active]="mobileMenuOpen"
-          [attr.aria-expanded]="mobileMenuOpen"
-          aria-controls="mobile-nav"
-          aria-label="Abrir menu"
-        >
-          <span></span><span></span><span></span>
-        </button>
+        <div class="nav-actions">
+          <app-language-switcher />
+
+          <button
+            type="button"
+            class="hamburger"
+            (click)="mobileMenuOpen=!mobileMenuOpen"
+            [class.active]="mobileMenuOpen"
+            [attr.aria-expanded]="mobileMenuOpen"
+            aria-controls="mobile-nav"
+            [attr.aria-label]="'landing.nav.openMenu' | t"
+          >
+            <span></span><span></span><span></span>
+          </button>
+        </div>
       </div>
     </nav>
   </header>
@@ -69,7 +73,7 @@
           <i class="fas fa-shield-halved"></i>
           {{ hero.guaranteeText }}
         </p>
-        <p class="hero-proof-line">{{ hero.proofText || 'Usado por negócios em Maputo, Beira, Nampula e no resto do país' }}</p>
+        <p class="hero-proof-line">{{ hero.proofText || ('landing.hero.proofFallback' | t) }}</p>
       </div>
 
       <div
@@ -80,8 +84,8 @@
       >
         <div class="hero-form-card">
           <div class="form-card-header">
-            <h2>Aceder à conta</h2>
-            <p>Entre na sua conta ou crie uma nova</p>
+            <h2>{{ 'landing.hero.formTitle' | t }}</h2>
+            <p>{{ 'landing.hero.formSubtitle' | t }}</p>
           </div>
           <app-login-form></app-login-form>
         </div>
@@ -107,9 +111,9 @@
   <section id="funcionalidades" class="features-section">
     <div class="container-xl">
       <div #revealItem class="section-header reveal-item" [attr.data-reveal-key]="'features-header'" [class.is-visible]="isVisible('features-header')">
-        <div class="section-badge">Funcionalidades</div>
-        <h2 class="section-title">O que o ISPC Fácil <span class="highlight">faz por si</span></h2>
-        <p class="section-subtitle">Pensado para as regras do ISPC e para a forma como se trabalha em Moçambique.</p>
+        <div class="section-badge">{{ 'landing.features.badge' | t }}</div>
+        <h2 class="section-title">{{ 'landing.features.titleStart' | t }} <span class="highlight">{{ 'landing.features.titleHighlight' | t }}</span>{{ 'landing.features.titleEnd' | t }}</h2>
+        <p class="section-subtitle">{{ 'landing.features.subtitle' | t }}</p>
       </div>
       <div class="features-grid">
         <div
@@ -149,9 +153,9 @@
               </div>
               <div class="dashboard-body">
                 <div class="dashboard-kpi">
-                  <span>Resumo diário</span>
-                  <strong>2.480 MZN</strong>
-                  <p>+18% face à semana passada</p>
+                  <span>{{ 'landing.about.illustration.dailySummary' | t }}</span>
+                  <strong>{{ 'landing.about.illustration.amount' | t }}</strong>
+                  <p>{{ 'landing.about.illustration.weekGrowth' | t }}</p>
                 </div>
                 <div class="dashboard-bars" aria-hidden="true">
                   <span style="height: 42%"></span>
@@ -164,11 +168,11 @@
             </div>
             <div class="illus-badge illus-badge-1">
               <i class="fas fa-check-circle"></i>
-              <span>Feito em Moçambique</span>
+              <span>{{ 'landing.common.madeInMozambique' | t }}</span>
             </div>
             <div class="illus-badge illus-badge-2">
               <i class="fas fa-shield-alt"></i>
-              <span>Dados 100% seguros</span>
+              <span>{{ 'landing.about.illustration.secureData' | t }}</span>
             </div>
           </div>
         </div>
@@ -180,11 +184,10 @@
         [attr.data-reveal-key]="'about-content'"
         [class.is-visible]="isVisible('about-content')"
       >
-        <div class="section-badge">Sobre nós</div>
-        <h2 class="section-title">Nascemos para <span class="highlight">simplificar</span> o seu negócio</h2>
+        <div class="section-badge">{{ 'landing.about.badge' | t }}</div>
+        <h2 class="section-title">{{ 'landing.about.titleStart' | t }} <span class="highlight">{{ 'landing.about.titleHighlight' | t }}</span> {{ 'landing.about.titleEnd' | t }}</h2>
         <p class="about-lead">
-          Somos uma equipa moçambicana que acredita que a tecnologia deve estar ao serviço de todos os negócios,
-          independentemente do tamanho. Criámos o ISPC Fácil porque conhecemos os desafios reais do mercado local.
+          {{ 'landing.about.lead' | t }}
         </p>
         <div class="about-values">
           <div
@@ -210,9 +213,9 @@
   <section id="precos" class="pricing-section">
     <div class="container-xl">
       <div #revealItem class="section-header reveal-item" [attr.data-reveal-key]="'pricing-header'" [class.is-visible]="isVisible('pricing-header')">
-        <div class="section-badge">Preços</div>
-        <h2 class="section-title">Quanto <span class="highlight">custa</span></h2>
-        <p class="section-subtitle">Preços em meticais, sem custos escondidos. Experimente 14 dias antes de decidir.</p>
+        <div class="section-badge">{{ 'landing.pricing.badge' | t }}</div>
+        <h2 class="section-title">{{ 'landing.pricing.titleStart' | t }} <span class="highlight">{{ 'landing.pricing.titleHighlight' | t }}</span>{{ 'landing.pricing.titleEnd' | t }}</h2>
+        <p class="section-subtitle">{{ 'landing.pricing.subtitle' | t }}</p>
       </div>
 
       <div class="pricing-cycle-switcher">
@@ -222,7 +225,7 @@
           [class.active]="selectedCycle === 'monthly'" 
           (click)="setBillingCycle('monthly')"
         >
-          Mensal <span class="cycle-sub">1 Mês</span>
+          {{ 'landing.pricing.cycle.monthly' | t }} <span class="cycle-sub">{{ 'landing.pricing.cycle.monthlySub' | t }}</span>
         </button>
         <button 
           type="button" 
@@ -230,7 +233,7 @@
           [class.active]="selectedCycle === 'quarterly'" 
           (click)="setBillingCycle('quarterly')"
         >
-          Trimestral <span class="cycle-sub">3 Meses</span>
+          {{ 'landing.pricing.cycle.quarterly' | t }} <span class="cycle-sub">{{ 'landing.pricing.cycle.quarterlySub' | t }}</span>
         </button>
         <button 
           type="button" 
@@ -238,7 +241,7 @@
           [class.active]="selectedCycle === 'semiannual'" 
           (click)="setBillingCycle('semiannual')"
         >
-          Semestral <span class="cycle-sub">6 Meses</span>
+          {{ 'landing.pricing.cycle.semiannual' | t }} <span class="cycle-sub">{{ 'landing.pricing.cycle.semiannualSub' | t }}</span>
         </button>
         <button 
           type="button" 
@@ -246,7 +249,7 @@
           [class.active]="selectedCycle === 'yearly'" 
           (click)="setBillingCycle('yearly')"
         >
-          Anual <span class="cycle-sub">1 Ano</span>
+          {{ 'landing.pricing.cycle.yearly' | t }} <span class="cycle-sub">{{ 'landing.pricing.cycle.yearlySub' | t }}</span>
         </button>
       </div>
 
@@ -260,7 +263,7 @@
           [class.pricing-featured]="plan.highlighted"
         >
           <div class="pricing-badge" *ngIf="plan.highlighted">
-            <i class="fas fa-crown"></i> Mais popular
+            <i class="fas fa-crown"></i> {{ 'landing.pricing.mostPopular' | t }}
           </div>
           <div class="plan-header">
             <h3 class="plan-name">{{ plan.name }}</h3>
@@ -285,7 +288,7 @@
             [class.plan-cta-primary]="plan.highlighted"
             [class.plan-cta-outline]="!plan.highlighted"
           >
-            Começar com {{ plan.name }}
+            {{ 'landing.pricing.startWith' | t: { plan: plan.name } }}
             <i class="fas fa-arrow-right"></i>
           </a>
         </div>
@@ -293,7 +296,7 @@
 
       <div class="pricing-guarantee">
         <i class="fas fa-shield-check"></i>
-        <p>{{ hero.guaranteeText || 'Garantia de 14 dias. Experimente sem riscos, sem cartão de crédito necessário.' }}</p>
+        <p>{{ hero.guaranteeText || ('landing.pricing.guaranteeFallback' | t) }}</p>
       </div>
     </div>
   </section>
@@ -301,9 +304,9 @@
   <section id="faq" class="faq-section">
     <div class="container-xl">
       <div #revealItem class="section-header reveal-item" [attr.data-reveal-key]="'faq-header'" [class.is-visible]="isVisible('faq-header')">
-        <div class="section-badge">FAQ</div>
-        <h2 class="section-title">Perguntas <span class="highlight">frequentes</span></h2>
-        <p class="section-subtitle">As perguntas que mais nos fazem.</p>
+        <div class="section-badge">{{ 'landing.faq.badge' | t }}</div>
+        <h2 class="section-title">{{ 'landing.faq.titleStart' | t }} <span class="highlight">{{ 'landing.faq.titleHighlight' | t }}</span>{{ 'landing.faq.titleEnd' | t }}</h2>
+        <p class="section-subtitle">{{ 'landing.faq.subtitle' | t }}</p>
       </div>
       <div class="faq-list">
         <div
@@ -343,30 +346,30 @@
         [attr.data-reveal-key]="'contact-info'"
         [class.is-visible]="isVisible('contact-info')"
       >
-        <div class="section-badge">Contacto</div>
-        <h2 class="section-title">Fale <span class="highlight">connosco</span></h2>
+        <div class="section-badge">{{ 'landing.contact.badge' | t }}</div>
+        <h2 class="section-title">{{ 'landing.contact.titleStart' | t }} <span class="highlight">{{ 'landing.contact.titleHighlight' | t }}</span>{{ 'landing.contact.titleEnd' | t }}</h2>
         <p class="contact-lead">
-          A nossa equipa está disponível para o ajudar. Envie-nos uma mensagem e responderemos o mais rápido possível.
+          {{ 'landing.contact.lead' | t }}
         </p>
         <div class="contact-methods">
           <div class="contact-method">
             <div class="method-icon"><i class="fas fa-envelope"></i></div>
             <div>
-              <strong>Email</strong>
+              <strong>{{ 'landing.contact.email' | t }}</strong>
               <span>{{ contact.email }}</span>
             </div>
           </div>
           <div class="contact-method">
             <div class="method-icon"><i class="fas fa-phone"></i></div>
             <div>
-              <strong>Telefone / WhatsApp</strong>
+              <strong>{{ 'landing.contact.phoneWhatsapp' | t }}</strong>
               <span>{{ contact.phone || contact.whatsapp }}</span>
             </div>
           </div>
           <div class="contact-method">
             <div class="method-icon"><i class="fas fa-map-marker-alt"></i></div>
             <div>
-              <strong>Localização</strong>
+              <strong>{{ 'landing.contact.location' | t }}</strong>
               <span>{{ contact.address }}</span>
             </div>
           </div>
@@ -383,14 +386,14 @@
           <form [formGroup]="contactForm" (ngSubmit)="onContactSubmit()" class="contact-form" novalidate>
             <div class="form-row">
               <div class="form-group" [class.has-error]="isFieldInvalid('nome')">
-                <label for="contact-nome">Nome completo *</label>
+                <label for="contact-nome">{{ 'landing.contact.form.name' | t }} *</label>
                 <div class="input-wrap">
                   <i class="fas fa-user"></i>
                   <input
                     id="contact-nome"
                     type="text"
                     formControlName="nome"
-                    placeholder="Ex: João Silva"
+                    [placeholder]="'landing.contact.form.namePlaceholder' | t"
                     autocomplete="name"
                     [attr.aria-invalid]="isFieldInvalid('nome')"
                   >
@@ -401,14 +404,14 @@
                 </span>
               </div>
               <div class="form-group" [class.has-error]="isFieldInvalid('email')">
-                <label for="contact-email">Email *</label>
+                <label for="contact-email">{{ 'landing.contact.email' | t }} *</label>
                 <div class="input-wrap">
                   <i class="fas fa-envelope"></i>
                   <input
                     id="contact-email"
                     type="email"
                     formControlName="email"
-                    placeholder="seu@email.com"
+                    [placeholder]="'auth.login.emailPlaceholder' | t"
                     autocomplete="email"
                     [attr.aria-invalid]="isFieldInvalid('email')"
                   >
@@ -420,14 +423,14 @@
               </div>
             </div>
             <div class="form-group" [class.has-error]="isFieldInvalid('assunto')">
-              <label for="contact-assunto">Assunto *</label>
+              <label for="contact-assunto">{{ 'landing.contact.form.subject' | t }} *</label>
               <div class="input-wrap">
                 <i class="fas fa-tag"></i>
                 <input
                   id="contact-assunto"
                   type="text"
                   formControlName="assunto"
-                  placeholder="Como podemos ajudar?"
+                  [placeholder]="'landing.contact.form.subjectPlaceholder' | t"
                   autocomplete="off"
                   [attr.aria-invalid]="isFieldInvalid('assunto')"
                 >
@@ -438,14 +441,14 @@
               </span>
             </div>
             <div class="form-group" [class.has-error]="isFieldInvalid('mensagem')">
-              <label for="contact-mensagem">Mensagem *</label>
+              <label for="contact-mensagem">{{ 'landing.contact.form.message' | t }} *</label>
               <div class="input-wrap textarea-wrap">
                 <i class="fas fa-comment-alt"></i>
                 <textarea
                   id="contact-mensagem"
                   formControlName="mensagem"
                   rows="5"
-                  placeholder="Descreva a sua questão ou pedido..."
+                  [placeholder]="'landing.contact.form.messagePlaceholder' | t"
                   [attr.aria-invalid]="isFieldInvalid('mensagem')"
                 ></textarea>
               </div>
@@ -456,9 +459,9 @@
             </div>
             <button type="submit" class="btn-contact-submit" [class.loading]="contactLoading" [disabled]="contactLoading">
               @if (contactLoading) {
-                <i class="fas fa-circle-notch fa-spin"></i> A enviar...
+                <i class="fas fa-circle-notch fa-spin"></i> {{ 'landing.contact.form.sending' | t }}
               } @else {
-                <i class="fas fa-paper-plane"></i> Enviar mensagem
+                <i class="fas fa-paper-plane"></i> {{ 'landing.contact.form.send' | t }}
               }
             </button>
           </form>
@@ -467,10 +470,10 @@
             <div class="success-icon">
               <i class="fas fa-check-circle"></i>
             </div>
-            <h3>Mensagem enviada</h3>
-            <p>Obrigado pelo contacto. A nossa equipa irá responder em breve.</p>
+            <h3>{{ 'landing.contact.success.title' | t }}</h3>
+            <p>{{ 'landing.contact.success.text' | t }}</p>
             <button type="button" class="btn-contact-reset" (click)="resetContact()">
-              <i class="fas fa-redo"></i> Enviar nova mensagem
+              <i class="fas fa-redo"></i> {{ 'landing.contact.success.sendAnother' | t }}
             </button>
           </div>
         }
@@ -491,56 +494,56 @@
             <img src="assets/ispc-facil-logo-wide.png" alt="ISPC Fácil" class="footer-logo-img">
           </div>
           <p class="footer-tagline">
-            Facturação e ISPC para pequenos negócios moçambicanos, sem complicações.
+            {{ 'landing.footer.tagline' | t }}
           </p>
           <div class="footer-social">
-            <button type="button" class="social-btn" aria-label="Facebook em breve">
+            <button type="button" class="social-btn" [attr.aria-label]="'landing.footer.comingSoon' | t: { network: 'Facebook' }">
               <i class="fab fa-facebook-f"></i>
             </button>
-            <button type="button" class="social-btn" aria-label="Instagram em breve">
+            <button type="button" class="social-btn" [attr.aria-label]="'landing.footer.comingSoon' | t: { network: 'Instagram' }">
               <i class="fab fa-instagram"></i>
             </button>
-            <button type="button" class="social-btn" aria-label="LinkedIn em breve">
+            <button type="button" class="social-btn" [attr.aria-label]="'landing.footer.comingSoon' | t: { network: 'LinkedIn' }">
               <i class="fab fa-linkedin-in"></i>
             </button>
-            <button type="button" class="social-btn" aria-label="WhatsApp em breve">
+            <button type="button" class="social-btn" [attr.aria-label]="'landing.footer.comingSoon' | t: { network: 'WhatsApp' }">
               <i class="fab fa-whatsapp"></i>
             </button>
           </div>
         </div>
 
         <div class="footer-col">
-          <h4>Produto</h4>
+          <h4>{{ 'landing.footer.product' | t }}</h4>
           <ul>
-            <li><a href="#funcionalidades" (click)="scrollToSection('funcionalidades', $event)"><i class="fas fa-chevron-right"></i>Funcionalidades</a></li>
-            <li><a href="#precos" (click)="scrollToSection('precos', $event)"><i class="fas fa-chevron-right"></i>Preços</a></li>
-            <li><a href="#faq" (click)="scrollToSection('faq', $event)"><i class="fas fa-chevron-right"></i>FAQ</a></li>
-            <li><a href="#sobre-nos" (click)="scrollToSection('sobre-nos', $event)"><i class="fas fa-chevron-right"></i>Sobre nós</a></li>
+            <li><a href="#funcionalidades" (click)="scrollToSection('funcionalidades', $event)"><i class="fas fa-chevron-right"></i>{{ 'landing.nav.features' | t }}</a></li>
+            <li><a href="#precos" (click)="scrollToSection('precos', $event)"><i class="fas fa-chevron-right"></i>{{ 'landing.nav.pricing' | t }}</a></li>
+            <li><a href="#faq" (click)="scrollToSection('faq', $event)"><i class="fas fa-chevron-right"></i>{{ 'landing.nav.faq' | t }}</a></li>
+            <li><a href="#sobre-nos" (click)="scrollToSection('sobre-nos', $event)"><i class="fas fa-chevron-right"></i>{{ 'landing.nav.about' | t }}</a></li>
           </ul>
         </div>
 
         <div class="footer-col">
-          <h4>Empresa</h4>
+          <h4>{{ 'landing.footer.company' | t }}</h4>
           <ul>
-            <li><a href="#contacto" (click)="scrollToSection('contacto', $event)"><i class="fas fa-chevron-right"></i>Contacto</a></li>
-            <li><a href="#contacto" (click)="scrollToSection('contacto', $event)"><i class="fas fa-chevron-right"></i>Suporte</a></li>
+            <li><a href="#contacto" (click)="scrollToSection('contacto', $event)"><i class="fas fa-chevron-right"></i>{{ 'landing.nav.contact' | t }}</a></li>
+            <li><a href="#contacto" (click)="scrollToSection('contacto', $event)"><i class="fas fa-chevron-right"></i>{{ 'landing.footer.support' | t }}</a></li>
           </ul>
         </div>
 
         <div class="footer-col">
-          <h4>Legal</h4>
+          <h4>{{ 'landing.footer.legal' | t }}</h4>
           <ul>
-            <li><a href="#termos-de-uso" (click)="openTerms($event)"><i class="fas fa-chevron-right"></i>Termos de uso</a></li>
-            <li><a href="#politica-privacidade" (click)="openPrivacy($event)"><i class="fas fa-chevron-right"></i>Política de privacidade</a></li>
-            <li><a href="#cookies" (click)="openCookiePreferences($event)"><i class="fas fa-chevron-right"></i>Cookies</a></li>
+            <li><a href="#termos-de-uso" (click)="openTerms($event)"><i class="fas fa-chevron-right"></i>{{ 'landing.footer.terms' | t }}</a></li>
+            <li><a href="#politica-privacidade" (click)="openPrivacy($event)"><i class="fas fa-chevron-right"></i>{{ 'landing.footer.privacy' | t }}</a></li>
+            <li><a href="#cookies" (click)="openCookiePreferences($event)"><i class="fas fa-chevron-right"></i>{{ 'landing.footer.cookies' | t }}</a></li>
           </ul>
         </div>
       </div>
 
       <div class="footer-bottom">
-        <p class="footer-copy">&copy; {{ currentYear }} ISPC Fácil. Todos os direitos reservados.</p>
+        <p class="footer-copy">&copy; {{ currentYear }} ISPC Fácil. {{ 'landing.footer.rights' | t }}</p>
         <p class="footer-made">
-          Feito em Moçambique
+          {{ 'landing.common.madeInMozambique' | t }}
         </p>
       </div>
     </div>
@@ -555,11 +558,11 @@
     <section class="privacy-modal" role="dialog" aria-modal="true" aria-labelledby="privacy-modal-title">
       <header class="privacy-modal-header">
         <div>
-          <span class="privacy-modal-eyebrow">Legal &amp; transpar&ecirc;ncia</span>
+          <span class="privacy-modal-eyebrow">{{ 'landing.legal.eyebrow' | t }}</span>
           <h2 id="privacy-modal-title">{{ privacyContent.title }}</h2>
           <p>{{ privacyContent.subtitle }}</p>
         </div>
-        <button type="button" class="privacy-modal-close" (click)="closePrivacy()" aria-label="Fechar pol&iacute;tica de privacidade">
+        <button type="button" class="privacy-modal-close" (click)="closePrivacy()" [attr.aria-label]="'landing.legal.closePrivacy' | t">
           <i class="fas fa-times" aria-hidden="true"></i>
         </button>
       </header>
@@ -570,7 +573,7 @@
           <h3>{{ sec.title }}</h3>
           <p class="whitespace-pre-line">{{ sec.content }}</p>
         </ng-container>
-        <p class="privacy-modal-updated">{{ privacyContent.lastUpdatedText || ('Última actualização: ' + currentYear) }}</p>
+        <p class="privacy-modal-updated">{{ privacyContent.lastUpdatedText || ('landing.legal.lastUpdated' | t: { year: currentYear }) }}</p>
       </div>
     </section>
   </div>
@@ -584,11 +587,11 @@
     <section class="privacy-modal" role="dialog" aria-modal="true" aria-labelledby="terms-modal-title">
       <header class="privacy-modal-header">
         <div>
-          <span class="privacy-modal-eyebrow">Legal &amp; transpar&ecirc;ncia</span>
+          <span class="privacy-modal-eyebrow">{{ 'landing.legal.eyebrow' | t }}</span>
           <h2 id="terms-modal-title">{{ termsContent.title }}</h2>
           <p>{{ termsContent.subtitle }}</p>
         </div>
-        <button type="button" class="privacy-modal-close" (click)="closeTerms()" aria-label="Fechar termos de uso">
+        <button type="button" class="privacy-modal-close" (click)="closeTerms()" [attr.aria-label]="'landing.legal.closeTerms' | t">
           <i class="fas fa-times" aria-hidden="true"></i>
         </button>
       </header>
@@ -599,23 +602,23 @@
           <h3>{{ sec.title }}</h3>
           <p class="whitespace-pre-line">{{ sec.content }}</p>
         </ng-container>
-        <p class="privacy-modal-updated">{{ termsContent.lastUpdatedText || ('Última actualização: ' + currentYear) }}</p>
+        <p class="privacy-modal-updated">{{ termsContent.lastUpdatedText || ('landing.legal.lastUpdated' | t: { year: currentYear }) }}</p>
       </div>
     </section>
   </div>
 
-  <aside *ngIf="cookieConsentVisible && !cookiePreferencesOpen" class="cookie-consent" aria-label="Preferências de cookies">
+  <aside *ngIf="cookieConsentVisible && !cookiePreferencesOpen" class="cookie-consent" [attr.aria-label]="'landing.cookies.ariaLabel' | t">
     <div class="cookie-consent-copy">
       <span class="cookie-consent-icon" aria-hidden="true"><i class="fas fa-cookie-bite"></i></span>
       <div>
-        <h2>Respeitamos a sua privacidade</h2>
-        <p>Utilizamos cookies necessários para o funcionamento do site e, com a sua autorização, cookies analíticos para melhorar a experiência. <a href="#cookies" (click)="openCookiePreferences($event)">Saiba mais</a></p>
+        <h2>{{ 'landing.cookies.bannerTitle' | t }}</h2>
+        <p>{{ 'landing.cookies.bannerText' | t }} <a href="#cookies" (click)="openCookiePreferences($event)">{{ 'landing.cookies.learnMore' | t }}</a></p>
       </div>
     </div>
     <div class="cookie-consent-actions">
-      <button type="button" class="cookie-button cookie-button-ghost" (click)="rejectCookies()">Recusar</button>
-      <button type="button" class="cookie-button cookie-button-secondary" (click)="openCookiePreferences()">Personalizar</button>
-      <button type="button" class="cookie-button cookie-button-primary" (click)="acceptCookies()">Aceitar</button>
+      <button type="button" class="cookie-button cookie-button-ghost" (click)="rejectCookies()">{{ 'landing.cookies.reject' | t }}</button>
+      <button type="button" class="cookie-button cookie-button-secondary" (click)="openCookiePreferences()">{{ 'landing.cookies.customise' | t }}</button>
+      <button type="button" class="cookie-button cookie-button-primary" (click)="acceptCookies()">{{ 'landing.cookies.accept' | t }}</button>
     </div>
   </aside>
 
@@ -628,34 +631,34 @@
     <section class="cookie-preferences" role="dialog" aria-modal="true" aria-labelledby="cookie-preferences-title">
       <header class="cookie-preferences-header">
         <div>
-          <span class="privacy-modal-eyebrow">Privacidade</span>
-          <h2 id="cookie-preferences-title">Personalizar cookies</h2>
-          <p>Escolha que tipos de cookies autoriza neste dispositivo.</p>
+          <span class="privacy-modal-eyebrow">{{ 'landing.cookies.eyebrow' | t }}</span>
+          <h2 id="cookie-preferences-title">{{ 'landing.cookies.preferencesTitle' | t }}</h2>
+          <p>{{ 'landing.cookies.preferencesSubtitle' | t }}</p>
         </div>
-        <button type="button" class="privacy-modal-close" (click)="cookiePreferencesOpen = false" aria-label="Fechar preferências de cookies">
+        <button type="button" class="privacy-modal-close" (click)="cookiePreferencesOpen = false" [attr.aria-label]="'landing.cookies.closePreferences' | t">
           <i class="fas fa-times" aria-hidden="true"></i>
         </button>
       </header>
       <div class="cookie-preferences-content">
         <div class="cookie-option">
           <div>
-            <h3>Cookies necessários <span>Obrigatórios</span></h3>
-            <p>Essenciais para segurança, navegação e funcionamento básico da plataforma. Não podem ser desactivados.</p>
+            <h3>{{ 'landing.cookies.necessaryTitle' | t }} <span>{{ 'landing.cookies.required' | t }}</span></h3>
+            <p>{{ 'landing.cookies.necessaryText' | t }}</p>
           </div>
-          <span class="cookie-toggle cookie-toggle-locked" aria-label="Cookies necessários sempre activos"><i class="fas fa-check"></i></span>
+          <span class="cookie-toggle cookie-toggle-locked" [attr.aria-label]="'landing.cookies.necessaryAlwaysOn' | t"><i class="fas fa-check"></i></span>
         </div>
         <div class="cookie-option">
           <div>
-            <h3>Cookies analíticos</h3>
-            <p>Ajudam-nos a compreender como o site é utilizado para podermos melhorar o desempenho e a experiência.</p>
+            <h3>{{ 'landing.cookies.analyticsTitle' | t }}</h3>
+            <p>{{ 'landing.cookies.analyticsText' | t }}</p>
           </div>
-          <button type="button" class="cookie-toggle" [class.active]="analyticsCookies" (click)="analyticsCookies = !analyticsCookies" [attr.aria-pressed]="analyticsCookies" aria-label="Activar ou desactivar cookies analíticos">
+          <button type="button" class="cookie-toggle" [class.active]="analyticsCookies" (click)="analyticsCookies = !analyticsCookies" [attr.aria-pressed]="analyticsCookies" [attr.aria-label]="'landing.cookies.toggleAnalytics' | t">
             <span></span>
           </button>
         </div>
         <div class="cookie-preferences-footer">
-          <a href="#politica-privacidade" (click)="openPrivacy($event); cookiePreferencesOpen = false">Consultar política de privacidade</a>
-          <button type="button" class="cookie-button cookie-button-primary" (click)="saveCookiePreferences()">Guardar preferências</button>
+          <a href="#politica-privacidade" (click)="openPrivacy($event); cookiePreferencesOpen = false">{{ 'landing.cookies.viewPrivacy' | t }}</a>
+          <button type="button" class="cookie-button cookie-button-primary" (click)="saveCookiePreferences()">{{ 'landing.cookies.savePreferences' | t }}</button>
         </div>
       </div>
     </section>

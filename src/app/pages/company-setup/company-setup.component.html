@@ -1,23 +1,27 @@
-<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+<div class="relative min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-16 px-4 sm:px-6 lg:px-8">
+  <div class="absolute top-4 right-4 z-20">
+    <app-language-switcher />
+  </div>
+
   <div class="max-w-3xl mx-auto">
     <div class="text-center mb-8">
-      <h1 class="text-3xl font-bold text-gray-900 mb-2">Configurar Empresa</h1>
-      <p class="text-gray-600">Configure a sua primeira empresa em 3 passos simples</p>
+      <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ 'companySetup.header.title' | t }}</h1>
+      <p class="text-gray-600">{{ 'companySetup.header.subtitle' | t }}</p>
     </div>
 
     <div class="bg-white rounded-2xl shadow-xl p-8">
       <mat-stepper linear #stepper>
-        <mat-step [stepControl]="companyInfoForm" label="Informações da Empresa">
+        <mat-step [stepControl]="companyInfoForm" [label]="'companySetup.steps.companyInfo' | t">
           <form [formGroup]="companyInfoForm" class="mt-6 space-y-6">
 
 
             <div class="border-t pt-6">
               <div>
                 <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Tipo de Entidade</mat-label>
+                  <mat-label>{{ 'companySetup.form.entityType' | t }}</mat-label>
                   <mat-select formControlName="entityType" required>
-                    <mat-option value="singular">Pessoa Singular</mat-option>
-                    <mat-option value="collective">Pessoa Colectiva</mat-option>
+                    <mat-option value="singular">{{ 'companySetup.form.entitySingular' | t }}</mat-option>
+                    <mat-option value="collective">{{ 'companySetup.form.entityCollective' | t }}</mat-option>
                   </mat-select>
                   <mat-icon matPrefix class="text-gray-400">category</mat-icon>
                   @if (getErrorMessage(companyInfoForm, 'entityType')) {
@@ -28,8 +32,8 @@
 
               <div>
                 <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Email</mat-label>
-                  <input matInput type="email" formControlName="email" placeholder="Ex: info@empresa.com" />
+                  <mat-label>{{ 'companySetup.form.email' | t }}</mat-label>
+                  <input matInput type="email" formControlName="email" [placeholder]="'companySetup.form.emailPlaceholder' | t" />
                   <mat-icon matPrefix class="text-gray-400">email</mat-icon>
                 </mat-form-field>
               </div>
@@ -37,12 +41,12 @@
               <div class="border-t border-gray-100 pt-6 mt-4">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <mat-icon class="mr-2 text-ispc-orange">business_center</mat-icon>
-                  Tipo de Actividades
+                  {{ 'companySetup.form.activitiesTitle' | t }}
                 </h3>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <mat-form-field appearance="outline" class="w-full">
-                    <mat-label>Actividade Principal</mat-label>
+                    <mat-label>{{ 'companySetup.form.mainActivity' | t }}</mat-label>
                     <mat-select formControlName="category1" [disabled]="isLoadingActivities()">
                       @for (cat of getCat1Options(); track cat.id) {
                       <mat-option [value]="cat.id">{{ cat.label }}</mat-option>
@@ -52,7 +56,7 @@
 
                   @if (!isLoadingActivities() && getCat2Options().length > 0) {
                   <mat-form-field appearance="outline" class="w-full">
-                    <mat-label>Actividade(s) Comerciais</mat-label>
+                    <mat-label>{{ 'companySetup.form.commercialActivities' | t }}</mat-label>
                     <mat-select formControlName="category2">
                       @for (cat of getCat2Options(); track cat.id) {
                       <mat-option [value]="cat.id">{{ cat.label }}</mat-option>
@@ -63,7 +67,7 @@
 
                   @if (!isLoadingActivities() && getCat3Options().length > 0) {
                   <mat-form-field appearance="outline" class="w-full">
-                    <mat-label>Actividade(s) de Prestação de Serviço</mat-label>
+                    <mat-label>{{ 'companySetup.form.serviceActivities' | t }}</mat-label>
                     <mat-select formControlName="category3">
                       @for (cat of getCat3Options(); track cat.id) {
                       <mat-option [value]="cat.id">{{ cat.label }}</mat-option>
@@ -75,19 +79,19 @@
 
                 <div class="mt-4">
                   <mat-form-field appearance="outline" class="w-full">
-                    <mat-label>Volume de Negócio / Taxa ISPC</mat-label>
+                    <mat-label>{{ 'companySetup.form.businessVolume' | t }}</mat-label>
                     <mat-select formControlName="business_volume" required>
                       @if (isISPCScaleActivity()) {
-                      <mat-option value="3">3% (até 1.000.000,00MT)</mat-option>
-                      <mat-option value="4">4% (> 1.001.000,00MT e ≤ 2.500.000,00MT)</mat-option>
-                      <mat-option value="5">5% (> 2.501.000,00MT e ≤ 4.000.000,00MT)</mat-option>
+                      <mat-option value="3">{{ 'companySetup.volume.rate3' | t }}</mat-option>
+                      <mat-option value="4">{{ 'companySetup.volume.rate4' | t }}</mat-option>
+                      <mat-option value="5">{{ 'companySetup.volume.rate5' | t }}</mat-option>
                       } @else {
                       @if (getServiceType() === 'nao_liberais') {
-                      <mat-option value="12">12% s/ volume ≤ 4.000.000,00MT</mat-option>
-                      <mat-option value="20">20% s/ volume > 4.000.000,00MT</mat-option>
+                      <mat-option value="12">{{ 'companySetup.volume.rate12' | t }}</mat-option>
+                      <mat-option value="20">{{ 'companySetup.volume.rate20' | t }}</mat-option>
                       } @else if (getServiceType() === 'liberal') {
-                      <mat-option value="15">15% s/ volume ≤ 4.000.000,00MT</mat-option>
-                      <mat-option value="20">20% s/ volume > 4.000.000,00MT</mat-option>
+                      <mat-option value="15">{{ 'companySetup.volume.rate15' | t }}</mat-option>
+                      <mat-option value="20">{{ 'companySetup.volume.rate20' | t }}</mat-option>
                       }
                       }
                     </mat-select>
@@ -98,8 +102,8 @@
 
               <div class="border-t border-gray-100 pt-6 mt-6">
                 <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Nome da Entidade</mat-label>
-                  <input matInput type="text" formControlName="name" placeholder="Ex: Comercial Silva Lda" />
+                  <mat-label>{{ 'companySetup.form.entityName' | t }}</mat-label>
+                  <input matInput type="text" formControlName="name" [placeholder]="'companySetup.form.entityNamePlaceholder' | t" />
                   <mat-icon matPrefix class="text-gray-400">business</mat-icon>
                   @if (getErrorMessage(companyInfoForm, 'name')) {
                   <mat-error>{{ getErrorMessage(companyInfoForm, 'name') }}</mat-error>
@@ -111,7 +115,7 @@
               <div>
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>NUIT</mat-label>
-                  <input matInput type="text" formControlName="nuit" placeholder="9 dígitos" maxlength="9"
+                  <input matInput type="text" formControlName="nuit" [placeholder]="'companySetup.form.nuitPlaceholder' | t" maxlength="9"
                     (input)="formatNuit()" />
                   <mat-icon matPrefix class="text-gray-400">badge</mat-icon>
 
@@ -120,16 +124,16 @@
                     <mat-spinner diameter="20" class="mr-2"></mat-spinner>
                     } @else {
                     @if (nuitDocumentUrl()) {
-                    <mat-icon class="text-green-500 mr-2" matTooltip="Documento carregado">check_circle</mat-icon>
-                    <button type="button" mat-icon-button (click)="viewDocument()" matTooltip="Visualizar Documento">
+                    <mat-icon class="text-green-500 mr-2" [matTooltip]="'companySetup.documents.uploaded' | t">check_circle</mat-icon>
+                    <button type="button" mat-icon-button (click)="viewDocument()" [matTooltip]="'companySetup.documents.viewDocument' | t">
                       <mat-icon class="text-blue-500">visibility</mat-icon>
                     </button>
-                    <button type="button" mat-icon-button (click)="nuitInput.click()" matTooltip="Alterar Documento">
+                    <button type="button" mat-icon-button (click)="nuitInput.click()" [matTooltip]="'companySetup.documents.changeDocument' | t">
                       <mat-icon class="text-gray-400">file_upload</mat-icon>
                     </button>
                     } @else {
                     <button type="button" mat-icon-button (click)="nuitInput.click()"
-                      matTooltip="Fazer upload do NUIT (Opcional)">
+                      [matTooltip]="'companySetup.documents.uploadNuit' | t">
                       <mat-icon class="text-gray-400">file_upload</mat-icon>
                     </button>
                     }
@@ -141,15 +145,15 @@
                   @if (getErrorMessage(companyInfoForm, 'nuit')) {
                   <mat-error>{{ getErrorMessage(companyInfoForm, 'nuit') }}</mat-error>
                   }
-                  <mat-hint>Número Único de Identificação Tributária (9 dígitos)</mat-hint>
+                  <mat-hint>{{ 'companySetup.form.nuitHint' | t }}</mat-hint>
                 </mat-form-field>
               </div>
 
               <div>
                 <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Endereço</mat-label>
+                  <mat-label>{{ 'common.fields.address' | t }}</mat-label>
                   <textarea matInput formControlName="address" rows="3"
-                    placeholder="Av. Julius Nyerere, nº 123, Maputo"></textarea>
+                    [placeholder]="'companySetup.form.addressPlaceholder' | t"></textarea>
                   <mat-icon matPrefix class="text-gray-400">location_on</mat-icon>
                   @if (getErrorMessage(companyInfoForm, 'address')) {
                   <mat-error>{{ getErrorMessage(companyInfoForm, 'address') }}</mat-error>
@@ -159,10 +163,10 @@
 
               <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>País</mat-label>
+                  <mat-label>{{ 'companySetup.form.country' | t }}</mat-label>
                   <mat-select formControlName="country">
                     @for (country of countries; track country) {
-                    <mat-option [value]="country">{{ country }}</mat-option>
+                    <mat-option [value]="country">{{ countryLabel(country) }}</mat-option>
                     }
                   </mat-select>
                   <mat-icon matPrefix class="text-gray-400">public</mat-icon>
@@ -172,7 +176,7 @@
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Província</mat-label>
+                  <mat-label>{{ 'companySetup.form.province' | t }}</mat-label>
                   <mat-select formControlName="province">
                     @for (province of provinces; track province) {
                     <mat-option [value]="province">{{ province }}</mat-option>
@@ -182,8 +186,8 @@
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Código Postal</mat-label>
-                  <input matInput formControlName="postalCode" placeholder="Ex: 1100" />
+                  <mat-label>{{ 'companySetup.form.postalCode' | t }}</mat-label>
+                  <input matInput formControlName="postalCode" [placeholder]="'companySetup.form.postalCodePlaceholder' | t" />
                   <mat-icon matPrefix class="text-gray-400">markunread_mailbox</mat-icon>
                 </mat-form-field>
               </div>
@@ -191,26 +195,26 @@
               <div class="border-t border-gray-100 pt-6 mt-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <mat-icon class="mr-2 text-ispc-orange">event_available</mat-icon>
-                  Início de Actividade
+                  {{ 'companySetup.documents.startOfActivity' | t }}
                 </h3>
                 <div class="bg-gray-100 p-4 rounded-lg">
                   @if (commercialActivityUrl()) {
                   <div class="flex items-center justify-between bg-white p-3 rounded border">
                     <span class="text-sm text-green-600 flex items-center gap-1">
                       <mat-icon class="!text-base">check_circle</mat-icon>
-                      Documento carregado
+                      {{ 'companySetup.documents.uploaded' | t }}
                     </span>
                     <div class="flex items-center">
                       <button type="button" mat-icon-button color="primary" (click)="viewCommercialDocument()"
-                        matTooltip="Visualizar">
+                        [matTooltip]="'companySetup.documents.view' | t">
                         <mat-icon class="!text-lg">visibility</mat-icon>
                       </button>
                       <button type="button" mat-icon-button (click)="commercialInput.click()"
-                        [disabled]="isUploadingCommercial()" matTooltip="Alterar Documento">
+                        [disabled]="isUploadingCommercial()" [matTooltip]="'companySetup.documents.changeDocument' | t">
                         <mat-icon class="!text-lg">file_upload</mat-icon>
                       </button>
                       <button type="button" mat-icon-button color="warn" (click)="clearCommercialDocument()"
-                        matTooltip="Apagar Documento">
+                        [matTooltip]="'companySetup.documents.deleteDocument' | t">
                         <mat-icon class="!text-lg">delete</mat-icon>
                       </button>
                     </div>
@@ -220,9 +224,9 @@
                     <button type="button" mat-raised-button (click)="commercialInput.click()"
                       [disabled]="isUploadingCommercial()">
                       <mat-icon>file_upload</mat-icon>
-                      {{ isUploadingCommercial() ? 'Carregando...' : 'Fazer Upload do Início de Actividade' }}
+                      {{ (isUploadingCommercial() ? 'companySetup.documents.uploading' : 'companySetup.documents.uploadStartOfActivity') | t }}
                     </button>
-                    <span class="text-xs text-gray-500">PDF, JPG ou PNG (máx.10MB)</span>
+                    <span class="text-xs text-gray-500">{{ 'companySetup.documents.fileTypes' | t }}</span>
                   </div>
                   }
                   <input type="file" #commercialInput class="hidden" accept=".pdf,.jpg,.jpeg,.png"
@@ -234,7 +238,7 @@
               <div class="border-t border-gray-100 pt-6 mt-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <mat-icon class="mr-2 text-ispc-orange">verified</mat-icon>
-                  Alvará
+                  {{ 'companySetup.documents.licence' | t }}
                 </h3>
                 <div class="bg-gray-100 p-4 rounded-lg">
                   @if (alvaraDoc) {
@@ -242,11 +246,11 @@
                     <span class="text-sm truncate">{{ alvaraDoc.file_name }}</span>
                     <div class="flex items-center">
                       <button type="button" mat-icon-button color="primary" (click)="viewOtherDocument(alvaraDoc)"
-                        matTooltip="Visualizar">
+                        [matTooltip]="'companySetup.documents.view' | t">
                         <mat-icon class="!text-lg">visibility</mat-icon>
                       </button>
                       <button type="button" mat-icon-button color="warn" (click)="removeOtherDocument(alvaraDoc)"
-                        matTooltip="Remover">
+                        [matTooltip]="'common.actions.remove' | t">
                         <mat-icon class="!text-lg">delete</mat-icon>
                       </button>
                     </div>
@@ -256,9 +260,9 @@
                     <button type="button" mat-raised-button (click)="alvaraInput.click()"
                       [disabled]="isUploadingAlvara()">
                       <mat-icon>file_upload</mat-icon>
-                      {{ isUploadingAlvara() ? 'Carregando...' : 'Fazer Upload do Alvará' }}
+                      {{ (isUploadingAlvara() ? 'companySetup.documents.uploading' : 'companySetup.documents.uploadLicence') | t }}
                     </button>
-                    <span class="text-xs text-gray-500">PDF, JPG ou PNG (máx.10MB)</span>
+                    <span class="text-xs text-gray-500">{{ 'companySetup.documents.fileTypes' | t }}</span>
                     <input type="file" #alvaraInput class="hidden" accept=".pdf,.jpg,.jpeg,.png"
                       (change)="onAlvaraDocumentSelected($event)">
                   </div>
@@ -269,17 +273,17 @@
               <div class="border-t border-gray-100 pt-6 mt-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <mat-icon class="mr-2 text-ispc-orange">folder</mat-icon>
-                  Outros Documentos
+                  {{ 'companySetup.documents.otherTitle' | t }}
                 </h3>
 
                 <div class="bg-gray-100 p-4 rounded-lg mb-4">
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                     <mat-form-field appearance="outline" class="w-full">
-                      <mat-label>Tipo de Documento</mat-label>
+                      <mat-label>{{ 'companySetup.documents.documentType' | t }}</mat-label>
                       <mat-select [formControl]="newDocType">
                         @for (type of documentTypes; track type) {
                         <mat-option [value]="type" [disabled]="isDocTypeSelected(type)">
-                          {{ type }}
+                          {{ docTypeLabel(type) }}
                         </mat-option>
                         }
                       </mat-select>
@@ -289,14 +293,14 @@
                       <button type="button" mat-raised-button (click)="otherInput.click()"
                         [disabled]="!newDocType.value || isUploadingOther()">
                         <mat-icon>file_upload</mat-icon>
-                        {{ isUploadingOther() ? 'Carregando...' : 'Fazer Upload' }}
+                        {{ (isUploadingOther() ? 'companySetup.documents.uploading' : 'companySetup.documents.upload') | t }}
                       </button>
                       <input type="file" #otherInput class="hidden" accept=".pdf,.jpg,.jpeg,.png"
                         (change)="onOtherDocumentSelected($event)">
                     </div>
                   </div>
                   <p class="text-[10px] text-gray-500 mt-2">
-                    * Apenas um ficheiro por tipo. Para substituir, apague o anterior da lista abaixo.
+                    {{ 'companySetup.documents.onePerType' | t }}
                   </p>
                 </div>
 
@@ -305,23 +309,23 @@
                   <table class="w-full text-sm text-left">
                     <thead class="bg-gray-50 text-gray-700 uppercase text-[10px]">
                       <tr>
-                        <th class="px-3 py-2">Tipo</th>
-                        <th class="px-3 py-2">Ficheiro</th>
-                        <th class="px-3 py-2 text-right">Acções</th>
+                        <th class="px-3 py-2">{{ 'common.fields.type' | t }}</th>
+                        <th class="px-3 py-2">{{ 'companySetup.documents.file' | t }}</th>
+                        <th class="px-3 py-2 text-right">{{ 'common.fields.actions' | t }}</th>
                       </tr>
                     </thead>
                     <tbody class="divide-y">
                       @for (doc of otherDocsWithoutAlvara; track doc) {
                       <tr>
-                        <td class="px-3 py-2 font-medium">{{ doc.type }}</td>
+                        <td class="px-3 py-2 font-medium">{{ docTypeLabel(doc.type) }}</td>
                         <td class="px-3 py-2 text-gray-500 truncate max-w-[150px]">{{ doc.file_name }}</td>
                         <td class="px-3 py-2 text-right whitespace-nowrap">
                           <button type="button" mat-icon-button color="primary" (click)="viewOtherDocument(doc)"
-                            matTooltip="Visualizar">
+                            [matTooltip]="'companySetup.documents.view' | t">
                             <mat-icon class="!text-lg">visibility</mat-icon>
                           </button>
                           <button type="button" mat-icon-button color="warn" (click)="removeOtherDocument(doc)"
-                            matTooltip="Remover">
+                            [matTooltip]="'common.actions.remove' | t">
                             <mat-icon class="!text-lg">delete</mat-icon>
                           </button>
                         </td>
@@ -331,14 +335,14 @@
                   </table>
                 </div>
                 } @else {
-                <p class="text-center text-gray-400 py-4 text-sm italic">Nenhum documento adicional adicionado.</p>
+                <p class="text-center text-gray-400 py-4 text-sm italic">{{ 'companySetup.documents.none' | t }}</p>
                 }
               </div>
             </div>
 
             <div class="flex justify-end">
               <button mat-raised-button matStepperNext class="!bg-ispc-orange !text-white">
-                Próximo
+                {{ 'companySetup.actions.next' | t }}
                 <mat-icon class="ml-2">arrow_forward</mat-icon>
               </button>
             </div>
@@ -346,13 +350,13 @@
         </mat-step>
 
 
-        <mat-step [stepControl]="settingsForm" label="Configuração Inicial">
+        <mat-step [stepControl]="settingsForm" [label]="'companySetup.steps.initialSettings' | t">
           <form [formGroup]="settingsForm" class="mt-6 space-y-6">
             <div>
               <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Moeda</mat-label>
+                <mat-label>{{ 'companySetup.settings.currency' | t }}</mat-label>
                 <mat-select formControlName="currency">
-                  <mat-option value="MZN">MZN - Metical Moçambicano</mat-option>
+                  <mat-option value="MZN">{{ 'companySetup.settings.currencyMzn' | t }}</mat-option>
                 </mat-select>
                 <mat-icon matPrefix class="text-gray-400">payments</mat-icon>
               </mat-form-field>
@@ -360,13 +364,13 @@
 
             <div>
               <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Prefixo das Facturas</mat-label>
+                <mat-label>{{ 'companySetup.settings.invoicePrefix' | t }}</mat-label>
                 <input matInput type="text" formControlName="invoicePrefix" placeholder="FAC" maxlength="10" />
                 <mat-icon matPrefix class="text-gray-400">tag</mat-icon>
                 @if (getErrorMessage(settingsForm, 'invoicePrefix')) {
                 <mat-error>{{ getErrorMessage(settingsForm, 'invoicePrefix') }}</mat-error>
                 }
-                <mat-hint>Ex: FAC0001, FAC0002, etc.</mat-hint>
+                <mat-hint>{{ 'companySetup.settings.invoicePrefixHint' | t }}</mat-hint>
               </mat-form-field>
             </div>
 
@@ -374,9 +378,9 @@
               <div class="flex items-start">
                 <mat-icon class="text-green-600 mr-3">check_circle</mat-icon>
                 <div>
-                  <h4 class="font-semibold text-green-900 mb-1">Tudo pronto!</h4>
+                  <h4 class="font-semibold text-green-900 mb-1">{{ 'companySetup.settings.readyTitle' | t }}</h4>
                   <p class="text-sm text-green-800">
-                    Após concluir, poderá começar a emitir facturas imediatamente.
+                    {{ 'companySetup.settings.readyText' | t }}
                   </p>
                 </div>
               </div>
@@ -385,17 +389,17 @@
             <div class="flex justify-between">
               <button mat-stroked-button matStepperPrevious>
                 <mat-icon>arrow_back</mat-icon>
-                Anterior
+                {{ 'common.actions.previous' | t }}
               </button>
               <button mat-raised-button class="!bg-ispc-orange !text-white" (click)="onSubmit()"
                 [disabled]="isLoading()">
                 @if (isLoading()) {
                 <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
-                <span>A configurar...</span>
+                <span>{{ 'companySetup.actions.configuring' | t }}</span>
                 } @else {
                 <ng-container>
                   <mat-icon class="mr-2">check</mat-icon>
-                  <span>Concluir Configuração</span>
+                  <span>{{ 'companySetup.actions.finish' | t }}</span>
                 </ng-container>
                 }
               </button>

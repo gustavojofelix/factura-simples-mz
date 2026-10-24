@@ -1,4 +1,8 @@
 <div class="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-slate-950 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="absolute top-4 right-4 z-20">
+    <app-language-switcher variant="dark" />
+  </div>
+
   <!-- Soft glowing background orbs -->
   <div class="absolute w-[300px] h-[300px] sm:w-[450px] sm:h-[450px] bg-gradient-to-tr from-ispc-orange/20 to-orange-600/30 rounded-full blur-[80px] sm:blur-[120px] -top-20 -left-20 animate-pulse pointer-events-none"></div>
   <div class="absolute w-[300px] h-[300px] sm:w-[450px] sm:h-[450px] bg-gradient-to-bl from-amber-600/20 to-orange-500/20 rounded-full blur-[80px] sm:blur-[120px] -bottom-20 -right-20 animate-pulse pointer-events-none"></div>
@@ -10,17 +14,17 @@
         <img [src]="account()?.logo_url || 'assets/ISPC.png'" [alt]="account()?.name || 'ISPC Fácil'" class="h-12 sm:h-14 w-auto object-contain">
       </div>
       @if (accountNotFound()) {
-        <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Conta não encontrada</h2>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{{ 'auth.loginPage.accountNotFound' | t }}</h2>
         <p class="text-sm text-slate-400 mt-1.5 font-medium">
-          O endereço <strong class="text-slate-200">{{ tenant.currentSlug() }}</strong> não corresponde a nenhuma conta.
+          {{ 'auth.loginPage.addressPrefix' | t }} <strong class="text-slate-200">{{ tenant.currentSlug() }}</strong> {{ 'auth.loginPage.addressSuffix' | t }}
         </p>
       } @else {
-        <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Bem-vindo de volta</h2>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{{ 'auth.loginPage.welcomeBack' | t }}</h2>
         <p class="text-sm text-slate-400 mt-1.5 font-medium">
           @if (account()?.name) {
-            Entre na conta <strong class="text-slate-200">{{ account()?.name }}</strong>
+            {{ 'auth.loginPage.signInToAccount' | t }} <strong class="text-slate-200">{{ account()?.name }}</strong>
           } @else {
-            Entre na sua conta para gerir a sua facturação
+            {{ 'auth.loginPage.subtitle' | t }}
           }
         </p>
       }
@@ -29,7 +33,7 @@
     @if (accountNotFound()) {
       <div class="text-center">
         <a [href]="tenant.rootUrl('/entrar')" class="inline-flex items-center font-semibold text-white bg-ispc-orange hover:bg-ispc-orange/90 py-3 px-5 rounded-xl">
-          Ir para a página principal
+          {{ 'auth.loginPage.goToMainPage' | t }}
         </a>
       </div>
     } @else {
@@ -41,7 +45,7 @@
     <div class="text-center">
       <a routerLink="/" class="inline-flex items-center text-xs font-semibold text-slate-400 hover:text-white transition-all bg-white/5 hover:bg-white/10 py-2.5 px-4 rounded-xl border border-white/10 backdrop-blur-sm shadow-sm">
         <mat-icon class="!text-sm mr-1.5">arrow_back</mat-icon>
-        Voltar ao início
+        {{ 'auth.loginPage.backToHome' | t }}
       </a>
     </div>
   </div>

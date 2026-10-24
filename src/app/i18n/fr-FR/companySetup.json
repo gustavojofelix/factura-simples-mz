@@ -1,1 +1,126 @@
-{}
+{
+  "header": {
+    "title": "Configurer l'entreprise",
+    "subtitle": "Configurez votre première entreprise en 3 étapes simples"
+  },
+  "steps": {
+    "companyInfo": "Informations sur l'entreprise",
+    "initialSettings": "Configuration initiale"
+  },
+  "form": {
+    "entityType": "Type d'entité",
+    "entitySingular": "Personne physique",
+    "entityCollective": "Personne morale",
+    "email": "E-mail",
+    "emailPlaceholder": "Ex. : info@entreprise.com",
+    "activitiesTitle": "Type d'activités",
+    "mainActivity": "Activité principale",
+    "commercialActivities": "Activité(s) commerciale(s)",
+    "serviceActivities": "Activité(s) de prestation de services",
+    "businessVolume": "Chiffre d'affaires / Taux ISPC",
+    "entityName": "Nom de l'entité",
+    "entityNamePlaceholder": "Ex. : Commerce Dupont SARL",
+    "nuitPlaceholder": "9 chiffres",
+    "nuitHint": "Numéro unique d'identification fiscale (9 chiffres)",
+    "addressPlaceholder": "Av. Julius Nyerere, n° 123, Maputo",
+    "country": "Pays",
+    "province": "Province",
+    "postalCode": "Code postal",
+    "postalCodePlaceholder": "Ex. : 1100"
+  },
+  "volume": {
+    "rate3": "3 % (jusqu'à 1 000 000,00 MT)",
+    "rate4": "4 % (> 1 001 000,00 MT et ≤ 2 500 000,00 MT)",
+    "rate5": "5 % (> 2 501 000,00 MT et ≤ 4 000 000,00 MT)",
+    "rate12": "12 % sur chiffre d'affaires ≤ 4 000 000,00 MT",
+    "rate15": "15 % sur chiffre d'affaires ≤ 4 000 000,00 MT",
+    "rate20": "20 % sur chiffre d'affaires > 4 000 000,00 MT"
+  },
+  "documents": {
+    "uploaded": "Document chargé",
+    "viewDocument": "Voir le document",
+    "changeDocument": "Changer le document",
+    "uploadNuit": "Téléverser le NUIT (facultatif)",
+    "startOfActivity": "Début d'activité",
+    "view": "Voir",
+    "deleteDocument": "Supprimer le document",
+    "uploading": "Téléversement...",
+    "uploadStartOfActivity": "Téléverser le début d'activité",
+    "fileTypes": "PDF, JPG ou PNG (max. 10 Mo)",
+    "licence": "Licence d'exploitation",
+    "uploadLicence": "Téléverser la licence d'exploitation",
+    "otherTitle": "Autres documents",
+    "documentType": "Type de document",
+    "upload": "Téléverser",
+    "onePerType": "* Un seul fichier par type. Pour le remplacer, supprimez le précédent de la liste ci-dessous.",
+    "file": "Fichier",
+    "none": "Aucun document supplémentaire ajouté."
+  },
+  "actions": {
+    "next": "Suivant",
+    "configuring": "Configuration...",
+    "finish": "Terminer la configuration"
+  },
+  "settings": {
+    "currency": "Devise",
+    "currencyMzn": "MZN - Metical mozambicain",
+    "invoicePrefix": "Préfixe des factures",
+    "invoicePrefixHint": "Ex. : FAC0001, FAC0002, etc.",
+    "readyTitle": "Tout est prêt !",
+    "readyText": "Une fois terminé, vous pourrez commencer à émettre des factures immédiatement."
+  },
+  "countries": {
+    "mozambique": "Mozambique",
+    "southAfrica": "Afrique du Sud",
+    "angola": "Angola",
+    "brazil": "Brésil",
+    "eswatini": "Eswatini",
+    "malawi": "Malawi",
+    "portugal": "Portugal",
+    "tanzania": "Tanzanie",
+    "zambia": "Zambie",
+    "zimbabwe": "Zimbabwe"
+  },
+  "documentTypes": {
+    "commercialRegistry": "Extrait du registre du commerce",
+    "republicBulletin": "Journal officiel (Boletim da República)",
+    "partnersId": "Pièce d'identité (associés)",
+    "leaseAgreement": "Contrat de bail",
+    "other": "Autres",
+    "licence": "Licence d'exploitation"
+  },
+  "messages": {
+    "licenceUploaded": "Licence d'exploitation téléversée avec succès !",
+    "dataExtracted": "Données extraites du document !",
+    "documentUploaded": "Document téléversé avec succès !",
+    "typeExists": "Un document de type « {type} » existe déjà",
+    "documentAdded": "Document ajouté à la liste !",
+    "documentRemovedFromList": "Document retiré de la liste !",
+    "documentRemoved": "Document supprimé !",
+    "fillRequired": "Veuillez remplir tous les champs obligatoires",
+    "companyConfigured": "Entreprise configurée avec succès !",
+    "duplicateNuit": "Une entité avec ce NUIT est déjà enregistrée."
+  },
+  "errors": {
+    "loadActivitiesTitle": "Impossible de charger les types d'activités",
+    "contextLoadActivities": "Configuration de l'entreprise : chargement du catalogue d'activités",
+    "uploadLicenceTitle": "Impossible de téléverser la licence d'exploitation",
+    "contextUploadLicence": "Configuration de l'entreprise : téléversement de la licence d'exploitation",
+    "uploadNuitTitle": "Impossible de téléverser le document NUIT",
+    "contextUploadNuit": "Configuration de l'entreprise : téléversement du NUIT",
+    "uploadDocumentTitle": "Impossible de téléverser le document",
+    "contextUploadCommercial": "Configuration de l'entreprise : téléversement du document d'activité commerciale",
+    "contextUploadOther": "Configuration de l'entreprise : téléversement de « {type} »",
+    "sessionEnded": "Votre session a expiré. Reconnectez-vous pour configurer l'entreprise.",
+    "sessionExpiredTitle": "Session expirée",
+    "contextCreateCompany": "Configuration de l'entreprise : création de l'entreprise",
+    "createCompanyTitle": "Impossible de créer l'entreprise",
+    "removeDocumentTitle": "Impossible de supprimer le document",
+    "contextRemoveDocument": "Configuration de l'entreprise : supprimer un document"
+  },
+  "validation": {
+    "nuitDigits": "Le NUIT doit comporter 9 chiffres",
+    "maxLength": "Maximum {max} caractères",
+    "duplicateNuit": "Une entité avec ce NUIT est déjà enregistrée"
+  }
+}

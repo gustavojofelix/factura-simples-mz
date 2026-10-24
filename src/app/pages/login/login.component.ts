@@ -5,6 +5,8 @@ import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { AccountService, PublicAccountInfo } from '../../core/services/account.service';
 import { TenantService } from '../../core/services/tenant.service';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { LanguageSwitcherComponent } from '../../shared/components/language-switcher/language-switcher.component';
 
 @Component({
   selector: 'app-login',
@@ -13,7 +15,9 @@ import { TenantService } from '../../core/services/tenant.service';
     CommonModule,
     LoginFormComponent,
     RouterLink,
-    MatIconModule
+    MatIconModule,
+    TranslatePipe,
+    LanguageSwitcherComponent
   ],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']

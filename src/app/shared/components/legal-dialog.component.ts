@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 @Component({
   selector: 'app-legal-dialog',
   standalone: true,
-  imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule],
+  imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule, TranslatePipe],
   template: `
     <div class="flex flex-col h-screen w-screen overflow-hidden bg-white">
       <div class="flex justify-between items-center p-4 border-b bg-gray-50 flex-none">
@@ -23,7 +24,7 @@ import { MatIconModule } from '@angular/material/icon';
 
       <div class="p-4 border-t bg-gray-50 flex justify-end flex-none">
         <button mat-raised-button color="primary" (click)="dialogRef.close()" class="!bg-ispc-orange !text-white">
-          Fechar
+          {{ 'common.actions.close' | t }}
         </button>
       </div>
     </div>

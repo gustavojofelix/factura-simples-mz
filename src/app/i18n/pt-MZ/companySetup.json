@@ -1,1 +1,126 @@
-{}
+{
+  "header": {
+    "title": "Configurar Empresa",
+    "subtitle": "Configure a sua primeira empresa em 3 passos simples"
+  },
+  "steps": {
+    "companyInfo": "Informações da Empresa",
+    "initialSettings": "Configuração Inicial"
+  },
+  "form": {
+    "entityType": "Tipo de Entidade",
+    "entitySingular": "Pessoa Singular",
+    "entityCollective": "Pessoa Colectiva",
+    "email": "Email",
+    "emailPlaceholder": "Ex: info@empresa.com",
+    "activitiesTitle": "Tipo de Actividades",
+    "mainActivity": "Actividade Principal",
+    "commercialActivities": "Actividade(s) Comerciais",
+    "serviceActivities": "Actividade(s) de Prestação de Serviço",
+    "businessVolume": "Volume de Negócio / Taxa ISPC",
+    "entityName": "Nome da Entidade",
+    "entityNamePlaceholder": "Ex: Comercial Silva Lda",
+    "nuitPlaceholder": "9 dígitos",
+    "nuitHint": "Número Único de Identificação Tributária (9 dígitos)",
+    "addressPlaceholder": "Av. Julius Nyerere, nº 123, Maputo",
+    "country": "País",
+    "province": "Província",
+    "postalCode": "Código Postal",
+    "postalCodePlaceholder": "Ex: 1100"
+  },
+  "volume": {
+    "rate3": "3% (até 1.000.000,00MT)",
+    "rate4": "4% (> 1.001.000,00MT e ≤ 2.500.000,00MT)",
+    "rate5": "5% (> 2.501.000,00MT e ≤ 4.000.000,00MT)",
+    "rate12": "12% s/ volume ≤ 4.000.000,00MT",
+    "rate15": "15% s/ volume ≤ 4.000.000,00MT",
+    "rate20": "20% s/ volume > 4.000.000,00MT"
+  },
+  "documents": {
+    "uploaded": "Documento carregado",
+    "viewDocument": "Visualizar Documento",
+    "changeDocument": "Alterar Documento",
+    "uploadNuit": "Fazer upload do NUIT (Opcional)",
+    "startOfActivity": "Início de Actividade",
+    "view": "Visualizar",
+    "deleteDocument": "Apagar Documento",
+    "uploading": "Carregando...",
+    "uploadStartOfActivity": "Fazer Upload do Início de Actividade",
+    "fileTypes": "PDF, JPG ou PNG (máx.10MB)",
+    "licence": "Alvará",
+    "uploadLicence": "Fazer Upload do Alvará",
+    "otherTitle": "Outros Documentos",
+    "documentType": "Tipo de Documento",
+    "upload": "Fazer Upload",
+    "onePerType": "* Apenas um ficheiro por tipo. Para substituir, apague o anterior da lista abaixo.",
+    "file": "Ficheiro",
+    "none": "Nenhum documento adicional adicionado."
+  },
+  "actions": {
+    "next": "Próximo",
+    "configuring": "A configurar...",
+    "finish": "Concluir Configuração"
+  },
+  "settings": {
+    "currency": "Moeda",
+    "currencyMzn": "MZN - Metical Moçambicano",
+    "invoicePrefix": "Prefixo das Facturas",
+    "invoicePrefixHint": "Ex: FAC0001, FAC0002, etc.",
+    "readyTitle": "Tudo pronto!",
+    "readyText": "Após concluir, poderá começar a emitir facturas imediatamente."
+  },
+  "countries": {
+    "mozambique": "Moçambique",
+    "southAfrica": "África do Sul",
+    "angola": "Angola",
+    "brazil": "Brasil",
+    "eswatini": "Eswatini",
+    "malawi": "Malawi",
+    "portugal": "Portugal",
+    "tanzania": "Tanzânia",
+    "zambia": "Zâmbia",
+    "zimbabwe": "Zimbabué"
+  },
+  "documentTypes": {
+    "commercialRegistry": "Certidão de Registo Comercial",
+    "republicBulletin": "Boletim da República",
+    "partnersId": "Documento de Identificação (Sócios)",
+    "leaseAgreement": "Contrato de Arrendamento",
+    "other": "Outros",
+    "licence": "Alvará"
+  },
+  "messages": {
+    "licenceUploaded": "Alvará carregado com sucesso!",
+    "dataExtracted": "Dados extraídos do documento!",
+    "documentUploaded": "Documento carregado com sucesso!",
+    "typeExists": "Já existe um documento do tipo \"{type}\"",
+    "documentAdded": "Documento adicionado à lista!",
+    "documentRemovedFromList": "Documento removido da lista!",
+    "documentRemoved": "Documento removido!",
+    "fillRequired": "Por favor, preencha todos os campos obrigatórios",
+    "companyConfigured": "Empresa configurada com sucesso!",
+    "duplicateNuit": "Já existe uma entidade registada com este NUIT."
+  },
+  "errors": {
+    "loadActivitiesTitle": "Não foi possível carregar os tipos de actividades",
+    "contextLoadActivities": "Configurar empresa: carregar catálogo de actividades",
+    "uploadLicenceTitle": "Não foi possível carregar o Alvará",
+    "contextUploadLicence": "Configurar empresa: upload do Alvará",
+    "uploadNuitTitle": "Não foi possível carregar o documento NUIT",
+    "contextUploadNuit": "Configurar empresa: upload do NUIT",
+    "uploadDocumentTitle": "Não foi possível carregar o documento",
+    "contextUploadCommercial": "Configurar empresa: upload do Exercício de Actividade Comercial",
+    "contextUploadOther": "Configurar empresa: upload de \"{type}\"",
+    "sessionEnded": "A sua sessão terminou. Entre novamente para configurar a empresa.",
+    "sessionExpiredTitle": "Sessão expirada",
+    "contextCreateCompany": "Configurar empresa: criar empresa",
+    "createCompanyTitle": "Não foi possível criar a empresa",
+    "removeDocumentTitle": "Não foi possível remover o documento",
+    "contextRemoveDocument": "Configurar empresa: remover documento"
+  },
+  "validation": {
+    "nuitDigits": "NUIT deve ter 9 dígitos",
+    "maxLength": "Máximo de {max} caracteres",
+    "duplicateNuit": "Já existe uma entidade registada com este NUIT"
+  }
+}

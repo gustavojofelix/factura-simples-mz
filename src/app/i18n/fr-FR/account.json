@@ -1,1 +1,34 @@
-{}
+{
+  "common": {
+    "signOut": "Se déconnecter"
+  },
+  "setup": {
+    "title": "Créez votre compte",
+    "subtitle": "Choisissez l'adresse où vous gérerez vos entreprises.",
+    "name": "Nom du compte",
+    "namePlaceholder": "Ex. : Groupe Dupont",
+    "available": "Disponible.",
+    "createError": "Impossible de créer le compte."
+  },
+  "select": {
+    "title": "Choisissez le compte",
+    "subtitle": "Vous avez accès à plusieurs comptes.",
+    "owner": "Titulaire"
+  },
+  "denied": {
+    "title": "Aucun accès à ce compte",
+    "noAccessPrefix": "Votre session n'a pas accès à",
+    "noAccessSuffix": ".",
+    "askOwner": "Demandez au titulaire du compte de vous inviter, ou connectez-vous avec un autre utilisateur.",
+    "goToMyAccounts": "Aller à mes comptes",
+    "signInAsOther": "Se connecter avec un autre utilisateur"
+  },
+  "slug": {
+    "required": "Choisissez l'adresse de votre compte.",
+    "format": "Utilisez 3 à 32 caractères : lettres minuscules, chiffres et traits d'union (sans commencer ni finir par un trait d'union).",
+    "taken": "Cette adresse est déjà utilisée. Choisissez-en une autre."
+  },
+  "errors": {
+    "createdNotFound": "Compte créé mais introuvable."
+  }
+}

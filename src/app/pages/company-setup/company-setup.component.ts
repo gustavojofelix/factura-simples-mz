@@ -13,6 +13,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService } from '../../core/services/auth.service';
 import { nuitValidator } from '../../core/validators/nuit.validator';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -23,6 +24,9 @@ import { ActivityService, ActivityType } from '../../core/services/activity.serv
 import { CompanyService } from '../../core/services/company.service';
 import { AccountService } from '../../core/services/account.service';
 import { ErrorDialogService } from '../../core/services/error-dialog.service';
+import { t } from '../../core/i18n/i18n';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { LanguageSwitcherComponent } from '../../shared/components/language-switcher/language-switcher.component';
 
 
 @Component({
@@ -40,7 +44,10 @@ import { ErrorDialogService } from '../../core/services/error-dialog.service';
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatCardModule,
-    MatChipsModule
+    MatChipsModule,
+    MatTooltipModule,
+    TranslatePipe,
+    LanguageSwitcherComponent
   ],
   templateUrl: './company-setup.component.html',
   styleUrls: ['./company-setup.component.css']
@@ -75,10 +82,43 @@ export class CompanySetupComponent {
     'Zambézia', 'Nampula', 'Niassa', 'Cabo Delgado'
   ];
 
+  // Valores gravados na BD (em português); só a etiqueta é traduzida.
   countries = [
     'Moçambique', 'África do Sul', 'Angola', 'Brasil', 'Eswatini', 'Malawi',
     'Portugal', 'Tanzânia', 'Zâmbia', 'Zimbabué'
   ];
+
+  private readonly countryKeys: Record<string, string> = {
+    'Moçambique': 'mozambique',
+    'África do Sul': 'southAfrica',
+    'Angola': 'angola',
+    'Brasil': 'brazil',
+    'Eswatini': 'eswatini',
+    'Malawi': 'malawi',
+    'Portugal': 'portugal',
+    'Tanzânia': 'tanzania',
+    'Zâmbia': 'zambia',
+    'Zimbabué': 'zimbabwe'
+  };
+
+  private readonly docTypeKeys: Record<string, string> = {
+    'Certidão de Registo Comercial': 'commercialRegistry',
+    'Boletim da República': 'republicBulletin',
+    'Documento de Identificação (Sócios)': 'partnersId',
+    'Contrato de Arrendamento': 'leaseAgreement',
+    'Outros': 'other',
+    'Alvará': 'licence'
+  };
+
+  countryLabel(country: string): string {
+    const key = this.countryKeys[country];
+    return key ? t(`companySetup.countries.${key}`) : country;
+  }
+
+  docTypeLabel(type: string | null | undefined): string {
+    const key = type ? this.docTypeKeys[type] : undefined;
+    return key ? t(`companySetup.documentTypes.${key}`) : (type ?? '');
+  }
 
   activityTypes = signal<ActivityType[]>([]);
   isLoadingActivities = signal(false);
@@ -126,9 +166,9 @@ export class CompanySetupComponent {
     } catch (error) {
       console.error('Erro ao carregar catálogo de actividades:', error);
       this.errorDialog.show(error, {
-        title: 'Não foi possível carregar os tipos de actividades',
-        context: 'Configurar empresa: carregar catálogo de actividades',
-        retryLabel: 'Tentar novamente'
+        title: t('companySetup.errors.loadActivitiesTitle'),
+        context: t('companySetup.errors.contextLoadActivities'),
+        retryLabel: t('common.actions.retry')
       }).then(result => { if (result === 'retry') this.loadActivityCatalog(); });
     } finally {
       this.isLoadingActivities.set(false);
@@ -220,10 +260,10 @@ export class CompanySetupComponent {
         file_name: file.name
       }]);
 
-      this.snackBar.open('Alvará carregado com sucesso!', 'Fechar', { duration: 3000 });
+      this.snackBar.open(t('companySetup.messages.licenceUploaded'), t('common.actions.close'), { duration: 3000 });
     } catch (error: any) {
       console.error('Erro ao subir Alvará:', error);
-      this.errorDialog.show(error, { title: 'Não foi possível carregar o Alvará', context: 'Configurar empresa: upload do Alvará' });
+      this.errorDialog.show(error, { title: t('companySetup.errors.uploadLicenceTitle'), context: t('companySetup.errors.contextUploadLicence') });
     } finally {
       this.isUploadingAlvara.set(false);
       input.value = '';
@@ -256,13 +296,13 @@ export class CompanySetupComponent {
           this.companyInfoForm.patchValue({ province: result.extractedData.province });
         }
 
-        this.snackBar.open('Dados extraídos do documento!', 'Fechar', { duration: 3000 });
+        this.snackBar.open(t('companySetup.messages.dataExtracted'), t('common.actions.close'), { duration: 3000 });
       } else {
-        this.snackBar.open('Documento carregado com sucesso!', 'Fechar', { duration: 3000 });
+        this.snackBar.open(t('companySetup.messages.documentUploaded'), t('common.actions.close'), { duration: 3000 });
       }
     } catch (error: any) {
       console.error('Erro ao subir NUIT:', error);
-      this.errorDialog.show(error, { title: 'Não foi possível carregar o documento NUIT', context: 'Configurar empresa: upload do NUIT' });
+      this.errorDialog.show(error, { title: t('companySetup.errors.uploadNuitTitle'), context: t('companySetup.errors.contextUploadNuit') });
     } finally {
       this.isUploadingNuit.set(false);
       input.value = '';
@@ -291,13 +331,13 @@ export class CompanySetupComponent {
           this.companyInfoForm.patchValue({ province: result.extractedData.province });
         }
 
-        this.snackBar.open('Dados extraídos do documento!', 'Fechar', { duration: 3000 });
+        this.snackBar.open(t('companySetup.messages.dataExtracted'), t('common.actions.close'), { duration: 3000 });
       } else {
-        this.snackBar.open('Documento carregado com sucesso!', 'Fechar', { duration: 3000 });
+        this.snackBar.open(t('companySetup.messages.documentUploaded'), t('common.actions.close'), { duration: 3000 });
       }
     } catch (error: any) {
       console.error('Erro ao subir Exercício de Actividade Comercial:', error);
-      this.errorDialog.show(error, { title: 'Não foi possível carregar o documento', context: 'Configurar empresa: upload do Exercício de Actividade Comercial' });
+      this.errorDialog.show(error, { title: t('companySetup.errors.uploadDocumentTitle'), context: t('companySetup.errors.contextUploadCommercial') });
     } finally {
       this.isUploadingCommercial.set(false);
       input.value = '';
@@ -311,7 +351,7 @@ export class CompanySetupComponent {
     if (!input.files || input.files.length === 0 || !type) return;
 
     if (this.isDocTypeSelected(type)) {
-      this.snackBar.open(`Já existe um documento do tipo "${type}"`, 'Fechar', { duration: 3000 });
+      this.snackBar.open(t('companySetup.messages.typeExists', { type: this.docTypeLabel(type) }), t('common.actions.close'), { duration: 3000 });
       input.value = '';
       return;
     }
@@ -329,10 +369,10 @@ export class CompanySetupComponent {
       }]);
 
       this.newDocType.setValue('');
-      this.snackBar.open('Documento adicionado à lista!', 'Fechar', { duration: 3000 });
+      this.snackBar.open(t('companySetup.messages.documentAdded'), t('common.actions.close'), { duration: 3000 });
     } catch (error: any) {
       console.error('Erro ao subir documento:', error);
-      this.errorDialog.show(error, { title: 'Não foi possível carregar o documento', context: `Configurar empresa: upload de "${type}"` });
+      this.errorDialog.show(error, { title: t('companySetup.errors.uploadDocumentTitle'), context: t('companySetup.errors.contextUploadOther', { type: this.docTypeLabel(type) }) });
     } finally {
       this.isUploadingOther.set(false);
       input.value = '';
@@ -356,10 +396,10 @@ export class CompanySetupComponent {
         await this.documentService.deleteDocument(doc.url);
       }
       this.otherDocuments.update(docs => docs.filter(d => d !== doc));
-      this.snackBar.open('Documento removido da lista!', 'Fechar', { duration: 3000 });
+      this.snackBar.open(t('companySetup.messages.documentRemovedFromList'), t('common.actions.close'), { duration: 3000 });
     } catch (error) {
       console.error('Erro ao remover documento:', error);
-      this.errorDialog.show(error, { title: 'Não foi possível remover o documento', context: 'Configurar empresa: remover documento' });
+      this.errorDialog.show(error, { title: t('companySetup.errors.removeDocumentTitle'), context: t('companySetup.errors.contextRemoveDocument') });
     }
   }
 
@@ -385,10 +425,10 @@ export class CompanySetupComponent {
     try {
       await this.documentService.deleteDocument(url);
       this.commercialActivityUrl.set(null);
-      this.snackBar.open('Documento removido!', 'Fechar', { duration: 3000 });
+      this.snackBar.open(t('companySetup.messages.documentRemoved'), t('common.actions.close'), { duration: 3000 });
     } catch (error) {
       console.error('Erro ao remover documento:', error);
-      this.errorDialog.show(error, { title: 'Não foi possível remover o documento', context: 'Configurar empresa: remover documento' });
+      this.errorDialog.show(error, { title: t('companySetup.errors.removeDocumentTitle'), context: t('companySetup.errors.contextRemoveDocument') });
     }
   }
 
@@ -405,7 +445,7 @@ export class CompanySetupComponent {
 
   async onSubmit() {
     if (this.companyInfoForm.invalid || this.settingsForm.invalid) {
-      this.snackBar.open('Por favor, preencha todos os campos obrigatórios', 'Fechar', {
+      this.snackBar.open(t('companySetup.messages.fillRequired'), t('common.actions.close'), {
         duration: 3000,
         panelClass: ['error-snackbar']
       });
@@ -416,9 +456,9 @@ export class CompanySetupComponent {
 
     const user = (await this.supabase.auth.getUser()).data.user;
     if (!user) {
-      this.errorDialog.show('A sua sessão terminou. Entre novamente para configurar a empresa.', {
-        title: 'Sessão expirada',
-        context: 'Configurar empresa: criar empresa'
+      this.errorDialog.show(t('companySetup.errors.sessionEnded'), {
+        title: t('companySetup.errors.sessionExpiredTitle'),
+        context: t('companySetup.errors.contextCreateCompany')
       });
       this.isLoading.set(false);
       return;
@@ -489,7 +529,7 @@ export class CompanySetupComponent {
         await Promise.all(docPromises);
       }
 
-      this.snackBar.open('Empresa configurada com sucesso!', 'Fechar', {
+      this.snackBar.open(t('companySetup.messages.companyConfigured'), t('common.actions.close'), {
         duration: 3000,
         panelClass: ['success-snackbar']
       });
@@ -502,8 +542,8 @@ export class CompanySetupComponent {
         this.flagDuplicateNuit();
       } else {
         this.errorDialog.show(error, {
-          title: 'Não foi possível criar a empresa',
-          context: 'Configurar empresa: criar empresa'
+          title: t('companySetup.errors.createCompanyTitle'),
+          context: t('companySetup.errors.contextCreateCompany')
         });
       }
     } finally {
@@ -519,7 +559,7 @@ export class CompanySetupComponent {
     const control = this.companyInfoForm.get('nuit');
     control?.setErrors({ duplicateNuit: true });
     control?.markAsTouched();
-    this.snackBar.open('Já existe uma entidade registada com este NUIT.', 'Fechar', {
+    this.snackBar.open(t('companySetup.messages.duplicateNuit'), t('common.actions.close'), {
       duration: 5000,
       panelClass: ['error-snackbar']
     });
@@ -530,24 +570,24 @@ export class CompanySetupComponent {
     if (!control || !control.touched) return '';
 
     if (control.hasError('required')) {
-      return 'Este campo é obrigatório';
+      return t('auth.validation.requiredShort');
     }
     if (control.hasError('minlength')) {
       const minLength = control.getError('minlength').requiredLength;
-      return `Mínimo de ${minLength} caracteres`;
+      return t('auth.validation.minLength', { min: minLength });
     }
     if (control.hasError('maxlength')) {
       const maxLength = control.getError('maxlength').requiredLength;
-      return `Máximo de ${maxLength} caracteres`;
+      return t('companySetup.validation.maxLength', { max: maxLength });
     }
     if (control.hasError('nuit')) {
       return control.getError('nuit');
     }
     if (control.hasError('pattern') && field === 'nuit') {
-      return 'NUIT deve ter 9 dígitos';
+      return t('companySetup.validation.nuitDigits');
     }
     if (control.hasError('duplicateNuit')) {
-      return 'Já existe uma entidade registada com este NUIT';
+      return t('companySetup.validation.duplicateNuit');
     }
     return '';
   }

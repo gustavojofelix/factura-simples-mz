@@ -3,6 +3,7 @@ import { SupabaseService } from './supabase.service';
 import { AuthService } from './auth.service';
 import { TenantService } from './tenant.service';
 import { ACCOUNT_SLUG_PATTERN } from '../utils/tenant.util';
+import { t } from '../i18n/i18n';
 
 export interface Account {
   id: string;
@@ -196,7 +197,7 @@ export class AccountService {
     if (error) throw error;
     await this.loadAccounts();
     const account = this.accounts().find(a => a.id === (data as any).id);
-    if (!account) throw new Error('Conta criada mas não encontrada.');
+    if (!account) throw new Error(t('account.errors.createdNotFound'));
     if (!this.tenant.usesSubdomains) this.setActive(account);
     return account;
   }

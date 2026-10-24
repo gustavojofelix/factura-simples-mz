@@ -273,6 +273,7 @@ section[id] {
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  margin-left: auto;
 }
 
 .nav-link {
@@ -302,6 +303,13 @@ section[id] {
   align-items: center;
   gap: 0.625rem;
   margin-left: 0.5rem;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
 }
 
 .btn-outline-nav,
@@ -1818,6 +1826,11 @@ section[id] {
 }
 
 @include respond-down($bp-lg) {
+  // Seletor de língua só com a bandeira em ecrãs médios (a navegação fica apertada).
+  .nav-actions ::ng-deep .lang-code {
+    display: none;
+  }
+
   .features-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

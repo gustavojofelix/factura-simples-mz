@@ -10,6 +10,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../../../core/services/auth.service';
 import { AccountService } from '../../../core/services/account.service';
+import { t } from '../../../core/i18n/i18n';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 @Component({
   selector: 'app-login-form',
@@ -23,7 +25,8 @@ import { AccountService } from '../../../core/services/account.service';
     MatInputModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    TranslatePipe
   ],
   templateUrl: './login-form.component.html',
   styleUrls: ['./login-form.component.css']
@@ -61,7 +64,7 @@ export class LoginFormComponent implements OnInit {
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
       if (params['error'] === 'suspended') {
-        this.snackBar.open('A sua conta foi suspensa pela administração. Por favor, contacte o suporte.', 'Fechar', {
+        this.snackBar.open(t('auth.messages.accountSuspended'), t('common.actions.close'), {
           duration: 8000,
           panelClass: ['error-snackbar']
         });
@@ -83,7 +86,7 @@ export class LoginFormComponent implements OnInit {
     this.isLoading.set(false);
 
     if (result.success) {
-      this.snackBar.open('Bem-vindo de volta!', 'Fechar', {
+      this.snackBar.open(t('auth.messages.welcomeBack'), t('common.actions.close'), {
         duration: 3000,
         panelClass: ['success-snackbar']
       });
@@ -96,7 +99,7 @@ export class LoginFormComponent implements OnInit {
         this.router.navigate([target.route]);
       }
     } else {
-      this.snackBar.open(result.error || 'Erro ao entrar', 'Fechar', {
+      this.snackBar.open(result.error || t('auth.messages.signInError'), t('common.actions.close'), {
         duration: 5000,
         panelClass: ['error-snackbar']
       });
@@ -109,13 +112,13 @@ export class LoginFormComponent implements OnInit {
     if (!control || !control.touched) return '';
 
     if (control.hasError('required')) {
-      return 'Este campo é obrigatório.';
+      return t('auth.validation.required');
     }
     if (control.hasError('email')) {
-      return 'Email inválido.';
+      return t('auth.validation.emailInvalid');
     }
     if (control.hasError('minlength')) {
-      return 'A palavra-passe deve ter pelo menos 6 caracteres.';
+      return t('auth.validation.passwordMin');
     }
     return '';
   }
@@ -134,12 +137,12 @@ export class LoginFormComponent implements OnInit {
     if (result.success) {
       this.sentEmail.set(email);
       this.mode.set('forgot_sent');
-      this.snackBar.open('E-mail de recuperação enviado com sucesso!', 'Fechar', {
+      this.snackBar.open(t('auth.messages.recoverySent'), t('common.actions.close'), {
         duration: 5000,
         panelClass: ['success-snackbar']
       });
     } else {
-      this.snackBar.open(result.error || 'Erro ao enviar o e-mail de recuperação', 'Fechar', {
+      this.snackBar.open(result.error || t('auth.messages.recoveryError'), t('common.actions.close'), {
         duration: 5000,
         panelClass: ['error-snackbar']
       });

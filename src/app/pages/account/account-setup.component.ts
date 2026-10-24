@@ -19,6 +19,9 @@ import {
 import { slugifyAccount } from '../../core/utils/tenant.util';
 import { friendlyErrorMessage } from '../../core/utils/error-message';
 import { environment } from '../../../environments/environment';
+import { t } from '../../core/i18n/i18n';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { LanguageSwitcherComponent } from '../../shared/components/language-switcher/language-switcher.component';
 
 /**
  * /configurar-conta: utilizadores sem conta própria (ex.: convidados que passam
@@ -35,30 +38,35 @@ import { environment } from '../../../environments/environment';
     MatInputModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    TranslatePipe,
+    LanguageSwitcherComponent
   ],
   template: `
-    <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 py-16 px-4 sm:px-6 lg:px-8">
+      <div class="absolute top-4 right-4 z-20">
+        <app-language-switcher />
+      </div>
       <div class="max-w-md w-full">
         <div class="bg-white rounded-2xl shadow-xl p-8">
           <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Criar a sua conta</h1>
-            <p class="text-gray-600">Escolha o endereço onde vai gerir as suas empresas.</p>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ 'account.setup.title' | t }}</h1>
+            <p class="text-gray-600">{{ 'account.setup.subtitle' | t }}</p>
           </div>
 
           <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-5">
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Nome da conta</mat-label>
-              <input matInput formControlName="name" placeholder="Ex.: Grupo Silva" />
+              <mat-label>{{ 'account.setup.name' | t }}</mat-label>
+              <input matInput formControlName="name" [placeholder]="'account.setup.namePlaceholder' | t" />
               <mat-icon matPrefix class="text-gray-400">business</mat-icon>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Endereço da conta</mat-label>
+              <mat-label>{{ 'auth.register.accountAddress' | t }}</mat-label>
               <input
                 matInput
                 formControlName="slug"
-                placeholder="minhaempresa"
+                [placeholder]="'auth.register.accountAddressPlaceholder' | t"
                 autocomplete="off"
                 autocapitalize="off"
                 spellcheck="false"
@@ -70,9 +78,9 @@ import { environment } from '../../../environments/environment';
                 <mat-error>{{ slugError() }}</mat-error>
               }
               @if (form.get('slug')?.pending) {
-                <mat-hint>A verificar disponibilidade...</mat-hint>
+                <mat-hint>{{ 'auth.register.checkingAvailability' | t }}</mat-hint>
               } @else if (form.get('slug')?.valid) {
-                <mat-hint class="!text-green-700">Disponível.</mat-hint>
+                <mat-hint class="!text-green-700">{{ 'account.setup.available' | t }}</mat-hint>
               }
             </mat-form-field>
 
@@ -84,16 +92,16 @@ import { environment } from '../../../environments/environment';
             >
               @if (isLoading()) {
                 <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
-                <span>A criar conta...</span>
+                <span>{{ 'auth.register.creating' | t }}</span>
               } @else {
-                <span>Continuar</span>
+                <span>{{ 'common.actions.continue' | t }}</span>
               }
             </button>
           </form>
 
           <div class="mt-8 text-center">
             <button type="button" (click)="signOut()" class="text-sm text-gray-600 hover:text-gray-900">
-              Terminar sessão
+              {{ 'account.common.signOut' | t }}
             </button>
           </div>
         </div>
@@ -176,7 +184,7 @@ export class AccountSetupComponent implements OnInit {
         this.form.get('slug')!.markAsTouched();
         return;
       }
-      this.snackBar.open(friendlyErrorMessage(error, 'Não foi possível criar a conta.'), 'Fechar', {
+      this.snackBar.open(friendlyErrorMessage(error, t('account.setup.createError')), t('common.actions.close'), {
         duration: 5000,
         panelClass: ['error-snackbar']
       });

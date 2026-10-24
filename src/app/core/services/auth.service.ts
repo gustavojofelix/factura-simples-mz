@@ -4,6 +4,7 @@ import { SupabaseService } from './supabase.service';
 import { User, AuthError } from '@supabase/supabase-js';
 import { AuditLogService } from './audit-log.service';
 import { LanguageService } from '../i18n/language.service';
+import { t } from '../i18n/i18n';
 
 export interface AuthResponse {
   success: boolean;
@@ -107,9 +108,9 @@ export class AuthService {
         return { success: true, user: data.user };
       }
 
-      return { success: false, error: 'Erro ao criar conta' };
+      return { success: false, error: t('auth.messages.signUpError') };
     } catch (error: any) {
-      return { success: false, error: error.message || 'Erro desconhecido' };
+      return { success: false, error: error.message || t('auth.messages.unknownError') };
     }
   }
 
@@ -142,7 +143,7 @@ export class AuthService {
           );
           return {
             success: false,
-            error: 'A sua conta foi suspensa pela administração. Contacte o suporte para mais informações.'
+            error: t('auth.messages.accountSuspendedLong')
           };
         }
 
@@ -158,9 +159,9 @@ export class AuthService {
         return { success: true, user: data.user };
       }
 
-      return { success: false, error: 'Erro ao entrar' };
+      return { success: false, error: t('auth.messages.signInError') };
     } catch (error: any) {
-      return { success: false, error: error.message || 'Erro desconhecido' };
+      return { success: false, error: error.message || t('auth.messages.unknownError') };
     }
   }
 
@@ -190,7 +191,7 @@ export class AuthService {
 
       return { success: true };
     } catch (error: any) {
-      return { success: false, error: error.message || 'Erro desconhecido' };
+      return { success: false, error: error.message || t('auth.messages.unknownError') };
     }
   }
 
@@ -214,9 +215,9 @@ export class AuthService {
         return { success: true, user: data.user };
       }
 
-      return { success: false, error: 'Erro ao atualizar a palavra-passe' };
+      return { success: false, error: t('auth.messages.passwordUpdateError') };
     } catch (error: any) {
-      return { success: false, error: error.message || 'Erro desconhecido' };
+      return { success: false, error: error.message || t('auth.messages.unknownError') };
     }
   }
 
@@ -252,7 +253,7 @@ export class AuthService {
         console.warn('Aviso ao carregar perfil da base de dados:', error.message);
         return {
           id: user.id,
-          full_name: user.user_metadata?.['full_name'] || user.email?.split('@')[0] || 'Utilizador',
+          full_name: user.user_metadata?.['full_name'] || user.email?.split('@')[0] || t('auth.profile.defaultName'),
           phone: user.user_metadata?.['phone'] || '',
           email: user.email!,
           role: 'user',
@@ -276,7 +277,7 @@ export class AuthService {
       console.error('Erro ao carregar perfil:', error);
       return {
         id: user.id,
-        full_name: user.user_metadata?.['full_name'] || user.email?.split('@')[0] || 'Utilizador',
+        full_name: user.user_metadata?.['full_name'] || user.email?.split('@')[0] || t('auth.profile.defaultName'),
         phone: user.user_metadata?.['phone'] || '',
         email: user.email!,
         role: 'user',
@@ -302,21 +303,22 @@ export class AuthService {
     const message = error?.message || (typeof error === 'string' ? error : '');
 
     if (message.includes('Failed to fetch') || message.includes('ERR_CONNECTION_TIMED_OUT') || message.includes('no such host') || message.includes('fetch')) {
-      return 'Erro de ligação ao servidor. Por favor, verifique a sua ligação à internet e tente novamente.';
+      return t('auth.errors.connection');
     }
 
     const errorMap: { [key: string]: string } = {
-      'Invalid login credentials': 'Email ou palavra-passe incorretos',
-      'Email not confirmed': 'Email não confirmado',
-      'User already registered': 'Este email já está registado',
-      'Password should be at least 6 characters': 'A palavra-passe deve ter pelo menos 6 caracteres',
-      'Unable to validate email address': 'Email inválido',
-      'Email rate limit exceeded': 'Demasiadas tentativas. Tente novamente mais tarde',
-      'New password should be different from the old password': 'A nova palavra-passe deve ser diferente da antiga',
-      'Database error granting user': 'Erro na base de dados ao autenticar o utilizador. Por favor, execute as migrações mais recentes no Supabase.'
+      'Invalid login credentials': 'auth.errors.invalidCredentials',
+      'Email not confirmed': 'auth.errors.emailNotConfirmed',
+      'User already registered': 'auth.errors.alreadyRegistered',
+      'Password should be at least 6 characters': 'auth.errors.passwordTooShort',
+      'Unable to validate email address': 'auth.errors.invalidEmail',
+      'Email rate limit exceeded': 'auth.errors.rateLimit',
+      'New password should be different from the old password': 'auth.errors.samePassword',
+      'Database error granting user': 'auth.errors.databaseGrant'
     };
 
-    return errorMap[message] || message || 'Erro ao processar pedido';
+    const key = errorMap[message];
+    return key ? t(key) : (message || t('auth.errors.requestFailed'));
   }
 
   isAuthenticated(): boolean {
@@ -325,7 +327,7 @@ export class AuthService {
 
   async updateUserProfile(data: { fullName: string; phone?: string }): Promise<void> {
     const user = this.currentUser();
-    if (!user) throw new Error('Utilizador não autenticado');
+    if (!user) throw new Error(t('auth.errors.notAuthenticated'));
 
     const { error } = await this.supabase.db
       .from('profiles')
@@ -337,14 +339,14 @@ export class AuthService {
 
   async updateUserPassword(currentPassword: string, newPassword: string): Promise<void> {
     const user = this.currentUser();
-    if (!user?.email) throw new Error('Utilizador não encontrado');
+    if (!user?.email) throw new Error(t('auth.errors.userNotFound'));
 
     const { error: signInError } = await this.supabase.auth.signInWithPassword({
       email: user.email,
       password: currentPassword
     });
 
-    if (signInError) throw new Error('Palavra-passe atual incorreta');
+    if (signInError) throw new Error(t('auth.errors.wrongCurrentPassword'));
 
     const { error } = await this.supabase.auth.updateUser({ password: newPassword });
     if (error) throw error;

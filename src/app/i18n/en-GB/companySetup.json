@@ -1,1 +1,126 @@
-{}
+{
+  "header": {
+    "title": "Set Up Company",
+    "subtitle": "Set up your first company in 3 simple steps"
+  },
+  "steps": {
+    "companyInfo": "Company Information",
+    "initialSettings": "Initial Settings"
+  },
+  "form": {
+    "entityType": "Entity Type",
+    "entitySingular": "Individual",
+    "entityCollective": "Legal Entity",
+    "email": "Email",
+    "emailPlaceholder": "E.g.: info@company.com",
+    "activitiesTitle": "Type of Activities",
+    "mainActivity": "Main Activity",
+    "commercialActivities": "Commercial Activity(ies)",
+    "serviceActivities": "Service Activity(ies)",
+    "businessVolume": "Turnover / ISPC Rate",
+    "entityName": "Entity Name",
+    "entityNamePlaceholder": "E.g.: Smith Trading Ltd",
+    "nuitPlaceholder": "9 digits",
+    "nuitHint": "Single Tax Identification Number (9 digits)",
+    "addressPlaceholder": "Av. Julius Nyerere, No. 123, Maputo",
+    "country": "Country",
+    "province": "Province",
+    "postalCode": "Postcode",
+    "postalCodePlaceholder": "E.g.: 1100"
+  },
+  "volume": {
+    "rate3": "3% (up to 1,000,000.00 MT)",
+    "rate4": "4% (> 1,001,000.00 MT and ≤ 2,500,000.00 MT)",
+    "rate5": "5% (> 2,501,000.00 MT and ≤ 4,000,000.00 MT)",
+    "rate12": "12% on turnover ≤ 4,000,000.00 MT",
+    "rate15": "15% on turnover ≤ 4,000,000.00 MT",
+    "rate20": "20% on turnover > 4,000,000.00 MT"
+  },
+  "documents": {
+    "uploaded": "Document uploaded",
+    "viewDocument": "View Document",
+    "changeDocument": "Change Document",
+    "uploadNuit": "Upload NUIT document (optional)",
+    "startOfActivity": "Start of Activity",
+    "view": "View",
+    "deleteDocument": "Delete Document",
+    "uploading": "Uploading...",
+    "uploadStartOfActivity": "Upload Start of Activity",
+    "fileTypes": "PDF, JPG or PNG (max. 10MB)",
+    "licence": "Business Licence",
+    "uploadLicence": "Upload Business Licence",
+    "otherTitle": "Other Documents",
+    "documentType": "Document Type",
+    "upload": "Upload",
+    "onePerType": "* Only one file per type. To replace it, delete the previous one from the list below.",
+    "file": "File",
+    "none": "No additional documents added."
+  },
+  "actions": {
+    "next": "Next",
+    "configuring": "Setting up...",
+    "finish": "Finish Setup"
+  },
+  "settings": {
+    "currency": "Currency",
+    "currencyMzn": "MZN - Mozambican metical",
+    "invoicePrefix": "Invoice Prefix",
+    "invoicePrefixHint": "E.g.: FAC0001, FAC0002, etc.",
+    "readyTitle": "All set!",
+    "readyText": "Once you finish, you'll be able to start issuing invoices straight away."
+  },
+  "countries": {
+    "mozambique": "Mozambique",
+    "southAfrica": "South Africa",
+    "angola": "Angola",
+    "brazil": "Brazil",
+    "eswatini": "Eswatini",
+    "malawi": "Malawi",
+    "portugal": "Portugal",
+    "tanzania": "Tanzania",
+    "zambia": "Zambia",
+    "zimbabwe": "Zimbabwe"
+  },
+  "documentTypes": {
+    "commercialRegistry": "Commercial Registry Certificate",
+    "republicBulletin": "Official Gazette (Boletim da República)",
+    "partnersId": "Identity Document (Partners)",
+    "leaseAgreement": "Lease Agreement",
+    "other": "Other",
+    "licence": "Business Licence"
+  },
+  "messages": {
+    "licenceUploaded": "Business licence uploaded successfully!",
+    "dataExtracted": "Data extracted from the document!",
+    "documentUploaded": "Document uploaded successfully!",
+    "typeExists": "A \"{type}\" document already exists",
+    "documentAdded": "Document added to the list!",
+    "documentRemovedFromList": "Document removed from the list!",
+    "documentRemoved": "Document removed!",
+    "fillRequired": "Please fill in all required fields",
+    "companyConfigured": "Company set up successfully!",
+    "duplicateNuit": "An entity with this NUIT is already registered."
+  },
+  "errors": {
+    "loadActivitiesTitle": "Could not load the activity types",
+    "contextLoadActivities": "Company setup: load activity catalogue",
+    "uploadLicenceTitle": "Could not upload the business licence",
+    "contextUploadLicence": "Company setup: business licence upload",
+    "uploadNuitTitle": "Could not upload the NUIT document",
+    "contextUploadNuit": "Company setup: NUIT upload",
+    "uploadDocumentTitle": "Could not upload the document",
+    "contextUploadCommercial": "Company setup: commercial activity document upload",
+    "contextUploadOther": "Company setup: upload of \"{type}\"",
+    "sessionEnded": "Your session has ended. Sign in again to set up the company.",
+    "sessionExpiredTitle": "Session expired",
+    "contextCreateCompany": "Company setup: create company",
+    "createCompanyTitle": "Could not create the company",
+    "removeDocumentTitle": "The document could not be removed",
+    "contextRemoveDocument": "Company setup: remove document"
+  },
+  "validation": {
+    "nuitDigits": "NUIT must have 9 digits",
+    "maxLength": "Maximum {max} characters",
+    "duplicateNuit": "An entity with this NUIT is already registered"
+  }
+}

@@ -1,1 +1,34 @@
-{}
+{
+  "common": {
+    "signOut": "Terminar sessão"
+  },
+  "setup": {
+    "title": "Criar a sua conta",
+    "subtitle": "Escolha o endereço onde vai gerir as suas empresas.",
+    "name": "Nome da conta",
+    "namePlaceholder": "Ex.: Grupo Silva",
+    "available": "Disponível.",
+    "createError": "Não foi possível criar a conta."
+  },
+  "select": {
+    "title": "Escolha a conta",
+    "subtitle": "Tem acesso a mais de uma conta.",
+    "owner": "Titular"
+  },
+  "denied": {
+    "title": "Sem acesso a esta conta",
+    "noAccessPrefix": "A sua sessão não tem acesso a",
+    "noAccessSuffix": ".",
+    "askOwner": "Peça ao titular da conta que o convide, ou entre com outro utilizador.",
+    "goToMyAccounts": "Ir para as minhas contas",
+    "signInAsOther": "Entrar com outro utilizador"
+  },
+  "slug": {
+    "required": "Escolha o endereço da sua conta.",
+    "format": "Use 3 a 32 caracteres: letras minúsculas, números e hífens (sem começar ou terminar em hífen).",
+    "taken": "Este endereço já está em uso. Escolha outro."
+  },
+  "errors": {
+    "createdNotFound": "Conta criada mas não encontrada."
+  }
+}

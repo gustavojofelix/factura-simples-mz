@@ -11,6 +11,9 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../../core/services/auth.service';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { AccountService } from '../../core/services/account.service';
+import { t } from '../../core/i18n/i18n';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { LanguageSwitcherComponent } from '../../shared/components/language-switcher/language-switcher.component';
 
 @Component({
   selector: 'app-reset-password',
@@ -24,7 +27,9 @@ import { AccountService } from '../../core/services/account.service';
     MatInputModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    TranslatePipe,
+    LanguageSwitcherComponent
   ],
   templateUrl: './reset-password.component.html',
   styleUrls: ['./reset-password.component.css']
@@ -98,11 +103,11 @@ export class ResetPasswordComponent implements OnInit {
               this.tokenValid.set(true);
             }
           } else {
-            throw new Error('Token de recuperação incompleto no link.');
+            throw new Error(t('auth.reset.incompleteToken'));
           }
         } else {
           this.tokenValid.set(false);
-          this.tokenErrorMessage.set('O link de recuperação de palavra-passe é inválido ou expirou.');
+          this.tokenErrorMessage.set(t('auth.reset.invalidLink'));
         }
       } else {
         this.tokenValid.set(true);
@@ -110,7 +115,7 @@ export class ResetPasswordComponent implements OnInit {
     } catch (err: any) {
       console.error('Erro ao verificar token de recuperação:', err);
       this.tokenValid.set(false);
-      this.tokenErrorMessage.set(err.message || 'O link de recuperação caducou ou é inválido.');
+      this.tokenErrorMessage.set(err.message || t('auth.reset.expiredLink'));
     } finally {
       this.isVerifying.set(false);
     }
@@ -131,13 +136,13 @@ export class ResetPasswordComponent implements OnInit {
     if (!control || (!control.touched && !this.resetForm.hasError('passwordMismatch'))) return '';
 
     if (control.hasError('required')) {
-      return 'Este campo é obrigatório';
+      return t('auth.validation.requiredShort');
     }
     if (control.hasError('minlength')) {
-      return 'A palavra-passe deve ter pelo menos 6 caracteres';
+      return t('auth.validation.passwordMinShort');
     }
     if (field === 'confirmPassword' && this.resetForm.hasError('passwordMismatch')) {
-      return 'As palavras-passes não coincidem';
+      return t('auth.validation.passwordsMismatch');
     }
     return '';
   }
@@ -156,7 +161,7 @@ export class ResetPasswordComponent implements OnInit {
 
     if (result.success) {
       this.isSuccess.set(true);
-      this.snackBar.open('Palavra-passe alterada com sucesso!', 'Fechar', {
+      this.snackBar.open(t('auth.messages.passwordChanged'), t('common.actions.close'), {
         duration: 4000,
         panelClass: ['success-snackbar']
       });
@@ -170,7 +175,7 @@ export class ResetPasswordComponent implements OnInit {
         }
       }, 1500);
     } else {
-      this.snackBar.open(result.error || 'Erro ao redefinir a palavra-passe', 'Fechar', {
+      this.snackBar.open(result.error || t('auth.messages.passwordResetError'), t('common.actions.close'), {
         duration: 5000,
         panelClass: ['error-snackbar']
       });

@@ -17,6 +17,9 @@ import { animate, state, style, transition, trigger } from '@angular/animations'
 import { LoginFormComponent } from '../../shared/components/login-form/login-form.component';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { LandingCmsService } from '../../core/services/landing-cms.service';
+import { currentLocale, t } from '../../core/i18n/i18n';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { LanguageSwitcherComponent } from '../../shared/components/language-switcher/language-switcher.component';
 
 @Component({
   selector: 'app-landing',
@@ -25,7 +28,9 @@ import { LandingCmsService } from '../../core/services/landing-cms.service';
     CommonModule,
     RouterLink,
     ReactiveFormsModule,
-    LoginFormComponent
+    LoginFormComponent,
+    TranslatePipe,
+    LanguageSwitcherComponent
   ],
   templateUrl: './landing.component.html',
   styleUrls: ['./landing.component.scss'],
@@ -85,7 +90,7 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
   ];
 
   get hero() {
-    return this.cmsService.hero();
+    return this.cmsService.localizedHero();
   }
 
   getHeroTitleParts() {
@@ -102,65 +107,67 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   get stats() {
-    return this.cmsService.stats();
+    return this.cmsService.localizedStats();
   }
 
   get features() {
-    return this.cmsService.features();
+    return this.cmsService.localizedFeatures();
   }
 
   get values() {
-    return this.cmsService.values();
+    return this.cmsService.localizedValues();
   }
 
   get faqs() {
-    return this.cmsService.faqs();
+    return this.cmsService.localizedFaqs();
   }
 
   get contact() {
-    return this.cmsService.contact();
+    return this.cmsService.localizedContact();
   }
 
   get termsContent() {
-    return this.cmsService.terms();
+    return this.cmsService.localizedTerms();
   }
 
   get privacyContent() {
-    return this.cmsService.privacy();
+    return this.cmsService.localizedPrivacy();
   }
 
+  // Planos por omissão, substituídos pelos planos da BD (nomes/descrições/funcionalidades
+  // da BD são mostrados tal como estão gravados).
   plans = [
     {
-      name: 'Essencial',
-      description: 'Ideal para autónomos e microempresas',
-      price: '2.500',
+      name: t('landing.defaultPlans.essential.name'),
+      description: t('landing.defaultPlans.essential.description'),
+      price: t('landing.defaultPlans.essential.price'),
       currency: 'MZN',
-      period: 'mês',
+      period: t('landing.pricing.period.monthly'),
       features: [
-        'Até 100 facturas/mês',
-        'Clientes ilimitados',
-        'Cálculo automático de ISPC',
-        'Envio por email',
-        '1 empresa',
-        'Suporte por email'
+        t('landing.defaultPlans.essential.features.invoices'),
+        t('landing.defaultPlans.common.unlimitedClients'),
+        t('landing.defaultPlans.common.ispcCalculation'),
+        t('landing.defaultPlans.common.emailSending'),
+        t('landing.defaultPlans.essential.features.companies'),
+        t('landing.defaultPlans.essential.features.support')
       ],
       highlighted: false
     },
     {
-      name: 'Profissional',
-      description: 'Para PMEs em crescimento acelerado',
-      price: '5.000',
+      name: t('landing.defaultPlans.professional.name'),
+      description: t('landing.defaultPlans.professional.description'),
+      price: t('landing.defaultPlans.professional.price'),
       currency: 'MZN',
-      period: 'mês',
+      period: t('landing.pricing.period.monthly'),
       features: [
-        'Facturas ilimitadas',
-        'Clientes ilimitados',
-        'Cálculo automático de ISPC',
-        'Envio por email',
-        'Até 5 empresas',
-        'Relatórios avançados',
-        'Suporte prioritário 24/7',
-        'Exportação para PDF/Excel'
+        t('landing.defaultPlans.professional.features.invoices'),
+        t('landing.defaultPlans.common.unlimitedClients'),
+        t('landing.defaultPlans.common.ispcCalculation'),
+        t('landing.defaultPlans.common.emailSending'),
+        t('landing.defaultPlans.professional.features.companies'),
+        t('landing.defaultPlans.professional.features.reports'),
+        t('landing.defaultPlans.professional.features.support'),
+        t('landing.defaultPlans.professional.features.export')
       ],
       highlighted: true
     }
@@ -215,10 +222,10 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.rawPlans || this.rawPlans.length === 0) return;
 
     const periodMap = {
-      monthly: 'mês',
-      quarterly: '3 meses',
-      semiannual: '6 meses',
-      yearly: 'ano'
+      monthly: t('landing.pricing.period.monthly'),
+      quarterly: t('landing.pricing.period.quarterly'),
+      semiannual: t('landing.pricing.period.semiannual'),
+      yearly: t('landing.pricing.period.yearly')
     };
 
     this.plans = this.rawPlans.map(p => {
@@ -236,7 +243,7 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
       return {
         name: p.name,
         description: p.description || '',
-        price: priceVal ? priceVal.toLocaleString('pt-MZ') : '0',
+        price: priceVal ? priceVal.toLocaleString(currentLocale()) : '0',
         currency: p.currency || 'MZN',
         period: periodMap[this.selectedCycle],
         features: p.features || [],
@@ -432,11 +439,11 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
   getContactError(field: string): string {
     const control = this.contactForm.get(field);
     if (!control || !control.touched) return '';
-    if (control.hasError('required')) return 'Este campo é obrigatório.';
-    if (control.hasError('email')) return 'Introduza um endereço de email válido.';
+    if (control.hasError('required')) return t('landing.contact.errors.required');
+    if (control.hasError('email')) return t('landing.contact.errors.email');
     if (control.hasError('minlength')) {
       const min = control.errors?.['minlength']?.requiredLength;
-      return `Mínimo de ${min} caracteres.`;
+      return t('landing.contact.errors.minLength', { min });
     }
     return '';
   }

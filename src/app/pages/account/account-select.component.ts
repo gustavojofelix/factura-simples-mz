@@ -6,19 +6,24 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Account, AccountService } from '../../core/services/account.service';
 import { AuthService } from '../../core/services/auth.service';
 import { environment } from '../../../environments/environment';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { LanguageSwitcherComponent } from '../../shared/components/language-switcher/language-switcher.component';
 
 /** /escolher-conta: o utilizador tem acesso a várias contas e escolhe uma. */
 @Component({
   selector: 'app-account-select',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatProgressSpinnerModule],
+  imports: [CommonModule, MatIconModule, MatProgressSpinnerModule, TranslatePipe, LanguageSwitcherComponent],
   template: `
-    <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 py-16 px-4 sm:px-6 lg:px-8">
+      <div class="absolute top-4 right-4 z-20">
+        <app-language-switcher />
+      </div>
       <div class="max-w-md w-full">
         <div class="bg-white rounded-2xl shadow-xl p-8">
           <div class="text-center mb-6">
-            <h1 class="text-2xl font-bold text-gray-900 mb-2">Escolha a conta</h1>
-            <p class="text-gray-600">Tem acesso a mais de uma conta.</p>
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ 'account.select.title' | t }}</h1>
+            <p class="text-gray-600">{{ 'account.select.subtitle' | t }}</p>
           </div>
 
           @if (!accountService.isLoaded()) {
@@ -38,7 +43,7 @@ import { environment } from '../../../environments/environment';
                       <span class="block text-sm text-gray-500 truncate">{{ account.slug }}.{{ rootDomain }}</span>
                     </span>
                     @if (account.is_owner) {
-                      <span class="text-xs font-medium text-ispc-orange bg-orange-100 rounded-full px-2 py-0.5">Titular</span>
+                      <span class="text-xs font-medium text-ispc-orange bg-orange-100 rounded-full px-2 py-0.5">{{ 'account.select.owner' | t }}</span>
                     }
                     <mat-icon class="text-gray-400">chevron_right</mat-icon>
                   </button>
@@ -49,7 +54,7 @@ import { environment } from '../../../environments/environment';
 
           <div class="mt-8 text-center">
             <button type="button" (click)="signOut()" class="text-sm text-gray-600 hover:text-gray-900">
-              Terminar sessão
+              {{ 'account.common.signOut' | t }}
             </button>
           </div>
         </div>

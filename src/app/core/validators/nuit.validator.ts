@@ -1,4 +1,5 @@
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
+import { t } from '../i18n/i18n';
 
 export function nuitValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
@@ -9,7 +10,7 @@ export function nuitValidator(): ValidatorFn {
     const nuit = control.value.toString().trim();
 
     if (!/^\d{9}$/.test(nuit)) {
-      return { nuit: 'NUIT deve ter 9 dígitos' };
+      return { nuit: t('companySetup.validation.nuitDigits') };
     }
 
     return null;

@@ -1,20 +1,24 @@
-<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+<div class="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 py-16 px-4 sm:px-6 lg:px-8">
+  <div class="absolute top-4 right-4 z-20">
+    <app-language-switcher />
+  </div>
+
   <div class="max-w-md w-full">
     <div class="bg-white rounded-2xl shadow-xl p-8">
       <div class="text-center mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">Criar Conta</h1>
-        <p class="text-gray-600">Comece grátis por 14 dias</p>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ 'auth.register.title' | t }}</h1>
+        <p class="text-gray-600">{{ 'auth.register.subtitle' | t }}</p>
       </div>
 
       <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-5">
         <div>
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Nome Completo</mat-label>
+            <mat-label>{{ 'auth.register.fullName' | t }}</mat-label>
             <input
               matInput
               type="text"
               formControlName="fullName"
-              placeholder="João Silva"
+              [placeholder]="'auth.register.fullNamePlaceholder' | t"
               autocomplete="name"
             />
             <mat-icon matPrefix class="text-gray-400">person</mat-icon>
@@ -26,12 +30,12 @@
 
         <div>
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Endereço da conta</mat-label>
+            <mat-label>{{ 'auth.register.accountAddress' | t }}</mat-label>
             <input
               matInput
               type="text"
               formControlName="accountSlug"
-              placeholder="minhaempresa"
+              [placeholder]="'auth.register.accountAddressPlaceholder' | t"
               autocomplete="off"
               autocapitalize="off"
               spellcheck="false"
@@ -43,23 +47,23 @@
               <mat-error>{{ getErrorMessage('accountSlug') }}</mat-error>
             }
             @if (registerForm.get('accountSlug')?.pending) {
-              <mat-hint>A verificar disponibilidade...</mat-hint>
+              <mat-hint>{{ 'auth.register.checkingAvailability' | t }}</mat-hint>
             } @else if (registerForm.get('accountSlug')?.valid) {
-              <mat-hint class="!text-green-700">Disponível. Vai aceder à sua conta neste endereço.</mat-hint>
+              <mat-hint class="!text-green-700">{{ 'auth.register.available' | t }}</mat-hint>
             } @else {
-              <mat-hint>Será o endereço da sua conta. Pode ter várias empresas na mesma conta.</mat-hint>
+              <mat-hint>{{ 'auth.register.accountAddressHint' | t }}</mat-hint>
             }
           </mat-form-field>
         </div>
 
         <div>
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Email</mat-label>
+            <mat-label>{{ 'auth.login.email' | t }}</mat-label>
             <input
               matInput
               type="email"
               formControlName="email"
-              placeholder="seu@email.com"
+              [placeholder]="'auth.login.emailPlaceholder' | t"
               autocomplete="email"
             />
             <mat-icon matPrefix class="text-gray-400">email</mat-icon>
@@ -71,7 +75,7 @@
 
         <div>
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Telefone (opcional)</mat-label>
+            <mat-label>{{ 'auth.register.phoneOptional' | t }}</mat-label>
             <input
               matInput
               type="tel"
@@ -84,18 +88,18 @@
             @if (getErrorMessage('phone')) {
               <mat-error>{{ getErrorMessage('phone') }}</mat-error>
             }
-            <mat-hint>Formato moçambicano: +258 XX XXX XXXX</mat-hint>
+            <mat-hint>{{ 'auth.register.phoneHint' | t }}</mat-hint>
           </mat-form-field>
         </div>
 
         <div>
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Palavra-passe</mat-label>
+            <mat-label>{{ 'common.fields.password' | t }}</mat-label>
             <input
               matInput
               [type]="hidePassword() ? 'password' : 'text'"
               formControlName="password"
-              placeholder="Mínimo 6 caracteres"
+              [placeholder]="'auth.register.passwordPlaceholder' | t"
               autocomplete="new-password"
             />
             <mat-icon matPrefix class="text-gray-400">lock</mat-icon>
@@ -115,12 +119,12 @@
 
         <div>
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Confirmar Palavra-passe</mat-label>
+            <mat-label>{{ 'auth.register.confirmPassword' | t }}</mat-label>
             <input
               matInput
               [type]="hideConfirmPassword() ? 'password' : 'text'"
               formControlName="confirmPassword"
-              placeholder="Digite novamente"
+              [placeholder]="'auth.register.confirmPasswordPlaceholder' | t"
               autocomplete="new-password"
             />
             <mat-icon matPrefix class="text-gray-400">lock</mat-icon>
@@ -141,15 +145,15 @@
         <div>
           <mat-checkbox formControlName="acceptTerms" color="primary" class="text-sm">
             <span class="text-gray-700">
-              Aceito os
-              <a href="javascript:void(0)" (click)="openTerms($event)" class="text-ispc-orange hover:underline">Termos de Uso</a>
-              e
-              <a href="javascript:void(0)" (click)="openPrivacy($event)" class="text-ispc-orange hover:underline">Política de Privacidade</a>
+              {{ 'auth.register.acceptPrefix' | t }}
+              <a href="javascript:void(0)" (click)="openTerms($event)" class="text-ispc-orange hover:underline">{{ 'auth.register.termsLink' | t }}</a>
+              {{ 'auth.register.acceptAnd' | t }}
+              <a href="javascript:void(0)" (click)="openPrivacy($event)" class="text-ispc-orange hover:underline">{{ 'auth.register.privacyLink' | t }}</a>{{ 'auth.register.acceptSuffix' | t }}
             </span>
           </mat-checkbox>
           @if (registerForm.get('acceptTerms')?.touched && registerForm.get('acceptTerms')?.hasError('required')) {
             <div class="text-red-600 text-xs mt-1">
-              Deve aceitar os termos para continuar
+              {{ 'auth.register.mustAcceptTerms' | t }}
             </div>
           }
         </div>
@@ -162,9 +166,9 @@
         >
           @if (isLoading()) {
             <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
-            <span>A criar conta...</span>
+            <span>{{ 'auth.register.creating' | t }}</span>
           } @else {
-            <span>Criar Conta Grátis</span>
+            <span>{{ 'auth.register.submit' | t }}</span>
           }
         </button>
       </form>
@@ -175,7 +179,7 @@
             <div class="w-full border-t border-gray-300"></div>
           </div>
           <div class="relative flex justify-center text-sm">
-            <span class="px-2 bg-white text-gray-500">Já tem conta?</span>
+            <span class="px-2 bg-white text-gray-500">{{ 'auth.register.haveAccount' | t }}</span>
           </div>
         </div>
 
@@ -184,7 +188,7 @@
             routerLink="/entrar"
             class="font-medium text-ispc-orange hover:text-ispc-orange/80"
           >
-            Entrar na sua conta
+            {{ 'auth.register.signInToYourAccount' | t }}
           </a>
         </div>
       </div>
@@ -192,7 +196,7 @@
       <div class="mt-8 text-center">
         <a routerLink="/" class="text-sm text-gray-600 hover:text-gray-900">
           <mat-icon class="inline-block align-middle mr-1 !text-base">arrow_back</mat-icon>
-          Voltar ao início
+          {{ 'auth.loginPage.backToHome' | t }}
         </a>
       </div>
     </div>

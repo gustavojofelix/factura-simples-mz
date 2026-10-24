@@ -5,22 +5,27 @@ import { MatIconModule } from '@angular/material/icon';
 import { AccountService } from '../../core/services/account.service';
 import { AuthService } from '../../core/services/auth.service';
 import { TenantService } from '../../core/services/tenant.service';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { LanguageSwitcherComponent } from '../../shared/components/language-switcher/language-switcher.component';
 
 /** /sem-acesso: o subdomínio é de uma conta a que o utilizador não pertence. */
 @Component({
   selector: 'app-account-denied',
   standalone: true,
-  imports: [CommonModule, MatIconModule],
+  imports: [CommonModule, MatIconModule, TranslatePipe, LanguageSwitcherComponent],
   template: `
-    <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 py-16 px-4 sm:px-6 lg:px-8">
+      <div class="absolute top-4 right-4 z-20">
+        <app-language-switcher />
+      </div>
       <div class="max-w-md w-full">
         <div class="bg-white rounded-2xl shadow-xl p-8 text-center">
           <mat-icon class="!text-5xl !w-12 !h-12 text-ispc-orange mb-4">lock</mat-icon>
-          <h1 class="text-2xl font-bold text-gray-900 mb-2">Sem acesso a esta conta</h1>
+          <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ 'account.denied.title' | t }}</h1>
           <p class="text-gray-600 mb-6">
-            A sua sessão não tem acesso a
-            <strong>{{ tenant.currentSlug() }}</strong>.
-            Peça ao titular da conta que o convide, ou entre com outro utilizador.
+            {{ 'account.denied.noAccessPrefix' | t }}
+            <strong>{{ tenant.currentSlug() }}</strong>{{ 'account.denied.noAccessSuffix' | t }}
+            {{ 'account.denied.askOwner' | t }}
           </p>
 
           <div class="flex flex-col gap-3">
@@ -29,7 +34,7 @@ import { TenantService } from '../../core/services/tenant.service';
                 [href]="tenant.rootUrl('/escolher-conta')"
                 class="w-full py-3 rounded-xl font-semibold text-white bg-ispc-orange hover:bg-ispc-orange/90"
               >
-                Ir para as minhas contas
+                {{ 'account.denied.goToMyAccounts' | t }}
               </a>
             }
             <button
@@ -37,7 +42,7 @@ import { TenantService } from '../../core/services/tenant.service';
               (click)="signOut()"
               class="w-full py-3 rounded-xl font-semibold text-gray-700 border border-gray-300 hover:bg-gray-50"
             >
-              Entrar com outro utilizador
+              {{ 'account.denied.signInAsOther' | t }}
             </button>
           </div>
         </div>
