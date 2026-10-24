@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { friendlyErrorMessage } from '../utils/error-message';
+import { t } from '../i18n/i18n';
 import { SupabaseService } from './supabase.service';
 import { CompanyService } from './company.service';
 import { AuditLogService } from './audit-log.service';
@@ -102,7 +103,7 @@ export class ClientService {
 
   async importClients(clients: ClientImportData[]): Promise<{ imported: number; error?: string }> {
     const company = this.companyService.activeCompany();
-    if (!company) return { imported: 0, error: 'Nenhuma empresa activa seleccionada.' };
+    if (!company) return { imported: 0, error: t('clients.service.noActiveCompany') };
     if (!clients.length) return { imported: 0 };
 
     try {
@@ -132,7 +133,7 @@ export class ClientService {
       return { imported: data?.length || 0 };
     } catch (error: any) {
       console.error('Erro ao importar clientes:', error);
-      return { imported: 0, error: friendlyErrorMessage(error, 'Não foi possível importar os clientes.') };
+      return { imported: 0, error: friendlyErrorMessage(error, t('clients.service.importFailed')) };
     }
   }
 
@@ -162,7 +163,7 @@ export class ClientService {
       return true;
     } catch (error) {
       console.error('Erro ao actualizar cliente:', error);
-      this.lastError = friendlyErrorMessage(error, 'Não foi possível actualizar o cliente.');
+      this.lastError = friendlyErrorMessage(error, t('clients.service.updateFailed'));
       return false;
     }
   }
@@ -178,7 +179,7 @@ export class ClientService {
       if (used) {
         return {
           success: false,
-          error: 'Este cliente possui facturas associadas e não pode ser eliminado. Desative-o em vez disso.'
+          error: t('clients.service.hasInvoices')
         };
       }
 
@@ -203,7 +204,7 @@ export class ClientService {
       return { success: true };
     } catch (error: any) {
       console.error('Erro ao eliminar cliente:', error);
-      return { success: false, error: friendlyErrorMessage(error, 'Não foi possível eliminar o cliente.') };
+      return { success: false, error: friendlyErrorMessage(error, t('clients.service.deleteFailed')) };
     }
   }
 

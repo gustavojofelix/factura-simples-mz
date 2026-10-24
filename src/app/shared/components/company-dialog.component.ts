@@ -28,6 +28,33 @@ import {
   nibWarning,
   swiftWarning
 } from '../../core/services/company-bank-account.service';
+import { t } from '../../core/i18n/i18n';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
+
+/** Valores gravados em companies.country → chave da etiqueta traduzida. */
+const COUNTRIES: ReadonlyArray<{ value: string; key: string }> = [
+  { value: 'Moçambique', key: 'mozambique' },
+  { value: 'África do Sul', key: 'southAfrica' },
+  { value: 'Angola', key: 'angola' },
+  { value: 'Brasil', key: 'brazil' },
+  { value: 'Eswatini', key: 'eswatini' },
+  { value: 'Malawi', key: 'malawi' },
+  { value: 'Portugal', key: 'portugal' },
+  { value: 'Tanzânia', key: 'tanzania' },
+  { value: 'Zâmbia', key: 'zambia' },
+  { value: 'Zimbabué', key: 'zimbabwe' }
+];
+
+/** Tipos de documento gravados em company_documents.type → chave da etiqueta traduzida. */
+const DOCUMENT_TYPES: ReadonlyArray<{ value: string; key: string }> = [
+  { value: 'Certidão de Registo Comercial', key: 'commercialRegistry' },
+  { value: 'Boletim da República', key: 'republicBulletin' },
+  { value: 'Documento de Identificação (Sócios)', key: 'partnersId' },
+  { value: 'Contrato de Arrendamento', key: 'leaseAgreement' },
+  { value: 'Comprovativo de Dados Bancários', key: 'bankProof' },
+  { value: 'Outros', key: 'other' },
+  { value: 'Alvará', key: 'licence' }
+];
 
 @Component({
   selector: 'app-company-dialog',
@@ -44,10 +71,11 @@ import {
     MatTooltipModule,
     MatSnackBarModule,
     MatProgressSpinnerModule,
-    MatSlideToggleModule
+    MatSlideToggleModule,
+    TranslatePipe
   ],
   template: `
-    <h2 mat-dialog-title>{{ data.company ? 'Editar Empresa' : 'Nova Empresa' }}</h2>
+    <h2 mat-dialog-title>{{ (data.company ? 'company.dialog.editTitle' : 'company.dialog.newTitle') | t }}</h2>
     <mat-dialog-content>
       <div class="px-6 py-4 overflow-y-auto max-h-[calc(80vh-140px)]">
         <!-- Logo Upload -->
@@ -62,7 +90,7 @@ import {
               } @else {
                 <div class="text-center p-4">
                   <mat-icon class="!text-gray-400 !text-3xl">add_photo_alternate</mat-icon>
-                  <p class="text-xs text-gray-500 mt-1">Logotipo</p>
+                  <p class="text-xs text-gray-500 mt-1">{{ 'company.dialog.logo' | t }}</p>
                 </div>
               }
             </div>
@@ -73,13 +101,13 @@ import {
                 mat-mini-fab 
                 class="!absolute -top-2 -right-2 !bg-red-500 !text-white !w-8 !h-8"
                 (click)="removeLogo($event)"
-                matTooltip="Remover Logotipo"
+                [matTooltip]="'company.dialog.removeLogo' | t"
               >
                 <mat-icon class="!text-lg">close</mat-icon>
               </button>
             }
           </div>
-          <p class="text-xs text-gray-400 mt-2">Formatos: PNG, JPG (Máx. 2MB)</p>
+          <p class="text-xs text-gray-400 mt-2">{{ 'company.dialog.logoFormats' | t }}</p>
           <input 
             type="file" 
             #logoInput 
@@ -91,31 +119,31 @@ import {
 
         <form [formGroup]="form" class="space-y-6">
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Tipo de Entidade</mat-label>
+            <mat-label>{{ 'company.dialog.entityType' | t }}</mat-label>
             <mat-select formControlName="entity_type" required>
-              <mat-option value="singular">Pessoa Singular</mat-option>
-              <mat-option value="collective">Pessoa Colectiva</mat-option>
+              <mat-option value="singular">{{ 'company.entityTypes.singular' | t }}</mat-option>
+              <mat-option value="collective">{{ 'company.entityTypes.collective' | t }}</mat-option>
             </mat-select>
             <mat-icon matPrefix class="text-gray-400">person</mat-icon>
             @if (form.get('entity_type')?.hasError('required')) {
-              <mat-error>Tipo de entidade é obrigatório</mat-error>
+              <mat-error>{{ 'company.dialog.entityTypeRequired' | t }}</mat-error>
             }
           </mat-form-field>
 
          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Nome da Entidade</mat-label>
-                <input matInput formControlName="name" placeholder="Ex: Comercial Silva Lda">
+                <mat-label>{{ 'company.dialog.entityName' | t }}</mat-label>
+                <input matInput formControlName="name" [placeholder]="'company.dialog.entityNamePlaceholder' | t">
                 <mat-icon matPrefix class="text-gray-400">business</mat-icon>
                 @if (form.get('name')?.hasError('required')) {
-                  <mat-error>O nome é obrigatório</mat-error>
+                  <mat-error>{{ 'company.dialog.nameRequired' | t }}</mat-error>
                 }
               </mat-form-field>
 
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>NUIT</mat-label>
-              <input matInput formControlName="nuit" placeholder="Ex: 123456789" maxlength="9" (input)="formatNuit()">
+              <input matInput formControlName="nuit" [placeholder]="'company.dialog.nuitPlaceholder' | t" maxlength="9" (input)="formatNuit()">
               <mat-icon matPrefix class="text-gray-400">badge</mat-icon>
               
               <div matSuffix class="flex items-center">
@@ -123,15 +151,15 @@ import {
                   <mat-spinner diameter="20" class="mr-2"></mat-spinner>
                 } @else {
                   @if (nuitDocumentUrl()) {
-                    <mat-icon class="text-green-500 mr-2" matTooltip="Documento carregado">check_circle</mat-icon>
-                    <button type="button" mat-icon-button (click)="viewDocument()" matTooltip="Visualizar Documento">
+                    <mat-icon class="text-green-500 mr-2" [matTooltip]="'company.dialog.documentUploaded' | t">check_circle</mat-icon>
+                    <button type="button" mat-icon-button (click)="viewDocument()" [matTooltip]="'company.dialog.viewDocument' | t">
                       <mat-icon class="text-blue-500">visibility</mat-icon>
                     </button>
-                    <button type="button" mat-icon-button (click)="nuitInput.click()" matTooltip="Alterar Documento">
+                    <button type="button" mat-icon-button (click)="nuitInput.click()" [matTooltip]="'company.dialog.changeDocument' | t">
                       <mat-icon class="text-gray-400">file_upload</mat-icon>
                     </button>
                   } @else {
-                    <button type="button" mat-icon-button (click)="nuitInput.click()" matTooltip="Fazer upload do NUIT (Opcional)">
+                    <button type="button" mat-icon-button (click)="nuitInput.click()" [matTooltip]="'company.dialog.uploadNuit' | t">
                       <mat-icon class="text-gray-400">file_upload</mat-icon>
                     </button>
                   }
@@ -140,49 +168,49 @@ import {
               </div>
 
               @if (form.get('nuit')?.hasError('required')) {
-                <mat-error>O NUIT é obrigatório</mat-error>
+                <mat-error>{{ 'company.dialog.nuitRequired' | t }}</mat-error>
               }
               @if (form.get('nuit')?.hasError('invalidNuit')) {
-                <mat-error>NUIT inválido</mat-error>
+                <mat-error>{{ 'company.dialog.nuitInvalid' | t }}</mat-error>
               }
             </mat-form-field>
           </div>
 
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Endereço</mat-label>
-            <textarea matInput formControlName="address" rows="2" placeholder="Ex: Av. Julius Nyerere, nº 123" required></textarea>
+            <mat-label>{{ 'common.fields.address' | t }}</mat-label>
+            <textarea matInput formControlName="address" rows="2" [placeholder]="'company.dialog.addressPlaceholder' | t" required></textarea>
             <mat-icon matPrefix class="text-gray-400">location_on</mat-icon>
             @if (form.get('address')?.hasError('required')) {
-              <mat-error>O endereço é obrigatório</mat-error>
+              <mat-error>{{ 'company.dialog.addressRequired' | t }}</mat-error>
             }
           </mat-form-field>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Email</mat-label>
-              <input matInput formControlName="email" type="email" placeholder="Ex: contacto@empresa.com" required>
+              <mat-label>{{ 'company.dialog.email' | t }}</mat-label>
+              <input matInput formControlName="email" type="email" [placeholder]="'company.dialog.emailPlaceholder' | t" required>
               <mat-icon matPrefix class="text-gray-400">email</mat-icon>
               @if (form.get('email')?.hasError('required')) {
-                <mat-error>O email é obrigatório</mat-error>
+                <mat-error>{{ 'company.dialog.emailRequired' | t }}</mat-error>
               }
               @if (form.get('email')?.hasError('email')) {
-                <mat-error>Email inválido</mat-error>
+                <mat-error>{{ 'company.dialog.emailInvalid' | t }}</mat-error>
               }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>País</mat-label>
+              <mat-label>{{ 'company.dialog.country' | t }}</mat-label>
               <mat-select formControlName="country">
-                @for (country of countries; track country) {
-                  <mat-option [value]="country">{{ country }}</mat-option>
+                @for (country of countries; track country.value) {
+                  <mat-option [value]="country.value">{{ country.label }}</mat-option>
                 }
               </mat-select>
               <mat-icon matPrefix class="text-gray-400">public</mat-icon>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Código Postal</mat-label>
-              <input matInput formControlName="postal_code" placeholder="Ex: 1100">
+              <mat-label>{{ 'company.dialog.postalCode' | t }}</mat-label>
+              <input matInput formControlName="postal_code" [placeholder]="'company.dialog.postalCodePlaceholder' | t">
               <mat-icon matPrefix class="text-gray-400">markunread_mailbox</mat-icon>
             </mat-form-field>
           </div>
@@ -190,12 +218,12 @@ import {
           <div class="border-t border-gray-100 pt-6 mt-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <mat-icon class="mr-2 text-ispc-orange">business_center</mat-icon>
-              Tipo de Actividades
+              {{ 'company.dialog.activitiesTitle' | t }}
             </h3>
             
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Actividade Principal</mat-label>
+                <mat-label>{{ 'company.dialog.mainActivity' | t }}</mat-label>
                 <mat-select formControlName="category1">
                   @for (cat of getCat1Options(); track cat.id) {
                     <mat-option [value]="cat.id">{{ cat.label }}</mat-option>
@@ -205,7 +233,7 @@ import {
 
               @if (getCat2Options().length > 0) {
                 <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Actividade(s) Comerciais</mat-label>
+                  <mat-label>{{ 'company.dialog.commercialActivities' | t }}</mat-label>
                   <mat-select formControlName="category2">
                     @for (cat of getCat2Options(); track cat.id) {
                       <mat-option [value]="cat.id">{{ cat.label }}</mat-option>
@@ -216,7 +244,7 @@ import {
 
               @if (getCat3Options().length > 0) {
                 <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Actividade(s) de Prestação de Serviços</mat-label>
+                  <mat-label>{{ 'company.dialog.serviceActivities' | t }}</mat-label>
                   <mat-select formControlName="category3">
                   @for (cat of getCat3Options(); track cat.id) {
                   <mat-option [value]="cat.id">{{ cat.label }}</mat-option>
@@ -229,20 +257,20 @@ import {
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Volume de Negócio</mat-label>
+              <mat-label>{{ 'company.dialog.businessVolume' | t }}</mat-label>
               <mat-select formControlName="business_volume">
                 @if (isISPCScaleActivity()) {
-                  <mat-option value="3">3% (até 1.000.000,00MT)</mat-option>
-                  <mat-option value="4">4% (> 1.000.000,00MT e ≤ 2.500.000,00MT)</mat-option>
-                  <mat-option value="5">5% (> 2.500.000,00MT e ≤ 4.000.000,00MT)</mat-option>
-                  <mat-option value="20">20% (> 4.000.000,00MT)</mat-option>
+                  <mat-option value="3">{{ 'company.businessVolume.ispc3' | t }}</mat-option>
+                  <mat-option value="4">{{ 'company.businessVolume.ispc4' | t }}</mat-option>
+                  <mat-option value="5">{{ 'company.businessVolume.ispc5' | t }}</mat-option>
+                  <mat-option value="20">{{ 'company.businessVolume.ispc20' | t }}</mat-option>
                 } @else {
                   @if (getServiceType() === 'nao_liberais') {
-                    <mat-option value="12">12% s/ volume ≤ 4.000.000,00MT</mat-option>
-                    <mat-option value="20">20% s/ volume > 4.000.000,00MT</mat-option>
+                    <mat-option value="12">{{ 'company.businessVolume.nonLiberal12' | t }}</mat-option>
+                    <mat-option value="20">{{ 'company.businessVolume.services20' | t }}</mat-option>
                   } @else if (getServiceType() === 'liberal') {
-                    <mat-option value="15">15% s/ volume ≤ 4.000.000,00MT</mat-option>
-                    <mat-option value="20">20% s/ volume > 4.000.000,00MT</mat-option>
+                    <mat-option value="15">{{ 'company.businessVolume.liberal15' | t }}</mat-option>
+                    <mat-option value="20">{{ 'company.businessVolume.services20' | t }}</mat-option>
                   }
                 }
               </mat-select>
@@ -250,12 +278,12 @@ import {
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Moeda</mat-label>
+              <mat-label>{{ 'company.dialog.currency' | t }}</mat-label>
               <mat-select formControlName="currency">
-                <mat-option value="MZN">MZN - Metical Moçambicano</mat-option>
-                <mat-option value="USD">USD - Dólar Americano</mat-option>
-                <mat-option value="EUR">EUR - Euro</mat-option>
-                <mat-option value="ZAR">ZAR - Rand Sul-Africano</mat-option>
+                <mat-option value="MZN">{{ 'company.currencies.MZN' | t }}</mat-option>
+                <mat-option value="USD">{{ 'company.currencies.USD' | t }}</mat-option>
+                <mat-option value="EUR">{{ 'company.currencies.EUR' | t }}</mat-option>
+                <mat-option value="ZAR">{{ 'company.currencies.ZAR' | t }}</mat-option>
               </mat-select>
               <mat-icon matPrefix class="text-gray-400">payments</mat-icon>
             </mat-form-field>
@@ -263,14 +291,14 @@ import {
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Prefixo da Fatura</mat-label>
-              <input matInput formControlName="invoice_prefix" placeholder="Ex: FAC">
+              <mat-label>{{ 'company.dialog.invoicePrefix' | t }}</mat-label>
+              <input matInput formControlName="invoice_prefix" [placeholder]="'company.dialog.invoicePrefixPlaceholder' | t">
               <mat-icon matPrefix class="text-gray-400">tag</mat-icon>
             </mat-form-field>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Província</mat-label>
+                  <mat-label>{{ 'company.dialog.province' | t }}</mat-label>
                   <mat-select formControlName="province">
                     @for (province of provinces; track province) {
                       <mat-option [value]="province">{{ province }}</mat-option>
@@ -288,13 +316,13 @@ import {
             <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
               <h3 class="text-lg font-semibold text-gray-900 flex items-center">
                 <mat-icon class="mr-2 text-ispc-orange">account_balance</mat-icon>
-                Dados Bancários
+                {{ 'company.bank.title' | t }}
               </h3>
               @if (canEditBanks()) {
                 <button type="button" mat-stroked-button (click)="addBankAccount()"
                   [disabled]="isLoadingBanks() || bankLoadFailed()">
                   <mat-icon>add</mat-icon>
-                  Adicionar banco
+                  {{ 'company.bank.add' | t }}
                 </button>
               }
             </div>
@@ -302,28 +330,28 @@ import {
             @if (!canEditBanks() && !isLoadingBanks()) {
               <p class="flex items-start gap-1 text-xs text-gray-500 mb-3">
                 <mat-icon class="!text-[16px] !w-4 !h-4 shrink-0">lock</mat-icon>
-                Só o dono ou um administrador da empresa pode alterar os dados bancários.
+                {{ 'company.bank.readOnly' | t }}
               </p>
             }
 
             @if (isLoadingBanks()) {
               <div class="flex items-center gap-2 text-sm text-gray-500 mb-4">
                 <mat-spinner diameter="18"></mat-spinner>
-                A carregar contas bancárias...
+                {{ 'company.bank.loading' | t }}
               </div>
             } @else if (bankLoadFailed()) {
               <p class="flex items-start gap-1 text-sm text-red-600 mb-4">
                 <mat-icon class="!text-base shrink-0">error</mat-icon>
-                Não foi possível carregar as contas bancárias. As contas existentes não serão alteradas ao guardar.
+                {{ 'company.bank.loadFailed' | t }}
               </p>
             } @else if (bankAccountsArray.length === 0) {
-              <p class="text-center text-gray-500 py-4 italic">Nenhum banco adicionado.</p>
+              <p class="text-center text-gray-500 py-4 italic">{{ 'company.bank.empty' | t }}</p>
             }
 
             @if (visibleBankCount() > maxRecommendedBanks) {
               <p class="flex items-start gap-1 text-xs text-amber-700 mb-3">
                 <mat-icon class="!text-amber-600 !text-[16px] !w-4 !h-4 shrink-0">warning</mat-icon>
-                Tem {{ visibleBankCount() }} bancos marcados para aparecer nas facturas. Com mais de {{ maxRecommendedBanks }} o rodapé do documento pode ficar apertado.
+                {{ 'company.bank.tooManyVisible' | t: { count: visibleBankCount(), max: maxRecommendedBanks } }}
               </p>
             }
 
@@ -332,25 +360,25 @@ import {
                 <div [formGroupName]="i" class="border border-gray-200 rounded-lg p-4 bg-gray-50">
                   <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
                     <div class="flex items-center gap-2">
-                      <span class="text-sm font-semibold text-gray-700">Banco {{ i + 1 }}</span>
+                      <span class="text-sm font-semibold text-gray-700">{{ 'company.bank.bankNumber' | t: { number: i + 1 } }}</span>
                       @if (bank.get('is_default')?.value) {
-                        <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">Principal</span>
+                        <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">{{ 'company.bank.default' | t }}</span>
                       }
                     </div>
                     @if (canEditBanks()) {
                     <div class="flex items-center">
                       @if (!bank.get('is_default')?.value) {
-                        <button type="button" mat-icon-button (click)="setDefaultBank(i)" matTooltip="Tornar conta principal">
+                        <button type="button" mat-icon-button (click)="setDefaultBank(i)" [matTooltip]="'company.bank.makeDefault' | t">
                           <mat-icon class="text-gray-400">star_outline</mat-icon>
                         </button>
                       }
-                      <button type="button" mat-icon-button (click)="moveBankAccount(i, -1)" [disabled]="i === 0" matTooltip="Mover para cima">
+                      <button type="button" mat-icon-button (click)="moveBankAccount(i, -1)" [disabled]="i === 0" [matTooltip]="'company.bank.moveUp' | t">
                         <mat-icon>arrow_upward</mat-icon>
                       </button>
-                      <button type="button" mat-icon-button (click)="moveBankAccount(i, 1)" [disabled]="i === bankAccountsArray.length - 1" matTooltip="Mover para baixo">
+                      <button type="button" mat-icon-button (click)="moveBankAccount(i, 1)" [disabled]="i === bankAccountsArray.length - 1" [matTooltip]="'company.bank.moveDown' | t">
                         <mat-icon>arrow_downward</mat-icon>
                       </button>
-                      <button type="button" mat-icon-button color="warn" (click)="removeBankAccount(i)" matTooltip="Remover banco">
+                      <button type="button" mat-icon-button color="warn" (click)="removeBankAccount(i)" [matTooltip]="'company.bank.remove' | t">
                         <mat-icon>delete</mat-icon>
                       </button>
                     </div>
@@ -359,36 +387,36 @@ import {
 
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <mat-form-field appearance="outline" class="w-full">
-                      <mat-label>Banco</mat-label>
+                      <mat-label>{{ 'company.bank.bank' | t }}</mat-label>
                       <mat-select formControlName="bank_choice">
                         @for (name of bankOptions; track name) {
                           <mat-option [value]="name">{{ name }}</mat-option>
                         }
-                        <mat-option [value]="bankOtherOption">Outro</mat-option>
+                        <mat-option [value]="bankOtherOption">{{ 'company.bank.other' | t }}</mat-option>
                       </mat-select>
                       <mat-icon matPrefix class="text-gray-400">account_balance</mat-icon>
                     </mat-form-field>
 
                     @if (bank.get('bank_choice')?.value === bankOtherOption) {
                       <mat-form-field appearance="outline" class="w-full">
-                        <mat-label>Nome do banco</mat-label>
-                        <input matInput formControlName="bank_name_other" maxlength="120" placeholder="Ex: Banco Exemplo">
+                        <mat-label>{{ 'company.bank.bankName' | t }}</mat-label>
+                        <input matInput formControlName="bank_name_other" maxlength="120" [placeholder]="'company.bank.bankNamePlaceholder' | t">
                       </mat-form-field>
                     }
 
                     <mat-form-field appearance="outline" class="w-full">
-                      <mat-label>Titular da conta</mat-label>
-                      <input matInput formControlName="account_holder" maxlength="160" placeholder="Opcional">
+                      <mat-label>{{ 'company.bank.accountHolder' | t }}</mat-label>
+                      <input matInput formControlName="account_holder" maxlength="160" [placeholder]="'company.bank.optional' | t">
                     </mat-form-field>
 
                     <mat-form-field appearance="outline" class="w-full">
-                      <mat-label>Número de Conta</mat-label>
-                      <input matInput formControlName="account_number" maxlength="60" placeholder="Ex: 123456789">
+                      <mat-label>{{ 'company.bank.accountNumber' | t }}</mat-label>
+                      <input matInput formControlName="account_number" maxlength="60" [placeholder]="'company.bank.accountNumberPlaceholder' | t">
                     </mat-form-field>
 
                     <mat-form-field appearance="outline" class="w-full">
                       <mat-label>NIB</mat-label>
-                      <input matInput formControlName="nib" maxlength="40" placeholder="Ex: 0001 0000 1234 5678 9012 3">
+                      <input matInput formControlName="nib" maxlength="40" [placeholder]="'company.bank.nibPlaceholder' | t">
                       @if (nibWarningFor(bank); as warning) {
                         <mat-hint class="!text-amber-700">{{ warning }}</mat-hint>
                       }
@@ -404,14 +432,14 @@ import {
 
                     <mat-form-field appearance="outline" class="w-full">
                       <mat-label>SWIFT/BIC</mat-label>
-                      <input matInput formControlName="swift" maxlength="15" placeholder="Ex: ABCDMZMM">
+                      <input matInput formControlName="swift" maxlength="15" [placeholder]="'company.bank.swiftPlaceholder' | t">
                       @if (swiftWarningFor(bank); as warning) {
                         <mat-hint class="!text-amber-700">{{ warning }}</mat-hint>
                       }
                     </mat-form-field>
 
                     <mat-form-field appearance="outline" class="w-full">
-                      <mat-label>Moeda da conta</mat-label>
+                      <mat-label>{{ 'company.bank.accountCurrency' | t }}</mat-label>
                       <mat-select formControlName="currency">
                         <mat-option value="MZN">MZN</mat-option>
                         <mat-option value="USD">USD</mat-option>
@@ -422,63 +450,63 @@ import {
                   </div>
 
                   @if (bank.hasError('bankNameRequired') && (bank.touched || bank.dirty)) {
-                    <p class="text-xs text-red-600 mb-2">Escolha o banco (ou indique o nome em "Outro").</p>
+                    <p class="text-xs text-red-600 mb-2">{{ 'company.bank.bankNameRequired' | t }}</p>
                   }
                   @if (bank.hasError('identifierRequired') && (bank.touched || bank.dirty)) {
-                    <p class="text-xs text-red-600 mb-2">Indique pelo menos o número de conta, o NIB ou o IBAN.</p>
+                    <p class="text-xs text-red-600 mb-2">{{ 'company.bank.identifierRequired' | t }}</p>
                   }
 
                   <div class="flex flex-wrap items-center justify-between gap-3 mt-1">
                     <mat-slide-toggle formControlName="show_on_invoice" color="primary">
-                      <span class="text-sm">Mostrar nas facturas</span>
+                      <span class="text-sm">{{ 'company.bank.showOnInvoices' | t }}</span>
                     </mat-slide-toggle>
 
                     <div class="flex items-center gap-2 min-w-0">
                       @if (bank.get('document_path')?.value) {
                         <mat-icon class="text-green-500 shrink-0">description</mat-icon>
                         <span class="text-sm truncate max-w-[220px]" [title]="bank.get('document_file_name')?.value || ''">
-                          {{ bank.get('document_file_name')?.value || 'Comprovativo' }}
+                          {{ bank.get('document_file_name')?.value || ('company.bank.proof' | t) }}
                         </span>
-                        <button type="button" mat-icon-button color="primary" (click)="viewBankDocument(i)" matTooltip="Visualizar comprovativo">
+                        <button type="button" mat-icon-button color="primary" (click)="viewBankDocument(i)" [matTooltip]="'company.bank.viewProof' | t">
                           <mat-icon>visibility</mat-icon>
                         </button>
                         @if (canEditBanks()) {
-                          <button type="button" mat-icon-button (click)="bankDocInput.click()" [disabled]="uploadingBankIndex() !== null" matTooltip="Substituir comprovativo">
+                          <button type="button" mat-icon-button (click)="bankDocInput.click()" [disabled]="uploadingBankIndex() !== null" [matTooltip]="'company.bank.replaceProof' | t">
                             <mat-icon>file_upload</mat-icon>
                           </button>
-                          <button type="button" mat-icon-button color="warn" (click)="removeBankDocument(i)" matTooltip="Remover comprovativo">
+                          <button type="button" mat-icon-button color="warn" (click)="removeBankDocument(i)" [matTooltip]="'company.bank.removeProof' | t">
                             <mat-icon>delete</mat-icon>
                           </button>
                         }
                       } @else if (canEditBanks()) {
                         <button type="button" mat-stroked-button (click)="bankDocInput.click()"
                           [disabled]="!data.company?.id || uploadingBankIndex() !== null"
-                          [matTooltip]="data.company?.id ? 'PDF, JPG ou PNG (máx. 10MB)' : 'Guarde a empresa primeiro para carregar o documento'">
+                          [matTooltip]="(data.company?.id ? 'company.bank.proofFormats' : 'company.bank.saveCompanyFirstTooltip') | t">
                           <mat-icon>file_upload</mat-icon>
-                          {{ uploadingBankIndex() === i ? 'Carregando...' : 'Comprovativo bancário' }}
+                          {{ (uploadingBankIndex() === i ? 'company.dialog.uploading' : 'company.bank.uploadProof') | t }}
                         </button>
                       }
                       <input type="file" #bankDocInput class="hidden" accept=".pdf,.jpg,.jpeg,.png" (change)="onBankDocumentSelected($event, i)">
                     </div>
                   </div>
                   @if (!data.company?.id && canEditBanks()) {
-                    <p class="text-xs text-gray-500 mt-2">Guarde a empresa primeiro para carregar o documento.</p>
+                    <p class="text-xs text-gray-500 mt-2">{{ 'company.bank.saveCompanyFirst' | t }}</p>
                   }
                 </div>
               }
             </div>
 
-            <h4 class="text-sm font-semibold text-gray-700 mt-6 mb-3">Carteiras móveis</h4>
+            <h4 class="text-sm font-semibold text-gray-700 mt-6 mb-3">{{ 'company.bank.mobileWallets' | t }}</h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>M-Pesa</mat-label>
-                <input matInput formControlName="mpesa_number" placeholder="Ex: 84 123 4567">
+                <input matInput formControlName="mpesa_number" [placeholder]="'company.bank.mpesaPlaceholder' | t">
                 <mat-icon matPrefix class="text-gray-400">smartphone</mat-icon>
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>e-Mola</mat-label>
-                <input matInput formControlName="emola_number" placeholder="Ex: 86 123 4567">
+                <input matInput formControlName="emola_number" [placeholder]="'company.bank.emolaPlaceholder' | t">
                 <mat-icon matPrefix class="text-gray-400">smartphone</mat-icon>
               </mat-form-field>
             </div>
@@ -488,17 +516,17 @@ import {
             <div class="border-t border-gray-100 pt-6 mt-6">
               <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <mat-icon class="mr-2 text-ispc-orange">verified</mat-icon>
-                Alvará
+                {{ 'company.documentTypes.licence' | t }}
               </h3>
               <div class="bg-gray-50 p-4 rounded-lg">
                 @if (alvaraDoc) {
                   <div class="flex items-center justify-between bg-white p-3 rounded border">
                     <span class="text-sm truncate">{{ alvaraDoc.file_name }}</span>
                     <div class="flex items-center">
-                      <button type="button" mat-icon-button color="primary" (click)="viewOtherDocument(alvaraDoc)" matTooltip="Visualizar">
+                      <button type="button" mat-icon-button color="primary" (click)="viewOtherDocument(alvaraDoc)" [matTooltip]="'company.dialog.view' | t">
                         <mat-icon>visibility</mat-icon>
                       </button>
-                      <button type="button" mat-icon-button color="warn" (click)="removeOtherDocument(alvaraDoc)" matTooltip="Remover">
+                      <button type="button" mat-icon-button color="warn" (click)="removeOtherDocument(alvaraDoc)" [matTooltip]="'common.actions.remove' | t">
                         <mat-icon>delete</mat-icon>
                       </button>
                     </div>
@@ -507,9 +535,9 @@ import {
                   <div class="flex items-center gap-3">
                     <button type="button" mat-raised-button (click)="alvaraInput.click()" [disabled]="isUploadingAlvara()">
                       <mat-icon>file_upload</mat-icon>
-                      {{ isUploadingAlvara() ? 'Carregando...' : 'Fazer Upload do Alvará' }}
+                      {{ (isUploadingAlvara() ? 'company.dialog.uploading' : 'company.dialog.uploadLicence') | t }}
                     </button>
-                    <span class="text-xs text-gray-500">PDF, JPG ou PNG (máx.10MB)</span>
+                    <span class="text-xs text-gray-500">{{ 'company.dialog.fileFormats' | t }}</span>
                     <input type="file" #alvaraInput class="hidden" accept=".pdf,.jpg,.jpeg,.png" (change)="onAlvaraDocumentSelected($event)">
                   </div>
                 }
@@ -519,23 +547,23 @@ import {
                 <div class="border-t border-gray-100 pt-6 mt-6">
                   <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                     <mat-icon class="mr-2 text-ispc-orange">event_available</mat-icon>
-                    Início de Actividade
+                    {{ 'company.dialog.activityStart' | t }}
                   </h3>
                   <div class="bg-gray-100 p-4 rounded-lg">
                     @if (commercialActivityUrl()) {
                       <div class="flex items-center justify-between bg-white p-3 rounded border">
                         <span class="text-sm text-green-600 flex items-center gap-1">
                           <mat-icon class="!text-base">check_circle</mat-icon>
-                          Documento carregado
+                          {{ 'company.dialog.documentUploaded' | t }}
                         </span>
                         <div class="flex items-center">
-                            <button type="button" mat-icon-button color="primary" (click)="viewCommercialDocument()" matTooltip="Visualizar">
+                            <button type="button" mat-icon-button color="primary" (click)="viewCommercialDocument()" [matTooltip]="'company.dialog.view' | t">
                               <mat-icon class="!text-lg">visibility</mat-icon>
                             </button>
-                            <button type="button" mat-icon-button (click)="commercialInput.click()" [disabled]="isUploadingCommercial()" matTooltip="Alterar Documento">
+                            <button type="button" mat-icon-button (click)="commercialInput.click()" [disabled]="isUploadingCommercial()" [matTooltip]="'company.dialog.changeDocument' | t">
                               <mat-icon class="!text-lg">file_upload</mat-icon>
                             </button>
-                            <button type="button" mat-icon-button color="warn" (click)="clearCommercialDocument()" matTooltip="Apagar Documento">
+                            <button type="button" mat-icon-button color="warn" (click)="clearCommercialDocument()" [matTooltip]="'company.dialog.deleteDocument' | t">
                               <mat-icon class="!text-lg">delete</mat-icon>
                             </button>
                           </div>
@@ -544,9 +572,9 @@ import {
                       <div class="flex items-center gap-3">
                         <button type="button" mat-raised-button (click)="commercialInput.click()" [disabled]="isUploadingCommercial()">
                           <mat-icon>file_upload</mat-icon>
-                          {{ isUploadingCommercial() ? 'Carregando...' : 'Fazer Upload do Início de Actividade' }}
+                          {{ (isUploadingCommercial() ? 'company.dialog.uploading' : 'company.dialog.uploadActivityStart') | t }}
                         </button>
-                        <span class="text-xs text-gray-500">PDF, JPG ou PNG (máx.10MB)</span>
+                        <span class="text-xs text-gray-500">{{ 'company.dialog.fileFormats' | t }}</span>
                       </div>
                     }
                     <input type="file" #commercialInput class="hidden" accept=".pdf,.jpg,.jpeg,.png"
@@ -557,17 +585,17 @@ import {
           <div class="border-t border-gray-100 pt-6 mt-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <mat-icon class="mr-2 text-ispc-orange">folder</mat-icon>
-              Outros Documentos
+              {{ 'company.dialog.otherDocuments' | t }}
             </h3>
 
             <div class="bg-gray-50 p-4 rounded-lg mb-4">
               <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                 <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Tipo de Documento</mat-label>
+                  <mat-label>{{ 'company.dialog.documentType' | t }}</mat-label>
                   <mat-select [formControl]="newDocType">
-                    @for (type of documentTypes; track type) {
-                      <mat-option [value]="type" [disabled]="isDocTypeSelected(type)">
-                        {{ type }}
+                    @for (type of documentTypes; track type.value) {
+                      <mat-option [value]="type.value" [disabled]="isDocTypeSelected(type.value)">
+                        {{ type.label }}
                       </mat-option>
                     }
                   </mat-select>
@@ -576,13 +604,13 @@ import {
                 <div class="flex items-center gap-2 mb-2">
                   <button type="button" mat-raised-button (click)="otherInput.click()" [disabled]="!newDocType.value || isUploadingOther()">
                     <mat-icon>file_upload</mat-icon>
-                    {{ isUploadingOther() ? 'Carregando...' : 'Fazer Upload' }}
+                    {{ (isUploadingOther() ? 'company.dialog.uploading' : 'company.dialog.upload') | t }}
                   </button>
                   <input type="file" #otherInput class="hidden" accept=".pdf,.jpg,.jpeg,.png" (change)="onOtherDocumentSelected($event)">
                 </div>
 
                 <div class="text-xs text-gray-500 mb-2">
-                  * Apenas um ficheiro por tipo. Para substituir, apague o anterior.
+                  {{ 'company.dialog.onePerType' | t }}
                 </div>
               </div>
             </div>
@@ -592,21 +620,21 @@ import {
                 <table class="w-full text-sm text-left">
                   <thead class="bg-gray-50 text-gray-700 uppercase text-xs">
                     <tr>
-                      <th class="px-4 py-2">Tipo</th>
-                      <th class="px-4 py-2">Ficheiro</th>
-                      <th class="px-4 py-2 text-right">Acções</th>
+                      <th class="px-4 py-2">{{ 'common.fields.type' | t }}</th>
+                      <th class="px-4 py-2">{{ 'company.dialog.file' | t }}</th>
+                      <th class="px-4 py-2 text-right">{{ 'common.fields.actions' | t }}</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y">
                     @for (doc of otherDocsWithoutAlvara; track doc.id) {
                       <tr>
-                        <td class="px-4 py-3 font-medium">{{ doc.type }}</td>
+                        <td class="px-4 py-3 font-medium">{{ documentTypeLabel(doc.type) }}</td>
                         <td class="px-4 py-3 text-gray-500">{{ doc.file_name }}</td>
                         <td class="px-4 py-3 text-right">
-                          <button type="button" mat-icon-button color="primary" (click)="viewOtherDocument(doc)" matTooltip="Visualizar">
+                          <button type="button" mat-icon-button color="primary" (click)="viewOtherDocument(doc)" [matTooltip]="'company.dialog.view' | t">
                             <mat-icon>visibility</mat-icon>
                           </button>
-                          <button type="button" mat-icon-button color="warn" (click)="removeOtherDocument(doc)" matTooltip="Remover">
+                          <button type="button" mat-icon-button color="warn" (click)="removeOtherDocument(doc)" [matTooltip]="'common.actions.remove' | t">
                             <mat-icon>delete</mat-icon>
                           </button>
                         </td>
@@ -616,7 +644,7 @@ import {
                 </table>
               </div>
             } @else {
-              <p class="text-center text-gray-500 py-4 italic">Nenhum documento adicional adicionado.</p>
+              <p class="text-center text-gray-500 py-4 italic">{{ 'company.dialog.noOtherDocuments' | t }}</p>
             }
           </div>
 
@@ -625,11 +653,11 @@ import {
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       @if (bankAccountsArray.invalid && !isLoadingBanks()) {
-        <span class="text-xs text-red-600 mr-auto pl-2">Complete ou remova o banco assinalado em Dados Bancários.</span>
+        <span class="text-xs text-red-600 mr-auto pl-2">{{ 'company.bank.invalidFooter' | t }}</span>
       }
-      <button mat-button (click)="onCancel()">Cancelar</button>
+      <button mat-button (click)="onCancel()">{{ 'common.actions.cancel' | t }}</button>
       <button mat-raised-button color="primary" (click)="onSave()" [disabled]="form.invalid || loading()">
-        {{ data.company ? 'Guardar' : 'Criar' }}
+        {{ (data.company ? 'common.actions.save' : 'common.actions.create') | t }}
       </button>
     </mat-dialog-actions>
   `,
@@ -672,24 +700,17 @@ export class CompanyDialogComponent {
   isUploadingAlvara = signal(false);
   newDocType = this.fb.control('');
 
-  documentTypes = [
-    'Certidão de Registo Comercial',
-    'Boletim da República',
-    'Documento de Identificação (Sócios)',
-    'Contrato de Arrendamento',
-    'Comprovativo de Dados Bancários',
-    'Outros'
-  ];
+  /** Valor gravado (em português) + etiqueta traduzida. O Alvará tem secção própria. */
+  documentTypes = DOCUMENT_TYPES
+    .filter(type => type.value !== 'Alvará')
+    .map(type => ({ value: type.value, label: t(`company.documentTypes.${type.key}`) }));
 
   provinces = [
     'Maputo', 'Gaza', 'Inhambane', 'Sofala', 'Manica', 'Tete',
     'Zambézia', 'Nampula', 'Niassa', 'Cabo Delgado'
   ];
 
-  countries = [
-    'Moçambique', 'África do Sul', 'Angola', 'Brasil', 'Eswatini', 'Malawi',
-    'Portugal', 'Tanzânia', 'Zâmbia', 'Zimbabué'
-  ];
+  countries = COUNTRIES.map(country => ({ value: country.value, label: t(`company.countries.${country.key}`) }));
 
   activityTypes = signal<ActivityType[]>([]);
   isLoadingActivities = signal(false);
@@ -715,6 +736,12 @@ export class CompanyDialogComponent {
   }
   get otherDocsWithoutAlvara() {
     return this.otherDocuments().filter(doc => doc.type !== 'Alvará');
+  }
+
+  /** Etiqueta traduzida de um tipo de documento gravado (tipos desconhecidos ficam como estão). */
+  documentTypeLabel(type: string): string {
+    const match = DOCUMENT_TYPES.find(item => item.value === type);
+    return match ? t(`company.documentTypes.${match.key}`) : type;
   }
 
 
@@ -787,7 +814,7 @@ export class CompanyDialogComponent {
     } catch (error) {
       console.error('Erro ao carregar contas bancárias:', error);
       this.bankLoadFailed.set(true);
-      this.snackBar.open('Não foi possível carregar as contas bancárias.', 'Fechar', { duration: 5000 });
+      this.snackBar.open(t('company.messages.banksLoadFailed'), t('common.actions.close'), { duration: 5000 });
     } finally {
       this.isLoadingBanks.set(false);
     }
@@ -834,8 +861,8 @@ export class CompanyDialogComponent {
 
   removeBankAccount(index: number) {
     const group = this.bankAccountsArray.at(index);
-    const name = this.bankNameOf(group) || `Banco ${index + 1}`;
-    if (!confirm(`Remover o banco "${name}"? A alteração só é gravada ao guardar a empresa.`)) return;
+    const name = this.bankNameOf(group) || t('company.bank.bankNumber', { number: index + 1 });
+    if (!confirm(t('company.messages.confirmRemoveBank', { name }))) return;
 
     const path = group.get('document_path')?.value as string | null;
     const wasDefault = !!group.get('is_default')?.value;
@@ -891,19 +918,19 @@ export class CompanyDialogComponent {
 
     const companyId = this.data.company?.id;
     if (!companyId) {
-      this.snackBar.open('Guarde a empresa primeiro para carregar o documento.', 'Fechar', { duration: 3000 });
+      this.snackBar.open(t('company.bank.saveCompanyFirst'), t('common.actions.close'), { duration: 3000 });
       input.value = '';
       return;
     }
 
     const allowed = ['application/pdf', 'image/jpeg', 'image/png'];
     if (!allowed.includes(file.type)) {
-      this.snackBar.open('Formato não suportado. Use PDF, JPG ou PNG.', 'Fechar', { duration: 4000 });
+      this.snackBar.open(t('company.messages.unsupportedFormat'), t('common.actions.close'), { duration: 4000 });
       input.value = '';
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      this.snackBar.open('O ficheiro é muito grande. Tamanho máximo: 10MB.', 'Fechar', { duration: 4000 });
+      this.snackBar.open(t('company.messages.fileTooLarge10'), t('common.actions.close'), { duration: 4000 });
       input.value = '';
       return;
     }
@@ -919,10 +946,10 @@ export class CompanyDialogComponent {
       });
       group.markAsDirty();
       this.discardUnsavedBankDocument(previous);
-      this.snackBar.open('Comprovativo carregado. Guarde a empresa para confirmar.', 'Fechar', { duration: 3000 });
+      this.snackBar.open(t('company.messages.proofUploaded'), t('common.actions.close'), { duration: 3000 });
     } catch (error: any) {
       console.error('Erro ao carregar comprovativo bancário:', error);
-      this.snackBar.open(friendlyErrorMessage(error, 'Não foi possível carregar o documento.'), 'Fechar', { duration: 6000 });
+      this.snackBar.open(friendlyErrorMessage(error, t('company.messages.documentUploadFailed')), t('common.actions.close'), { duration: 6000 });
     } finally {
       this.uploadingBankIndex.set(null);
       input.value = '';
@@ -937,7 +964,7 @@ export class CompanyDialogComponent {
   }
 
   removeBankDocument(index: number) {
-    if (!confirm('Remover o comprovativo deste banco? A alteração só é gravada ao guardar a empresa.')) return;
+    if (!confirm(t('company.messages.confirmRemoveProof'))) return;
     const group = this.bankAccountsArray.at(index);
     const path = group.get('document_path')?.value as string | null;
     group.patchValue({ document_path: null, document_file_name: null });
@@ -995,7 +1022,7 @@ export class CompanyDialogComponent {
       if (this.data.company?.id) await this.loadCompanyActivities(this.data.company.id);
     } catch (error) {
       console.error('Erro ao carregar catálogo de actividades:', error);
-      this.snackBar.open('Não foi possível carregar os tipos de actividades.', 'Fechar', { duration: 5000 });
+      this.snackBar.open(t('company.messages.activitiesLoadFailed'), t('common.actions.close'), { duration: 5000 });
     } finally {
       this.isLoadingActivities.set(false);
     }
@@ -1084,7 +1111,7 @@ export class CompanyDialogComponent {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        alert('O ficheiro é muito grande. Tamanho máximo: 2MB');
+        alert(t('company.messages.logoTooLarge'));
         return;
       }
 
@@ -1126,13 +1153,13 @@ export class CompanyDialogComponent {
           this.form.patchValue({ address: result.extractedData.address });
         }
 
-        this.snackBar.open('Dados extraídos do documento!', 'Fechar', { duration: 3000 });
+        this.snackBar.open(t('company.messages.dataExtracted'), t('common.actions.close'), { duration: 3000 });
       } else {
-        this.snackBar.open('Documento carregado com sucesso!', 'Fechar', { duration: 3000 });
+        this.snackBar.open(t('company.messages.documentUploaded'), t('common.actions.close'), { duration: 3000 });
       }
     } catch (error: any) {
       console.error('Erro ao subir NUIT:', error);
-      this.snackBar.open(friendlyErrorMessage(error, 'Não foi possível carregar o documento.'), 'Fechar', { duration: 6000 });
+      this.snackBar.open(friendlyErrorMessage(error, t('company.messages.documentUploadFailed')), t('common.actions.close'), { duration: 6000 });
     } finally {
       this.isUploadingNuit.set(false);
       input.value = '';
@@ -1156,13 +1183,13 @@ export class CompanyDialogComponent {
         if (result.extractedData.tradeName && !this.form.get('name')?.value) {
           this.form.patchValue({ name: result.extractedData.tradeName });
         }
-        this.snackBar.open('Dados extraídos do documento!', 'Fechar', { duration: 3000 });
+        this.snackBar.open(t('company.messages.dataExtracted'), t('common.actions.close'), { duration: 3000 });
       } else {
-        this.snackBar.open('Documento carregado com sucesso!', 'Fechar', { duration: 3000 });
+        this.snackBar.open(t('company.messages.documentUploaded'), t('common.actions.close'), { duration: 3000 });
       }
     } catch (error: any) {
       console.error('Erro ao subir Exercício de Actividade Comercial:', error);
-      this.snackBar.open(friendlyErrorMessage(error, 'Não foi possível carregar o documento.'), 'Fechar', { duration: 6000 });
+      this.snackBar.open(friendlyErrorMessage(error, t('company.messages.documentUploadFailed')), t('common.actions.close'), { duration: 6000 });
     } finally {
       this.isUploadingCommercial.set(false);
       input.value = '';
@@ -1176,7 +1203,7 @@ export class CompanyDialogComponent {
     if (!input.files || input.files.length === 0 || !type) return;
 
     if (this.isDocTypeSelected(type)) {
-      this.snackBar.open(`Já existe um documento do tipo "${type}"`, 'Fechar', { duration: 3000 });
+      this.snackBar.open(t('company.messages.documentTypeExists', { type: this.documentTypeLabel(type) }), t('common.actions.close'), { duration: 3000 });
       input.value = '';
       return;
     }
@@ -1187,7 +1214,7 @@ export class CompanyDialogComponent {
     try {
       const companyId = this.data.company?.id;
       if (!companyId) {
-        this.snackBar.open('Salve a empresa primeiro antes de adicionar outros documentos.', 'Fechar', { duration: 3000 });
+        this.snackBar.open(t('company.messages.saveBeforeOtherDocs'), t('common.actions.close'), { duration: 3000 });
         return;
       }
 
@@ -1197,11 +1224,11 @@ export class CompanyDialogComponent {
       if (savedDoc) {
         this.otherDocuments.update(docs => [...docs, savedDoc]);
         this.newDocType.setValue('');
-        this.snackBar.open('Documento adicionado com sucesso!', 'Fechar', { duration: 3000 });
+        this.snackBar.open(t('company.messages.documentAdded'), t('common.actions.close'), { duration: 3000 });
       }
     } catch (error: any) {
       console.error('Erro ao subir documento:', error);
-      this.snackBar.open(friendlyErrorMessage(error, 'Não foi possível carregar o documento.'), 'Fechar', { duration: 6000 });
+      this.snackBar.open(friendlyErrorMessage(error, t('company.messages.documentUploadFailed')), t('common.actions.close'), { duration: 6000 });
     } finally {
       this.isUploadingOther.set(false);
       input.value = '';
@@ -1218,7 +1245,7 @@ export class CompanyDialogComponent {
     try {
       const companyId = this.data.company?.id;
       if (!companyId) {
-        this.snackBar.open('Salve a empresa primeiro antes de adicionar o Alvará.', 'Fechar', { duration: 3000 });
+        this.snackBar.open(t('company.messages.saveBeforeLicence'), t('common.actions.close'), { duration: 3000 });
         return;
       }
 
@@ -1227,11 +1254,11 @@ export class CompanyDialogComponent {
 
       if (savedDoc) {
         this.otherDocuments.update(docs => [...docs, savedDoc]);
-        this.snackBar.open('Alvará carregado com sucesso!', 'Fechar', { duration: 3000 });
+        this.snackBar.open(t('company.messages.licenceUploaded'), t('common.actions.close'), { duration: 3000 });
       }
     } catch (error: any) {
       console.error('Erro ao subir alvará:', error);
-      this.snackBar.open(friendlyErrorMessage(error, 'Não foi possível carregar o Alvará.'), 'Fechar', { duration: 6000 });
+      this.snackBar.open(friendlyErrorMessage(error, t('company.messages.licenceUploadFailed')), t('common.actions.close'), { duration: 6000 });
     } finally {
       this.isUploadingAlvara.set(false);
       input.value = '';
@@ -1248,15 +1275,15 @@ export class CompanyDialogComponent {
   }
 
   async removeOtherDocument(doc: CompanyDocument) {
-    if (confirm(`Tem certeza que deseja remover o documento "${doc.type}"?`)) {
+    if (confirm(t('company.messages.confirmRemoveDocument', { type: this.documentTypeLabel(doc.type) }))) {
       try {
         await this.documentService.deleteDocument(doc.url);
         await this.documentService.deleteCompanyDocument(doc.id);
         this.otherDocuments.update(docs => docs.filter(d => d.id !== doc.id));
-        this.snackBar.open('Documento removido com sucesso!', 'Fechar', { duration: 3000 });
+        this.snackBar.open(t('company.messages.documentRemoved'), t('common.actions.close'), { duration: 3000 });
       } catch (error) {
         console.error('Erro ao remover documento:', error);
-        this.snackBar.open(friendlyErrorMessage(error, 'Não foi possível remover o documento.'), 'Fechar', { duration: 6000 });
+        this.snackBar.open(friendlyErrorMessage(error, t('company.messages.documentRemoveFailed')), t('common.actions.close'), { duration: 6000 });
       }
     }
   }
@@ -1302,10 +1329,10 @@ export class CompanyDialogComponent {
       }
 
       this.commercialActivityUrl.set(null);
-      this.snackBar.open('Documento removido!', 'Fechar', { duration: 3000 });
+      this.snackBar.open(t('company.messages.documentRemovedShort'), t('common.actions.close'), { duration: 3000 });
     } catch (error) {
       console.error('Erro ao remover documento:', error);
-      this.snackBar.open(friendlyErrorMessage(error, 'Não foi possível remover o documento.'), 'Fechar', { duration: 6000 });
+      this.snackBar.open(friendlyErrorMessage(error, t('company.messages.documentRemoveFailed')), t('common.actions.close'), { duration: 6000 });
     }
   }
 

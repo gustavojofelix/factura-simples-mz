@@ -3,6 +3,7 @@ import { SupabaseService } from './supabase.service';
 import { AuditLogService } from './audit-log.service';
 import { DocumentProcessingService } from './document-processing.service';
 import type { Company } from './company.service';
+import { t } from '../i18n/i18n';
 
 export interface CompanyBankAccount {
   id?: string;
@@ -52,8 +53,8 @@ export const MAX_RECOMMENDED_INVOICE_BANKS = 4;
 export function nibWarning(value: string | null | undefined): string | null {
   const digits = (value || '').replace(/\s/g, '');
   if (!digits) return null;
-  if (!/^\d+$/.test(digits)) return 'O NIB deve conter apenas dígitos.';
-  if (digits.length !== 21) return `O NIB moçambicano tem 21 dígitos (tem ${digits.length}).`;
+  if (!/^\d+$/.test(digits)) return t('company.bankWarnings.nibDigitsOnly');
+  if (digits.length !== 21) return t('company.bankWarnings.nibLength', { length: digits.length });
   return null;
 }
 
@@ -61,9 +62,9 @@ export function nibWarning(value: string | null | undefined): string | null {
 export function ibanWarning(value: string | null | undefined): string | null {
   const iban = (value || '').replace(/\s/g, '').toUpperCase();
   if (!iban) return null;
-  if (!/^[A-Z]{2}\d{2}[A-Z0-9]+$/.test(iban)) return 'Formato de IBAN inválido (ex.: MZ59 0001 ...).';
-  if (iban.startsWith('MZ') && iban.length !== 25) return `O IBAN moçambicano tem 25 caracteres (tem ${iban.length}).`;
-  if (iban.length < 15 || iban.length > 34) return 'O IBAN parece ter um comprimento inválido.';
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]+$/.test(iban)) return t('company.bankWarnings.ibanFormat');
+  if (iban.startsWith('MZ') && iban.length !== 25) return t('company.bankWarnings.ibanMzLength', { length: iban.length });
+  if (iban.length < 15 || iban.length > 34) return t('company.bankWarnings.ibanLength');
   return null;
 }
 
@@ -71,7 +72,7 @@ export function ibanWarning(value: string | null | undefined): string | null {
 export function swiftWarning(value: string | null | undefined): string | null {
   const swift = (value || '').replace(/\s/g, '').toUpperCase();
   if (!swift) return null;
-  if (!/^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/.test(swift)) return 'O SWIFT/BIC tem 8 ou 11 caracteres (ex.: BCIMMZMA).';
+  if (!/^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/.test(swift)) return t('company.bankWarnings.swiftFormat');
   return null;
 }
 

@@ -5,6 +5,7 @@ import { AuthService } from './auth.service';
 import { AuditLogService } from './audit-log.service';
 import { AccountService } from './account.service';
 import type { CompanyBankAccount } from './company-bank-account.service';
+import { t } from '../i18n/i18n';
 
 export interface Company {
   id: string;
@@ -246,10 +247,10 @@ export class CompanyService {
       const oldCompany = this.companies().find(c => c.id === id);
       // 1. Check for dependent records
       const checks = [
-        { table: 'invoices', label: 'facturas' },
-        { table: 'products', label: 'produtos' },
-        { table: 'clients', label: 'clientes' },
-        { table: 'tax_declarations', label: 'declarações' }
+        { table: 'invoices', label: t('company.service.recordInvoices') },
+        { table: 'products', label: t('company.service.recordProducts') },
+        { table: 'clients', label: t('company.service.recordClients') },
+        { table: 'tax_declarations', label: t('company.service.recordDeclarations') }
       ];
 
       for (const check of checks) {
@@ -263,7 +264,7 @@ export class CompanyService {
         if (count && count > 0) {
           return { 
             success: false, 
-            error: `Não é possível eliminar uma empresa que já possui registos (${check.label}).` 
+            error: t('company.service.hasRecords', { records: check.label }) 
           };
         }
       }
@@ -300,7 +301,7 @@ export class CompanyService {
       return { success: true };
     } catch (error: any) {
       console.error('Erro ao deletar empresa:', error);
-      return { success: false, error: friendlyErrorMessage(error, 'Não foi possível eliminar a empresa.') };
+      return { success: false, error: friendlyErrorMessage(error, t('company.service.deleteFailed')) };
     }
   }
 

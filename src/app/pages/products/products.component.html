@@ -1,19 +1,19 @@
 <div class="p-6">
   <div class="flex items-center justify-between mb-6">
     <div>
-      <h1 class="text-3xl font-bold text-gray-900 mb-2">Produtos e Serviços</h1>
-      <p class="text-gray-600">Catálogo de {{ companyService.activeCompany()?.name }}</p>
+      <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ 'products.list.title' | t }}</h1>
+      <p class="text-gray-600">{{ 'products.list.subtitle' | t: { company: companyService.activeCompany()?.name ?? '' } }}</p>
     </div>
     @if (companyService.activeRole() !== 'user') {
       <div class="flex flex-wrap gap-2 justify-end">
         <input #productImportInput type="file" accept=".csv,.xlsx,.xls" class="hidden" (change)="onImportFileSelected($event)">
         <button mat-stroked-button class="!border-ispc-orange !text-ispc-orange" (click)="productImportInput.click()">
           <mat-icon>upload_file</mat-icon>
-          <span>Importar</span>
+          <span>{{ 'products.list.import' | t }}</span>
         </button>
         <button mat-stroked-button class="!border-ispc-orange !text-ispc-orange" [matMenuTriggerFor]="exportMenu" [disabled]="filteredProducts().length === 0">
           <mat-icon>file_download</mat-icon>
-          <span>Exportar</span>
+          <span>{{ 'common.actions.export' | t }}</span>
         </button>
         <mat-menu #exportMenu="matMenu">
           <button mat-menu-item (click)="exportProducts('xlsx')"><mat-icon>table_view</mat-icon><span>Excel (.xlsx)</span></button>
@@ -21,7 +21,7 @@
         </mat-menu>
         <button mat-stroked-button class="!border-ispc-orange !text-ispc-orange" [matMenuTriggerFor]="templateMenu">
           <mat-icon>description</mat-icon>
-          <span>Baixar Template</span>
+          <span>{{ 'products.list.downloadTemplate' | t }}</span>
         </button>
         <mat-menu #templateMenu="matMenu">
           <button mat-menu-item (click)="downloadImportTemplate('xlsx')"><mat-icon>table_view</mat-icon><span>Excel (.xlsx)</span></button>
@@ -30,7 +30,7 @@
         </mat-menu>
         <button mat-raised-button class="!bg-ispc-orange !text-white" (click)="openDialog()">
           <mat-icon>add</mat-icon>
-          <span>Novo Produto</span>
+          <span>{{ 'products.list.newProduct' | t }}</span>
         </button>
       </div>
     }
@@ -43,12 +43,12 @@
         <!-- Search Field -->
         <mat-form-field appearance="outline" class="flex-1 max-w-md" subscriptSizing="dynamic">
           <mat-icon matPrefix class="text-gray-400 mr-2">search</mat-icon>
-          <mat-label>Pesquisar produtos</mat-label>
+          <mat-label>{{ 'products.filters.searchLabel' | t }}</mat-label>
           <input 
             matInput 
             [value]="searchTerm()" 
             (input)="onSearchChange($event)"
-            placeholder="Nome, código ou descrição..."
+            [placeholder]="'products.filters.searchPlaceholder' | t"
           >
           @if (searchTerm()) {
             <button matSuffix mat-icon-button (click)="searchTerm.set('')">
@@ -61,40 +61,40 @@
 
         <div class="flex flex-wrap items-center gap-4">
           <mat-form-field appearance="outline" class="w-40" subscriptSizing="dynamic">
-            <mat-label>Tipo</mat-label>
+            <mat-label>{{ 'common.fields.type' | t }}</mat-label>
             <mat-select [value]="typeFilter()" (selectionChange)="onTypeChange($event.value)">
-              <mat-option value="all">Todos</mat-option>
-              <mat-option value="produto">Produtos</mat-option>
-              <mat-option value="servico">Serviços</mat-option>
+              <mat-option value="all">{{ 'common.status.all' | t }}</mat-option>
+              <mat-option value="produto">{{ 'products.filters.products' | t }}</mat-option>
+              <mat-option value="servico">{{ 'products.filters.services' | t }}</mat-option>
             </mat-select>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="w-40" subscriptSizing="dynamic">
-            <mat-label>Estado</mat-label>
+            <mat-label>{{ 'common.fields.status' | t }}</mat-label>
             <mat-select [value]="statusFilter()" (selectionChange)="onStatusChange($event.value)">
-              <mat-option value="all">Todos</mat-option>
-              <mat-option value="active">Activados</mat-option>
-              <mat-option value="inactive">Desactivados</mat-option>
+              <mat-option value="all">{{ 'common.status.all' | t }}</mat-option>
+              <mat-option value="active">{{ 'products.filters.activated' | t }}</mat-option>
+              <mat-option value="inactive">{{ 'products.filters.deactivated' | t }}</mat-option>
             </mat-select>
           </mat-form-field>
 
           <!-- Sort Group -->
           <div class="flex items-center">
             <mat-form-field appearance="outline" class="w-48" subscriptSizing="dynamic">
-              <mat-label>Ordenar por</mat-label>
+              <mat-label>{{ 'products.filters.sortBy' | t }}</mat-label>
               <mat-select [value]="sortField()" (selectionChange)="onSortFieldChange($event.value)">
-                <mat-option value="code">Código</mat-option>
-                <mat-option value="name">Nome</mat-option>
-                <mat-option value="price">Preço</mat-option>
-                <mat-option value="stock">Stock</mat-option>
-                <mat-option value="date">Data</mat-option>
+                <mat-option value="code">{{ 'common.fields.code' | t }}</mat-option>
+                <mat-option value="name">{{ 'common.fields.name' | t }}</mat-option>
+                <mat-option value="price">{{ 'common.fields.price' | t }}</mat-option>
+                <mat-option value="stock">{{ 'products.table.stock' | t }}</mat-option>
+                <mat-option value="date">{{ 'common.fields.date' | t }}</mat-option>
               </mat-select>
             </mat-form-field>
             <button 
               mat-icon-button 
               (click)="toggleSortDirection()" 
               class="ml-1 text-ispc-orange"
-              [matTooltip]="sortDirection() === 'asc' ? 'Crescente' : 'Decrescente'"
+              [matTooltip]="(sortDirection() === 'asc' ? 'products.filters.ascending' : 'products.filters.descending') | t"
             >
               <mat-icon>{{ sortDirection() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
             </button>
@@ -103,14 +103,14 @@
           <!-- Price Group -->
           <div class="flex items-center gap-2 border border-gray-200 rounded-lg pr-3 pl-1 h-[56px] transition-all hover:border-gray-300">
             <div class="bg-gray-50 h-full flex items-center px-3 rounded-l-lg border-r border-gray-200">
-              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Preço</span>
+              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ 'common.fields.price' | t }}</span>
             </div>
             <mat-form-field appearance="fill" class="w-20 no-border-field" subscriptSizing="dynamic">
-              <input matInput type="number" [value]="minPriceFilter()" (input)="onMinPriceChange($event)" placeholder="Min">
+              <input matInput type="number" [value]="minPriceFilter()" (input)="onMinPriceChange($event)" [placeholder]="'products.filters.min' | t">
             </mat-form-field>
             <span class="text-gray-300">—</span>
             <mat-form-field appearance="fill" class="w-20 no-border-field" subscriptSizing="dynamic">
-              <input matInput type="number" [value]="maxPriceFilter()" (input)="onMaxPriceChange($event)" placeholder="Max">
+              <input matInput type="number" [value]="maxPriceFilter()" (input)="onMaxPriceChange($event)" [placeholder]="'products.filters.max' | t">
             </mat-form-field>
           </div>
 
@@ -118,7 +118,7 @@
           @if (searchTerm() !== '' || sortField() !== 'code' || sortDirection() !== 'asc' || minPriceFilter() !== null || maxPriceFilter() !== null || typeFilter() !== 'all' || statusFilter() !== 'all') {
             <button mat-button color="warn" (click)="clearFilters()" class="!h-[56px] rounded-lg">
               <mat-icon>filter_list_off</mat-icon>
-              <span>Limpar</span>
+              <span>{{ 'products.filters.clear' | t }}</span>
             </button>
           }
         </div>
@@ -133,14 +133,14 @@
           <div class="py-20 text-center">
             <mat-icon class="!text-6xl text-gray-300 mb-4">inventory_2</mat-icon>
             @if (searchTerm() !== '') {
-              <p class="text-gray-600 mb-4">Nenhum produto encontrado para "{{ searchTerm() }}"</p>
-              <button mat-button (click)="searchTerm.set('')">Limpar pesquisa</button>
+              <p class="text-gray-600 mb-4">{{ 'products.list.emptySearch' | t: { term: searchTerm() } }}</p>
+              <button mat-button (click)="searchTerm.set('')">{{ 'products.list.clearSearch' | t }}</button>
             } @else {
-              <p class="text-gray-600 mb-4">Ainda não tem produtos cadastrados</p>
+              <p class="text-gray-600 mb-4">{{ 'products.list.empty' | t }}</p>
               @if (companyService.activeRole() !== 'user') {
                 <button mat-raised-button class="!bg-ispc-orange !text-white" (click)="openDialog()">
                   <mat-icon>add</mat-icon>
-                  <span>Adicionar Primeiro Produto</span>
+                  <span>{{ 'products.list.addFirst' | t }}</span>
                 </button>
               }
             }
@@ -154,11 +154,11 @@
               </ng-container>
 
               <ng-container matColumnDef="name">
-                <th mat-header-cell *matHeaderCellDef class="!font-semibold">Produto</th>
+                <th mat-header-cell *matHeaderCellDef class="!font-semibold">{{ 'products.table.product' | t }}</th>
                 <td mat-cell *matCellDef="let product">
                   <div>
                     <div class="font-medium">{{ product.name }}</div>
-                    <div class="text-xs text-gray-500">{{ product.type === 'produto' ? 'Produto' : 'Serviço' }}</div>
+                    <div class="text-xs text-gray-500">{{ typeLabel(product.type) }}</div>
                     @if (product.description) {
                       <div class="text-sm text-gray-600">{{ product.description }}</div>
                     }
@@ -167,14 +167,14 @@
               </ng-container>
 
               <ng-container matColumnDef="price">
-                <th mat-header-cell *matHeaderCellDef class="!font-semibold">Preço</th>
+                <th mat-header-cell *matHeaderCellDef class="!font-semibold">{{ 'common.fields.price' | t }}</th>
                 <td mat-cell *matCellDef="let product">
                   <span class="font-semibold">{{ product.price | number:'1.2-2' }} MZN</span>
                 </td>
               </ng-container>
 
               <ng-container matColumnDef="unit">
-                <th mat-header-cell *matHeaderCellDef class="!font-semibold">Unidade</th>
+                <th mat-header-cell *matHeaderCellDef class="!font-semibold">{{ 'products.table.unit' | t }}</th>
                 <td mat-cell *matCellDef="let product">
                   @if (product.unit) {
                     <span>{{ product.unit }}</span>
@@ -185,7 +185,7 @@
               </ng-container>
 
               <ng-container matColumnDef="stock">
-                <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-center">Stock</th>
+                <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-center">{{ 'products.table.stock' | t }}</th>
                 <td mat-cell *matCellDef="let product" class="!text-center">
                   @if (product.stock !== null && product.stock !== undefined) {
                     <span [class]="product.stock > 0 ? 'text-green-600' : 'text-red-600'">
@@ -198,32 +198,32 @@
               </ng-container>
 
               <ng-container matColumnDef="status">
-                <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-center">Estado</th>
+                <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-center">{{ 'common.fields.status' | t }}</th>
                 <td mat-cell *matCellDef="let product" class="!text-center">
                   <span 
                     class="px-2 py-1 rounded-full text-xs font-medium"
                     [ngClass]="product.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'"
                   >
-                    {{ product.is_active ? 'Activo' : 'Inactivo' }}
+                    {{ (product.is_active ? 'common.status.active' : 'common.status.inactive') | t }}
                   </span>
                 </td>
               </ng-container>
 
               <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-right">Acções</th>
+                <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-right">{{ 'common.fields.actions' | t }}</th>
                 <td mat-cell *matCellDef="let product" class="!text-right flex items-center justify-end gap-1">
                   <button 
                     mat-icon-button 
                     (click)="toggleStatus(product)" 
-                    [title]="product.is_active ? 'Desactivar' : 'Activar'"
+                    [title]="(product.is_active ? 'products.table.deactivate' : 'products.table.activate') | t"
                     [class]="product.is_active ? 'text-gray-400' : 'text-ispc-orange'"
                   >
                     <mat-icon>{{ product.is_active ? 'visibility_off' : 'visibility' }}</mat-icon>
                   </button>
-                  <button mat-icon-button (click)="openDialog(product)" title="Editar">
+                  <button mat-icon-button (click)="openDialog(product)" [title]="'common.actions.edit' | t">
                     <mat-icon>edit</mat-icon>
                   </button>
-                  <button mat-icon-button (click)="deleteProduct(product)" title="Eliminar" class="!text-red-600">
+                  <button mat-icon-button (click)="deleteProduct(product)" [title]="'common.actions.delete' | t" class="!text-red-600">
                     <mat-icon>delete</mat-icon>
                   </button>
                 </td>
@@ -235,9 +235,10 @@
           </div>
 
           <div class="mt-4 text-sm text-gray-600">
-            {{ filteredProducts().length }} produto(s)
             @if (searchTerm() !== '') {
-              de {{ productService.products().length }} no total
+              {{ 'products.list.countOfTotal' | t: { count: filteredProducts().length, total: productService.products().length } }}
+            } @else {
+              {{ 'products.list.count' | t: { count: filteredProducts().length } }}
             }
           </div>
         }

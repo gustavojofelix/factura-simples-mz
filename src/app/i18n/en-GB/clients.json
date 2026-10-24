@@ -1,1 +1,125 @@
-{}
+{
+  "list": {
+    "title": "Clients",
+    "subtitle": "Manage clients of {company}",
+    "import": "Import clients",
+    "downloadTemplate": "Download template",
+    "newClient": "New client",
+    "emptyFiltered": "No clients match the current filters",
+    "empty": "You have no clients yet",
+    "addFirst": "Add your first client",
+    "count": "{count} client(s)",
+    "countOfTotal": "{count} client(s) of {total} in total"
+  },
+  "filters": {
+    "title": "Filters",
+    "caption": "Find a client quickly",
+    "searchLabel": "Search name, NUIT or email",
+    "searchPlaceholder": "e.g. John Smith",
+    "industry": "Industry",
+    "allIndustries": "All industries",
+    "allStatuses": "All statuses",
+    "active": "Active",
+    "inactive": "Inactive",
+    "sortBy": "Sort by",
+    "sortClient": "Client",
+    "order": "Order",
+    "ascending": "Ascending",
+    "descending": "Descending"
+  },
+  "table": {
+    "email": "Email",
+    "viewStatement": "View statement",
+    "activate": "Activate",
+    "deactivate": "Deactivate"
+  },
+  "industries": {
+    "commerce": "Retail & trade",
+    "services": "Services",
+    "industry": "Manufacturing",
+    "agriculture": "Agriculture",
+    "construction": "Construction",
+    "technology": "Technology",
+    "health": "Healthcare",
+    "education": "Education",
+    "other": "Other"
+  },
+  "dialog": {
+    "editTitle": "Edit client",
+    "newTitle": "New client",
+    "namePlaceholder": "Client name",
+    "nameRequired": "Name is required",
+    "nuitPlaceholder": "Tax identification number",
+    "nuitRequired": "NUIT is required",
+    "idDocument": "Identity document (optional)",
+    "removeDocument": "Remove document",
+    "documentAttached": "Document attached",
+    "viewDocument": "View document",
+    "uploading": "Uploading...",
+    "replaceDocument": "Replace document",
+    "chooseDocument": "Choose document",
+    "documentHint": "PDF or image (max. 5MB)",
+    "email": "Email",
+    "emailPlaceholder": "email@example.com",
+    "emailRequired": "Email is required",
+    "emailInvalid": "Invalid email",
+    "phonePlaceholder": "e.g. 841234567",
+    "phoneInvalid": "The phone number must have exactly 9 digits",
+    "industry": "Industry / Sector",
+    "addressPlaceholder": "Full address",
+    "addressRequired": "Address is required"
+  },
+  "messages": {
+    "fileTooLarge": "File too large. Maximum: 5MB",
+    "fileTypeNotAllowed": "File type not allowed",
+    "documentUploaded": "Document uploaded!",
+    "documentUploadFailed": "Could not upload the document.",
+    "duplicateNuit": "A client with this NUIT is already registered in this company.",
+    "updated": "Client updated successfully!",
+    "updateFailed": "Could not update the client.",
+    "created": "Client created successfully!",
+    "saveFailed": "Could not save the client.",
+    "statusChangeFailed": "Could not change the client's status.",
+    "activated": "Client activated successfully!",
+    "deactivated": "Client deactivated successfully!",
+    "confirmDelete": "Are you sure you want to delete the client \"{name}\"?",
+    "deleted": "Client deleted successfully!",
+    "deleteFailed": "Error deleting client",
+    "importReadFailed": "Could not read the file. Please use a valid CSV or Excel file."
+  },
+  "import": {
+    "rowRequired": "row {row}: Name, NUIT, Email and Address are required",
+    "rowNuitDigits": "row {row}: NUIT must have 9 digits",
+    "rowEmailInvalid": "row {row}: Invalid email",
+    "rowPhoneDigits": "row {row}: Phone must have exactly 9 digits",
+    "rowNuitDuplicate": "row {row}: Duplicate NUIT",
+    "noneValid": "No valid clients found. {details}",
+    "failed": "Error importing clients: {error}",
+    "success": "{count} client(s) imported successfully.",
+    "successWithSkipped": "{imported} client(s) imported successfully. {skipped} invalid row(s) skipped."
+  },
+  "columns": {
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address",
+    "industry": "Industry",
+    "status": "Status"
+  },
+  "template": {
+    "exampleName": "Example Company, Lda",
+    "fileName": "client_import_template",
+    "sheetName": "Clients"
+  },
+  "export": {
+    "fileName": "clients_{date}",
+    "sheetName": "Data"
+  },
+  "service": {
+    "noActiveCompany": "No active company selected.",
+    "importFailed": "Could not import the clients.",
+    "updateFailed": "Could not update the client.",
+    "hasInvoices": "This client has associated invoices and cannot be deleted. Deactivate it instead.",
+    "deleteFailed": "Could not delete the client."
+  }
+}

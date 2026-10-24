@@ -1,1 +1,130 @@
-{}
+{
+  "list": {
+    "title": "Produits et services",
+    "subtitle": "Catalogue de {company}",
+    "import": "Importer",
+    "downloadTemplate": "Télécharger le modèle",
+    "newProduct": "Nouveau produit",
+    "emptySearch": "Aucun produit trouvé pour « {term} »",
+    "clearSearch": "Effacer la recherche",
+    "empty": "Vous n'avez encore aucun produit",
+    "addFirst": "Ajouter votre premier produit",
+    "count": "{count} produit(s)",
+    "countOfTotal": "{count} produit(s) sur {total} au total"
+  },
+  "filters": {
+    "searchLabel": "Rechercher des produits",
+    "searchPlaceholder": "Nom, code ou description...",
+    "products": "Produits",
+    "services": "Services",
+    "activated": "Activés",
+    "deactivated": "Désactivés",
+    "sortBy": "Trier par",
+    "ascending": "Croissant",
+    "descending": "Décroissant",
+    "min": "Min",
+    "max": "Max",
+    "clear": "Effacer"
+  },
+  "table": {
+    "product": "Produit",
+    "unit": "Unité",
+    "stock": "Stock",
+    "activate": "Activer",
+    "deactivate": "Désactiver"
+  },
+  "types": {
+    "product": "Produit",
+    "service": "Service"
+  },
+  "dialog": {
+    "title": "Produit / Service",
+    "typeRequired": "Le type est obligatoire",
+    "namePlaceholder": "Nom du produit ou du service",
+    "nameRequired": "Le nom est obligatoire",
+    "codePlaceholder": "Généré automatiquement si vide",
+    "codeHint": "Facultatif : utilisez votre code interne",
+    "barcode": "Code-barres",
+    "barcodePlaceholder": "Ex. : 7891234567890",
+    "price": "Prix (MZN)",
+    "priceRequired": "Le prix est obligatoire",
+    "unit": "Unité",
+    "unitPlaceholder": "un, kg, m, h, etc.",
+    "stock": "Stock",
+    "stockPlaceholder": "Quantité en stock",
+    "stockHint": "Uniquement pour les produits physiques"
+  },
+  "messages": {
+    "stockInvalid": "Le stock doit être égal à zéro ou positif.",
+    "duplicateName": "Un produit ou service portant ce nom existe déjà.",
+    "duplicateCode": "Un produit ou service avec ce code existe déjà.",
+    "duplicateBarcode": "Un produit ou service avec ce code-barres existe déjà.",
+    "productUpdated": "Produit mis à jour avec succès !",
+    "serviceUpdated": "Service mis à jour avec succès !",
+    "updateFailed": "Impossible de mettre à jour le produit.",
+    "productCreated": "Produit créé avec succès !",
+    "serviceCreated": "Service créé avec succès !",
+    "saveFailed": "Impossible d'enregistrer le produit.",
+    "activated": "Produit activé avec succès !",
+    "deactivated": "Produit désactivé avec succès !",
+    "statusChangeFailed": "Impossible de modifier le statut du produit.",
+    "confirmDelete": "Voulez-vous vraiment supprimer le produit « {name} » ?",
+    "deleted": "Produit supprimé avec succès !",
+    "deleteFailed": "Erreur lors de la suppression du produit",
+    "importReadFailed": "Impossible de lire le fichier. Utilisez un fichier CSV ou Excel valide."
+  },
+  "import": {
+    "nameMissing": "Nom manquant",
+    "typeMissing": "Type manquant (utilisez Produit ou Service)",
+    "typeInvalid": "Type invalide '{value}' (utilisez Produit ou Service)",
+    "priceMissing": "Prix manquant",
+    "priceInvalid": "Prix invalide '{value}'",
+    "stockInvalid": "Stock invalide '{value}' (doit être égal à zéro ou positif)",
+    "productNameExists": "un produit nommé '{name}' existe déjà",
+    "serviceNameExists": "un service nommé '{name}' existe déjà",
+    "nameRepeated": "nom '{name}' répété (identique à la ligne {row})",
+    "codeExists": "un produit ou service avec le code '{code}' existe déjà",
+    "codeRepeated": "code '{code}' répété (identique à la ligne {row})",
+    "barcodeExists": "un produit ou service avec le code-barres '{barcode}' existe déjà",
+    "barcodeRepeated": "code-barres '{barcode}' répété (identique à la ligne {row})",
+    "rowErrors": "ligne {row} : {errors}",
+    "noneValid": "Aucun article valide trouvé.",
+    "noneValidWithDetails": "Aucun article valide trouvé. {details}",
+    "failed": "Erreur lors de l'importation : {error}",
+    "success": "{count} article(s) importé(s) avec succès.",
+    "successWithSkipped": "{imported} article(s) importé(s) avec succès. {skipped} ligne(s) ignorée(s) : {details}",
+    "andMore": "{shown} | et {count} de plus…"
+  },
+  "columns": {
+    "code": "Code",
+    "barcode": "Code-barres",
+    "name": "Nom",
+    "type": "Type",
+    "description": "Description",
+    "price": "Prix",
+    "unit": "Unité",
+    "stock": "Stock",
+    "status": "Statut"
+  },
+  "template": {
+    "exampleName": "Stylo bleu",
+    "exampleDescription": "Stylo à bille bleu",
+    "fileName": "modele_import_produits_services"
+  },
+  "export": {
+    "fileName": "produits_services_{date}",
+    "sheetName": "Produits et services"
+  },
+  "service": {
+    "duplicateName": "Un produit ou service portant ce nom existe déjà.",
+    "updateFailed": "Impossible de mettre à jour le produit.",
+    "hasSales": "Cet article a déjà des ventes enregistrées et ne peut pas être supprimé. Désactivez-le plutôt.",
+    "deleteFailed": "Impossible de supprimer le produit.",
+    "noActiveCompany": "Aucune entreprise active sélectionnée.",
+    "fieldBarcode": "code-barres",
+    "fieldCode": "code",
+    "fieldIdentifier": "identifiant",
+    "duplicateIdentifier": "Un {field} est en double (déjà utilisé par un autre produit ou service). Aucun article n'a été importé.",
+    "importFailed": "Impossible d'importer les produits."
+  }
+}

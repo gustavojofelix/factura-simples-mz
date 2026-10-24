@@ -1,1 +1,125 @@
-{}
+{
+  "list": {
+    "title": "Clients",
+    "subtitle": "Gérer les clients de {company}",
+    "import": "Importer des clients",
+    "downloadTemplate": "Télécharger le modèle",
+    "newClient": "Nouveau client",
+    "emptyFiltered": "Aucun client ne correspond aux filtres actuels",
+    "empty": "Vous n'avez encore aucun client",
+    "addFirst": "Ajouter votre premier client",
+    "count": "{count} client(s)",
+    "countOfTotal": "{count} client(s) sur {total} au total"
+  },
+  "filters": {
+    "title": "Filtres",
+    "caption": "Trouvez rapidement un client",
+    "searchLabel": "Rechercher nom, NUIT ou e-mail",
+    "searchPlaceholder": "Ex. : Jean Dupont",
+    "industry": "Secteur",
+    "allIndustries": "Tous les secteurs",
+    "allStatuses": "Tous les statuts",
+    "active": "Actifs",
+    "inactive": "Inactifs",
+    "sortBy": "Trier par",
+    "sortClient": "Client",
+    "order": "Ordre",
+    "ascending": "Croissant",
+    "descending": "Décroissant"
+  },
+  "table": {
+    "email": "E-mail",
+    "viewStatement": "Voir le relevé",
+    "activate": "Activer",
+    "deactivate": "Désactiver"
+  },
+  "industries": {
+    "commerce": "Commerce",
+    "services": "Services",
+    "industry": "Industrie",
+    "agriculture": "Agriculture",
+    "construction": "Construction",
+    "technology": "Technologie",
+    "health": "Santé",
+    "education": "Éducation",
+    "other": "Autres"
+  },
+  "dialog": {
+    "editTitle": "Modifier le client",
+    "newTitle": "Nouveau client",
+    "namePlaceholder": "Nom du client",
+    "nameRequired": "Le nom est obligatoire",
+    "nuitPlaceholder": "Numéro d'identification fiscale",
+    "nuitRequired": "Le NUIT est obligatoire",
+    "idDocument": "Pièce d'identité (facultatif)",
+    "removeDocument": "Supprimer le document",
+    "documentAttached": "Document joint",
+    "viewDocument": "Voir le document",
+    "uploading": "Envoi en cours...",
+    "replaceDocument": "Remplacer le document",
+    "chooseDocument": "Choisir un document",
+    "documentHint": "PDF ou image (max. 5 Mo)",
+    "email": "E-mail",
+    "emailPlaceholder": "email@exemple.com",
+    "emailRequired": "L'e-mail est obligatoire",
+    "emailInvalid": "E-mail invalide",
+    "phonePlaceholder": "Ex. : 841234567",
+    "phoneInvalid": "Le téléphone doit comporter exactement 9 chiffres",
+    "industry": "Secteur d'activité",
+    "addressPlaceholder": "Adresse complète",
+    "addressRequired": "L'adresse est obligatoire"
+  },
+  "messages": {
+    "fileTooLarge": "Fichier trop volumineux. Maximum : 5 Mo",
+    "fileTypeNotAllowed": "Type de fichier non autorisé",
+    "documentUploaded": "Document chargé !",
+    "documentUploadFailed": "Impossible de charger le document.",
+    "duplicateNuit": "Un client avec ce NUIT est déjà enregistré dans cette entreprise.",
+    "updated": "Client mis à jour avec succès !",
+    "updateFailed": "Impossible de mettre à jour le client.",
+    "created": "Client créé avec succès !",
+    "saveFailed": "Impossible d'enregistrer le client.",
+    "statusChangeFailed": "Impossible de modifier le statut du client.",
+    "activated": "Client activé avec succès !",
+    "deactivated": "Client désactivé avec succès !",
+    "confirmDelete": "Voulez-vous vraiment supprimer le client « {name} » ?",
+    "deleted": "Client supprimé avec succès !",
+    "deleteFailed": "Erreur lors de la suppression du client",
+    "importReadFailed": "Impossible de lire le fichier. Utilisez un fichier CSV ou Excel valide."
+  },
+  "import": {
+    "rowRequired": "ligne {row} : Nom, NUIT, E-mail et Adresse sont obligatoires",
+    "rowNuitDigits": "ligne {row} : le NUIT doit comporter 9 chiffres",
+    "rowEmailInvalid": "ligne {row} : e-mail invalide",
+    "rowPhoneDigits": "ligne {row} : le téléphone doit comporter exactement 9 chiffres",
+    "rowNuitDuplicate": "ligne {row} : NUIT en double",
+    "noneValid": "Aucun client valide trouvé. {details}",
+    "failed": "Erreur lors de l'importation des clients : {error}",
+    "success": "{count} client(s) importé(s) avec succès.",
+    "successWithSkipped": "{imported} client(s) importé(s) avec succès. {skipped} ligne(s) invalide(s) ignorée(s)."
+  },
+  "columns": {
+    "name": "Nom",
+    "email": "E-mail",
+    "phone": "Téléphone",
+    "address": "Adresse",
+    "industry": "Secteur",
+    "status": "Statut"
+  },
+  "template": {
+    "exampleName": "Entreprise Exemple, Lda",
+    "fileName": "modele_import_clients",
+    "sheetName": "Clients"
+  },
+  "export": {
+    "fileName": "clients_{date}",
+    "sheetName": "Données"
+  },
+  "service": {
+    "noActiveCompany": "Aucune entreprise active sélectionnée.",
+    "importFailed": "Impossible d'importer les clients.",
+    "updateFailed": "Impossible de mettre à jour le client.",
+    "hasInvoices": "Ce client a des factures associées et ne peut pas être supprimé. Désactivez-le plutôt.",
+    "deleteFailed": "Impossible de supprimer le client."
+  }
+}

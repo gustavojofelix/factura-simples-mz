@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { AuditLogService } from './audit-log.service';
+import { t } from '../i18n/i18n';
 
 export type DocumentTemplateCode = 'classico' | 'moderno' | 'minimalista';
 
@@ -63,22 +64,19 @@ export interface DocumentTemplateOption {
   description: string;
 }
 
+/** Etiqueta e descrição traduzidas na altura do acesso (getters), nunca ao carregar o módulo. */
+function templateOption(code: DocumentTemplateCode, key: string): DocumentTemplateOption {
+  return {
+    code,
+    get label() { return t(`company.documentTemplates.${key}.label`); },
+    get description() { return t(`company.documentTemplates.${key}.description`); }
+  };
+}
+
 export const DOCUMENT_TEMPLATES: DocumentTemplateOption[] = [
-  {
-    code: 'classico',
-    label: 'Clássico',
-    description: 'Logótipo à esquerda e tabela com cabeçalho cinzento. É o aspecto actual das suas facturas.'
-  },
-  {
-    code: 'moderno',
-    label: 'Moderno',
-    description: 'Faixa superior na cor da marca, com o logótipo centrado e tabela às riscas.'
-  },
-  {
-    code: 'minimalista',
-    label: 'Minimalista',
-    description: 'Sem fundos nem faixas. Apenas um filete na cor da marca e tabela sem grelha.'
-  }
+  templateOption('classico', 'classic'),
+  templateOption('moderno', 'modern'),
+  templateOption('minimalista', 'minimalist')
 ];
 
 @Injectable({

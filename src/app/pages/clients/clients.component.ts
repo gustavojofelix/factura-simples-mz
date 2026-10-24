@@ -22,6 +22,41 @@ import { ExportService } from '../../core/services/export.service';
 import { nuitValidator } from '../../core/validators/nuit.validator';
 import { SubscriptionLimitDialogComponent } from '../../shared/components/subscription-limit-dialog.component';
 import * as XLSX from 'xlsx';
+import { t } from '../../core/i18n/i18n';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
+
+/** Valores gravados na BD (client.industry) → chave da etiqueta traduzida. */
+const INDUSTRIES: ReadonlyArray<{ value: string; key: string }> = [
+  { value: 'Comércio', key: 'commerce' },
+  { value: 'Serviços', key: 'services' },
+  { value: 'Indústria', key: 'industry' },
+  { value: 'Agricultura', key: 'agriculture' },
+  { value: 'Construção', key: 'construction' },
+  { value: 'Tecnologia', key: 'technology' },
+  { value: 'Saúde', key: 'health' },
+  { value: 'Educação', key: 'education' },
+  { value: 'Outros', key: 'other' }
+];
+
+function industryOptions(): Array<{ value: string; label: string }> {
+  return INDUSTRIES.map(ind => ({ value: ind.value, label: t(`clients.industries.${ind.key}`) }));
+}
+
+/** Etiqueta traduzida de um sector gravado (valores desconhecidos ficam como estão). */
+function industryLabel(value: string | null | undefined): string {
+  if (!value) return '';
+  const match = INDUSTRIES.find(ind => ind.value === value);
+  return match ? t(`clients.industries.${match.key}`) : value;
+}
+
+/** Converte a etiqueta (ou o valor) importada no valor gravado na BD. */
+function industryValue(input: string): string {
+  const normalized = input.toLowerCase().trim();
+  const match = INDUSTRIES.find(ind =>
+    ind.value.toLowerCase() === normalized || t(`clients.industries.${ind.key}`).toLowerCase() === normalized
+  );
+  return match ? match.value : input;
+}
 
 @Component({
   selector: 'app-client-dialog',
@@ -34,40 +69,41 @@ import * as XLSX from 'xlsx';
     MatInputModule,
     MatButtonModule,
     MatIconModule,
-    MatSelectModule
+    MatSelectModule,
+    TranslatePipe
   ],
   template: `
-    <h2 mat-dialog-title>{{ data ? 'Editar Cliente' : 'Novo Cliente' }}</h2>
+    <h2 mat-dialog-title>{{ (data ? 'clients.dialog.editTitle' : 'clients.dialog.newTitle') | t }}</h2>
     <mat-dialog-content class="!pt-4">
       <form [formGroup]="form" class="space-y-4">
         <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Nome</mat-label>
-          <input matInput formControlName="name" placeholder="Nome do cliente">
+          <mat-label>{{ 'common.fields.name' | t }}</mat-label>
+          <input matInput formControlName="name" [placeholder]="'clients.dialog.namePlaceholder' | t">
           @if (form.get('name')?.hasError('required') && form.get('name')?.touched) {
-            <mat-error>Nome é obrigatório</mat-error>
+            <mat-error>{{ 'clients.dialog.nameRequired' | t }}</mat-error>
           }
         </mat-form-field>
 
         <div class="space-y-2">
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>NUIT</mat-label>
-            <input matInput formControlName="nuit" placeholder="Número de identificação" required>
+            <input matInput formControlName="nuit" [placeholder]="'clients.dialog.nuitPlaceholder' | t" required>
             @if (form.get('nuit')?.hasError('required') && form.get('nuit')?.touched) {
-              <mat-error>NUIT é obrigatório</mat-error>
+              <mat-error>{{ 'clients.dialog.nuitRequired' | t }}</mat-error>
             }
           </mat-form-field>
 
           @if (form.get('nuit')?.value) {
             <div class="border border-gray-300 rounded-lg p-4 bg-gray-50">
               <div class="flex items-center justify-between mb-2">
-                <label class="text-sm font-medium text-gray-700">Documento de Identificação (opcional)</label>
+                <label class="text-sm font-medium text-gray-700">{{ 'clients.dialog.idDocument' | t }}</label>
                 @if (documentUrl()) {
                   <button
                     type="button"
                     mat-icon-button
                     (click)="removeDocument()"
                     class="!text-red-600"
-                    matTooltip="Remover documento"
+                    [title]="'clients.dialog.removeDocument' | t"
                   >
                     <mat-icon>delete</mat-icon>
                   </button>
@@ -78,9 +114,9 @@ import * as XLSX from 'xlsx';
                 <div class="mb-2 p-2 bg-green-50 border border-green-200 rounded">
                   <div class="flex items-center text-sm text-green-800">
                     <mat-icon class="!text-green-600 mr-2">check_circle</mat-icon>
-                    <span class="flex-1">Documento anexado</span>
+                    <span class="flex-1">{{ 'clients.dialog.documentAttached' | t }}</span>
                     <a [href]="documentUrl()" target="_blank" class="text-green-600 hover:underline">
-                      Ver documento
+                      {{ 'clients.dialog.viewDocument' | t }}
                     </a>
                   </div>
                 </div>
@@ -101,62 +137,62 @@ import * as XLSX from 'xlsx';
                   [disabled]="uploading()"
                 >
                   <mat-icon>upload_file</mat-icon>
-                  {{ uploading() ? 'A enviar...' : (documentUrl() ? 'Trocar documento' : 'Escolher documento') }}
+                  {{ (uploading() ? 'clients.dialog.uploading' : (documentUrl() ? 'clients.dialog.replaceDocument' : 'clients.dialog.chooseDocument')) | t }}
                 </button>
-                <span class="text-xs text-gray-500">PDF ou imagem (máx. 5MB)</span>
+                <span class="text-xs text-gray-500">{{ 'clients.dialog.documentHint' | t }}</span>
               </div>
             </div>
           }
         </div>
 
         <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Email</mat-label>
-          <input matInput type="email" formControlName="email" placeholder="email@exemplo.com" required>
+          <mat-label>{{ 'clients.dialog.email' | t }}</mat-label>
+          <input matInput type="email" formControlName="email" [placeholder]="'clients.dialog.emailPlaceholder' | t" required>
           @if (form.get('email')?.hasError('required') && form.get('email')?.touched) {
-            <mat-error>Email é obrigatório</mat-error>
+            <mat-error>{{ 'clients.dialog.emailRequired' | t }}</mat-error>
           }
           @if (form.get('email')?.hasError('email') && form.get('email')?.touched) {
-            <mat-error>Email inválido</mat-error>
+            <mat-error>{{ 'clients.dialog.emailInvalid' | t }}</mat-error>
           }
         </mat-form-field>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Telefone</mat-label>
-            <input matInput type="tel" inputmode="numeric" maxlength="9" formControlName="phone" placeholder="Ex: 841234567" (input)="onPhoneInput($event)">
+            <mat-label>{{ 'common.fields.phone' | t }}</mat-label>
+            <input matInput type="tel" inputmode="numeric" maxlength="9" formControlName="phone" [placeholder]="'clients.dialog.phonePlaceholder' | t" (input)="onPhoneInput($event)">
             @if (form.get('phone')?.hasError('pattern') && form.get('phone')?.touched) {
-              <mat-error>O telefone deve ter exactamente 9 dígitos</mat-error>
+              <mat-error>{{ 'clients.dialog.phoneInvalid' | t }}</mat-error>
             }
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Indústria / Sector</mat-label>
+            <mat-label>{{ 'clients.dialog.industry' | t }}</mat-label>
             <mat-select formControlName="industry">
-              @for (ind of industries; track ind) {
-                <mat-option [value]="ind">{{ ind }}</mat-option>
+              @for (ind of industries; track ind.value) {
+                <mat-option [value]="ind.value">{{ ind.label }}</mat-option>
               }
             </mat-select>
           </mat-form-field>
         </div>
 
         <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Endereço</mat-label>
-          <textarea matInput formControlName="address" rows="3" placeholder="Endereço completo" required></textarea>
+          <mat-label>{{ 'common.fields.address' | t }}</mat-label>
+          <textarea matInput formControlName="address" rows="3" [placeholder]="'clients.dialog.addressPlaceholder' | t" required></textarea>
           @if (form.get('address')?.hasError('required') && form.get('address')?.touched) {
-            <mat-error>Endereço é obrigatório</mat-error>
+            <mat-error>{{ 'clients.dialog.addressRequired' | t }}</mat-error>
           }
         </mat-form-field>
       </form>
     </mat-dialog-content>
     <mat-dialog-actions align="end" class="!px-6 !pb-4">
-      <button mat-button mat-dialog-close>Cancelar</button>
+      <button mat-button mat-dialog-close>{{ 'common.actions.cancel' | t }}</button>
       <button
         mat-raised-button
         class="!bg-ispc-orange !text-white"
         [disabled]="form.invalid || saving() || uploading()"
         (click)="save()"
       >
-        {{ saving() ? 'A guardar...' : 'Guardar' }}
+        {{ (saving() ? 'common.status.saving' : 'common.actions.save') | t }}
       </button>
     </mat-dialog-actions>
   `
@@ -167,17 +203,7 @@ export class ClientDialogComponent {
   uploading = signal(false);
   documentUrl = signal<string | null>(null);
 
-  industries = [
-    'Comércio',
-    'Serviços',
-    'Indústria',
-    'Agricultura',
-    'Construção',
-    'Tecnologia',
-    'Saúde',
-    'Educação',
-    'Outros'
-  ];
+  industries = industryOptions();
 
   constructor(
     private fb: FormBuilder,
@@ -221,13 +247,13 @@ export class ClientDialogComponent {
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      this.snackBar.open('Ficheiro muito grande. Máximo: 5MB', 'Fechar', { duration: 3000 });
+      this.snackBar.open(t('clients.messages.fileTooLarge'), t('common.actions.close'), { duration: 3000 });
       return;
     }
 
     const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
     if (!allowedTypes.includes(file.type)) {
-      this.snackBar.open('Tipo de ficheiro não permitido', 'Fechar', { duration: 3000 });
+      this.snackBar.open(t('clients.messages.fileTypeNotAllowed'), t('common.actions.close'), { duration: 3000 });
       return;
     }
 
@@ -242,11 +268,11 @@ export class ClientDialogComponent {
           document_url: dataUrl,
           document_type: file.type === 'application/pdf' ? 'PDF' : 'Imagem'
         });
-        this.snackBar.open('Documento carregado!', 'Fechar', { duration: 2000 });
+        this.snackBar.open(t('clients.messages.documentUploaded'), t('common.actions.close'), { duration: 2000 });
       };
       reader.readAsDataURL(file);
     } catch (error) {
-      this.snackBar.open(friendlyErrorMessage(error, 'Não foi possível carregar o documento.'), 'Fechar', { duration: 6000 });
+      this.snackBar.open(friendlyErrorMessage(error, t('clients.messages.documentUploadFailed')), t('common.actions.close'), { duration: 6000 });
     } finally {
       this.uploading.set(false);
     }
@@ -272,7 +298,7 @@ export class ClientDialogComponent {
       // Verificar NUIT duplicado
       const isDuplicate = await this.clientService.isNuitDuplicate(nuit, this.data?.id);
       if (isDuplicate) {
-        this.snackBar.open('Já existe um cliente registado com este NUIT nesta empresa.', 'Fechar', {
+        this.snackBar.open(t('clients.messages.duplicateNuit'), t('common.actions.close'), {
           duration: 5000
         });
         this.saving.set(false);
@@ -282,15 +308,15 @@ export class ClientDialogComponent {
       if (this.data) {
         const success = await this.clientService.updateClient(this.data.id, formData);
         if (success) {
-          this.snackBar.open('Cliente actualizado com sucesso!', 'Fechar', { duration: 3000 });
+          this.snackBar.open(t('clients.messages.updated'), t('common.actions.close'), { duration: 3000 });
           this.dialog.closeAll();
         } else {
-          this.snackBar.open(this.clientService.lastError || 'Não foi possível actualizar o cliente.', 'Fechar', { duration: 6000 });
+          this.snackBar.open(this.clientService.lastError || t('clients.messages.updateFailed'), t('common.actions.close'), { duration: 6000 });
         }
       } else {
         const client = await this.clientService.createClient(formData);
         if (client) {
-          this.snackBar.open('Cliente criado com sucesso!', 'Fechar', { duration: 3000 });
+          this.snackBar.open(t('clients.messages.created'), t('common.actions.close'), { duration: 3000 });
           this.dialog.closeAll();
         }
       }
@@ -308,7 +334,7 @@ export class ClientDialogComponent {
         });
       } else {
         console.error('Erro ao guardar cliente:', error);
-        this.snackBar.open(friendlyErrorMessage(error, 'Não foi possível guardar o cliente.'), 'Fechar', { duration: 8000 });
+        this.snackBar.open(friendlyErrorMessage(error, t('clients.messages.saveFailed')), t('common.actions.close'), { duration: 8000 });
       }
     } finally {
       this.saving.set(false);
@@ -332,7 +358,8 @@ export class ClientDialogComponent {
     MatTooltipModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSelectModule
+    MatSelectModule,
+    TranslatePipe
   ],
   templateUrl: './clients.component.html',
   styleUrls: ['./clients.component.css']
@@ -345,17 +372,8 @@ export class ClientsComponent implements OnInit {
   sortField = signal<'id' | 'name'>('id');
   sortOrder = signal<'asc' | 'desc'>('asc');
 
-  industries = [
-    'Comércio',
-    'Serviços',
-    'Indústria',
-    'Agricultura',
-    'Construção',
-    'Tecnologia',
-    'Saúde',
-    'Educação',
-    'Outros'
-  ];
+  industries = industryOptions();
+  industryLabel = industryLabel;
 
   filteredClients = computed(() => {
     const term = this.searchTerm().toLowerCase();
@@ -474,33 +492,34 @@ export class ClientsComponent implements OnInit {
           );
           return String(entry?.[1] ?? '').trim();
         };
-        const name = getValue('nome', 'name');
+        // Aceita cabeçalhos em português, inglês e francês (os modelos são gerados na língua da interface).
+        const name = getValue('nome', 'name', 'nom');
         const nuit = getValue('nuit');
         const email = getValue('email', 'e-mail');
-        const phone = getValue('telefone', 'phone', 'telemovel');
-        const address = getValue('endereco', 'morada', 'address');
-        const industry = getValue('industria', 'sector', 'setor', 'industry');
-        const status = getValue('estado', 'status').toLowerCase();
+        const phone = getValue('telefone', 'phone', 'telemovel', 'telephone');
+        const address = getValue('endereco', 'morada', 'address', 'adresse');
+        const industry = getValue('industria', 'sector', 'setor', 'industry', 'secteur');
+        const status = getValue('estado', 'status', 'statut').toLowerCase();
         const rowNumber = index + 2;
 
         if (!name || !nuit || !email || !address) {
-          invalidRows.push(`linha ${rowNumber}: Nome, NUIT, Email e Endereço são obrigatórios`);
+          invalidRows.push(t('clients.import.rowRequired', { row: rowNumber }));
           return;
         }
         if (!/^\d{9}$/.test(nuit)) {
-          invalidRows.push(`linha ${rowNumber}: NUIT deve ter 9 dígitos`);
+          invalidRows.push(t('clients.import.rowNuitDigits', { row: rowNumber }));
           return;
         }
         if (Validators.email({ value: email } as any)) {
-          invalidRows.push(`linha ${rowNumber}: Email inválido`);
+          invalidRows.push(t('clients.import.rowEmailInvalid', { row: rowNumber }));
           return;
         }
         if (phone && !/^\d{9}$/.test(phone)) {
-          invalidRows.push(`linha ${rowNumber}: Telefone deve ter exactamente 9 dígitos`);
+          invalidRows.push(t('clients.import.rowPhoneDigits', { row: rowNumber }));
           return;
         }
         if (existingNuits.has(nuit) || importedNuits.has(nuit)) {
-          invalidRows.push(`linha ${rowNumber}: NUIT duplicado`);
+          invalidRows.push(t('clients.import.rowNuitDuplicate', { row: rowNumber }));
           return;
         }
 
@@ -511,8 +530,8 @@ export class ClientsComponent implements OnInit {
           email,
           phone: phone || undefined,
           address,
-          industry: industry || undefined,
-          is_active: !['inactivo', 'inativo', 'false', '0'].includes(status)
+          industry: industry ? industryValue(industry) : undefined,
+          is_active: !['inactivo', 'inativo', 'false', '0', 'inactive', 'inactif', t('common.status.inactive').toLowerCase()].includes(status)
         });
       });
 
@@ -521,35 +540,37 @@ export class ClientsComponent implements OnInit {
       }
 
       if (!clients.length) {
-        this.snackBar.open(`Nenhum cliente válido encontrado. ${invalidRows.slice(0, 2).join('; ')}`, 'Fechar', { duration: 7000 });
+        this.snackBar.open(t('clients.import.noneValid', { details: invalidRows.slice(0, 2).join('; ') }), t('common.actions.close'), { duration: 7000 });
         return;
       }
 
       const result = await this.clientService.importClients(clients);
       if (result.error) {
-        this.snackBar.open(`Erro ao importar clientes: ${result.error}`, 'Fechar', { duration: 6000 });
+        this.snackBar.open(t('clients.import.failed', { error: result.error }), t('common.actions.close'), { duration: 6000 });
         return;
       }
 
-      const detail = invalidRows.length ? ` ${invalidRows.length} linha(s) inválida(s) ignorada(s).` : '';
-      this.snackBar.open(`${result.imported} cliente(s) importado(s) com sucesso.${detail}`, 'Fechar', { duration: 6000 });
+      const message = invalidRows.length
+        ? t('clients.import.successWithSkipped', { imported: result.imported, skipped: invalidRows.length })
+        : t('clients.import.success', { count: result.imported });
+      this.snackBar.open(message, t('common.actions.close'), { duration: 6000 });
     } catch (error) {
       console.error('Erro ao ler ficheiro de clientes:', error);
-      this.snackBar.open('Não foi possível ler o ficheiro. Use um CSV ou Excel válido.', 'Fechar', { duration: 5000 });
+      this.snackBar.open(t('clients.messages.importReadFailed'), t('common.actions.close'), { duration: 5000 });
     }
   }
 
   downloadImportTemplate(format: 'xlsx' | 'xls' | 'csv') {
     const example = [{
-      'Nome': 'Empresa Exemplo, Lda',
+      [t('clients.columns.name')]: t('clients.template.exampleName'),
       'NUIT': '400123456',
-      'Email': 'geral@exemplo.co.mz',
-      'Telefone': '841234567',
-      'Endereço': 'Av. 25 de Setembro, Maputo',
-      'Indústria': 'Comércio',
-      'Estado': 'Activo'
+      [t('clients.columns.email')]: 'geral@exemplo.co.mz',
+      [t('clients.columns.phone')]: '841234567',
+      [t('clients.columns.address')]: 'Av. 25 de Setembro, Maputo',
+      [t('clients.columns.industry')]: industryLabel('Comércio'),
+      [t('clients.columns.status')]: t('common.status.active')
     }];
-    const fileName = 'modelo_importacao_clientes';
+    const fileName = t('clients.template.fileName');
 
     if (format === 'csv') {
       this.exportService.exportToCsv(example, fileName);
@@ -562,7 +583,7 @@ export class ClientsComponent implements OnInit {
       { wch: 38 }, { wch: 18 }, { wch: 12 }
     ];
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Clientes');
+    XLSX.utils.book_append_sheet(workbook, worksheet, t('clients.template.sheetName'));
     XLSX.writeFile(workbook, `${fileName}.${format}`, format === 'xls' ? { bookType: 'biff8' } : undefined);
   }
 
@@ -570,52 +591,52 @@ export class ClientsComponent implements OnInit {
     const success = await this.clientService.toggleClientActiveStatus(client.id, client.is_active);
     if (success) {
       this.snackBar.open(
-        `Cliente ${!client.is_active ? 'activado' : 'desactivado'} com sucesso!`,
-        'Fechar',
+        t(!client.is_active ? 'clients.messages.activated' : 'clients.messages.deactivated'),
+        t('common.actions.close'),
         { duration: 3000 }
       );
     } else {
-      this.snackBar.open(this.clientService.lastError || 'Não foi possível alterar o estado do cliente.', 'Fechar', { duration: 6000 });
+      this.snackBar.open(this.clientService.lastError || t('clients.messages.statusChangeFailed'), t('common.actions.close'), { duration: 6000 });
     }
   }
 
   async deleteClient(client: Client) {
-    if (!confirm(`Tem certeza que deseja eliminar o cliente "${client.name}"?`)) {
+    if (!confirm(t('clients.messages.confirmDelete', { name: client.name }))) {
       return;
     }
 
     const result = await this.clientService.deleteClient(client.id);
 
     if (result.success) {
-      this.snackBar.open('Cliente eliminado com sucesso!', 'Fechar', { duration: 3000 });
+      this.snackBar.open(t('clients.messages.deleted'), t('common.actions.close'), { duration: 3000 });
     } else {
-      this.snackBar.open(result.error || 'Erro ao eliminar cliente', 'Fechar', { duration: 5000 });
+      this.snackBar.open(result.error || t('clients.messages.deleteFailed'), t('common.actions.close'), { duration: 5000 });
     }
   }
 
-  exportAsCSV() {
-    const data = this.clientService.clients().map(c => ({
+  private exportRows() {
+    const active = t('common.status.active');
+    const inactive = t('common.status.inactive');
+    return this.clientService.clients().map(c => ({
       'ID': c.client_code || '',
-      'Nome': c.name,
+      [t('clients.columns.name')]: c.name,
       'NUIT': c.nuit || '',
-      'Email': c.email || '',
-      'Telefone': c.phone || '',
-      'Endereço': c.address || '',
-      'Estado': c.is_active ? 'Activo' : 'Inactivo'
+      [t('clients.columns.email')]: c.email || '',
+      [t('clients.columns.phone')]: c.phone || '',
+      [t('clients.columns.address')]: c.address || '',
+      [t('clients.columns.status')]: c.is_active ? active : inactive
     }));
-    this.exportService.exportToCsv(data, `clientes_${new Date().toISOString().split('T')[0]}`);
+  }
+
+  private exportFileName(): string {
+    return t('clients.export.fileName', { date: new Date().toISOString().split('T')[0] });
+  }
+
+  exportAsCSV() {
+    this.exportService.exportToCsv(this.exportRows(), this.exportFileName());
   }
 
   exportAsExcel() {
-    const data = this.clientService.clients().map(c => ({
-      'ID': c.client_code || '',
-      'Nome': c.name,
-      'NUIT': c.nuit || '',
-      'Email': c.email || '',
-      'Telefone': c.phone || '',
-      'Endereço': c.address || '',
-      'Estado': c.is_active ? 'Activo' : 'Inactivo'
-    }));
-    this.exportService.exportToExcel(data, `clientes_${new Date().toISOString().split('T')[0]}`);
+    this.exportService.exportToExcel(this.exportRows(), this.exportFileName(), t('clients.export.sheetName'));
   }
 }

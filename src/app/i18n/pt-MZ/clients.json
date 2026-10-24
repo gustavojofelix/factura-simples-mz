@@ -1,1 +1,125 @@
-{}
+{
+  "list": {
+    "title": "Clientes",
+    "subtitle": "Gerir clientes de {company}",
+    "import": "Importar Clientes",
+    "downloadTemplate": "Baixar Template",
+    "newClient": "Novo Cliente",
+    "emptyFiltered": "Nenhum cliente encontrado com os filtros actuais",
+    "empty": "Ainda não tem clientes cadastrados",
+    "addFirst": "Adicionar Primeiro Cliente",
+    "count": "{count} cliente(s)",
+    "countOfTotal": "{count} cliente(s) de {total} no total"
+  },
+  "filters": {
+    "title": "Filtros",
+    "caption": "Encontre rapidamente um cliente",
+    "searchLabel": "Pesquisar nome, NUIT ou email",
+    "searchPlaceholder": "Ex: João Silva",
+    "industry": "Indústria",
+    "allIndustries": "Todas as Indústrias",
+    "allStatuses": "Todos os Estados",
+    "active": "Activos",
+    "inactive": "Inactivos",
+    "sortBy": "Ordenar por",
+    "sortClient": "Cliente",
+    "order": "Ordem",
+    "ascending": "Crescente",
+    "descending": "Decrescente"
+  },
+  "table": {
+    "email": "Email",
+    "viewStatement": "Ver extracto",
+    "activate": "Activar",
+    "deactivate": "Desactivar"
+  },
+  "industries": {
+    "commerce": "Comércio",
+    "services": "Serviços",
+    "industry": "Indústria",
+    "agriculture": "Agricultura",
+    "construction": "Construção",
+    "technology": "Tecnologia",
+    "health": "Saúde",
+    "education": "Educação",
+    "other": "Outros"
+  },
+  "dialog": {
+    "editTitle": "Editar Cliente",
+    "newTitle": "Novo Cliente",
+    "namePlaceholder": "Nome do cliente",
+    "nameRequired": "Nome é obrigatório",
+    "nuitPlaceholder": "Número de identificação",
+    "nuitRequired": "NUIT é obrigatório",
+    "idDocument": "Documento de Identificação (opcional)",
+    "removeDocument": "Remover documento",
+    "documentAttached": "Documento anexado",
+    "viewDocument": "Ver documento",
+    "uploading": "A enviar...",
+    "replaceDocument": "Trocar documento",
+    "chooseDocument": "Escolher documento",
+    "documentHint": "PDF ou imagem (máx. 5MB)",
+    "email": "Email",
+    "emailPlaceholder": "email@exemplo.com",
+    "emailRequired": "Email é obrigatório",
+    "emailInvalid": "Email inválido",
+    "phonePlaceholder": "Ex: 841234567",
+    "phoneInvalid": "O telefone deve ter exactamente 9 dígitos",
+    "industry": "Indústria / Sector",
+    "addressPlaceholder": "Endereço completo",
+    "addressRequired": "Endereço é obrigatório"
+  },
+  "messages": {
+    "fileTooLarge": "Ficheiro muito grande. Máximo: 5MB",
+    "fileTypeNotAllowed": "Tipo de ficheiro não permitido",
+    "documentUploaded": "Documento carregado!",
+    "documentUploadFailed": "Não foi possível carregar o documento.",
+    "duplicateNuit": "Já existe um cliente registado com este NUIT nesta empresa.",
+    "updated": "Cliente actualizado com sucesso!",
+    "updateFailed": "Não foi possível actualizar o cliente.",
+    "created": "Cliente criado com sucesso!",
+    "saveFailed": "Não foi possível guardar o cliente.",
+    "statusChangeFailed": "Não foi possível alterar o estado do cliente.",
+    "activated": "Cliente activado com sucesso!",
+    "deactivated": "Cliente desactivado com sucesso!",
+    "confirmDelete": "Tem certeza que deseja eliminar o cliente \"{name}\"?",
+    "deleted": "Cliente eliminado com sucesso!",
+    "deleteFailed": "Erro ao eliminar cliente",
+    "importReadFailed": "Não foi possível ler o ficheiro. Use um CSV ou Excel válido."
+  },
+  "import": {
+    "rowRequired": "linha {row}: Nome, NUIT, Email e Endereço são obrigatórios",
+    "rowNuitDigits": "linha {row}: NUIT deve ter 9 dígitos",
+    "rowEmailInvalid": "linha {row}: Email inválido",
+    "rowPhoneDigits": "linha {row}: Telefone deve ter exactamente 9 dígitos",
+    "rowNuitDuplicate": "linha {row}: NUIT duplicado",
+    "noneValid": "Nenhum cliente válido encontrado. {details}",
+    "failed": "Erro ao importar clientes: {error}",
+    "success": "{count} cliente(s) importado(s) com sucesso.",
+    "successWithSkipped": "{imported} cliente(s) importado(s) com sucesso. {skipped} linha(s) inválida(s) ignorada(s)."
+  },
+  "columns": {
+    "name": "Nome",
+    "email": "Email",
+    "phone": "Telefone",
+    "address": "Endereço",
+    "industry": "Indústria",
+    "status": "Estado"
+  },
+  "template": {
+    "exampleName": "Empresa Exemplo, Lda",
+    "fileName": "modelo_importacao_clientes",
+    "sheetName": "Clientes"
+  },
+  "export": {
+    "fileName": "clientes_{date}",
+    "sheetName": "Dados"
+  },
+  "service": {
+    "noActiveCompany": "Nenhuma empresa activa seleccionada.",
+    "importFailed": "Não foi possível importar os clientes.",
+    "updateFailed": "Não foi possível actualizar o cliente.",
+    "hasInvoices": "Este cliente possui facturas associadas e não pode ser eliminado. Desative-o em vez disso.",
+    "deleteFailed": "Não foi possível eliminar o cliente."
+  }
+}

@@ -20,6 +20,8 @@ import { CompanyService } from '../../core/services/company.service';
 import { SubscriptionLimitDialogComponent } from '../../shared/components/subscription-limit-dialog.component';
 import { ExportService } from '../../core/services/export.service';
 import * as XLSX from 'xlsx';
+import { t, currentLocale } from '../../core/i18n/i18n';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 @Component({
   selector: 'app-product-dialog',
@@ -31,78 +33,79 @@ import * as XLSX from 'xlsx';
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatButtonModule
+    MatButtonModule,
+    TranslatePipe
   ],
   template: `
     <h2 mat-dialog-title>
-      Produto / Serviço
+      {{ 'products.dialog.title' | t }}
     </h2>
     <mat-dialog-content class="!pt-4">
       <form [formGroup]="form" class="space-y-4">
         <!-- Tipo hidden as per requirements -->
         <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Tipo</mat-label>
+          <mat-label>{{ 'common.fields.type' | t }}</mat-label>
           <mat-select formControlName="type">
-            <mat-option value="produto">Produto</mat-option>
-            <mat-option value="servico">Serviço</mat-option>
+            <mat-option value="produto">{{ 'products.types.product' | t }}</mat-option>
+            <mat-option value="servico">{{ 'products.types.service' | t }}</mat-option>
           </mat-select>
           @if (form.get('type')?.hasError('required') && form.get('type')?.touched) {
-            <mat-error>Tipo é obrigatório</mat-error>
+            <mat-error>{{ 'products.dialog.typeRequired' | t }}</mat-error>
           }
-        </mat-form-field> 
+        </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Nome</mat-label>
-          <input matInput formControlName="name" placeholder="Nome do produto ou serviço">
+          <mat-label>{{ 'common.fields.name' | t }}</mat-label>
+          <input matInput formControlName="name" [placeholder]="'products.dialog.namePlaceholder' | t">
           @if (form.get('name')?.hasError('required') && form.get('name')?.touched) {
-            <mat-error>Nome é obrigatório</mat-error>
+            <mat-error>{{ 'products.dialog.nameRequired' | t }}</mat-error>
           }
         </mat-form-field>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Código</mat-label>
-            <input matInput formControlName="code" placeholder="Gerado automaticamente se vazio">
-            <mat-hint>Opcional: use o seu código interno</mat-hint>
+            <mat-label>{{ 'common.fields.code' | t }}</mat-label>
+            <input matInput formControlName="code" [placeholder]="'products.dialog.codePlaceholder' | t">
+            <mat-hint>{{ 'products.dialog.codeHint' | t }}</mat-hint>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Código de barras</mat-label>
-            <input matInput formControlName="barcode" placeholder="Ex.: 7891234567890">
+            <mat-label>{{ 'products.dialog.barcode' | t }}</mat-label>
+            <input matInput formControlName="barcode" [placeholder]="'products.dialog.barcodePlaceholder' | t">
           </mat-form-field>
         </div>
 
         <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Descrição</mat-label>
-          <textarea matInput formControlName="description" rows="3" placeholder="Descrição"></textarea>
+          <mat-label>{{ 'common.fields.description' | t }}</mat-label>
+          <textarea matInput formControlName="description" rows="3" [placeholder]="'common.fields.description' | t"></textarea>
         </mat-form-field>
 
         <div class="grid grid-cols-2 gap-4">
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Preço (MZN)</mat-label>
+            <mat-label>{{ 'products.dialog.price' | t }}</mat-label>
             <input matInput type="number" formControlName="price" placeholder="0.00" step="0.01" min="0">
             @if (form.get('price')?.hasError('required') && form.get('price')?.touched) {
-              <mat-error>Preço é obrigatório</mat-error>
+              <mat-error>{{ 'products.dialog.priceRequired' | t }}</mat-error>
             }
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Unidade</mat-label>
-            <input matInput formControlName="unit" placeholder="un, kg, m, h, etc">
+            <mat-label>{{ 'products.dialog.unit' | t }}</mat-label>
+            <input matInput formControlName="unit" [placeholder]="'products.dialog.unitPlaceholder' | t">
           </mat-form-field>
         </div>
 
         @if (form.get('type')?.value === 'produto') {
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Stock</mat-label>
-            <input matInput type="number" formControlName="stock" placeholder="Quantidade em stock" min="0">
-            <mat-hint>Apenas para produtos físicos</mat-hint>
+            <mat-label>{{ 'products.dialog.stock' | t }}</mat-label>
+            <input matInput type="number" formControlName="stock" [placeholder]="'products.dialog.stockPlaceholder' | t" min="0">
+            <mat-hint>{{ 'products.dialog.stockHint' | t }}</mat-hint>
           </mat-form-field>
         }
       </form>
     </mat-dialog-content>
     <mat-dialog-actions align="end" class="!px-6 !pb-4">
-      <button mat-button mat-dialog-close>Cancelar</button>
+      <button mat-button mat-dialog-close>{{ 'common.actions.cancel' | t }}</button>
       <button
         mat-raised-button
         class="!bg-ispc-orange !text-white"
@@ -110,7 +113,7 @@ import * as XLSX from 'xlsx';
         (click)="save()"
       >
         <span>
-          @if (saving()) { A guardar... } @else { Guardar }
+          @if (saving()) { {{ 'common.status.saving' | t }} } @else { {{ 'common.actions.save' | t }} }
         </span>
       </button>
     </mat-dialog-actions>
@@ -161,23 +164,23 @@ export class ProductDialogComponent implements OnInit {
       if (formData.type === 'servico') {
         formData.stock = null;
       } else if (formData.stock === null || formData.stock === '' || Number(formData.stock) < 0) {
-        this.snackBar.open('O stock deve ser zero ou um número positivo.', 'Fechar', { duration: 3000 });
+        this.snackBar.open(t('products.messages.stockInvalid'), t('common.actions.close'), { duration: 3000 });
         return;
       }
 
       const isDuplicate = await this.productService.isProductDuplicate(formData.name, formData.type, this.product?.id);
       if (isDuplicate) {
-        this.snackBar.open('Já existe um produto ou serviço com este nome.', 'Fechar', { duration: 4000 });
+        this.snackBar.open(t('products.messages.duplicateName'), t('common.actions.close'), { duration: 4000 });
         return;
       }
 
       if (await this.productService.isProductIdentifierDuplicate('code', formData.code, this.product?.id)) {
-        this.snackBar.open('Já existe um produto ou serviço com este código.', 'Fechar', { duration: 4000 });
+        this.snackBar.open(t('products.messages.duplicateCode'), t('common.actions.close'), { duration: 4000 });
         return;
       }
 
       if (await this.productService.isProductIdentifierDuplicate('barcode', formData.barcode, this.product?.id)) {
-        this.snackBar.open('Já existe um produto ou serviço com este código de barras.', 'Fechar', { duration: 4000 });
+        this.snackBar.open(t('products.messages.duplicateBarcode'), t('common.actions.close'), { duration: 4000 });
         return;
       }
 
@@ -185,20 +188,20 @@ export class ProductDialogComponent implements OnInit {
         const success = await this.productService.updateProduct(this.product.id, formData);
         if (success) {
           this.snackBar.open(
-            `${formData.type === 'produto' ? 'Produto' : 'Serviço'} actualizado com sucesso!`,
-            'Fechar',
+            t(formData.type === 'produto' ? 'products.messages.productUpdated' : 'products.messages.serviceUpdated'),
+            t('common.actions.close'),
             { duration: 3000 }
           );
           this.dialogRef.close();
         } else {
-          this.snackBar.open(this.productService.lastError || 'Não foi possível actualizar o produto.', 'Fechar', { duration: 6000 });
+          this.snackBar.open(this.productService.lastError || t('products.messages.updateFailed'), t('common.actions.close'), { duration: 6000 });
         }
       } else {
         const product = await this.productService.createProduct(formData);
         if (product) {
           this.snackBar.open(
-            `${formData.type === 'produto' ? 'Produto' : 'Serviço'} criado com sucesso!`,
-            'Fechar',
+            t(formData.type === 'produto' ? 'products.messages.productCreated' : 'products.messages.serviceCreated'),
+            t('common.actions.close'),
             { duration: 3000 }
           );
           this.dialogRef.close();
@@ -218,7 +221,7 @@ export class ProductDialogComponent implements OnInit {
         });
       } else {
         console.error('Erro ao guardar produto:', error);
-        this.snackBar.open(friendlyErrorMessage(error, 'Não foi possível guardar o produto.'), 'Fechar', { duration: 8000 });
+        this.snackBar.open(friendlyErrorMessage(error, t('products.messages.saveFailed')), t('common.actions.close'), { duration: 8000 });
       }
     } finally {
       this.saving.set(false);
@@ -243,7 +246,8 @@ export class ProductDialogComponent implements OnInit {
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatTooltipModule,
-    MatMenuModule
+    MatMenuModule,
+    TranslatePipe
   ],
   templateUrl: './products.component.html',
   styleUrls: ['./products.component.css']
@@ -398,59 +402,66 @@ export class ProductsComponent implements OnInit {
     const success = await this.productService.toggleProductActiveStatus(product.id, product.is_active);
     if (success) {
       this.snackBar.open(
-        `Produto ${!product.is_active ? 'activado' : 'desactivado'} com sucesso!`,
-        'Fechar',
+        t(!product.is_active ? 'products.messages.activated' : 'products.messages.deactivated'),
+        t('common.actions.close'),
         { duration: 3000 }
       );
     } else {
-      this.snackBar.open(this.productService.lastError || 'Não foi possível alterar o estado do produto.', 'Fechar', { duration: 6000 });
+      this.snackBar.open(this.productService.lastError || t('products.messages.statusChangeFailed'), t('common.actions.close'), { duration: 6000 });
     }
   }
 
   async deleteProduct(product: Product) {
-    if (!confirm(`Tem certeza que deseja eliminar o produto "${product.name}"?`)) {
+    if (!confirm(t('products.messages.confirmDelete', { name: product.name }))) {
       return;
     }
 
     const result = await this.productService.deleteProduct(product.id);
 
     if (result.success) {
-      this.snackBar.open('Produto eliminado com sucesso!', 'Fechar', { duration: 3000 });
+      this.snackBar.open(t('products.messages.deleted'), t('common.actions.close'), { duration: 3000 });
     } else {
-      this.snackBar.open(result.error || 'Erro ao eliminar produto', 'Fechar', { duration: 5000 });
+      this.snackBar.open(result.error || t('products.messages.deleteFailed'), t('common.actions.close'), { duration: 5000 });
     }
   }
 
+  /** Etiqueta traduzida do tipo (o valor gravado continua 'produto' / 'servico'). */
+  typeLabel(type: Product['type']): string {
+    return t(type === 'produto' ? 'products.types.product' : 'products.types.service');
+  }
+
   exportProducts(format: 'csv' | 'xlsx') {
+    const active = t('common.status.active');
+    const inactive = t('common.status.inactive');
     const data = this.filteredProducts().map(product => ({
-      'Código': product.code || '',
-      'Código de Barras': product.barcode || '',
-      'Nome': product.name,
-      'Tipo': product.type === 'produto' ? 'Produto' : 'Serviço',
-      'Descrição': product.description || '',
-      'Preço': product.price,
-      'Unidade': product.unit || '',
-      'Stock': product.stock ?? '',
-      'Estado': product.is_active ? 'Activo' : 'Inactivo'
+      [t('products.columns.code')]: product.code || '',
+      [t('products.columns.barcode')]: product.barcode || '',
+      [t('products.columns.name')]: product.name,
+      [t('products.columns.type')]: this.typeLabel(product.type),
+      [t('products.columns.description')]: product.description || '',
+      [t('products.columns.price')]: product.price,
+      [t('products.columns.unit')]: product.unit || '',
+      [t('products.columns.stock')]: product.stock ?? '',
+      [t('products.columns.status')]: product.is_active ? active : inactive
     }));
-    const fileName = `produtos_servicos_${new Date().toISOString().split('T')[0]}`;
+    const fileName = t('products.export.fileName', { date: new Date().toISOString().split('T')[0] });
     if (format === 'csv') this.exportService.exportToCsv(data, fileName);
-    else this.exportService.exportToExcel(data, fileName, 'Produtos e Serviços');
+    else this.exportService.exportToExcel(data, fileName, t('products.export.sheetName'));
   }
 
   downloadImportTemplate(format: 'xlsx' | 'xls' | 'csv') {
     const example = [{
-      'Código': 'CAN-AZ-001',
-      'Código de Barras': '7891234567890',
-      'Nome': 'Caneta Azul',
-      'Tipo': 'Produto',
-      'Descrição': 'Caneta esferográfica azul',
-      'Preço': 25,
-      'Unidade': 'un',
-      'Stock': 100,
-      'Estado': 'Activo'
+      [t('products.columns.code')]: 'CAN-AZ-001',
+      [t('products.columns.barcode')]: '7891234567890',
+      [t('products.columns.name')]: t('products.template.exampleName'),
+      [t('products.columns.type')]: t('products.types.product'),
+      [t('products.columns.description')]: t('products.template.exampleDescription'),
+      [t('products.columns.price')]: 25,
+      [t('products.columns.unit')]: 'un',
+      [t('products.columns.stock')]: 100,
+      [t('products.columns.status')]: t('common.status.active')
     }];
-    const fileName = 'modelo_importacao_produtos_servicos';
+    const fileName = t('products.template.fileName');
 
     if (format === 'csv') {
       this.exportService.exportToCsv(example, fileName);
@@ -463,7 +474,7 @@ export class ProductsComponent implements OnInit {
       { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }
     ];
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Produtos e Serviços');
+    XLSX.utils.book_append_sheet(workbook, worksheet, t('products.export.sheetName'));
     XLSX.writeFile(workbook, `${fileName}.${format}`, format === 'xls' ? { bookType: 'biff8' } : undefined);
   }
 
@@ -496,75 +507,79 @@ export class ProductsComponent implements OnInit {
           return this.repairMojibake(String(found?.[1] ?? '')).trim();
         };
         const rowNumber = index + 2;
-        const name = get('nome', 'name');
+        // Aceita cabeçalhos em português, inglês e francês (os modelos são gerados na língua da interface).
+        const name = get('nome', 'name', 'nom');
         const code = get('codigo', 'code');
-        const barcode = get('codigo de barras', 'codigodebarras', 'codigo barras', 'barcode', 'bar_code');
+        const barcode = get('codigo de barras', 'codigodebarras', 'codigo barras', 'barcode', 'bar_code', 'code-barres', 'code barres', 'code-barre');
         const typeRaw = get('tipo', 'type');
         const type = this.parseImportType(typeRaw);
-        const priceText = get('preco', 'price', 'preco unitario');
+        const priceText = get('preco', 'price', 'preco unitario', 'prix', 'unit price', 'prix unitaire');
         const price = this.parseImportNumber(priceText);
-        const stockText = get('stock', 'quantidade');
+        const stockText = get('stock', 'quantidade', 'quantity', 'quantite');
         const stock = stockText === '' ? 0 : this.parseImportNumber(stockText);
 
         const errors: string[] = [];
-        if (!name) errors.push('Nome em falta');
-        if (!typeRaw) errors.push('Tipo em falta (use Produto ou Serviço)');
-        else if (!type) errors.push(`Tipo inválido '${typeRaw}' (use Produto ou Serviço)`);
-        if (!priceText) errors.push('Preço em falta');
-        else if (price === null || price < 0) errors.push(`Preço inválido '${priceText}'`);
-        if (type === 'produto' && (stock === null || stock < 0)) errors.push(`Stock inválido '${stockText}' (deve ser zero ou positivo)`);
+        if (!name) errors.push(t('products.import.nameMissing'));
+        if (!typeRaw) errors.push(t('products.import.typeMissing'));
+        else if (!type) errors.push(t('products.import.typeInvalid', { value: typeRaw }));
+        if (!priceText) errors.push(t('products.import.priceMissing'));
+        else if (price === null || price < 0) errors.push(t('products.import.priceInvalid', { value: priceText }));
+        if (type === 'produto' && (stock === null || stock < 0)) errors.push(t('products.import.stockInvalid', { value: stockText }));
 
         const key = type ? `${type}:${name.toLowerCase()}` : '';
         if (name && type) {
-          if (existing.has(key)) errors.push(`já existe um ${type === 'produto' ? 'produto' : 'serviço'} com o nome '${name}'`);
-          else if (seen.has(key)) errors.push(`nome '${name}' repetido (igual à linha ${seen.get(key)})`);
+          if (existing.has(key)) errors.push(t(type === 'produto' ? 'products.import.productNameExists' : 'products.import.serviceNameExists', { name }));
+          else if (seen.has(key)) errors.push(t('products.import.nameRepeated', { name, row: seen.get(key) }));
         }
         if (code) {
-          if (existingCodes.has(code)) errors.push(`já existe um produto ou serviço com o código '${code}'`);
-          else if (seenCodes.has(code)) errors.push(`código '${code}' repetido (igual à linha ${seenCodes.get(code)})`);
+          if (existingCodes.has(code)) errors.push(t('products.import.codeExists', { code }));
+          else if (seenCodes.has(code)) errors.push(t('products.import.codeRepeated', { code, row: seenCodes.get(code) }));
         }
         if (barcode) {
-          if (existingBarcodes.has(barcode)) errors.push(`já existe um produto ou serviço com o código de barras '${barcode}'`);
-          else if (seenBarcodes.has(barcode)) errors.push(`código de barras '${barcode}' repetido (igual à linha ${seenBarcodes.get(barcode)})`);
+          if (existingBarcodes.has(barcode)) errors.push(t('products.import.barcodeExists', { barcode }));
+          else if (seenBarcodes.has(barcode)) errors.push(t('products.import.barcodeRepeated', { barcode, row: seenBarcodes.get(barcode) }));
         }
 
         if (errors.length || !type || price === null) {
-          invalidRows.push(`linha ${rowNumber}: ${errors.join('; ')}`);
+          invalidRows.push(t('products.import.rowErrors', { row: rowNumber, errors: errors.join('; ') }));
           return;
         }
 
         seen.set(key, rowNumber);
         if (code) seenCodes.set(code, rowNumber);
         if (barcode) seenBarcodes.set(barcode, rowNumber);
-        const status = this.normalizeImportText(get('estado', 'status'));
+        const status = this.normalizeImportText(get('estado', 'status', 'statut'));
+        const inactiveLabel = this.normalizeImportText(t('common.status.inactive'));
         products.push({
           name, type, code: code || undefined, barcode: barcode || undefined, price,
           stock: type === 'produto' ? (stock ?? 0) : undefined,
           description: get('descricao', 'description') || undefined,
-          unit: get('unidade', 'unit') || undefined,
-          is_active: !['inactivo', 'inativo', 'inactive', 'false', '0', 'nao'].includes(status)
+          unit: get('unidade', 'unit', 'unite') || undefined,
+          is_active: !['inactivo', 'inativo', 'inactive', 'inactif', 'false', '0', 'nao', 'no', 'non', inactiveLabel].includes(status)
         });
       });
 
       if (invalidRows.length) console.warn('Linhas inválidas na importação de produtos:', invalidRows);
 
       if (!products.length) {
-        const details = invalidRows.length ? ` ${this.summarizeInvalidRows(invalidRows)}` : '';
-        this.snackBar.open(`Nenhum item válido encontrado.${details}`, 'Fechar', { duration: 10000 });
+        const message = invalidRows.length
+          ? t('products.import.noneValidWithDetails', { details: this.summarizeInvalidRows(invalidRows) })
+          : t('products.import.noneValid');
+        this.snackBar.open(message, t('common.actions.close'), { duration: 10000 });
         return;
       }
       const result = await this.productService.importProducts(products);
       if (result.error) {
-        this.snackBar.open(`Erro ao importar: ${result.error}`, 'Fechar', { duration: 8000 });
+        this.snackBar.open(t('products.import.failed', { error: result.error }), t('common.actions.close'), { duration: 8000 });
         return;
       }
-      const skipped = invalidRows.length
-        ? ` ${invalidRows.length} linha(s) ignorada(s): ${this.summarizeInvalidRows(invalidRows)}`
-        : '';
-      this.snackBar.open(`${result.imported} item(ns) importado(s) com sucesso.${skipped}`, 'Fechar', { duration: invalidRows.length ? 12000 : 6000 });
+      const message = invalidRows.length
+        ? t('products.import.successWithSkipped', { imported: result.imported, skipped: invalidRows.length, details: this.summarizeInvalidRows(invalidRows) })
+        : t('products.import.success', { count: result.imported });
+      this.snackBar.open(message, t('common.actions.close'), { duration: invalidRows.length ? 12000 : 6000 });
     } catch (error) {
       console.error('Erro ao ler ficheiro de produtos:', error);
-      this.snackBar.open('Não foi possível ler o ficheiro. Use um CSV ou Excel válido.', 'Fechar', { duration: 5000 });
+      this.snackBar.open(t('products.messages.importReadFailed'), t('common.actions.close'), { duration: 5000 });
     }
   }
 
@@ -605,6 +620,8 @@ export class ProductsComponent implements OnInit {
   private parseImportType(value: string): 'produto' | 'servico' | null {
     const normalized = this.normalizeImportText(value);
     if (!normalized) return null;
+    if (normalized === this.normalizeImportText(t('products.types.product'))) return 'produto';
+    if (normalized === this.normalizeImportText(t('products.types.service'))) return 'servico';
     if (['produto', 'produtos', 'product', 'products'].includes(normalized) || normalized.startsWith('prod')) return 'produto';
     if (['servico', 'servicos', 'service', 'services'].includes(normalized) || normalized.startsWith('serv')) return 'servico';
     return null;
@@ -640,11 +657,11 @@ export class ProductsComponent implements OnInit {
 
   private summarizeInvalidRows(invalidRows: string[]): string {
     const shown = invalidRows.slice(0, 3).join(' | ');
-    return invalidRows.length > 3 ? `${shown} | e mais ${invalidRows.length - 3}…` : shown;
+    return invalidRows.length > 3 ? t('products.import.andMore', { shown, count: invalidRows.length - 3 }) : shown;
   }
 
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('pt-MZ', {
+    return new Intl.NumberFormat(currentLocale(), {
       style: 'decimal',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2

@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { friendlyErrorMessage } from '../utils/error-message';
+import { t } from '../i18n/i18n';
 import { SupabaseService } from './supabase.service';
 import { CompanyService } from './company.service';
 import { AuditLogService } from './audit-log.service';
@@ -75,7 +76,7 @@ export class ProductService {
     if (!company) return null;
 
     if (await this.isProductDuplicate(productData.name, productData.type)) {
-      throw new Error('Já existe um produto ou serviço com este nome.');
+      throw new Error(t('products.service.duplicateName'));
     }
 
     const { data, error } = await this.supabase.db
@@ -134,7 +135,7 @@ export class ProductService {
       return true;
     } catch (error) {
       console.error('Erro ao actualizar produto:', error);
-      this.lastError = friendlyErrorMessage(error, 'Não foi possível actualizar o produto.');
+      this.lastError = friendlyErrorMessage(error, t('products.service.updateFailed'));
       return false;
     }
   }
@@ -150,7 +151,7 @@ export class ProductService {
       if (sold) {
         return { 
           success: false, 
-          error: 'Este item já possui vendas registadas e não pode ser eliminado. Desative-o em vez disso.' 
+          error: t('products.service.hasSales') 
         };
       }
 
@@ -175,7 +176,7 @@ export class ProductService {
       return { success: true };
     } catch (error: any) {
       console.error('Erro ao eliminar produto:', error);
-      return { success: false, error: friendlyErrorMessage(error, 'Não foi possível eliminar o produto.') };
+      return { success: false, error: friendlyErrorMessage(error, t('products.service.deleteFailed')) };
     }
   }
 
@@ -240,7 +241,7 @@ export class ProductService {
 
   async importProducts(products: ProductImportData[]): Promise<{ imported: number; error?: string }> {
     const company = this.companyService.activeCompany();
-    if (!company) return { imported: 0, error: 'Nenhuma empresa activa seleccionada.' };
+    if (!company) return { imported: 0, error: t('products.service.noActiveCompany') };
 
     try {
       const { data, error } = await this.supabase.db
@@ -263,10 +264,10 @@ export class ProductService {
       console.error('Erro ao importar produtos:', error);
       if (error?.code === '23505') {
         const detail = `${error?.message || ''} ${error?.details || ''}`;
-        const field = detail.includes('barcode') ? 'código de barras' : detail.includes('code') ? 'código' : 'identificador';
-        return { imported: 0, error: `Existe um ${field} duplicado (já usado por outro produto ou serviço). Nenhum item foi importado.` };
+        const field = t(detail.includes('barcode') ? 'products.service.fieldBarcode' : detail.includes('code') ? 'products.service.fieldCode' : 'products.service.fieldIdentifier');
+        return { imported: 0, error: t('products.service.duplicateIdentifier', { field }) };
       }
-      return { imported: 0, error: friendlyErrorMessage(error, 'Não foi possível importar os produtos.') };
+      return { imported: 0, error: friendlyErrorMessage(error, t('products.service.importFailed')) };
     }
   }
 

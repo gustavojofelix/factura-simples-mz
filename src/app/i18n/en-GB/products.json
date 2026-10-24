@@ -1,1 +1,130 @@
-{}
+{
+  "list": {
+    "title": "Products and Services",
+    "subtitle": "{company} catalogue",
+    "import": "Import",
+    "downloadTemplate": "Download template",
+    "newProduct": "New product",
+    "emptySearch": "No products found for \"{term}\"",
+    "clearSearch": "Clear search",
+    "empty": "You have no products yet",
+    "addFirst": "Add your first product",
+    "count": "{count} product(s)",
+    "countOfTotal": "{count} product(s) of {total} in total"
+  },
+  "filters": {
+    "searchLabel": "Search products",
+    "searchPlaceholder": "Name, code or description...",
+    "products": "Products",
+    "services": "Services",
+    "activated": "Active",
+    "deactivated": "Inactive",
+    "sortBy": "Sort by",
+    "ascending": "Ascending",
+    "descending": "Descending",
+    "min": "Min",
+    "max": "Max",
+    "clear": "Clear"
+  },
+  "table": {
+    "product": "Product",
+    "unit": "Unit",
+    "stock": "Stock",
+    "activate": "Activate",
+    "deactivate": "Deactivate"
+  },
+  "types": {
+    "product": "Product",
+    "service": "Service"
+  },
+  "dialog": {
+    "title": "Product / Service",
+    "typeRequired": "Type is required",
+    "namePlaceholder": "Product or service name",
+    "nameRequired": "Name is required",
+    "codePlaceholder": "Generated automatically if left blank",
+    "codeHint": "Optional: use your internal code",
+    "barcode": "Barcode",
+    "barcodePlaceholder": "e.g. 7891234567890",
+    "price": "Price (MZN)",
+    "priceRequired": "Price is required",
+    "unit": "Unit",
+    "unitPlaceholder": "un, kg, m, h, etc.",
+    "stock": "Stock",
+    "stockPlaceholder": "Quantity in stock",
+    "stockHint": "Physical products only"
+  },
+  "messages": {
+    "stockInvalid": "Stock must be zero or a positive number.",
+    "duplicateName": "A product or service with this name already exists.",
+    "duplicateCode": "A product or service with this code already exists.",
+    "duplicateBarcode": "A product or service with this barcode already exists.",
+    "productUpdated": "Product updated successfully!",
+    "serviceUpdated": "Service updated successfully!",
+    "updateFailed": "Could not update the product.",
+    "productCreated": "Product created successfully!",
+    "serviceCreated": "Service created successfully!",
+    "saveFailed": "Could not save the product.",
+    "activated": "Product activated successfully!",
+    "deactivated": "Product deactivated successfully!",
+    "statusChangeFailed": "Could not change the product's status.",
+    "confirmDelete": "Are you sure you want to delete the product \"{name}\"?",
+    "deleted": "Product deleted successfully!",
+    "deleteFailed": "Error deleting product",
+    "importReadFailed": "Could not read the file. Please use a valid CSV or Excel file."
+  },
+  "import": {
+    "nameMissing": "Name missing",
+    "typeMissing": "Type missing (use Product or Service)",
+    "typeInvalid": "Invalid type '{value}' (use Product or Service)",
+    "priceMissing": "Price missing",
+    "priceInvalid": "Invalid price '{value}'",
+    "stockInvalid": "Invalid stock '{value}' (must be zero or positive)",
+    "productNameExists": "a product named '{name}' already exists",
+    "serviceNameExists": "a service named '{name}' already exists",
+    "nameRepeated": "name '{name}' repeated (same as row {row})",
+    "codeExists": "a product or service with code '{code}' already exists",
+    "codeRepeated": "code '{code}' repeated (same as row {row})",
+    "barcodeExists": "a product or service with barcode '{barcode}' already exists",
+    "barcodeRepeated": "barcode '{barcode}' repeated (same as row {row})",
+    "rowErrors": "row {row}: {errors}",
+    "noneValid": "No valid items found.",
+    "noneValidWithDetails": "No valid items found. {details}",
+    "failed": "Import error: {error}",
+    "success": "{count} item(s) imported successfully.",
+    "successWithSkipped": "{imported} item(s) imported successfully. {skipped} row(s) skipped: {details}",
+    "andMore": "{shown} | and {count} more…"
+  },
+  "columns": {
+    "code": "Code",
+    "barcode": "Barcode",
+    "name": "Name",
+    "type": "Type",
+    "description": "Description",
+    "price": "Price",
+    "unit": "Unit",
+    "stock": "Stock",
+    "status": "Status"
+  },
+  "template": {
+    "exampleName": "Blue Pen",
+    "exampleDescription": "Blue ballpoint pen",
+    "fileName": "products_services_import_template"
+  },
+  "export": {
+    "fileName": "products_services_{date}",
+    "sheetName": "Products and Services"
+  },
+  "service": {
+    "duplicateName": "A product or service with this name already exists.",
+    "updateFailed": "Could not update the product.",
+    "hasSales": "This item already has recorded sales and cannot be deleted. Deactivate it instead.",
+    "deleteFailed": "Could not delete the product.",
+    "noActiveCompany": "No active company selected.",
+    "fieldBarcode": "barcode",
+    "fieldCode": "code",
+    "fieldIdentifier": "identifier",
+    "duplicateIdentifier": "There is a duplicate {field} (already used by another product or service). No items were imported.",
+    "importFailed": "Could not import the products."
+  }
+}
