@@ -11,6 +11,7 @@ import {
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { t } from '../../core/i18n/i18n';
 
 /**
  * Etiquetas que o editor aceita. É a mesma lista que a função de envio de
@@ -183,13 +184,13 @@ export class RichTextEditorComponent implements ControlValueAccessor, AfterViewI
   private onTouched: () => void = () => {};
 
   actions = [
-    { command: 'bold', icon: 'format_bold', hint: 'Negrito' },
-    { command: 'italic', icon: 'format_italic', hint: 'Itálico' },
-    { command: 'underline', icon: 'format_underlined', hint: 'Sublinhado' },
-    { command: 'insertUnorderedList', icon: 'format_list_bulleted', hint: 'Lista' },
-    { command: 'insertOrderedList', icon: 'format_list_numbered', hint: 'Lista numerada' },
-    { command: 'createLink', icon: 'link', hint: 'Inserir ligação' },
-    { command: 'removeFormat', icon: 'format_clear', hint: 'Limpar formatação' }
+    { command: 'bold', icon: 'format_bold', hint: t('messages.richText.bold') },
+    { command: 'italic', icon: 'format_italic', hint: t('messages.richText.italic') },
+    { command: 'underline', icon: 'format_underlined', hint: t('messages.richText.underline') },
+    { command: 'insertUnorderedList', icon: 'format_list_bulleted', hint: t('messages.richText.bulletList') },
+    { command: 'insertOrderedList', icon: 'format_list_numbered', hint: t('messages.richText.numberedList') },
+    { command: 'createLink', icon: 'link', hint: t('messages.richText.insertLink') },
+    { command: 'removeFormat', icon: 'format_clear', hint: t('messages.richText.clearFormatting') }
   ];
 
   private get editor(): HTMLDivElement {
@@ -235,7 +236,7 @@ export class RichTextEditorComponent implements ControlValueAccessor, AfterViewI
     document.execCommand('styleWithCSS', false, 'false');
 
     if (command === 'createLink') {
-      const url = window.prompt('Endereço da ligação (https://… ou mailto:…)', 'https://');
+      const url = window.prompt(t('messages.richText.linkPrompt'), 'https://');
       if (!url) return;
       const href = url.trim();
       if (!SAFE_HREF.test(href)) return;

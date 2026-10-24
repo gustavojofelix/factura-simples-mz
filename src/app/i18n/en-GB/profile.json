@@ -1,1 +1,27 @@
-{}
+{
+  "title": "My profile",
+  "subtitle": "View and update your personal details and credentials.",
+  "personalInfo": "Personal details",
+  "fullName": "Full name",
+  "email": "Email",
+  "changePassword": "Change password",
+  "currentPassword": "Current password",
+  "currentPasswordPlaceholder": "Enter your current password",
+  "newPassword": "New password",
+  "newPasswordPlaceholder": "At least 6 characters",
+  "confirmPassword": "Confirm new password",
+  "confirmPasswordPlaceholder": "Type it again",
+  "edit": "Edit profile",
+  "saveChanges": "Save changes",
+  "errors": {
+    "required": "This field is required",
+    "email": "Invalid email",
+    "phoneFormat": "Format: +258 XX XXX XXXX",
+    "currentPasswordRequired": "Enter your current password to set a new one",
+    "passwordMismatch": "The passwords do not match"
+  },
+  "messages": {
+    "updated": "Profile updated successfully!",
+    "updateError": "Error updating profile"
+  }
+}

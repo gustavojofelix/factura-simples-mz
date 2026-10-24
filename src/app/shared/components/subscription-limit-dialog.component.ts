@@ -4,6 +4,8 @@ import { Router } from '@angular/router';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { t } from '../../core/i18n/i18n';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 export interface SubscriptionLimitDialogData {
   /** Human-readable feature that was blocked, e.g. "produtos" */
@@ -17,7 +19,7 @@ export interface SubscriptionLimitDialogData {
 @Component({
   selector: 'app-subscription-limit-dialog',
   standalone: true,
-  imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule],
+  imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule, TranslatePipe],
   template: `
     <div class="flex flex-col items-center text-center px-2 py-4 max-w-sm mx-auto">
 
@@ -28,32 +30,31 @@ export interface SubscriptionLimitDialogData {
 
       <!-- Heading -->
       <h2 class="text-xl font-bold text-gray-800 mb-2">
-        Limite do plano atingido
+        {{ 'messages.planLimit.title' | t }}
       </h2>
 
       <!-- Body -->
       <p class="text-sm text-gray-600 leading-relaxed mb-1">
-        O seu plano actual não permite criar mais
-        <span class="font-semibold text-gray-800">{{ featureLabel }}</span>.
+        {{ 'messages.planLimit.bodyBefore' | t }}
+        <span class="font-semibold text-gray-800">{{ featureLabel }}</span>{{ 'messages.planLimit.bodyAfter' | t }}
       </p>
       <p class="text-sm text-gray-500 leading-relaxed mb-6">
-        Actualize o seu plano para continuar a adicionar
-        {{ featureLabel }} sem restrições.
+        {{ 'messages.planLimit.upgradeHint' | t: { feature: featureLabel } }}
       </p>
 
       <!-- Feature bullets -->
       <div class="w-full bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl border border-amber-100 p-4 mb-6 text-left space-y-2">
         <div class="flex items-start gap-2 text-sm text-gray-700">
           <mat-icon class="!text-emerald-500 !text-base !w-5 !h-5 mt-0.5 flex-shrink-0">check_circle</mat-icon>
-          <span>Produtos e serviços ilimitados</span>
+          <span>{{ 'messages.planLimit.benefitProducts' | t }}</span>
         </div>
         <div class="flex items-start gap-2 text-sm text-gray-700">
           <mat-icon class="!text-emerald-500 !text-base !w-5 !h-5 mt-0.5 flex-shrink-0">check_circle</mat-icon>
-          <span>Facturação sem limites</span>
+          <span>{{ 'messages.planLimit.benefitInvoicing' | t }}</span>
         </div>
         <div class="flex items-start gap-2 text-sm text-gray-700">
           <mat-icon class="!text-emerald-500 !text-base !w-5 !h-5 mt-0.5 flex-shrink-0">check_circle</mat-icon>
-          <span>Suporte prioritário</span>
+          <span>{{ 'messages.planLimit.benefitSupport' | t }}</span>
         </div>
       </div>
 
@@ -65,14 +66,14 @@ export interface SubscriptionLimitDialogData {
           (click)="upgrade()"
         >
           <mat-icon class="mr-1">rocket_launch</mat-icon>
-          Actualizar plano agora
+          {{ 'messages.planLimit.upgradeNow' | t }}
         </button>
         <button
           mat-button
           class="!text-gray-500 !font-medium w-full"
           mat-dialog-close
         >
-          Talvez mais tarde
+          {{ 'messages.planLimit.later' | t }}
         </button>
       </div>
     </div>
@@ -91,11 +92,11 @@ export class SubscriptionLimitDialogComponent {
   ) {
     // Map known feature codes to friendly labels, or fall back to data.featureLabel
     const featureMap: Record<string, string> = {
-      max_products:  'produtos / serviços',
-      max_invoices:  'facturas',
-      max_clients:   'clientes',
-      max_companies: 'empresas',
-      max_users:     'utilizadores',
+      max_products:  t('messages.planLimit.features.products'),
+      max_invoices:  t('messages.planLimit.features.invoices'),
+      max_clients:   t('messages.planLimit.features.clients'),
+      max_companies: t('messages.planLimit.features.companies'),
+      max_users:     t('messages.planLimit.features.users'),
     };
 
     // Try to extract feature code from errorMessage, e.g. "max_products"
@@ -104,7 +105,7 @@ export class SubscriptionLimitDialogComponent {
 
     this.featureLabel =
       data.featureLabel ||
-      (matchedCode ? featureMap[matchedCode] : 'itens') ;
+      (matchedCode ? featureMap[matchedCode] : t('messages.planLimit.features.items')) ;
   }
 
   upgrade() {

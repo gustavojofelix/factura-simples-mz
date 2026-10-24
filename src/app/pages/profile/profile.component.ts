@@ -11,6 +11,8 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { User } from '@supabase/supabase-js';
+import { t } from '../../core/i18n/i18n';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 @Component({
   selector: 'app-profile',
@@ -25,7 +27,8 @@ import { User } from '@supabase/supabase-js';
     MatIconModule,
     MatCardModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    TranslatePipe
   ],
   templateUrl: './profile.component.html'
 })
@@ -154,15 +157,15 @@ export class ProfileComponent {
     const control = this.profileForm.get(field);
     if (!control || !control.touched) return '';
 
-    if (control.hasError('required')) return 'Este campo é obrigatório';
-    if (control.hasError('email')) return 'Email inválido';
-    if (control.hasError('minlength')) return `Mínimo de ${control.getError('minlength').requiredLength} caracteres`;
-    if (control.hasError('pattern') && field === 'phone') return 'Formato: +258 XX XXX XXXX';
+    if (control.hasError('required')) return t('profile.errors.required');
+    if (control.hasError('email')) return t('profile.errors.email');
+    if (control.hasError('minlength')) return t('common.validation.minLength', { min: control.getError('minlength').requiredLength });
+    if (control.hasError('pattern') && field === 'phone') return t('profile.errors.phoneFormat');
     if (field === 'currentPassword' && this.profileForm.hasError('currentPasswordRequired')) {
-      return 'Precisa informar a palavra-passe atual para definir uma nova';
+      return t('profile.errors.currentPasswordRequired');
     }
     if (field === 'confirmPassword' && this.profileForm.hasError('passwordMismatch')) {
-      return 'As palavras-passe não coincidem';
+      return t('profile.errors.passwordMismatch');
     }
     return '';
   }
@@ -183,7 +186,7 @@ export class ProfileComponent {
         await this.authService.updateUserPassword(currentPassword, password);
       }
 
-      this.snackBar.open('Perfil atualizado com sucesso!', 'Fechar', {
+      this.snackBar.open(t('profile.messages.updated'), t('common.actions.close'), {
         duration: 3000,
         panelClass: ['success-snackbar']
       });
@@ -193,7 +196,7 @@ export class ProfileComponent {
       this.cancelEdit();
 
     } catch (error: any) {
-      this.snackBar.open(error.message || 'Erro ao atualizar perfil', 'Fechar', {
+      this.snackBar.open(error.message || t('profile.messages.updateError'), t('common.actions.close'), {
         duration: 5000,
         panelClass: ['error-snackbar']
       });

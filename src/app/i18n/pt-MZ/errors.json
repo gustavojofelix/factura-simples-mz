@@ -1,1 +1,114 @@
-{}
+{
+  "unexpected": "Ocorreu um erro inesperado.",
+  "serverUnavailable": "{fallback} O servidor não respondeu correctamente; tente novamente dentro de instantes.",
+  "withReason": "{fallback} Motivo: {reason}",
+  "fields": {
+    "name": "Nome",
+    "nuit": "NUIT",
+    "email": "Email",
+    "phone": "Telefone",
+    "address": "Endereço",
+    "city": "Cidade",
+    "province": "Província",
+    "country": "País",
+    "postalCode": "Código postal",
+    "entityType": "Tipo de entidade",
+    "code": "Código",
+    "barcode": "Código de barras",
+    "price": "Preço",
+    "unitPrice": "Preço unitário",
+    "type": "Tipo",
+    "quantity": "Quantidade",
+    "client": "Cliente",
+    "company": "Empresa",
+    "invoiceNumber": "Número da factura",
+    "dueDate": "Data de vencimento",
+    "issueDate": "Data de emissão",
+    "amount": "Valor",
+    "role": "Função",
+    "description": "Descrição"
+  },
+  "constraints": {
+    "companyNuit": "Já existe uma empresa registada com este NUIT.",
+    "clientNuit": "Já existe um cliente com este NUIT nesta empresa.",
+    "clientEmail": "Já existe um cliente com este email nesta empresa.",
+    "productBarcode": "Já existe um produto com este código de barras.",
+    "productCode": "Já existe um produto com este código.",
+    "invoiceNumber": "Já existe um documento com este número.",
+    "companyUser": "Este utilizador já tem acesso a esta empresa.",
+    "emailRegistered": "Este email já está registado.",
+    "invalidRole": "Função de utilizador inválida.",
+    "invalidEntityType": "Tipo de entidade inválido (use Singular ou Colectiva).",
+    "invalidProductType": "Tipo de produto inválido (use Produto ou Serviço)."
+  },
+  "details": {
+    "subscriptionExpired": "A subscrição desta empresa expirou. Renove o plano em Configurações → Subscrição para continuar.",
+    "downgradeBlocked": "Não é possível fazer downgrade enquanto a subscrição estiver activa."
+  },
+  "text": {
+    "network": "Sem ligação ao servidor. Verifique a sua internet e tente novamente.",
+    "sessionExpired": "A sua sessão expirou. Entre novamente no sistema.",
+    "permissionDenied": "Não tem permissão para esta acção. Apenas o proprietário ou um administrador da empresa a pode fazer.",
+    "invalidCredentials": "Email ou palavra-passe incorrectos.",
+    "emailNotConfirmed": "Email não confirmado. Verifique a sua caixa de entrada.",
+    "rateLimit": "Demasiadas tentativas. Aguarde alguns minutos e tente novamente.",
+    "fileTooLarge": "O ficheiro é demasiado grande."
+  },
+  "db": {
+    "duplicateField": "Já existe um registo com o mesmo {field}.",
+    "duplicate": "Já existe um registo com estes dados.",
+    "requiredField": "O campo «{field}» é obrigatório.",
+    "required": "Falta preencher um campo obrigatório.",
+    "invalidField": "Valor inválido no campo «{field}».",
+    "invalid": "Um dos valores introduzidos não é válido.",
+    "inUse": "Este registo está a ser usado noutros documentos e não pode ser eliminado.",
+    "missingReference": "O registo associado (cliente, produto ou empresa) já não existe.",
+    "tooLong": "Um dos campos excede o tamanho máximo permitido.",
+    "invalidFormat": "Um dos campos tem um formato inválido (número ou data).",
+    "notFound": "O registo não foi encontrado ou não tem acesso a ele."
+  },
+  "handler": {
+    "invalidCredentials": "Email ou palavra-passe incorretos",
+    "emailNotConfirmed": "Email não confirmado. Verifique a sua caixa de entrada.",
+    "userRegistered": "Este email já está registado",
+    "passwordTooShort": "A palavra-passe deve ter pelo menos 6 caracteres",
+    "invalidEmail": "Endereço de email inválido",
+    "rateLimit": "Demasiadas tentativas. Tente novamente mais tarde.",
+    "samePassword": "A nova palavra-passe deve ser diferente da anterior",
+    "sessionExpired": "A sua sessão expirou. Por favor, entre novamente.",
+    "accessDenied": "Acesso negado. Não tem permissão para esta acção.",
+    "fetchFailed": "Erro de ligação ao servidor. Verifique a sua internet.",
+    "loadFailed": "Falha ao carregar dados. Verifique a sua ligação.",
+    "offline": "Sem ligação à internet.",
+    "unknown": "Erro desconhecido",
+    "authError": "Erro de autenticação.",
+    "noPermission": "Não tem permissão para esta acção.",
+    "serverError": "Erro no servidor. Tente novamente mais tarde.",
+    "validationError": "Erro de validação dos dados."
+  },
+  "dialog": {
+    "defaultTitle": "Ocorreu um erro",
+    "technicalDetails": "Detalhes técnicos",
+    "copied": "Copiado",
+    "copyDetails": "Copiar detalhes",
+    "supportPrompt": "O problema continua? A nossa equipa de suporte pode ajudar.",
+    "sendEmail": "Enviar email",
+    "details": {
+      "action": "Acção",
+      "message": "Mensagem",
+      "code": "Código",
+      "detail": "Detalhe",
+      "hint": "Sugestão",
+      "page": "Página",
+      "user": "Utilizador",
+      "dateTime": "Data/hora",
+      "browser": "Navegador"
+    },
+    "report": {
+      "error": "Erro: {title}",
+      "message": "Mensagem: {message}",
+      "subject": "Pedido de suporte: {title}",
+      "intro": "Olá, encontrei este erro no ISPC Fácil:"
+    }
+  }
+}

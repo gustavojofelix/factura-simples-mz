@@ -4,77 +4,84 @@
  *
  * Regra: nunca mostrar só "Erro ao ..." sem motivo. Quando o erro não é
  * reconhecido, a mensagem genérica é acompanhada do detalhe técnico curto.
+ *
+ * As tabelas abaixo guardam CHAVES de tradução (t() só pode ser chamado depois
+ * de as traduções estarem carregadas, por isso é chamado no momento do uso).
  */
 
+import { t } from '../i18n/i18n';
+
+/** Coluna → chave em errors.fields.* */
 const FIELD_LABELS: Record<string, string> = {
-  name: 'Nome',
-  nuit: 'NUIT',
-  email: 'Email',
-  phone: 'Telefone',
-  address: 'Endereço',
-  city: 'Cidade',
-  province: 'Província',
-  country: 'País',
-  postal_code: 'Código postal',
-  entity_type: 'Tipo de entidade',
-  code: 'Código',
-  barcode: 'Código de barras',
-  price: 'Preço',
-  unit_price: 'Preço unitário',
-  type: 'Tipo',
-  quantity: 'Quantidade',
-  client_id: 'Cliente',
-  company_id: 'Empresa',
-  invoice_number: 'Número da factura',
-  due_date: 'Data de vencimento',
-  issue_date: 'Data de emissão',
-  amount: 'Valor',
-  role: 'Função',
-  description: 'Descrição',
+  name: 'errors.fields.name',
+  nuit: 'errors.fields.nuit',
+  email: 'errors.fields.email',
+  phone: 'errors.fields.phone',
+  address: 'errors.fields.address',
+  city: 'errors.fields.city',
+  province: 'errors.fields.province',
+  country: 'errors.fields.country',
+  postal_code: 'errors.fields.postalCode',
+  entity_type: 'errors.fields.entityType',
+  code: 'errors.fields.code',
+  barcode: 'errors.fields.barcode',
+  price: 'errors.fields.price',
+  unit_price: 'errors.fields.unitPrice',
+  type: 'errors.fields.type',
+  quantity: 'errors.fields.quantity',
+  client_id: 'errors.fields.client',
+  company_id: 'errors.fields.company',
+  invoice_number: 'errors.fields.invoiceNumber',
+  due_date: 'errors.fields.dueDate',
+  issue_date: 'errors.fields.issueDate',
+  amount: 'errors.fields.amount',
+  role: 'errors.fields.role',
+  description: 'errors.fields.description',
 };
 
 /** Mensagens para constraints conhecidas (nome da constraint ou parte dele). */
 const CONSTRAINT_MESSAGES: Array<[RegExp, string]> = [
-  [/companies.*nuit/i, 'Já existe uma empresa registada com este NUIT.'],
-  [/clients.*nuit/i, 'Já existe um cliente com este NUIT nesta empresa.'],
-  [/clients.*email/i, 'Já existe um cliente com este email nesta empresa.'],
-  [/products.*barcode/i, 'Já existe um produto com este código de barras.'],
-  [/products.*code/i, 'Já existe um produto com este código.'],
-  [/invoices.*number/i, 'Já existe um documento com este número.'],
-  [/company_users/i, 'Este utilizador já tem acesso a esta empresa.'],
-  [/profiles.*email|users.*email/i, 'Este email já está registado.'],
-  [/valid_role|role_check/i, 'Função de utilizador inválida.'],
-  [/entity_type/i, 'Tipo de entidade inválido (use Singular ou Colectiva).'],
-  [/products_type_check/i, 'Tipo de produto inválido (use Produto ou Serviço).'],
+  [/companies.*nuit/i, 'errors.constraints.companyNuit'],
+  [/clients.*nuit/i, 'errors.constraints.clientNuit'],
+  [/clients.*email/i, 'errors.constraints.clientEmail'],
+  [/products.*barcode/i, 'errors.constraints.productBarcode'],
+  [/products.*code/i, 'errors.constraints.productCode'],
+  [/invoices.*number/i, 'errors.constraints.invoiceNumber'],
+  [/company_users/i, 'errors.constraints.companyUser'],
+  [/profiles.*email|users.*email/i, 'errors.constraints.emailRegistered'],
+  [/valid_role|role_check/i, 'errors.constraints.invalidRole'],
+  [/entity_type/i, 'errors.constraints.invalidEntityType'],
+  [/products_type_check/i, 'errors.constraints.invalidProductType'],
 ];
 
 /** Códigos enviados em DETAIL pelas funções/triggers da base de dados. */
 const DETAIL_MESSAGES: Record<string, string> = {
-  DUPLICATE_COMPANY_NUIT: 'Já existe uma empresa registada com este NUIT.',
-  SUBSCRIPTION_EXPIRED: 'A subscrição desta empresa expirou. Renove o plano em Configurações → Subscrição para continuar.',
-  SUBSCRIPTION_DOWNGRADE_BLOCKED: 'Não é possível fazer downgrade enquanto a subscrição estiver activa.',
+  DUPLICATE_COMPANY_NUIT: 'errors.constraints.companyNuit',
+  SUBSCRIPTION_EXPIRED: 'errors.details.subscriptionExpired',
+  SUBSCRIPTION_DOWNGRADE_BLOCKED: 'errors.details.downgradeBlocked',
 };
 
 const TEXT_MESSAGES: Array<[RegExp, string]> = [
-  [/Failed to fetch|Load failed|NetworkError|ERR_CONNECTION|ERR_INTERNET/i, 'Sem ligação ao servidor. Verifique a sua internet e tente novamente.'],
-  [/JWT expired|invalid JWT|refresh token/i, 'A sua sessão expirou. Entre novamente no sistema.'],
-  [/row-level security|permission denied/i, 'Não tem permissão para esta acção. Apenas o proprietário ou um administrador da empresa a pode fazer.'],
-  [/Invalid login credentials/i, 'Email ou palavra-passe incorrectos.'],
-  [/Email not confirmed/i, 'Email não confirmado. Verifique a sua caixa de entrada.'],
-  [/User already registered|already been registered/i, 'Este email já está registado.'],
-  [/rate limit/i, 'Demasiadas tentativas. Aguarde alguns minutos e tente novamente.'],
-  [/payload too large|request entity too large/i, 'O ficheiro é demasiado grande.'],
+  [/Failed to fetch|Load failed|NetworkError|ERR_CONNECTION|ERR_INTERNET/i, 'errors.text.network'],
+  [/JWT expired|invalid JWT|refresh token/i, 'errors.text.sessionExpired'],
+  [/row-level security|permission denied/i, 'errors.text.permissionDenied'],
+  [/Invalid login credentials/i, 'errors.text.invalidCredentials'],
+  [/Email not confirmed/i, 'errors.text.emailNotConfirmed'],
+  [/User already registered|already been registered/i, 'errors.constraints.emailRegistered'],
+  [/rate limit/i, 'errors.text.rateLimit'],
+  [/payload too large|request entity too large/i, 'errors.text.fileTooLarge'],
 ];
 
 function label(column: string): string {
-  return FIELD_LABELS[column] ?? column.replace(/_/g, ' ');
+  const key = FIELD_LABELS[column];
+  return key ? t(key) : column.replace(/_/g, ' ');
 }
 
 function truncate(text: string, max = 160): string {
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;
 }
 
-export function friendlyErrorMessage(error: unknown, fallback = 'Ocorreu um erro inesperado.'): string {
+export function friendlyErrorMessage(error: unknown, fallback = t('errors.unexpected')): string {
   if (!error) return fallback;
   if (typeof error === 'string') return error;
 
@@ -83,13 +90,13 @@ export function friendlyErrorMessage(error: unknown, fallback = 'Ocorreu um erro
   const message: string = err.message ?? err.error_description ?? err.error ?? '';
   const details: string = typeof err.details === 'string' ? err.details : '';
 
-  if (details && DETAIL_MESSAGES[details]) return DETAIL_MESSAGES[details];
+  if (details && DETAIL_MESSAGES[details]) return t(DETAIL_MESSAGES[details]);
   // Outros códigos em DETAIL (ex.: SUBSCRIPTION_INSERT_BLOCKED) vêm das nossas
   // funções/triggers, cuja mensagem já está em português — mesmo com SQLSTATE 42501.
   if (/^[A-Z][A-Z0-9_]+$/.test(details) && message) return message;
 
-  for (const [pattern, text] of TEXT_MESSAGES) {
-    if (pattern.test(message)) return text;
+  for (const [pattern, key] of TEXT_MESSAGES) {
+    if (pattern.test(message)) return t(key);
   }
 
   switch (code) {
@@ -98,53 +105,53 @@ export function friendlyErrorMessage(error: unknown, fallback = 'Ocorreu um erro
       return message || fallback;
     case '23505': {
       const source = `${message} ${details}`;
-      for (const [pattern, text] of CONSTRAINT_MESSAGES) {
-        if (pattern.test(source)) return text;
+      for (const [pattern, key] of CONSTRAINT_MESSAGES) {
+        if (pattern.test(source)) return t(key);
       }
       const field = /Key \(([^)]+)\)/.exec(details)?.[1];
       return field
-        ? `Já existe um registo com o mesmo ${field.split(',').map(f => label(f.trim())).join(' / ')}.`
-        : 'Já existe um registo com estes dados.';
+        ? t('errors.db.duplicateField', { field: field.split(',').map(f => label(f.trim())).join(' / ') })
+        : t('errors.db.duplicate');
     }
     case '23502': {
       const column = /column "([^"]+)"/.exec(message)?.[1];
-      return column ? `O campo «${label(column)}» é obrigatório.` : 'Falta preencher um campo obrigatório.';
+      return column ? t('errors.db.requiredField', { field: label(column) }) : t('errors.db.required');
     }
     case '23514': {
-      for (const [pattern, text] of CONSTRAINT_MESSAGES) {
-        if (pattern.test(message)) return text;
+      for (const [pattern, key] of CONSTRAINT_MESSAGES) {
+        if (pattern.test(message)) return t(key);
       }
       const constraint = /constraint "([^"]+)"/.exec(message)?.[1] ?? '';
       const column = Object.keys(FIELD_LABELS).find(c => constraint.includes(c));
-      return column ? `Valor inválido no campo «${label(column)}».` : 'Um dos valores introduzidos não é válido.';
+      return column ? t('errors.db.invalidField', { field: label(column) }) : t('errors.db.invalid');
     }
     case '23503':
       return /delete|update or delete/i.test(message)
-        ? 'Este registo está a ser usado noutros documentos e não pode ser eliminado.'
-        : 'O registo associado (cliente, produto ou empresa) já não existe.';
+        ? t('errors.db.inUse')
+        : t('errors.db.missingReference');
     case '22001':
-      return 'Um dos campos excede o tamanho máximo permitido.';
+      return t('errors.db.tooLong');
     case '22P02':
     case '22007':
     case '22008':
-      return 'Um dos campos tem um formato inválido (número ou data).';
+      return t('errors.db.invalidFormat');
     case '42501':
     case 'PGRST301':
-      return 'Não tem permissão para esta acção. Apenas o proprietário ou um administrador da empresa a pode fazer.';
+      return t('errors.text.permissionDenied');
     case 'PGRST116':
-      return 'O registo não foi encontrado ou não tem acesso a ele.';
+      return t('errors.db.notFound');
   }
 
-  if (err.status >= 500) return `${fallback} O servidor não respondeu correctamente; tente novamente dentro de instantes.`;
+  if (err.status >= 500) return t('errors.serverUnavailable', { fallback });
 
-  return message ? `${fallback} Motivo: ${truncate(message)}` : fallback;
+  return message ? t('errors.withReason', { fallback, reason: truncate(message) }) : fallback;
 }
 
 /**
  * Para erros de supabase.functions.invoke: o corpo da resposta (com a mensagem
  * em português devolvida pela Edge Function) fica em error.context.
  */
-export async function friendlyFunctionError(error: unknown, fallback = 'Ocorreu um erro inesperado.'): Promise<string> {
+export async function friendlyFunctionError(error: unknown, fallback = t('errors.unexpected')): Promise<string> {
   const context = (error as any)?.context;
   if (context && typeof context.json === 'function') {
     try {

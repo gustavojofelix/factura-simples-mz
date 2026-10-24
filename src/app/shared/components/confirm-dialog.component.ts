@@ -1,11 +1,12 @@
 ﻿import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 @Component({
   selector: 'app-confirm-dialog',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   template: `
     @if (dialog.dialogState().open) {
       <div class="fixed inset-0 z-[9998] flex items-center justify-center p-4">
@@ -38,13 +39,13 @@ import { ConfirmDialogService } from '../../core/services/confirm-dialog.service
             <button
               (click)="dialog.resolve(false)"
               class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors">
-              {{ dialog.dialogState().cancelLabel || 'Cancelar' }}
+              {{ dialog.dialogState().cancelLabel || ('common.actions.cancel' | t) }}
             </button>
             <button
               (click)="dialog.resolve(true)"
               class="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-colors shadow-lg"
               [class]="dialog.dialogState().danger ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-200' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'">
-              {{ dialog.dialogState().confirmLabel || 'Confirmar' }}
+              {{ dialog.dialogState().confirmLabel || ('common.actions.confirm' | t) }}
             </button>
           </div>
         </div>

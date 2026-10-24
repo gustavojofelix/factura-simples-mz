@@ -1,1 +1,27 @@
-{}
+{
+  "title": "Mon profil",
+  "subtitle": "Consultez et mettez à jour vos informations personnelles et vos identifiants.",
+  "personalInfo": "Informations personnelles",
+  "fullName": "Nom complet",
+  "email": "E-mail",
+  "changePassword": "Changer le mot de passe",
+  "currentPassword": "Mot de passe actuel",
+  "currentPasswordPlaceholder": "Saisissez votre mot de passe actuel",
+  "newPassword": "Nouveau mot de passe",
+  "newPasswordPlaceholder": "6 caractères minimum",
+  "confirmPassword": "Confirmer le nouveau mot de passe",
+  "confirmPasswordPlaceholder": "Saisissez-le à nouveau",
+  "edit": "Modifier le profil",
+  "saveChanges": "Enregistrer les modifications",
+  "errors": {
+    "required": "Ce champ est obligatoire",
+    "email": "E-mail invalide",
+    "phoneFormat": "Format : +258 XX XXX XXXX",
+    "currentPasswordRequired": "Saisissez votre mot de passe actuel pour en définir un nouveau",
+    "passwordMismatch": "Les mots de passe ne correspondent pas"
+  },
+  "messages": {
+    "updated": "Profil mis à jour avec succès !",
+    "updateError": "Erreur lors de la mise à jour du profil"
+  }
+}

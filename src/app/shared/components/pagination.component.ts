@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 export interface PageChangeEvent {
   page: number;
@@ -10,17 +11,17 @@ export interface PageChangeEvent {
 @Component({
   selector: 'app-pagination',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   template: `
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 py-3">
       <!-- Info & Page Size Selector -->
       <div class="flex items-center gap-3 text-sm text-gray-600">
         <span class="text-xs text-gray-500 font-medium">
-          {{ startItem }}–{{ endItem }} de {{ totalItems }}
+          {{ 'messages.pagination.range' | t: { start: startItem, end: endItem, total: totalItems } }}
         </span>
         <div class="flex items-center gap-2 border-l border-gray-200 pl-3">
           <label for="pageSize" class="text-[10px] font-bold text-gray-400 uppercase tracking-wider whitespace-nowrap">
-            Registos/página
+            {{ 'messages.pagination.perPage' | t }}
           </label>
           <select
             id="pageSize"
@@ -39,7 +40,7 @@ export interface PageChangeEvent {
           (click)="goToPage(1)"
           [disabled]="currentPage === 1"
           class="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-          title="Primeira página">
+          [title]="'messages.pagination.first' | t">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
           </svg>
@@ -50,7 +51,7 @@ export interface PageChangeEvent {
           (click)="goToPage(currentPage - 1)"
           [disabled]="currentPage === 1"
           class="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-          title="Página anterior">
+          [title]="'messages.pagination.previous' | t">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7 7" />
           </svg>
@@ -77,7 +78,7 @@ export interface PageChangeEvent {
           (click)="goToPage(currentPage + 1)"
           [disabled]="currentPage === totalPages"
           class="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-          title="Próxima página">
+          [title]="'messages.pagination.next' | t">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
@@ -88,7 +89,7 @@ export interface PageChangeEvent {
           (click)="goToPage(totalPages)"
           [disabled]="currentPage === totalPages"
           class="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-          title="Última página">
+          [title]="'messages.pagination.last' | t">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
           </svg>

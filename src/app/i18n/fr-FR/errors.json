@@ -1,1 +1,114 @@
-{}
+{
+  "unexpected": "Une erreur inattendue s'est produite.",
+  "serverUnavailable": "{fallback} Le serveur n'a pas répondu correctement ; réessayez dans quelques instants.",
+  "withReason": "{fallback} Motif : {reason}",
+  "fields": {
+    "name": "Nom",
+    "nuit": "NUIT",
+    "email": "E-mail",
+    "phone": "Téléphone",
+    "address": "Adresse",
+    "city": "Ville",
+    "province": "Province",
+    "country": "Pays",
+    "postalCode": "Code postal",
+    "entityType": "Type d'entité",
+    "code": "Code",
+    "barcode": "Code-barres",
+    "price": "Prix",
+    "unitPrice": "Prix unitaire",
+    "type": "Type",
+    "quantity": "Quantité",
+    "client": "Client",
+    "company": "Entreprise",
+    "invoiceNumber": "Numéro de facture",
+    "dueDate": "Échéance",
+    "issueDate": "Date d'émission",
+    "amount": "Montant",
+    "role": "Rôle",
+    "description": "Description"
+  },
+  "constraints": {
+    "companyNuit": "Une entreprise est déjà enregistrée avec ce NUIT.",
+    "clientNuit": "Un client avec ce NUIT existe déjà dans cette entreprise.",
+    "clientEmail": "Un client avec cet e-mail existe déjà dans cette entreprise.",
+    "productBarcode": "Un produit avec ce code-barres existe déjà.",
+    "productCode": "Un produit avec ce code existe déjà.",
+    "invoiceNumber": "Un document avec ce numéro existe déjà.",
+    "companyUser": "Cet utilisateur a déjà accès à cette entreprise.",
+    "emailRegistered": "Cet e-mail est déjà enregistré.",
+    "invalidRole": "Rôle d'utilisateur invalide.",
+    "invalidEntityType": "Type d'entité invalide (utilisez Personne physique ou Personne morale).",
+    "invalidProductType": "Type de produit invalide (utilisez Produit ou Service)."
+  },
+  "details": {
+    "subscriptionExpired": "L'abonnement de cette entreprise a expiré. Renouvelez la formule dans Paramètres → Abonnement pour continuer.",
+    "downgradeBlocked": "Impossible de passer à une formule inférieure tant que l'abonnement est actif."
+  },
+  "text": {
+    "network": "Pas de connexion au serveur. Vérifiez votre connexion internet et réessayez.",
+    "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
+    "permissionDenied": "Vous n'avez pas l'autorisation pour cette action. Seul le titulaire ou un administrateur de l'entreprise peut l'effectuer.",
+    "invalidCredentials": "E-mail ou mot de passe incorrect.",
+    "emailNotConfirmed": "E-mail non confirmé. Vérifiez votre boîte de réception.",
+    "rateLimit": "Trop de tentatives. Patientez quelques minutes et réessayez.",
+    "fileTooLarge": "Le fichier est trop volumineux."
+  },
+  "db": {
+    "duplicateField": "Un enregistrement avec le même {field} existe déjà.",
+    "duplicate": "Un enregistrement avec ces données existe déjà.",
+    "requiredField": "Le champ « {field} » est obligatoire.",
+    "required": "Un champ obligatoire n'est pas rempli.",
+    "invalidField": "Valeur invalide dans le champ « {field} ».",
+    "invalid": "L'une des valeurs saisies n'est pas valide.",
+    "inUse": "Cet enregistrement est utilisé dans d'autres documents et ne peut pas être supprimé.",
+    "missingReference": "L'enregistrement associé (client, produit ou entreprise) n'existe plus.",
+    "tooLong": "L'un des champs dépasse la longueur maximale autorisée.",
+    "invalidFormat": "L'un des champs a un format invalide (nombre ou date).",
+    "notFound": "L'enregistrement est introuvable ou vous n'y avez pas accès."
+  },
+  "handler": {
+    "invalidCredentials": "E-mail ou mot de passe incorrect",
+    "emailNotConfirmed": "E-mail non confirmé. Vérifiez votre boîte de réception.",
+    "userRegistered": "Cet e-mail est déjà enregistré",
+    "passwordTooShort": "Le mot de passe doit contenir au moins 6 caractères",
+    "invalidEmail": "Adresse e-mail invalide",
+    "rateLimit": "Trop de tentatives. Réessayez plus tard.",
+    "samePassword": "Le nouveau mot de passe doit être différent de l'ancien",
+    "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
+    "accessDenied": "Accès refusé. Vous n'avez pas l'autorisation pour cette action.",
+    "fetchFailed": "Erreur de connexion au serveur. Vérifiez votre connexion internet.",
+    "loadFailed": "Échec du chargement des données. Vérifiez votre connexion.",
+    "offline": "Pas de connexion internet.",
+    "unknown": "Erreur inconnue",
+    "authError": "Erreur d'authentification.",
+    "noPermission": "Vous n'avez pas l'autorisation pour cette action.",
+    "serverError": "Erreur du serveur. Réessayez plus tard.",
+    "validationError": "Erreur de validation des données."
+  },
+  "dialog": {
+    "defaultTitle": "Une erreur s'est produite",
+    "technicalDetails": "Détails techniques",
+    "copied": "Copié",
+    "copyDetails": "Copier les détails",
+    "supportPrompt": "Le problème persiste ? Notre équipe d'assistance peut vous aider.",
+    "sendEmail": "Envoyer un e-mail",
+    "details": {
+      "action": "Action",
+      "message": "Message",
+      "code": "Code",
+      "detail": "Détail",
+      "hint": "Suggestion",
+      "page": "Page",
+      "user": "Utilisateur",
+      "dateTime": "Date/heure",
+      "browser": "Navigateur"
+    },
+    "report": {
+      "error": "Erreur : {title}",
+      "message": "Message : {message}",
+      "subject": "Demande d'assistance : {title}",
+      "intro": "Bonjour, j'ai rencontré cette erreur dans ISPC Fácil :"
+    }
+  }
+}

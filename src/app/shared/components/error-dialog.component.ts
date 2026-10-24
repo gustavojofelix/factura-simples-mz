@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { LandingCmsService } from '../../core/services/landing-cms.service';
+import { t } from '../../core/i18n/i18n';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 export interface ErrorDialogDetail {
   label: string;
@@ -29,7 +31,7 @@ export type ErrorDialogResult = 'retry' | 'close';
 @Component({
   selector: 'app-error-dialog',
   standalone: true,
-  imports: [CommonModule, MatDialogModule, MatIconModule],
+  imports: [CommonModule, MatDialogModule, MatIconModule, TranslatePipe],
   template: `
     <div class="p-6 max-w-lg">
       <div class="flex items-start gap-4">
@@ -49,7 +51,7 @@ export type ErrorDialogResult = 'retry' | 'close';
             (click)="showDetails.set(!showDetails())">
             <span class="flex items-center gap-2">
               <mat-icon class="!text-base !w-4 !h-4 !leading-4">code</mat-icon>
-              Detalhes técnicos
+              {{ 'errors.dialog.technicalDetails' | t }}
             </span>
             <mat-icon class="!text-base !w-4 !h-4 !leading-4">{{ showDetails() ? 'expand_less' : 'expand_more' }}</mat-icon>
           </button>
@@ -67,7 +69,7 @@ export type ErrorDialogResult = 'retry' | 'close';
                 class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700"
                 (click)="copyDetails()">
                 <mat-icon class="!text-sm !w-4 !h-4 !leading-4">{{ copied() ? 'check' : 'content_copy' }}</mat-icon>
-                {{ copied() ? 'Copiado' : 'Copiar detalhes' }}
+                {{ (copied() ? 'errors.dialog.copied' : 'errors.dialog.copyDetails') | t }}
               </button>
             </div>
           }
@@ -75,12 +77,12 @@ export type ErrorDialogResult = 'retry' | 'close';
       }
 
       <div class="mt-5 rounded-xl bg-orange-50 border border-orange-100 px-4 py-3">
-        <p class="text-sm text-gray-700">O problema continua? A nossa equipa de suporte pode ajudar.</p>
+        <p class="text-sm text-gray-700">{{ 'errors.dialog.supportPrompt' | t }}</p>
         <div class="mt-2 flex flex-wrap gap-2">
           <a [href]="mailtoUrl()"
             class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-orange-200 text-sm font-semibold text-ispc-orange hover:bg-orange-100 transition-colors">
             <mat-icon class="!text-base !w-4 !h-4 !leading-4">mail</mat-icon>
-            Enviar email
+            {{ 'errors.dialog.sendEmail' | t }}
           </a>
           @if (whatsappUrl(); as url) {
             <a [href]="url" target="_blank" rel="noopener"
@@ -95,7 +97,7 @@ export type ErrorDialogResult = 'retry' | 'close';
       <div class="mt-6 flex gap-3">
         <button type="button" (click)="close('close')"
           class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors">
-          Fechar
+          {{ 'common.actions.close' | t }}
         </button>
         @if (data.retryLabel) {
           <button type="button" (click)="close('retry')"
@@ -116,23 +118,23 @@ export class ErrorDialogComponent {
   readonly copied = signal(false);
 
   private readonly reportText = computed(() => [
-    `Erro: ${this.data.title}`,
-    `Mensagem: ${this.data.message}`,
+    t('errors.dialog.report.error', { title: this.data.title }),
+    t('errors.dialog.report.message', { message: this.data.message }),
     '',
     ...this.data.details.map(d => `${d.label}: ${d.value}`)
   ].join('\n'));
 
   readonly mailtoUrl = computed(() => {
     const email = this.cms.contact().email;
-    const subject = encodeURIComponent(`Pedido de suporte: ${this.data.title}`);
-    const body = encodeURIComponent(`Olá, encontrei este erro no ISPC Fácil:\n\n${this.reportText()}\n`);
+    const subject = encodeURIComponent(t('errors.dialog.report.subject', { title: this.data.title }));
+    const body = encodeURIComponent(`${t('errors.dialog.report.intro')}\n\n${this.reportText()}\n`);
     return `mailto:${email}?subject=${subject}&body=${body}`;
   });
 
   readonly whatsappUrl = computed(() => {
     const digits = (this.cms.contact().whatsapp || '').replace(/\D/g, '');
     if (!digits) return null;
-    const text = encodeURIComponent(`Olá, encontrei este erro no ISPC Fácil:\n\n${this.reportText()}`);
+    const text = encodeURIComponent(`${t('errors.dialog.report.intro')}\n\n${this.reportText()}`);
     return `https://wa.me/${digits}?text=${text}`;
   });
 

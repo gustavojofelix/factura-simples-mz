@@ -1,1 +1,114 @@
-{}
+{
+  "unexpected": "An unexpected error occurred.",
+  "serverUnavailable": "{fallback} The server did not respond correctly; please try again in a moment.",
+  "withReason": "{fallback} Reason: {reason}",
+  "fields": {
+    "name": "Name",
+    "nuit": "NUIT",
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address",
+    "city": "City",
+    "province": "Province",
+    "country": "Country",
+    "postalCode": "Postcode",
+    "entityType": "Entity type",
+    "code": "Code",
+    "barcode": "Barcode",
+    "price": "Price",
+    "unitPrice": "Unit price",
+    "type": "Type",
+    "quantity": "Quantity",
+    "client": "Client",
+    "company": "Company",
+    "invoiceNumber": "Invoice number",
+    "dueDate": "Due date",
+    "issueDate": "Issue date",
+    "amount": "Amount",
+    "role": "Role",
+    "description": "Description"
+  },
+  "constraints": {
+    "companyNuit": "A company with this NUIT is already registered.",
+    "clientNuit": "A client with this NUIT already exists in this company.",
+    "clientEmail": "A client with this email already exists in this company.",
+    "productBarcode": "A product with this barcode already exists.",
+    "productCode": "A product with this code already exists.",
+    "invoiceNumber": "A document with this number already exists.",
+    "companyUser": "This user already has access to this company.",
+    "emailRegistered": "This email is already registered.",
+    "invalidRole": "Invalid user role.",
+    "invalidEntityType": "Invalid entity type (use Individual or Corporate).",
+    "invalidProductType": "Invalid product type (use Product or Service)."
+  },
+  "details": {
+    "subscriptionExpired": "This company's subscription has expired. Renew the plan in Settings → Subscription to continue.",
+    "downgradeBlocked": "Downgrading is not possible while the subscription is active."
+  },
+  "text": {
+    "network": "No connection to the server. Check your internet connection and try again.",
+    "sessionExpired": "Your session has expired. Please sign in again.",
+    "permissionDenied": "You do not have permission for this action. Only the company owner or an administrator can do it.",
+    "invalidCredentials": "Incorrect email or password.",
+    "emailNotConfirmed": "Email not confirmed. Please check your inbox.",
+    "rateLimit": "Too many attempts. Wait a few minutes and try again.",
+    "fileTooLarge": "The file is too large."
+  },
+  "db": {
+    "duplicateField": "A record with the same {field} already exists.",
+    "duplicate": "A record with this data already exists.",
+    "requiredField": "The field \"{field}\" is required.",
+    "required": "A required field is missing.",
+    "invalidField": "Invalid value in the field \"{field}\".",
+    "invalid": "One of the values entered is not valid.",
+    "inUse": "This record is used in other documents and cannot be deleted.",
+    "missingReference": "The linked record (client, product or company) no longer exists.",
+    "tooLong": "One of the fields exceeds the maximum length allowed.",
+    "invalidFormat": "One of the fields has an invalid format (number or date).",
+    "notFound": "The record was not found or you do not have access to it."
+  },
+  "handler": {
+    "invalidCredentials": "Incorrect email or password",
+    "emailNotConfirmed": "Email not confirmed. Please check your inbox.",
+    "userRegistered": "This email is already registered",
+    "passwordTooShort": "The password must be at least 6 characters long",
+    "invalidEmail": "Invalid email address",
+    "rateLimit": "Too many attempts. Please try again later.",
+    "samePassword": "The new password must be different from the previous one",
+    "sessionExpired": "Your session has expired. Please sign in again.",
+    "accessDenied": "Access denied. You do not have permission for this action.",
+    "fetchFailed": "Could not connect to the server. Check your internet connection.",
+    "loadFailed": "Failed to load data. Check your connection.",
+    "offline": "No internet connection.",
+    "unknown": "Unknown error",
+    "authError": "Authentication error.",
+    "noPermission": "You do not have permission for this action.",
+    "serverError": "Server error. Please try again later.",
+    "validationError": "Data validation error."
+  },
+  "dialog": {
+    "defaultTitle": "An error occurred",
+    "technicalDetails": "Technical details",
+    "copied": "Copied",
+    "copyDetails": "Copy details",
+    "supportPrompt": "Still having the problem? Our support team can help.",
+    "sendEmail": "Send email",
+    "details": {
+      "action": "Action",
+      "message": "Message",
+      "code": "Code",
+      "detail": "Detail",
+      "hint": "Hint",
+      "page": "Page",
+      "user": "User",
+      "dateTime": "Date/time",
+      "browser": "Browser"
+    },
+    "report": {
+      "error": "Error: {title}",
+      "message": "Message: {message}",
+      "subject": "Support request: {title}",
+      "intro": "Hello, I came across this error in ISPC Fácil:"
+    }
+  }
+}

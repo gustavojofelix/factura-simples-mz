@@ -1,1 +1,59 @@
-{}
+{
+  "subscription": {
+    "paymentRequestSent": "Request sent to {phone}. Please confirm on your mobile phone.",
+    "paymentRequestError": "Error sending the payment request. Please try again.",
+    "paymentUnexpectedError": "Unexpected error during payment"
+  },
+  "voucher": {
+    "codeRequired": "The voucher code is required.",
+    "createError": "Error creating voucher.",
+    "enterCode": "Please enter a voucher code.",
+    "notFound": "Invalid voucher code or voucher not found.",
+    "disabled": "This voucher has been deactivated.",
+    "notYetActive": "This voucher is not active yet.",
+    "expired": "This voucher has expired.",
+    "usageLimit": "This voucher has reached its maximum number of uses.",
+    "otherCompany": "This voucher is exclusive and cannot be used by this client.",
+    "otherUser": "This voucher is exclusive to another user account.",
+    "minAmount": "This voucher requires a minimum purchase of {amount} MZN.",
+    "applied": "Voucher applied successfully!",
+    "codeFallback": "Code"
+  },
+  "pagination": {
+    "range": "{start}–{end} of {total}",
+    "perPage": "Rows/page",
+    "first": "First page",
+    "previous": "Previous page",
+    "next": "Next page",
+    "last": "Last page"
+  },
+  "planLimit": {
+    "title": "Plan limit reached",
+    "bodyBefore": "Your current plan does not allow you to create more",
+    "bodyAfter": ".",
+    "upgradeHint": "Upgrade your plan to keep adding {feature} without restrictions.",
+    "benefitProducts": "Unlimited products and services",
+    "benefitInvoicing": "Unlimited invoicing",
+    "benefitSupport": "Priority support",
+    "upgradeNow": "Upgrade plan now",
+    "later": "Maybe later",
+    "features": {
+      "products": "products / services",
+      "invoices": "invoices",
+      "clients": "clients",
+      "companies": "companies",
+      "users": "users",
+      "items": "items"
+    }
+  },
+  "richText": {
+    "bold": "Bold",
+    "italic": "Italic",
+    "underline": "Underline",
+    "bulletList": "List",
+    "numberedList": "Numbered list",
+    "insertLink": "Insert link",
+    "clearFormatting": "Clear formatting",
+    "linkPrompt": "Link address (https://… or mailto:…)"
+  }
+}

@@ -35,23 +35,25 @@ import {
   SAMPLE_BANK_ACCOUNTS
 } from '../../../shared/components/documents/document-preview.fixtures';
 import { CompanyBankAccountService, CompanyBankAccount } from '../../../core/services/company-bank-account.service';
+import { t } from '../../../core/i18n/i18n';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 /** Marcadores que o utilizador pode usar nos textos de e-mail. */
 const EMAIL_TOKENS = [
-  { token: '{{cliente}}', hint: 'Nome do cliente' },
-  { token: '{{empresa}}', hint: 'Nome da sua empresa' },
-  { token: '{{numero_factura}}', hint: 'Número da factura' },
-  { token: '{{numero_recibo}}', hint: 'Número do recibo' },
-  { token: '{{total}}', hint: 'Valor total do documento' },
-  { token: '{{valor_pago}}', hint: 'Valor já pago' },
-  { token: '{{valor_pendente}}', hint: 'Valor por pagar' },
-  { token: '{{data}}', hint: 'Data de emissão' },
-  { token: '{{data_vencimento}}', hint: 'Data de vencimento' },
-  { token: '{{periodo}}', hint: 'Extracto: período (01/08/2026 a 31/08/2026)' },
-  { token: '{{saldo_anterior}}', hint: 'Extracto: saldo antes do período' },
-  { token: '{{total_facturado}}', hint: 'Extracto: total facturado no período' },
-  { token: '{{total_pago}}', hint: 'Extracto: total pago no período' },
-  { token: '{{saldo}}', hint: 'Extracto: saldo em dívida na data final' }
+  { token: '{{cliente}}', hintKey: 'settings.documentTab.tokens.client' },
+  { token: '{{empresa}}', hintKey: 'settings.documentTab.tokens.company' },
+  { token: '{{numero_factura}}', hintKey: 'settings.documentTab.tokens.invoiceNumber' },
+  { token: '{{numero_recibo}}', hintKey: 'settings.documentTab.tokens.receiptNumber' },
+  { token: '{{total}}', hintKey: 'settings.documentTab.tokens.total' },
+  { token: '{{valor_pago}}', hintKey: 'settings.documentTab.tokens.amountPaid' },
+  { token: '{{valor_pendente}}', hintKey: 'settings.documentTab.tokens.amountDue' },
+  { token: '{{data}}', hintKey: 'settings.documentTab.tokens.issueDate' },
+  { token: '{{data_vencimento}}', hintKey: 'settings.documentTab.tokens.dueDate' },
+  { token: '{{periodo}}', hintKey: 'settings.documentTab.tokens.period' },
+  { token: '{{saldo_anterior}}', hintKey: 'settings.documentTab.tokens.openingBalance' },
+  { token: '{{total_facturado}}', hintKey: 'settings.documentTab.tokens.totalInvoiced' },
+  { token: '{{total_pago}}', hintKey: 'settings.documentTab.tokens.totalPaid' },
+  { token: '{{saldo}}', hintKey: 'settings.documentTab.tokens.balance' }
 ];
 
 const MAX_LOGO_BYTES = 2 * 1024 * 1024;
@@ -78,7 +80,8 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
     InvoiceDocumentComponent,
     ReceiptDocumentComponent,
     ClientStatementDocumentComponent,
-    RichTextEditorComponent
+    RichTextEditorComponent,
+    TranslatePipe
   ],
   styles: [`
     /* A pré-visualização é desenhada à largura de uma folha A4 e depois
@@ -92,7 +95,7 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
   template: `
     @if (!companyId()) {
       <div class="p-8 text-center text-gray-500">
-        Seleccione uma empresa para personalizar os seus documentos.
+        {{ 'settings.documentTab.noCompany' | t }}
       </div>
     } @else {
       <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_400px] gap-6 items-start">
@@ -101,15 +104,15 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
         @if (!canEdit()) {
           <div class="flex items-start gap-3 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm">
             <mat-icon class="!text-amber-600">lock</mat-icon>
-            <span>Apenas o proprietário ou um administrador da empresa pode alterar estas definições.</span>
+            <span>{{ 'settings.documentTab.readOnly' | t }}</span>
           </div>
         }
 
         <!-- MODELO -->
         <mat-card class="!rounded-2xl !shadow-sm">
           <mat-card-content class="!p-6">
-            <h3 class="text-base font-bold text-gray-800 mb-1">Modelo do documento</h3>
-            <p class="text-xs text-gray-500 mb-5">Escolha a disposição das suas facturas, recibos e extractos.</p>
+            <h3 class="text-base font-bold text-gray-800 mb-1">{{ 'settings.documentTab.template.title' | t }}</h3>
+            <p class="text-xs text-gray-500 mb-5">{{ 'settings.documentTab.template.subtitle' | t }}</p>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
               @for (modelo of templates; track modelo.code) {
@@ -121,12 +124,12 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
                   [class.bg-orange-50]="form.value.template_code === modelo.code"
                   [class.border-gray-200]="form.value.template_code !== modelo.code">
                   <div class="flex items-center justify-between mb-2">
-                    <span class="font-bold text-sm text-gray-800">{{ modelo.label }}</span>
+                    <span class="font-bold text-sm text-gray-800">{{ 'settings.documentTab.templates.' + modelo.code + '.label' | t }}</span>
                     @if (form.value.template_code === modelo.code) {
                       <mat-icon class="!text-orange-500 !text-[18px] !w-[18px] !h-[18px]">check_circle</mat-icon>
                     }
                   </div>
-                  <p class="text-[11px] leading-relaxed text-gray-500">{{ modelo.description }}</p>
+                  <p class="text-[11px] leading-relaxed text-gray-500">{{ 'settings.documentTab.templates.' + modelo.code + '.description' | t }}</p>
                 </button>
               }
             </div>
@@ -136,69 +139,65 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
         <!-- MARCA -->
         <mat-card class="!rounded-2xl !shadow-sm">
           <mat-card-content class="!p-6">
-            <h3 class="text-base font-bold text-gray-800 mb-1">Marca</h3>
-            <p class="text-xs text-gray-500 mb-5">O logótipo é partilhado com os dados da empresa.</p>
+            <h3 class="text-base font-bold text-gray-800 mb-1">{{ 'settings.documentTab.brand.title' | t }}</h3>
+            <p class="text-xs text-gray-500 mb-5">{{ 'settings.documentTab.brand.subtitle' | t }}</p>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="space-y-4">
                 <div>
-                  <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Cor principal</label>
+                  <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{{ 'settings.documentTab.brand.primaryColor' | t }}</label>
                   <div class="flex items-center gap-3">
                     <input type="color" formControlName="primary_color"
                       class="w-12 h-10 rounded border border-gray-200 cursor-pointer disabled:cursor-not-allowed">
                     <mat-form-field appearance="outline" class="flex-1" subscriptSizing="dynamic">
                       <input matInput formControlName="primary_color" placeholder="#f16c39" maxlength="7">
                       @if (form.get('primary_color')?.hasError('pattern')) {
-                        <mat-error>Use um valor como #f16c39.</mat-error>
+                        <mat-error>{{ 'settings.documentTab.brand.colorFormat' | t: { example: '#f16c39' } }}</mat-error>
                       }
                     </mat-form-field>
                   </div>
                 </div>
 
                 <div>
-                  <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Cor secundária</label>
+                  <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{{ 'settings.documentTab.brand.accentColor' | t }}</label>
                   <div class="flex items-center gap-3">
                     <input type="color" formControlName="accent_color"
                       class="w-12 h-10 rounded border border-gray-200 cursor-pointer disabled:cursor-not-allowed">
                     <mat-form-field appearance="outline" class="flex-1" subscriptSizing="dynamic">
                       <input matInput formControlName="accent_color" placeholder="#332d2a" maxlength="7">
                       @if (form.get('accent_color')?.hasError('pattern')) {
-                        <mat-error>Use um valor como #332d2a.</mat-error>
+                        <mat-error>{{ 'settings.documentTab.brand.colorFormat' | t: { example: '#332d2a' } }}</mat-error>
                       }
                     </mat-form-field>
                   </div>
                 </div>
 
                 <mat-slide-toggle formControlName="show_logo" color="primary">
-                  <span class="text-sm">Mostrar o logótipo nos documentos</span>
+                  <span class="text-sm">{{ 'settings.documentTab.brand.showLogo' | t }}</span>
                 </mat-slide-toggle>
 
                 <div>
                   <mat-slide-toggle formControlName="show_bank_details" color="primary">
-                    <span class="text-sm">Mostrar as coordenadas bancárias</span>
+                    <span class="text-sm">{{ 'settings.documentTab.brand.showBankDetails' | t }}</span>
                   </mat-slide-toggle>
-                  <p class="text-xs text-gray-500 mt-1">
-                    Os bancos marcados "Mostrar nas facturas" (a conta principal primeiro), M-Pesa e e-Mola
-                    aparecem no fim das facturas e extractos.
-                    Edite-os nos dados da empresa: Configurações → Empresas → editar → Dados Bancários.
-                  </p>
+                  <p class="text-xs text-gray-500 mt-1">{{ 'settings.documentTab.brand.bankDetailsHint' | t }}</p>
                   @if (!companyHasBankDetails()) {
                     <p class="flex items-start gap-1 text-xs text-amber-700 mt-1">
                       <mat-icon class="!text-amber-600 !text-[16px] !w-4 !h-4 shrink-0">warning</mat-icon>
-                      Esta empresa ainda não tem dados bancários, por isso nada será mostrado nos documentos.
+                      {{ 'settings.documentTab.brand.noBankDetails' | t }}
                     </p>
                   }
                 </div>
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Logótipo</label>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{{ 'settings.documentTab.brand.logo' | t }}</label>
                 <div class="border-2 border-dashed border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center gap-3 min-h-[180px]">
                   @if (logoUrl()) {
-                    <img [src]="logoUrl()!" alt="Logótipo" class="max-h-24 max-w-full object-contain">
+                    <img [src]="logoUrl()!" [alt]="'settings.documentTab.brand.logo' | t" class="max-h-24 max-w-full object-contain">
                   } @else {
                     <mat-icon class="!text-gray-300 !text-[48px] !w-12 !h-12">image</mat-icon>
-                    <p class="text-xs text-gray-400">Sem logótipo</p>
+                    <p class="text-xs text-gray-400">{{ 'settings.documentTab.brand.noLogo' | t }}</p>
                   }
 
                   <div class="flex items-center gap-2">
@@ -206,16 +205,16 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
                     <button type="button" mat-stroked-button [disabled]="!canEdit() || isUploadingLogo()"
                       (click)="logoInput.click()">
                       <mat-icon>upload</mat-icon>
-                      {{ logoUrl() ? 'Substituir' : 'Carregar' }}
+                      {{ logoUrl() ? ('settings.documentTab.brand.replace' | t) : ('common.actions.upload' | t) }}
                     </button>
                     @if (logoUrl()) {
                       <button type="button" mat-button color="warn" [disabled]="!canEdit() || isUploadingLogo()"
                         (click)="removeLogo()">
-                        Remover
+                        {{ 'common.actions.remove' | t }}
                       </button>
                     }
                   </div>
-                  <p class="text-[11px] text-gray-400">PNG ou JPG, até 2 MB.</p>
+                  <p class="text-[11px] text-gray-400">{{ 'settings.documentTab.brand.logoFormats' | t }}</p>
                 </div>
               </div>
             </div>
@@ -225,28 +224,28 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
         <!-- TEXTOS -->
         <mat-card class="!rounded-2xl !shadow-sm">
           <mat-card-content class="!p-6">
-            <h3 class="text-base font-bold text-gray-800 mb-1">Textos dos documentos</h3>
-            <p class="text-xs text-gray-500 mb-5">Deixe em branco para não mostrar nada.</p>
+            <h3 class="text-base font-bold text-gray-800 mb-1">{{ 'settings.documentTab.texts.title' | t }}</h3>
+            <p class="text-xs text-gray-500 mb-5">{{ 'settings.documentTab.texts.subtitle' | t }}</p>
 
             <div class="space-y-4">
               <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Mensagem de agradecimento</mat-label>
+                <mat-label>{{ 'settings.documentTab.texts.thankYou' | t }}</mat-label>
                 <input matInput formControlName="thank_you_message" maxlength="160"
-                  placeholder="Ex: Obrigado pela sua preferência.">
+                  [placeholder]="'settings.documentTab.texts.thankYouPlaceholder' | t">
                 <mat-hint align="end">{{ form.value.thank_you_message?.length || 0 }} / 160</mat-hint>
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Observações por omissão</mat-label>
+                <mat-label>{{ 'settings.documentTab.texts.defaultObservations' | t }}</mat-label>
                 <textarea matInput formControlName="default_observations" rows="3" maxlength="500"
-                  placeholder="Ex: Pagamento no acto da entrega."></textarea>
-                <mat-hint>Preenche as notas ao criar uma factura nova. Facturas já emitidas não são alteradas.</mat-hint>
+                  [placeholder]="'settings.documentTab.texts.defaultObservationsPlaceholder' | t"></textarea>
+                <mat-hint>{{ 'settings.documentTab.texts.defaultObservationsHint' | t }}</mat-hint>
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Rodapé</mat-label>
+                <mat-label>{{ 'settings.documentTab.texts.footer' | t }}</mat-label>
                 <textarea matInput formControlName="footer_text" rows="2" maxlength="240"
-                  placeholder="Ex: Documento processado por computador."></textarea>
+                  [placeholder]="'settings.documentTab.texts.footerPlaceholder' | t"></textarea>
                 <mat-hint align="end">{{ form.value.footer_text?.length || 0 }} / 240</mat-hint>
               </mat-form-field>
             </div>
@@ -256,12 +255,12 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
         <!-- IMPRESSÃO -->
         <mat-card class="!rounded-2xl !shadow-sm">
           <mat-card-content class="!p-6">
-            <h3 class="text-base font-bold text-gray-800 mb-1">Impressão</h3>
-            <p class="text-xs text-gray-500 mb-5">Cada via sai numa página própria, identificada.</p>
+            <h3 class="text-base font-bold text-gray-800 mb-1">{{ 'settings.documentTab.print.title' | t }}</h3>
+            <p class="text-xs text-gray-500 mb-5">{{ 'settings.documentTab.print.subtitle' | t }}</p>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <mat-form-field appearance="outline">
-                <mat-label>Vias da factura</mat-label>
+                <mat-label>{{ 'settings.documentTab.print.invoiceCopies' | t }}</mat-label>
                 <mat-select formControlName="invoice_copies">
                   @for (opcao of copyOptions; track opcao.value) {
                     <mat-option [value]="opcao.value">{{ opcao.label }}</mat-option>
@@ -270,7 +269,7 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
               </mat-form-field>
 
               <mat-form-field appearance="outline">
-                <mat-label>Vias do recibo</mat-label>
+                <mat-label>{{ 'settings.documentTab.print.receiptCopies' | t }}</mat-label>
                 <mat-select formControlName="receipt_copies">
                   @for (opcao of copyOptions; track opcao.value) {
                     <mat-option [value]="opcao.value">{{ opcao.label }}</mat-option>
@@ -284,83 +283,83 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
         <!-- E-MAIL -->
         <mat-card class="!rounded-2xl !shadow-sm">
           <mat-card-content class="!p-6">
-            <h3 class="text-base font-bold text-gray-800 mb-1">Mensagens de e-mail</h3>
-            <p class="text-xs text-gray-500 mb-4">Clique num marcador para o inserir no campo onde estava a escrever.</p>
+            <h3 class="text-base font-bold text-gray-800 mb-1">{{ 'settings.documentTab.email.title' | t }}</h3>
+            <p class="text-xs text-gray-500 mb-4">{{ 'settings.documentTab.email.subtitle' | t }}</p>
 
             <div class="flex flex-wrap gap-2 mb-5">
-              @for (t of tokens; track t.token) {
-                <button type="button" (click)="insertToken(t.token)" [disabled]="!canEdit()"
-                  [matTooltip]="t.hint"
+              @for (tok of tokens; track tok.token) {
+                <button type="button" (click)="insertToken(tok.token)" [disabled]="!canEdit()"
+                  [matTooltip]="tok.hintKey | t"
                   class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 text-[11px] font-mono text-slate-700 transition-colors disabled:opacity-50">
-                  {{ t.token }}
+                  {{ tok.token }}
                 </button>
               }
             </div>
 
             <div class="space-y-4">
               <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Assunto</mat-label>
+                <mat-label>{{ 'settings.documentTab.email.subject' | t }}</mat-label>
                 <input matInput formControlName="email_subject" maxlength="200"
                   (focus)="lastFocused.set('email_subject')">
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Saudação</mat-label>
+                <mat-label>{{ 'settings.documentTab.email.greeting' | t }}</mat-label>
                 <input matInput formControlName="email_greeting" maxlength="200"
                   (focus)="lastFocused.set('email_greeting')">
               </mat-form-field>
 
               <div>
                 <app-rich-text-editor name="email_body" formControlName="email_body"
-                  label="Corpo da mensagem" [minHeight]="110"
+                  [label]="'settings.documentTab.email.body' | t" [minHeight]="110"
                   (focusIn)="lastFocused.set('email_body')">
                 </app-rich-text-editor>
                 @if (form.get('email_body')?.hasError('maxlength')) {
-                  <p class="text-xs text-red-600 mt-1 px-3">Texto demasiado longo.</p>
+                  <p class="text-xs text-red-600 mt-1 px-3">{{ 'settings.documentTab.email.tooLong' | t }}</p>
                 }
               </div>
 
               <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Despedida</mat-label>
+                <mat-label>{{ 'settings.documentTab.email.signature' | t }}</mat-label>
                 <input matInput formControlName="email_signature" maxlength="200"
                   (focus)="lastFocused.set('email_signature')">
               </mat-form-field>
 
               <div>
                 <app-rich-text-editor name="receipt_email_body" formControlName="receipt_email_body"
-                  label="Corpo da mensagem do recibo" [minHeight]="80"
+                  [label]="'settings.documentTab.email.receiptBody' | t" [minHeight]="80"
                   (focusIn)="lastFocused.set('receipt_email_body')">
                 </app-rich-text-editor>
                 @if (form.get('receipt_email_body')?.hasError('maxlength')) {
-                  <p class="text-xs text-red-600 mt-1 px-3">Texto demasiado longo.</p>
+                  <p class="text-xs text-red-600 mt-1 px-3">{{ 'settings.documentTab.email.tooLong' | t }}</p>
                 }
               </div>
 
               <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Assunto do extracto de conta</mat-label>
+                <mat-label>{{ 'settings.documentTab.email.statementSubject' | t }}</mat-label>
                 <input matInput formControlName="statement_email_subject" maxlength="200"
                   (focus)="lastFocused.set('statement_email_subject')">
               </mat-form-field>
 
               <div>
                 <app-rich-text-editor name="statement_email_body" formControlName="statement_email_body"
-                  label="Corpo da mensagem do extracto de conta" [minHeight]="80"
+                  [label]="'settings.documentTab.email.statementBody' | t" [minHeight]="80"
                   (focusIn)="lastFocused.set('statement_email_body')">
                 </app-rich-text-editor>
                 @if (form.get('statement_email_body')?.hasError('maxlength')) {
-                  <p class="text-xs text-red-600 mt-1 px-3">Texto demasiado longo.</p>
+                  <p class="text-xs text-red-600 mt-1 px-3">{{ 'settings.documentTab.email.tooLong' | t }}</p>
                 } @else {
-                  <p class="text-xs text-gray-500 mt-1 px-3">Use os marcadores de extracto, como período e saldo.</p>
+                  <p class="text-xs text-gray-500 mt-1 px-3">{{ 'settings.documentTab.email.statementHint' | t }}</p>
                 }
               </div>
 
               <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Responder para (opcional)</mat-label>
+                <mat-label>{{ 'settings.documentTab.email.replyTo' | t }}</mat-label>
                 <input matInput formControlName="email_reply_to" type="email"
-                  placeholder="geral@suaempresa.co.mz">
-                <mat-hint>As respostas dos clientes são encaminhadas para este endereço.</mat-hint>
+                  [placeholder]="'settings.documentTab.email.replyToPlaceholder' | t">
+                <mat-hint>{{ 'settings.documentTab.email.replyToHint' | t }}</mat-hint>
                 @if (form.get('email_reply_to')?.hasError('email')) {
-                  <mat-error>Endereço de e-mail inválido.</mat-error>
+                  <mat-error>{{ 'settings.documentTab.email.invalidEmail' | t }}</mat-error>
                 }
               </mat-form-field>
             </div>
@@ -369,14 +368,14 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
 
         <div class="flex items-center justify-end gap-3 pb-4">
           <button type="button" mat-button (click)="reset()" [disabled]="!canEdit() || isSaving()">
-            Repor
+            {{ 'settings.documentTab.reset' | t }}
           </button>
           <button type="button" mat-raised-button class="!bg-ispc-orange !text-white"
             (click)="save()" [disabled]="!canEdit() || form.invalid || isSaving()">
             @if (isSaving()) {
               <mat-spinner diameter="18" class="inline-block mr-2"></mat-spinner>
             }
-            Guardar alterações
+            {{ 'common.actions.saveChanges' | t }}
           </button>
         </div>
       </form>
@@ -386,7 +385,7 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
       <div class="hidden xl:block sticky top-6">
         <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <div class="flex items-center justify-between mb-3">
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pré-visualização</p>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ 'settings.documentTab.preview.title' | t }}</p>
 
             <div class="flex rounded-lg border border-slate-200 bg-white overflow-hidden">
               <button type="button" (click)="previewKind.set('factura')"
@@ -394,21 +393,21 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
                 [class.bg-orange-500]="previewKind() === 'factura'"
                 [class.text-white]="previewKind() === 'factura'"
                 [class.text-slate-500]="previewKind() !== 'factura'">
-                Factura
+                {{ 'settings.documentTab.preview.invoice' | t }}
               </button>
               <button type="button" (click)="previewKind.set('recibo')"
                 class="px-3 py-1 text-[11px] font-semibold transition-colors border-l border-slate-200"
                 [class.bg-orange-500]="previewKind() === 'recibo'"
                 [class.text-white]="previewKind() === 'recibo'"
                 [class.text-slate-500]="previewKind() !== 'recibo'">
-                Recibo
+                {{ 'settings.documentTab.preview.receipt' | t }}
               </button>
               <button type="button" (click)="previewKind.set('extracto')"
                 class="px-3 py-1 text-[11px] font-semibold transition-colors border-l border-slate-200"
                 [class.bg-orange-500]="previewKind() === 'extracto'"
                 [class.text-white]="previewKind() === 'extracto'"
                 [class.text-slate-500]="previewKind() !== 'extracto'">
-                Extracto
+                {{ 'settings.documentTab.preview.statement' | t }}
               </button>
             </div>
           </div>
@@ -446,7 +445,7 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
           </div>
 
           <p class="text-[11px] text-slate-400 mt-3">
-            Dados de exemplo. Reflecte as alterações enquanto escreve, antes de guardar.
+            {{ 'settings.documentTab.preview.note' | t }}
           </p>
         </div>
       </div>
@@ -467,9 +466,9 @@ export class DocumentSettingsTabComponent {
   tokens = EMAIL_TOKENS;
 
   copyOptions = [
-    { value: 1, label: 'Apenas o original' },
-    { value: 2, label: 'Original e duplicado' },
-    { value: 3, label: 'Original, duplicado e triplicado' }
+    { value: 1, label: t('settings.documentTab.print.copies1') },
+    { value: 2, label: t('settings.documentTab.print.copies2') },
+    { value: 3, label: t('settings.documentTab.print.copies3') }
   ];
 
   isSaving = this.settings.isSaving;
@@ -621,7 +620,7 @@ export class DocumentSettingsTabComponent {
     if (!file) return;
 
     if (file.size > MAX_LOGO_BYTES) {
-      this.snackBar.open('O ficheiro é demasiado grande. Máximo de 2 MB.', 'Fechar', { duration: 4000 });
+      this.snackBar.open(t('settings.documentTab.messages.fileTooLarge'), t('common.actions.close'), { duration: 4000 });
       input.value = '';
       return;
     }
@@ -633,7 +632,7 @@ export class DocumentSettingsTabComponent {
       input.value = '';
     };
     reader.onerror = () => {
-      this.snackBar.open('Não foi possível ler o ficheiro.', 'Fechar', { duration: 4000 });
+      this.snackBar.open(t('settings.documentTab.messages.fileReadError'), t('common.actions.close'), { duration: 4000 });
       input.value = '';
     };
     reader.readAsDataURL(file);
@@ -658,12 +657,12 @@ export class DocumentSettingsTabComponent {
     if (ok) {
       this.logoUrl.set(dataUrl);
       this.snackBar.open(
-        dataUrl ? 'Logótipo actualizado.' : 'Logótipo removido.',
-        'Fechar',
+        dataUrl ? t('settings.documentTab.messages.logoUpdated') : t('settings.documentTab.messages.logoRemoved'),
+        t('common.actions.close'),
         { duration: 3000 }
       );
     } else {
-      this.snackBar.open('Não foi possível guardar o logótipo.', 'Fechar', { duration: 4000 });
+      this.snackBar.open(t('settings.documentTab.messages.logoSaveError'), t('common.actions.close'), { duration: 4000 });
     }
   }
 
@@ -685,9 +684,9 @@ export class DocumentSettingsTabComponent {
 
     this.snackBar.open(
       ok
-        ? 'Personalização de documentos actualizada com sucesso.'
-        : 'Não foi possível guardar a personalização.',
-      'Fechar',
+        ? t('settings.documentTab.messages.saved')
+        : t('settings.documentTab.messages.saveError'),
+      t('common.actions.close'),
       { duration: ok ? 3000 : 4000 }
     );
 

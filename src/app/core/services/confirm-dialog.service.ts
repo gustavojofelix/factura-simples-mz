@@ -18,8 +18,8 @@ export class ConfirmDialogService {
     open: false,
     title: '',
     message: '',
-    confirmLabel: 'Confirmar',
-    cancelLabel: 'Cancelar',
+    confirmLabel: '',
+    cancelLabel: '',
     danger: false
   });
 

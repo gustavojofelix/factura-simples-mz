@@ -1,1 +1,27 @@
-{}
+{
+  "title": "Meu Perfil",
+  "subtitle": "Visualize e atualize as suas informações pessoais e credenciais.",
+  "personalInfo": "Informações Pessoais",
+  "fullName": "Nome Completo",
+  "email": "Email",
+  "changePassword": "Alterar Palavra-passe",
+  "currentPassword": "Palavra-passe Atual",
+  "currentPasswordPlaceholder": "Introduza a palavra-passe atual",
+  "newPassword": "Nova Palavra-passe",
+  "newPasswordPlaceholder": "Mínimo 6 caracteres",
+  "confirmPassword": "Confirmar Nova Palavra-passe",
+  "confirmPasswordPlaceholder": "Digite novamente",
+  "edit": "Editar Perfil",
+  "saveChanges": "Guardar Alterações",
+  "errors": {
+    "required": "Este campo é obrigatório",
+    "email": "Email inválido",
+    "phoneFormat": "Formato: +258 XX XXX XXXX",
+    "currentPasswordRequired": "Precisa informar a palavra-passe atual para definir uma nova",
+    "passwordMismatch": "As palavras-passe não coincidem"
+  },
+  "messages": {
+    "updated": "Perfil atualizado com sucesso!",
+    "updateError": "Erro ao atualizar perfil"
+  }
+}

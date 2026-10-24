@@ -3,6 +3,7 @@ import { SupabaseService } from './supabase.service';
 import { AuthService } from './auth.service';
 import { AuditLogService } from './audit-log.service';
 import { friendlyErrorMessage, friendlyFunctionError } from '../utils/error-message';
+import { currentLanguage, t } from '../i18n/i18n';
 
 export interface CompanyUser {
   id: string;
@@ -162,19 +163,18 @@ export class UserManagementService {
     fullName?: string,
     phone?: string,
     companyName?: string,
-    inviterName?: string,
-    roleName?: string
+    inviterName?: string
   ): Promise<UserAccessResult> {
     try {
       const email = (rawEmail || '').trim().toLowerCase();
-      if (!email) return { ok: false, error: 'Indique o email do utilizador.' };
+      if (!email) return { ok: false, error: t('company.users.emailRequired') };
       if ((role as string) === 'owner') {
-        return { ok: false, error: 'Não é possível atribuir a função de proprietário.' };
+        return { ok: false, error: t('company.users.cannotAssignOwner') };
       }
 
       const currentUser = this.authService.currentUser();
       if (currentUser?.email?.toLowerCase() === email) {
-        return { ok: false, error: 'Não pode alterar o seu próprio acesso.' };
+        return { ok: false, error: t('company.users.cannotChangeOwnAccess') };
       }
 
       // 1. O utilizador já existe e já tem acesso a esta empresa?
@@ -193,7 +193,7 @@ export class UserManagementService {
 
         if (existing) {
           if (existing.role === 'owner') {
-            return { ok: false, error: 'Este utilizador é o proprietário da empresa; a sua função não pode ser alterada.' };
+            return { ok: false, error: t('company.users.ownerRoleLocked') };
           }
           if (existing.role !== role || !existing.is_active) {
             const { data: updated, error: updateError } = await this.supabase.client
@@ -203,7 +203,7 @@ export class UserManagementService {
               .select('id');
             if (updateError) throw updateError;
             if (!updated?.length) {
-              return { ok: false, error: 'Não tem permissão para alterar utilizadores desta empresa. Apenas o proprietário o pode fazer.' };
+              return { ok: false, error: t('company.users.noPermission') };
             }
             await this.auditLogService.log(
               'Atualizou Papel do Utilizador', 'users',
@@ -217,14 +217,15 @@ export class UserManagementService {
 
       // 2. Novo acesso: enviar convite (cria a conta, se ainda não existir).
       const { data: inviteData, error: inviteError } = await this.supabase.client.functions.invoke('invite-user', {
-        body: { email, fullName, phone, companyId, companyName, role: roleName || role, inviterName }
+        // O nome do papel é traduzido na Edge Function, na língua do e-mail (roleCode).
+        body: { email, fullName, phone, companyId, companyName, roleCode: role, inviterName, language: currentLanguage() }
       });
       if (inviteError) {
-        return { ok: false, error: await friendlyFunctionError(inviteError, 'Não foi possível enviar o convite.') };
+        return { ok: false, error: await friendlyFunctionError(inviteError, t('company.users.inviteFailed')) };
       }
       targetUserId = inviteData?.user?.id || targetUserId;
       if (!targetUserId) {
-        return { ok: false, error: 'Não foi possível criar a conta do utilizador.' };
+        return { ok: false, error: t('company.users.createAccountFailed') };
       }
 
       // 3. Criar o acesso
@@ -251,7 +252,7 @@ export class UserManagementService {
       return { ok: true, warning: inviteData?.warning };
     } catch (error) {
       console.error('Error adding user to company:', error);
-      return { ok: false, error: friendlyErrorMessage(error, 'Não foi possível adicionar o utilizador.') };
+      return { ok: false, error: friendlyErrorMessage(error, t('company.users.addFailed')) };
     }
   }
 
@@ -320,7 +321,7 @@ export class UserManagementService {
   async removeUserFromCompany(userId: string, companyId: string): Promise<UserAccessResult> {
     try {
       if (userId === this.authService.currentUser()?.id) {
-        return { ok: false, error: 'Não pode remover o seu próprio acesso.' };
+        return { ok: false, error: t('company.users.cannotRemoveOwnAccess') };
       }
       const user = this.companyUsersSignal().find(u => u.user_id === userId);
       const { data, error } = await this.supabase.client
@@ -334,7 +335,7 @@ export class UserManagementService {
       if (error) throw error;
       // Com RLS, um DELETE sem permissão não dá erro: apenas não apaga nada.
       if (!data?.length) {
-        return { ok: false, error: 'Não foi possível remover o acesso. Apenas o proprietário da empresa pode remover utilizadores, e o proprietário não pode ser removido.' };
+        return { ok: false, error: t('company.users.removeDenied') };
       }
 
       await this.auditLogService.log(
@@ -350,7 +351,7 @@ export class UserManagementService {
       return { ok: true };
     } catch (error) {
       console.error('Error removing user:', error);
-      return { ok: false, error: friendlyErrorMessage(error, 'Não foi possível remover o acesso.') };
+      return { ok: false, error: friendlyErrorMessage(error, t('company.users.removeFailed')) };
     }
   }
 
@@ -395,12 +396,12 @@ export class UserManagementService {
         return {
           ok: false,
           error: denied
-            ? 'Apenas o proprietário da empresa pode alterar as configurações do sistema.'
-            : friendlyErrorMessage(error, 'Não foi possível guardar as configurações.')
+            ? t('company.users.settingsOwnerOnly')
+            : friendlyErrorMessage(error, t('company.users.settingsSaveFailed'))
         };
       }
       if (!data) {
-        return { ok: false, error: 'Apenas o proprietário da empresa pode alterar as configurações do sistema.' };
+        return { ok: false, error: t('company.users.settingsOwnerOnly') };
       }
 
       await this.auditLogService.log(
@@ -416,7 +417,7 @@ export class UserManagementService {
       return { ok: true, data: data as SystemSettings };
     } catch (error) {
       console.error('Error updating system settings:', error);
-      return { ok: false, error: friendlyErrorMessage(error, 'Não foi possível guardar as configurações.') };
+      return { ok: false, error: friendlyErrorMessage(error, t('company.users.settingsSaveFailed')) };
     }
   }
 

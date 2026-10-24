@@ -2,8 +2,15 @@ import { TestBed } from '@angular/core/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { ErrorHandlerService } from './error-handler.service';
+import { LANGUAGE_STORAGE_KEY, initI18n } from '../i18n/i18n';
 
 describe('ErrorHandlerService', () => {
+  // Os textos esperados são os de pt-MZ.
+  beforeAll(async () => {
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, 'pt-MZ');
+    await initI18n();
+  });
+
   let service: ErrorHandlerService;
   let mockSnackBar: any;
   let mockRouter: any;

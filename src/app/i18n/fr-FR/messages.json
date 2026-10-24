@@ -1,1 +1,59 @@
-{}
+{
+  "subscription": {
+    "paymentRequestSent": "Demande envoyée au {phone}. Attendez la confirmation sur votre téléphone.",
+    "paymentRequestError": "Erreur lors de l'envoi de la demande de paiement. Veuillez réessayer.",
+    "paymentUnexpectedError": "Erreur inattendue pendant le paiement"
+  },
+  "voucher": {
+    "codeRequired": "Le code du bon de réduction est obligatoire.",
+    "createError": "Erreur lors de la création du bon de réduction.",
+    "enterCode": "Veuillez saisir un code de bon de réduction.",
+    "notFound": "Code de bon de réduction invalide ou introuvable.",
+    "disabled": "Ce bon de réduction a été désactivé.",
+    "notYetActive": "Ce bon de réduction n'est pas encore actif.",
+    "expired": "Ce bon de réduction a expiré.",
+    "usageLimit": "Ce bon de réduction a atteint le nombre maximal d'utilisations.",
+    "otherCompany": "Ce bon de réduction est exclusif et ne peut pas être utilisé par ce client.",
+    "otherUser": "Ce bon de réduction est réservé à un autre compte utilisateur.",
+    "minAmount": "Ce bon de réduction exige un montant d'achat minimum de {amount} MZN.",
+    "applied": "Bon de réduction appliqué avec succès !",
+    "codeFallback": "Code"
+  },
+  "pagination": {
+    "range": "{start}–{end} sur {total}",
+    "perPage": "Lignes/page",
+    "first": "Première page",
+    "previous": "Page précédente",
+    "next": "Page suivante",
+    "last": "Dernière page"
+  },
+  "planLimit": {
+    "title": "Limite de la formule atteinte",
+    "bodyBefore": "Votre formule actuelle ne permet pas de créer davantage de",
+    "bodyAfter": ".",
+    "upgradeHint": "Passez à une formule supérieure pour continuer à ajouter des {feature} sans restriction.",
+    "benefitProducts": "Produits et services illimités",
+    "benefitInvoicing": "Facturation illimitée",
+    "benefitSupport": "Assistance prioritaire",
+    "upgradeNow": "Changer de formule maintenant",
+    "later": "Plus tard",
+    "features": {
+      "products": "produits / services",
+      "invoices": "factures",
+      "clients": "clients",
+      "companies": "entreprises",
+      "users": "utilisateurs",
+      "items": "éléments"
+    }
+  },
+  "richText": {
+    "bold": "Gras",
+    "italic": "Italique",
+    "underline": "Souligné",
+    "bulletList": "Liste",
+    "numberedList": "Liste numérotée",
+    "insertLink": "Insérer un lien",
+    "clearFormatting": "Effacer la mise en forme",
+    "linkPrompt": "Adresse du lien (https://… ou mailto:…)"
+  }
+}

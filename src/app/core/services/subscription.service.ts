@@ -1,6 +1,7 @@
 import { Injectable, signal } from "@angular/core";
 import { SupabaseService } from "./supabase.service";
 import { AuditLogService } from "./audit-log.service";
+import { t } from "../i18n/i18n";
 
 export interface Subscription {
   id: string;
@@ -820,7 +821,7 @@ export class SubscriptionService {
       if (!error && data && data.success) {
         return {
           success: true,
-          message: data.message || `Pedido enviado para ${phoneNumber}. Aguarde a confirmação no seu telemóvel.`,
+          message: data.message || t("messages.subscription.paymentRequestSent", { phone: phoneNumber }),
           referenceCode: data.referenceCode,
         };
       }
@@ -828,14 +829,14 @@ export class SubscriptionService {
       // Edge Function failed or returned success:false
       return {
         success: false,
-        error: data?.error || error?.message || "Erro ao enviar pedido de pagamento. Tente novamente.",
+        error: data?.error || error?.message || t("messages.subscription.paymentRequestError"),
         code: data?.code,
       };
     } catch (err: any) {
       console.error("Exception processing mobile payment:", err);
       return {
         success: false,
-        error: err.message || "Erro inesperado durante o pagamento",
+        error: err.message || t("messages.subscription.paymentUnexpectedError"),
       };
     }
   }

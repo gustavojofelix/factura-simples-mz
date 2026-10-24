@@ -1,1 +1,258 @@
-{}
+{
+  "page": {
+    "processing": "Processing the invitation...",
+    "title": "Settings",
+    "subtitle": "Manage system settings, subscriptions, companies and users"
+  },
+  "tabs": {
+    "system": "System",
+    "subscriptions": "Subscriptions",
+    "companies": "Companies",
+    "users": "Users",
+    "documents": "Documents"
+  },
+  "companySelect": {
+    "label": "Select a company"
+  },
+  "columns": {
+    "actions": "Actions"
+  },
+  "system": {
+    "title": "System settings",
+    "selectHint": "Select the company to configure",
+    "ownerOnlyNotice": "Only the company owner can change the system settings. You can view them, but not save changes.",
+    "language": "Language",
+    "languageInfo": "Fiscal documents are always issued in Portuguese. Choose the interface language with the flag selector in the top-right corner.",
+    "timezone": "Time zone",
+    "timezoneHint": "Used to show dates and times on screen, in documents and in exports",
+    "dateFormat": "Date format",
+    "dateFormatHint": "Form 30 (Modelo 30) always uses DD/MM/YYYY",
+    "notificationEmail": "Notification email",
+    "notificationEmailPlaceholder": "notifications@company.com",
+    "invalidEmail": "Invalid email",
+    "notificationEmailHint": "Receives tax reminders and subscription confirmations, in addition to the owner's email",
+    "enableNotifications": "Enable notifications",
+    "enableNotificationsHint": "Off: tax reminders are no longer sent by email (they remain visible in the app). Payment and invoice emails are still sent.",
+    "save": "Save settings",
+    "empty": "Select a company to configure"
+  },
+  "subscription": {
+    "title": "Subscription management",
+    "selectHint": "Select the company to view its subscription",
+    "currentPlan": "Current plan: {plan}",
+    "startDate": "Start date",
+    "expiryDate": "Expiry date",
+    "nextBilling": "Next billing",
+    "paymentMethod": "Payment method",
+    "notDefined": "Not set",
+    "trialExpired": "Free trial expired",
+    "expired": "Subscription expired",
+    "lockedMessage": "The system is locked. Choose a plan below to use all features again.",
+    "daysRemaining": {
+      "one": "<strong>{count}</strong> day left in the current period.",
+      "other": "<strong>{count}</strong> days left in the current period."
+    },
+    "pastDueTitle": "Payment overdue",
+    "pastDueMessage": "Please update your payment method to keep using the service.",
+    "noPlan": "This company does not have an active plan yet. Choose one of the plans below to subscribe.",
+    "availablePlans": "Available plans",
+    "upgradeInfo": "You can upgrade at any time. Downgrading is not possible while the subscription is active.",
+    "mostPopular": "Most popular",
+    "trial": "Trial",
+    "trialDays": "14-day free trial",
+    "period": "Period: {cycle}",
+    "currentPlanBadge": "✓ Current plan",
+    "notAvailable": "Not available",
+    "switchTo": "Switch to {cycle}",
+    "downgradeNotAllowed": "Downgrade not allowed",
+    "downgradeBlockedShort": "Downgrading is not possible while the subscription is active",
+    "availableAfter": "Available after {date}",
+    "activateTrial": "Start free trial",
+    "upgrade": "Upgrade (M-Pesa / e-Mola)",
+    "subscribe": "Subscribe (M-Pesa / e-Mola)",
+    "empty": "Select a company to view its subscription and the available plans"
+  },
+  "status": {
+    "active": "Active",
+    "trialing": "Trial",
+    "pastDue": "Overdue",
+    "cancelled": "Cancelled"
+  },
+  "cycles": {
+    "monthly": "Monthly (30 days)",
+    "quarterly": "Quarterly (90 days)",
+    "semiannual": "Half-yearly (180 days)",
+    "yearly": "Yearly (360 days)",
+    "quarterlyShort": "90 days",
+    "semiannualShort": "180 days"
+  },
+  "roles": {
+    "owner": "Owner",
+    "admin": "Administrator",
+    "manager": "Manager",
+    "user": "User",
+    "invited": "Guest"
+  },
+  "account": {
+    "title": "Account",
+    "address": "Address:",
+    "name": "Account name"
+  },
+  "companies": {
+    "title": "Company management",
+    "subtitle": "Companies in this account",
+    "new": "New company",
+    "contact": "Contact",
+    "empty": "No companies found",
+    "createFirst": "Create your first company"
+  },
+  "users": {
+    "title": "User management",
+    "subtitle": "Manage users and assign them to companies",
+    "add": "Add user",
+    "email": "Email",
+    "companiesRoles": "Companies and roles",
+    "inactive": "- Inactive",
+    "manageAccess": "Manage access",
+    "you": "You",
+    "empty": "No users found",
+    "addFirst": "Add your first user"
+  },
+  "documents": {
+    "title": "Document customisation",
+    "description": "Set the look of your invoices and receipts and the text of the messages sent to your clients. The settings apply to all documents of the selected company.",
+    "selectHint": "Select the company to customise"
+  },
+  "messages": {
+    "accountNameUpdated": "Account name updated.",
+    "accountUpdateFailed": "Could not update the account.",
+    "ownerOnly": "Only the company owner can change the system settings.",
+    "selectCompanyFirst": "Select a company first",
+    "settingsUpdated": "Settings updated successfully",
+    "settingsUpdateError": "Error updating settings",
+    "companyUpdated": "Company updated successfully",
+    "companyCreated": "Company created successfully",
+    "sessionExpiredCreate": "Your session has expired. Sign in again to create the company.",
+    "companyUpdateFailed": "Could not update the company.",
+    "companyCreateFailed": "Could not create the company.",
+    "deleteCompanyConfirm": "Are you sure you want to delete the company \"{name}\"?",
+    "companyDeleted": "Company deleted successfully",
+    "companyDeleteFailed": "Could not delete the company.",
+    "accessUpdated": "Access updated successfully",
+    "inviteSent": "Invitation sent to {email}",
+    "removeAccessConfirm": "Are you sure you want to remove this access?",
+    "accessRemoved": "Access removed successfully",
+    "removeAccessFailed": "Could not remove the access.",
+    "planChanged": "Plan changed successfully",
+    "planChangeError": "Error changing plan",
+    "downgradeToTrial": "You cannot go back to the free trial after subscribing to a paid plan.",
+    "downgradeActive": "Downgrading is not possible while the subscription is active."
+  },
+  "documentTab": {
+    "noCompany": "Select a company to customise its documents.",
+    "readOnly": "Only the company owner or an administrator can change these settings.",
+    "template": {
+      "title": "Document template",
+      "subtitle": "Choose the layout of your invoices, receipts and statements."
+    },
+    "templates": {
+      "classico": {
+        "label": "Classic",
+        "description": "Logo on the left and a table with a grey header. This is the current look of your invoices."
+      },
+      "moderno": {
+        "label": "Modern",
+        "description": "Top band in the brand colour, with a centred logo and a striped table."
+      },
+      "minimalista": {
+        "label": "Minimalist",
+        "description": "No backgrounds or bands. Just a thin rule in the brand colour and a table without a grid."
+      }
+    },
+    "brand": {
+      "title": "Brand",
+      "subtitle": "The logo is shared with the company details.",
+      "primaryColor": "Primary colour",
+      "accentColor": "Secondary colour",
+      "colorFormat": "Use a value such as {example}.",
+      "showLogo": "Show the logo on documents",
+      "showBankDetails": "Show bank details",
+      "bankDetailsHint": "Banks marked \"Show on invoices\" (main account first), M-Pesa and e-Mola appear at the bottom of invoices and statements. Edit them in the company details: Settings → Companies → edit → Bank details.",
+      "noBankDetails": "This company has no bank details yet, so nothing will be shown on documents.",
+      "logo": "Logo",
+      "noLogo": "No logo",
+      "replace": "Replace",
+      "logoFormats": "PNG or JPG, up to 2 MB."
+    },
+    "texts": {
+      "title": "Document texts",
+      "subtitle": "Leave blank to show nothing.",
+      "thankYou": "Thank-you message",
+      "thankYouPlaceholder": "E.g. Thank you for your business.",
+      "defaultObservations": "Default notes",
+      "defaultObservationsPlaceholder": "E.g. Payment on delivery.",
+      "defaultObservationsHint": "Fills in the notes when creating a new invoice. Invoices already issued are not changed.",
+      "footer": "Footer",
+      "footerPlaceholder": "E.g. Computer-generated document."
+    },
+    "print": {
+      "title": "Printing",
+      "subtitle": "Each copy is printed on its own labelled page.",
+      "invoiceCopies": "Invoice copies",
+      "receiptCopies": "Receipt copies",
+      "copies1": "Original only",
+      "copies2": "Original and duplicate",
+      "copies3": "Original, duplicate and triplicate"
+    },
+    "email": {
+      "title": "Email messages",
+      "subtitle": "Click a placeholder to insert it into the field you were typing in.",
+      "subject": "Subject",
+      "greeting": "Greeting",
+      "body": "Message body",
+      "tooLong": "Text is too long.",
+      "signature": "Sign-off",
+      "receiptBody": "Receipt message body",
+      "statementSubject": "Account statement subject",
+      "statementBody": "Account statement message body",
+      "statementHint": "Use the statement placeholders, such as period and balance.",
+      "replyTo": "Reply to (optional)",
+      "replyToPlaceholder": "info@yourcompany.co.mz",
+      "replyToHint": "Client replies are forwarded to this address.",
+      "invalidEmail": "Invalid email address."
+    },
+    "tokens": {
+      "client": "Client name",
+      "company": "Your company name",
+      "invoiceNumber": "Invoice number",
+      "receiptNumber": "Receipt number",
+      "total": "Document total",
+      "amountPaid": "Amount already paid",
+      "amountDue": "Amount outstanding",
+      "issueDate": "Issue date",
+      "dueDate": "Due date",
+      "period": "Statement: period (01/08/2026 to 31/08/2026)",
+      "openingBalance": "Statement: balance before the period",
+      "totalInvoiced": "Statement: total invoiced in the period",
+      "totalPaid": "Statement: total paid in the period",
+      "balance": "Statement: balance owed at the end date"
+    },
+    "reset": "Reset",
+    "preview": {
+      "title": "Preview",
+      "invoice": "Invoice",
+      "receipt": "Receipt",
+      "statement": "Statement",
+      "note": "Sample data. Reflects your changes as you type, before saving."
+    },
+    "messages": {
+      "fileTooLarge": "The file is too large. Maximum 2 MB.",
+      "fileReadError": "Could not read the file.",
+      "logoUpdated": "Logo updated.",
+      "logoRemoved": "Logo removed.",
+      "logoSaveError": "Could not save the logo.",
+      "saved": "Document customisation updated successfully.",
+      "saveError": "Could not save the customisation."
+    }
+  }
+}

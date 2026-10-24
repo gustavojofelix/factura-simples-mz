@@ -1,1 +1,59 @@
-{}
+{
+  "subscription": {
+    "paymentRequestSent": "Pedido enviado para {phone}. Aguarde a confirmação no seu telemóvel.",
+    "paymentRequestError": "Erro ao enviar pedido de pagamento. Tente novamente.",
+    "paymentUnexpectedError": "Erro inesperado durante o pagamento"
+  },
+  "voucher": {
+    "codeRequired": "O código do voucher é obrigatório.",
+    "createError": "Erro ao criar voucher.",
+    "enterCode": "Por favor introduza um código de voucher.",
+    "notFound": "Código de voucher inválido ou não encontrado.",
+    "disabled": "Este voucher foi desativado.",
+    "notYetActive": "Este voucher ainda não se encontra ativo.",
+    "expired": "Este voucher já expirou.",
+    "usageLimit": "Este voucher já atingiu o limite máximo de utilizações.",
+    "otherCompany": "Este voucher é exclusivo e não pode ser utilizado por este cliente.",
+    "otherUser": "Este voucher é exclusivo para outra conta de utilizador.",
+    "minAmount": "Este voucher requer um valor mínimo de compra de {amount} MZN.",
+    "applied": "Voucher aplicado com sucesso!",
+    "codeFallback": "Código"
+  },
+  "pagination": {
+    "range": "{start}–{end} de {total}",
+    "perPage": "Registos/página",
+    "first": "Primeira página",
+    "previous": "Página anterior",
+    "next": "Próxima página",
+    "last": "Última página"
+  },
+  "planLimit": {
+    "title": "Limite do plano atingido",
+    "bodyBefore": "O seu plano actual não permite criar mais",
+    "bodyAfter": ".",
+    "upgradeHint": "Actualize o seu plano para continuar a adicionar {feature} sem restrições.",
+    "benefitProducts": "Produtos e serviços ilimitados",
+    "benefitInvoicing": "Facturação sem limites",
+    "benefitSupport": "Suporte prioritário",
+    "upgradeNow": "Actualizar plano agora",
+    "later": "Talvez mais tarde",
+    "features": {
+      "products": "produtos / serviços",
+      "invoices": "facturas",
+      "clients": "clientes",
+      "companies": "empresas",
+      "users": "utilizadores",
+      "items": "itens"
+    }
+  },
+  "richText": {
+    "bold": "Negrito",
+    "italic": "Itálico",
+    "underline": "Sublinhado",
+    "bulletList": "Lista",
+    "numberedList": "Lista numerada",
+    "insertLink": "Inserir ligação",
+    "clearFormatting": "Limpar formatação",
+    "linkPrompt": "Endereço da ligação (https://… ou mailto:…)"
+  }
+}

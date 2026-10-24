@@ -9,6 +9,7 @@ import {
 } from '../../shared/components/error-dialog.component';
 import { friendlyErrorMessage } from '../utils/error-message';
 import { AuthService } from './auth.service';
+import { currentLocale, t } from '../i18n/i18n';
 
 export interface ErrorDialogOptions {
   /** Título do popup, ex.: "Não foi possível criar a empresa". */
@@ -36,7 +37,7 @@ export class ErrorDialogService {
 
   show(error: unknown, options: ErrorDialogOptions = {}): Promise<ErrorDialogResult> {
     const data: ErrorDialogData = {
-      title: options.title || 'Ocorreu um erro',
+      title: options.title || t('errors.dialog.defaultTitle'),
       message: options.message || friendlyErrorMessage(error),
       details: this.collectDetails(error, options.context),
       retryLabel: options.retryLabel
@@ -63,20 +64,20 @@ export class ErrorDialogService {
       }
     };
 
-    add('Acção', context);
+    add(t('errors.dialog.details.action'), context);
     if (typeof error === 'string') {
-      add('Mensagem', error);
+      add(t('errors.dialog.details.message'), error);
     } else {
-      add('Código', err.code);
-      add('Detalhe', err.details);
-      add('Sugestão', err.hint);
-      add('Mensagem', err.message ?? err.error_description ?? err.error);
+      add(t('errors.dialog.details.code'), err.code);
+      add(t('errors.dialog.details.detail'), err.details);
+      add(t('errors.dialog.details.hint'), err.hint);
+      add(t('errors.dialog.details.message'), err.message ?? err.error_description ?? err.error);
       add('HTTP', err.status);
     }
-    add('Página', window.location.href);
-    add('Utilizador', this.authService.currentUser()?.email);
-    add('Data/hora', new Date().toLocaleString('pt-PT'));
-    add('Navegador', navigator.userAgent);
+    add(t('errors.dialog.details.page'), window.location.href);
+    add(t('errors.dialog.details.user'), this.authService.currentUser()?.email);
+    add(t('errors.dialog.details.dateTime'), new Date().toLocaleString(currentLocale()));
+    add(t('errors.dialog.details.browser'), navigator.userAgent);
     return details;
   }
 }

@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { AuditLogService } from './audit-log.service';
+import { currentLocale, t } from '../i18n/i18n';
 
 export interface Voucher {
   id?: string;
@@ -94,7 +95,7 @@ export class VoucherService {
 
   async createVoucher(voucher: Partial<Voucher>): Promise<Voucher | null> {
     const code = (voucher.code || '').trim().toUpperCase();
-    if (!code) throw new Error('O código do voucher é obrigatório.');
+    if (!code) throw new Error(t('messages.voucher.codeRequired'));
 
     const payload = {
       code,
@@ -123,7 +124,7 @@ export class VoucherService {
 
     if (error) {
       console.error('Error creating voucher:', error);
-      throw new Error(error.message || 'Erro ao criar voucher.');
+      throw new Error(error.message || t('messages.voucher.createError'));
     }
 
     await this.auditLogService.log('Criou Voucher Promocional', 'vouchers', { code: payload.code, scope: payload.scope });
@@ -211,7 +212,7 @@ export class VoucherService {
   ): Promise<VoucherValidationResult> {
     const code = (rawCode || '').trim().toUpperCase();
     if (!code) {
-      return { valid: false, message: 'Por favor introduza um código de voucher.' };
+      return { valid: false, message: t('messages.voucher.enterCode') };
     }
 
     const { data, error } = await this.supabase.client
@@ -224,7 +225,7 @@ export class VoucherService {
       .maybeSingle();
 
     if (error || !data) {
-      return { valid: false, message: 'Código de voucher inválido ou não encontrado.' };
+      return { valid: false, message: t('messages.voucher.notFound') };
     }
 
     const voucher: Voucher = {
@@ -236,21 +237,21 @@ export class VoucherService {
 
     // 1. Check if active
     if (!voucher.is_active) {
-      return { valid: false, message: 'Este voucher foi desativado.' };
+      return { valid: false, message: t('messages.voucher.disabled') };
     }
 
     // 2. Check dates
     const now = new Date();
     if (voucher.valid_from && new Date(voucher.valid_from) > now) {
-      return { valid: false, message: 'Este voucher ainda não se encontra ativo.' };
+      return { valid: false, message: t('messages.voucher.notYetActive') };
     }
     if (voucher.valid_until && new Date(voucher.valid_until) < now) {
-      return { valid: false, message: 'Este voucher já expirou.' };
+      return { valid: false, message: t('messages.voucher.expired') };
     }
 
     // 3. Check usage limit
     if (voucher.max_uses !== null && voucher.max_uses !== undefined && voucher.uses_count! >= voucher.max_uses) {
-      return { valid: false, message: 'Este voucher já atingiu o limite máximo de utilizações.' };
+      return { valid: false, message: t('messages.voucher.usageLimit') };
     }
 
     // 4. Check scope / Client restriction
@@ -258,14 +259,14 @@ export class VoucherService {
       if (!companyId || companyId !== voucher.target_company_id) {
         return {
           valid: false,
-          message: 'Este voucher é exclusivo e não pode ser utilizado por este cliente.'
+          message: t('messages.voucher.otherCompany')
         };
       }
     } else if (voucher.scope === 'specific_user') {
       if (!userEmail || userEmail.trim().toLowerCase() !== (voucher.target_user_email || '').toLowerCase()) {
         return {
           valid: false,
-          message: 'Este voucher é exclusivo para outra conta de utilizador.'
+          message: t('messages.voucher.otherUser')
         };
       }
     }
@@ -279,7 +280,7 @@ export class VoucherService {
     if (minAmount > 0 && price < minAmount) {
       return {
         valid: false,
-        message: `Este voucher requer um valor mínimo de compra de ${minAmount.toLocaleString('pt-MZ', { minimumFractionDigits: 2 })} MZN.`
+        message: t('messages.voucher.minAmount', { amount: minAmount.toLocaleString(currentLocale(), { minimumFractionDigits: 2 }) })
       };
     }
 
@@ -299,7 +300,7 @@ export class VoucherService {
 
     return {
       valid: true,
-      message: 'Voucher aplicado com sucesso!',
+      message: t('messages.voucher.applied'),
       voucher,
       discountAmount,
       finalPrice
@@ -415,7 +416,7 @@ export class VoucherService {
         discount_applied: Number(row.discount_applied),
         redeemed_at: row.redeemed_at,
         company_name: row.companies?.name || 'Cliente Geral',
-        voucher_code: row.vouchers?.code || 'Código'
+        voucher_code: row.vouchers?.code || t('messages.voucher.codeFallback')
       }));
     } catch (err) {
       console.error('Exception loading redemptions:', err);

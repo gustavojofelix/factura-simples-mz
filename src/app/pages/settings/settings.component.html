@@ -2,30 +2,30 @@
   @if (loading()) {
     <div class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm">
       <mat-spinner diameter="50" color="primary"></mat-spinner>
-      <p class="text-white mt-4 font-semibold text-lg">A processar o convite...</p>
+      <p class="text-white mt-4 font-semibold text-lg">{{ 'settings.page.processing' | t }}</p>
     </div>
   }
 
   <div class="max-w-7xl mx-auto">
     <div class="mb-6">
-      <h1 class="text-3xl font-bold text-gray-900">Configurações</h1>
-      <p class="text-gray-600 mt-2">Gerencie as configurações do sistema, subscrições, empresas e utilizadores</p>
+      <h1 class="text-3xl font-bold text-gray-900">{{ 'settings.page.title' | t }}</h1>
+      <p class="text-gray-600 mt-2">{{ 'settings.page.subtitle' | t }}</p>
     </div>
 
     <mat-tab-group [(selectedIndex)]="selectedTab" class="settings-tabs bg-white rounded-2xl shadow-sm">
-      <mat-tab label="Sistema" [disabled]="locked()">
+      <mat-tab [label]="'settings.tabs.system' | t" [disabled]="locked()">
         <div class="p-6">
-          <h2 class="text-xl font-semibold mb-4">Configurações do Sistema</h2>
+          <h2 class="text-xl font-semibold mb-4">{{ 'settings.system.title' | t }}</h2>
 
           <div class="mb-4">
             <mat-form-field appearance="outline" class="w-full md:w-1/2">
-              <mat-label>Selecione uma Empresa</mat-label>
+              <mat-label>{{ 'settings.companySelect.label' | t }}</mat-label>
               <mat-select [(value)]="selectedCompanyId" (selectionChange)="loadCompanySettings($event.value)">
                 @for (company of companies(); track company.id) {
                   <mat-option [value]="company.id">{{ company.name }}</mat-option>
                 }
               </mat-select>
-              <mat-hint>Selecione a empresa para configurar</mat-hint>
+              <mat-hint>{{ 'settings.system.selectHint' | t }}</mat-hint>
             </mat-form-field>
           </div>
 
@@ -33,88 +33,86 @@
             @if (!canEditSystemSettings()) {
               <div class="mb-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
                 <mat-icon class="shrink-0 text-amber-600">lock</mat-icon>
-                <p>Apenas o proprietário da empresa pode alterar as configurações do sistema. Pode consultá-las, mas não guardar alterações.</p>
+                <p>{{ 'settings.system.ownerOnlyNotice' | t }}</p>
               </div>
             }
             <form [formGroup]="systemForm" (ngSubmit)="saveSystemSettings()" class="space-y-6">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Idioma</mat-label>
-                  <mat-select formControlName="language">
-                    @for (lang of languages; track lang.value) {
-                      <mat-option [value]="lang.value">{{ lang.label }}</mat-option>
-                    }
-                  </mat-select>
-                  <mat-hint>Outros idiomas brevemente</mat-hint>
-                </mat-form-field>
+                <div class="w-full flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                  <mat-icon class="shrink-0 text-slate-500">translate</mat-icon>
+                  <div>
+                    <p class="font-medium text-slate-800">{{ 'settings.system.language' | t }}</p>
+                    <p class="mt-1">{{ 'settings.system.languageInfo' | t }}</p>
+                  </div>
+                </div>
 
                 <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Fuso Horário</mat-label>
+                  <mat-label>{{ 'settings.system.timezone' | t }}</mat-label>
                   <mat-select formControlName="timezone">
                     @for (tz of timezones; track tz.value) {
                       <mat-option [value]="tz.value">{{ tz.label }}</mat-option>
                     }
                   </mat-select>
-                  <mat-hint>Usado para mostrar datas e horas no ecrã, documentos e exportações</mat-hint>
+                  <mat-hint>{{ 'settings.system.timezoneHint' | t }}</mat-hint>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Formato de Data</mat-label>
+                  <mat-label>{{ 'settings.system.dateFormat' | t }}</mat-label>
                   <mat-select formControlName="date_format">
                     @for (format of dateFormats; track format.value) {
                       <mat-option [value]="format.value">{{ format.label }}</mat-option>
                     }
                   </mat-select>
-                  <mat-hint>O Modelo 30 mantém sempre DD/MM/AAAA</mat-hint>
+                  <mat-hint>{{ 'settings.system.dateFormatHint' | t }}</mat-hint>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Email para Notificações</mat-label>
-                  <input matInput type="email" formControlName="notification_email" placeholder="notificacoes@empresa.com">
+                  <mat-label>{{ 'settings.system.notificationEmail' | t }}</mat-label>
+                  <input matInput type="email" formControlName="notification_email" [placeholder]="'settings.system.notificationEmailPlaceholder' | t">
                   @if (systemForm.get('notification_email')?.hasError('email') || systemForm.get('notification_email')?.hasError('pattern')) {
-                    <mat-error>Email inválido</mat-error>
+                    <mat-error>{{ 'settings.system.invalidEmail' | t }}</mat-error>
                   } @else {
-                    <mat-hint>Recebe os lembretes fiscais e confirmações de subscrição, além do email do proprietário</mat-hint>
+                    <mat-hint>{{ 'settings.system.notificationEmailHint' | t }}</mat-hint>
                   }
                 </mat-form-field>
               </div>
 
               <div class="flex flex-col gap-1">
                 <mat-slide-toggle formControlName="enable_notifications">
-                  Habilitar Notificações
+                  {{ 'settings.system.enableNotifications' | t }}
                 </mat-slide-toggle>
-                <p class="text-xs text-gray-500">Desactivado: deixa de enviar lembretes fiscais por email (continuam visíveis na aplicação). Emails de pagamentos e facturas continuam a ser enviados.</p>
+                <p class="text-xs text-gray-500">{{ 'settings.system.enableNotificationsHint' | t }}</p>
               </div>
 
               <div class="flex justify-end">
                 <button mat-raised-button color="primary" type="submit" [disabled]="systemForm.invalid || loading() || !canEditSystemSettings()">
                   <mat-icon>save</mat-icon>
-                  Guardar Configurações
+                  {{ 'settings.system.save' | t }}
                 </button>
               </div>
             </form>
           } @else {
             <div class="text-center py-8 text-gray-500">
               <mat-icon class="text-6xl mb-2">settings</mat-icon>
-              <p>Selecione uma empresa para configurar</p>
+              <p>{{ 'settings.system.empty' | t }}</p>
             </div>
           }
         </div>
       </mat-tab>
 
-      <mat-tab label="Subscrições">
+      <mat-tab [label]="'settings.tabs.subscriptions' | t">
         <div class="p-6">
-          <h2 class="text-xl font-semibold mb-4">Gestão de Subscrição</h2>
+          <h2 class="text-xl font-semibold mb-4">{{ 'settings.subscription.title' | t }}</h2>
 
           <div class="mb-4">
             <mat-form-field appearance="outline" class="w-full md:w-1/2">
-              <mat-label>Selecione uma Empresa</mat-label>
+              <mat-label>{{ 'settings.companySelect.label' | t }}</mat-label>
               <mat-select [(value)]="selectedCompanyId" (selectionChange)="loadCompanySettings($event.value)">
                 @for (company of companies(); track company.id) {
                   <mat-option [value]="company.id">{{ company.name }}</mat-option>
                 }
               </mat-select>
-              <mat-hint>Selecione a empresa para ver a subscrição</mat-hint>
+              <mat-hint>{{ 'settings.subscription.selectHint' | t }}</mat-hint>
             </mat-form-field>
           </div>
 
@@ -124,7 +122,7 @@
                 <mat-card-content>
                   <div class="flex justify-between items-start mb-4">
                     <div>
-                      <h3 class="text-lg font-semibold">Plano Actual: {{ sub.plan_name }}</h3>
+                      <h3 class="text-lg font-semibold">{{ 'settings.subscription.currentPlan' | t: { plan: sub.plan_name } }}</h3>
                       <p class="text-gray-600 font-medium">{{ getCycleLabel(sub.billing_cycle) }}</p>
                     </div>
                     <span class="px-3 py-1 rounded-full text-white text-sm" [ngClass]="getStatusColor(sub.status)">
@@ -134,24 +132,24 @@
 
                   <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 mb-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
                     <div>
-                      <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Valor</p>
+                      <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">{{ 'common.fields.amount' | t }}</p>
                       <p class="text-base font-bold text-gray-900 mt-1">{{ formatCurrency(sub.amount, sub.currency || 'MZN') }}</p>
                     </div>
                     <div>
-                      <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Data de Início</p>
+                      <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">{{ 'settings.subscription.startDate' | t }}</p>
                       <p class="text-base font-bold text-gray-900 mt-1">{{ sub.start_date ? formatDate(sub.start_date) : (formatDate(sub.created_at) || '-') }}</p>
                     </div>
                     <div>
-                      <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Data de Expiração</p>
+                      <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">{{ 'settings.subscription.expiryDate' | t }}</p>
                       <p class="text-base font-bold text-blue-600 mt-1">{{ sub.end_date ? formatDate(sub.end_date) : (sub.next_billing_date ? formatDate(sub.next_billing_date) : '-') }}</p>
                     </div>
                     <div>
-                      <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Próxima Cobrança</p>
+                      <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">{{ 'settings.subscription.nextBilling' | t }}</p>
                       <p class="text-base font-bold text-gray-900 mt-1">{{ sub.next_billing_date ? formatDate(sub.next_billing_date) : '-' }}</p>
                     </div>
                     <div>
-                      <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Método de Pagamento</p>
-                      <p class="text-base font-bold text-gray-900 mt-1 uppercase">{{ sub.payment_method || 'Não definido' }}</p>
+                      <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">{{ 'settings.subscription.paymentMethod' | t }}</p>
+                      <p class="text-base font-bold text-gray-900 mt-1 uppercase">{{ sub.payment_method || ('settings.subscription.notDefined' | t) }}</p>
                     </div>
                   </div>
 
@@ -159,21 +157,21 @@
                     <div class="bg-red-50 border border-red-200 rounded p-4 mb-4">
                       <div class="flex items-center gap-2">
                         <mat-icon class="text-red-600">lock</mat-icon>
-                        <p class="text-red-800 font-semibold">{{ sub.status === 'trialing' ? 'Período de teste expirado' : 'Subscrição expirada' }}</p>
+                        <p class="text-red-800 font-semibold">{{ (sub.status === 'trialing' ? 'settings.subscription.trialExpired' : 'settings.subscription.expired') | t }}</p>
                       </div>
-                      <p class="text-red-600 mt-2">O sistema está bloqueado. Escolha um plano abaixo para voltar a usar todas as funcionalidades.</p>
+                      <p class="text-red-600 mt-2">{{ 'settings.subscription.lockedMessage' | t }}</p>
                     </div>
                   } @else {
-                    <p class="text-sm text-slate-600 mb-4">Restam <strong>{{ subscriptionService.getDaysRemaining() }}</strong> dia(s) no período actual.</p>
+                    <p class="text-sm text-slate-600 mb-4" [innerHTML]="'settings.subscription.daysRemaining' | t: { count: subscriptionService.getDaysRemaining() }"></p>
                   }
 
                   @if (sub.status === 'past_due') {
                     <div class="bg-red-50 border border-red-200 rounded p-4 mb-4">
                       <div class="flex items-center gap-2">
                         <mat-icon class="text-red-600">warning</mat-icon>
-                        <p class="text-red-800 font-semibold">Pagamento em Atraso</p>
+                        <p class="text-red-800 font-semibold">{{ 'settings.subscription.pastDueTitle' | t }}</p>
                       </div>
-                      <p class="text-red-600 mt-2">Por favor, atualize seu método de pagamento para continuar usando o serviço.</p>
+                      <p class="text-red-600 mt-2">{{ 'settings.subscription.pastDueMessage' | t }}</p>
                     </div>
                   }
                 </mat-card-content>
@@ -181,17 +179,17 @@
             } @else {
               <div class="p-4 mb-6 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm flex items-center gap-2">
                 <mat-icon class="text-amber-600">info</mat-icon>
-                <span>Esta empresa ainda não possui um plano ativo. Escolha um dos tarifários abaixo para subscrever.</span>
+                <span>{{ 'settings.subscription.noPlan' | t }}</span>
               </div>
             }
 
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <div>
-                <h3 class="text-lg font-semibold">Planos Disponíveis</h3>
+                <h3 class="text-lg font-semibold">{{ 'settings.subscription.availablePlans' | t }}</h3>
                 @if (subscription() && hasActivePeriod()) {
                   <p class="text-xs text-slate-500 mt-1 flex items-center gap-1">
                     <mat-icon class="!w-4 !h-4 !text-base !leading-4 text-slate-400">info</mat-icon>
-                    <span>Pode fazer upgrade a qualquer momento. Não é possível fazer downgrade enquanto a subscrição estiver activa.</span>
+                    <span>{{ 'settings.subscription.upgradeInfo' | t }}</span>
                   </p>
                 }
               </div>
@@ -204,7 +202,7 @@
                   [class]="selectedCycle() === 'monthly' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
                   class="px-3 py-1.5 rounded-lg transition-all"
                 >
-                  Mensal (30 dias)
+                  {{ 'settings.cycles.monthly' | t }}
                 </button>
                 <button
                   type="button"
@@ -212,7 +210,7 @@
                   [class]="selectedCycle() === 'quarterly' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
                   class="px-3 py-1.5 rounded-lg transition-all"
                 >
-                  90 dias
+                  {{ 'settings.cycles.quarterlyShort' | t }}
                 </button>
                 <button
                   type="button"
@@ -220,7 +218,7 @@
                   [class]="selectedCycle() === 'semiannual' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
                   class="px-3 py-1.5 rounded-lg transition-all"
                 >
-                  180 dias
+                  {{ 'settings.cycles.semiannualShort' | t }}
                 </button>
                 <button
                   type="button"
@@ -228,7 +226,7 @@
                   [class]="selectedCycle() === 'yearly' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
                   class="px-3 py-1.5 rounded-lg transition-all"
                 >
-                  Anual (360 dias)
+                  {{ 'settings.cycles.yearly' | t }}
                 </button>
               </div>
             </div>
@@ -246,7 +244,7 @@
                       </div>
                       @if (plan.is_popular) {
                         <span class="inline-flex items-center gap-1 bg-amber-100 text-amber-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-amber-200 shadow-xs whitespace-nowrap">
-                          <mat-icon class="!w-3.5 !h-3.5 !text-[11px] !leading-none text-amber-600 !inline-flex !items-center">star</mat-icon><span>Mais Popular</span>
+                          <mat-icon class="!w-3.5 !h-3.5 !text-[11px] !leading-none text-amber-600 !inline-flex !items-center">star</mat-icon><span>{{ 'settings.subscription.mostPopular' | t }}</span>
                         </span>
                       }
                     </div>
@@ -254,10 +252,10 @@
                   <mat-card-content>
                     <div class="text-center my-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
                       <p class="text-3xl font-black text-slate-900">
-                        {{ plan.monthly_price === 0 ? 'Trial' : formatCurrency(getPlanPriceForCycle(plan, selectedCycle()), plan.currency || 'MZN') }}
+                        {{ plan.monthly_price === 0 ? ('settings.subscription.trial' | t) : formatCurrency(getPlanPriceForCycle(plan, selectedCycle()), plan.currency || 'MZN') }}
                       </p>
                       <p class="text-slate-500 text-xs mt-1 font-medium">
-                        {{ plan.monthly_price === 0 ? '14 dias de teste' : ('Período: ' + getCycleLabel(selectedCycle())) }}
+                        {{ plan.monthly_price === 0 ? ('settings.subscription.trialDays' | t) : ('settings.subscription.period' | t: { cycle: getCycleLabel(selectedCycle()) }) }}
                       </p>
                     </div>
 
@@ -273,17 +271,17 @@
                     @if (subscription()?.plan_name === plan.name && subscription()?.billing_cycle === selectedCycle()) {
                       <!-- Plano atual com exatamente o mesmo período selecionado -->
                       <div class="text-center py-2.5 bg-green-50 rounded-xl border border-green-200">
-                        <span class="text-green-700 font-bold text-sm">✓ Plano Atual</span>
+                        <span class="text-green-700 font-bold text-sm">{{ 'settings.subscription.currentPlanBadge' | t }}</span>
                       </div>
                     } @else if (subscription()?.plan_name === plan.name && subscription()?.billing_cycle !== selectedCycle()) {
                       <!-- Mesmo plano mas período diferente — permitir mudar o período -->
                       @if (plan.monthly_price === 0) {
                         <div class="text-center py-2.5 bg-slate-100 rounded-xl border border-slate-200">
-                          <span class="text-slate-500 font-medium text-sm">Não disponível</span>
+                          <span class="text-slate-500 font-medium text-sm">{{ 'settings.subscription.notAvailable' | t }}</span>
                         </div>
                       } @else {
                         <button mat-raised-button color="accent" class="!py-2.5 !rounded-xl !font-bold w-full" (click)="changePlan(plan)">
-                          Mudar para {{ getCycleLabel(selectedCycle()) }}
+                          {{ 'settings.subscription.switchTo' | t: { cycle: getCycleLabel(selectedCycle()) } }}
                         </button>
                       }
                     } @else {
@@ -293,12 +291,12 @@
                         <div class="text-center py-2.5 px-3 bg-slate-100 rounded-xl border border-slate-200"
                           [matTooltip]="downgradeBlockedMessage(plan)">
                           @if (plan.monthly_price === 0) {
-                            <span class="text-slate-500 font-medium text-sm">Não disponível</span>
+                            <span class="text-slate-500 font-medium text-sm">{{ 'settings.subscription.notAvailable' | t }}</span>
                           } @else {
-                            <span class="block text-slate-600 font-semibold text-sm">Downgrade não permitido</span>
-                            <span class="block text-slate-500 text-xs mt-0.5">Não é possível fazer downgrade enquanto a subscrição estiver activa</span>
+                            <span class="block text-slate-600 font-semibold text-sm">{{ 'settings.subscription.downgradeNotAllowed' | t }}</span>
+                            <span class="block text-slate-500 text-xs mt-0.5">{{ 'settings.subscription.downgradeBlockedShort' | t }}</span>
                             @if (subscription()?.end_date) {
-                              <span class="block text-slate-400 text-[11px] mt-0.5">Disponível após {{ formatDate(subscription()!.end_date!) }}</span>
+                              <span class="block text-slate-400 text-[11px] mt-0.5">{{ 'settings.subscription.availableAfter' | t: { date: formatDate(subscription()!.end_date!) } }}</span>
                             }
                           }
                         </div>
@@ -306,11 +304,11 @@
                         <div class="flex flex-col gap-2">
                           <button mat-raised-button color="primary" class="!py-2.5 !rounded-xl !font-bold" (click)="changePlan(plan)">
                             @if (plan.monthly_price === 0) {
-                              Ativar Período de Teste
+                              {{ 'settings.subscription.activateTrial' | t }}
                             } @else if (isUpgrade(plan)) {
-                              Fazer Upgrade (M-Pesa / e-Mola)
+                              {{ 'settings.subscription.upgrade' | t }}
                             } @else {
-                              Subscrever (M-Pesa / e-Mola)
+                              {{ 'settings.subscription.subscribe' | t }}
                             }
                           </button>
                         </div>
@@ -323,28 +321,28 @@
           } @else {
             <div class="text-center py-8 text-gray-500">
               <mat-icon class="text-6xl mb-2">credit_card</mat-icon>
-              <p>Selecione uma empresa para ver a subscrição e os planos disponíveis</p>
+              <p>{{ 'settings.subscription.empty' | t }}</p>
             </div>
           }
         </div>
       </mat-tab>
 
-      <mat-tab label="Empresas" [disabled]="locked()">
+      <mat-tab [label]="'settings.tabs.companies' | t" [disabled]="locked()">
         <div class="p-6">
           @if (accountService.activeAccount(); as account) {
             <mat-card class="mb-6">
               <mat-card-content>
                 <div class="flex flex-col md:flex-row md:items-end gap-4">
                   <div class="flex-1">
-                    <h3 class="text-lg font-semibold mb-1">Conta</h3>
+                    <h3 class="text-lg font-semibold mb-1">{{ 'settings.account.title' | t }}</h3>
                     <p class="text-sm text-gray-600">
-                      Endereço:
+                      {{ 'settings.account.address' | t }}
                       <a [href]="accountAddress()" class="font-medium text-ispc-orange hover:underline break-all">{{ accountAddress() }}</a>
                     </p>
                   </div>
                   @if (account.is_owner) {
                     <mat-form-field appearance="outline" class="w-full md:w-72 hide-subscript">
-                      <mat-label>Nome da conta</mat-label>
+                      <mat-label>{{ 'settings.account.name' | t }}</mat-label>
                       <input matInput [formControl]="accountNameControl" />
                     </mat-form-field>
                     <button
@@ -353,7 +351,7 @@
                       (click)="saveAccountName()"
                       [disabled]="accountNameControl.invalid || accountNameControl.pristine || savingAccountName()"
                     >
-                      Guardar
+                      {{ 'common.actions.save' | t }}
                     </button>
                   } @else {
                     <p class="text-sm text-gray-600">{{ account.name || account.slug }}</p>
@@ -365,13 +363,13 @@
 
           <div class="flex justify-between items-center mb-6">
             <div>
-              <h2 class="text-xl font-semibold">Gestão de Empresas</h2>
-              <p class="text-gray-600 text-sm">Empresas desta conta</p>
+              <h2 class="text-xl font-semibold">{{ 'settings.companies.title' | t }}</h2>
+              <p class="text-gray-600 text-sm">{{ 'settings.companies.subtitle' | t }}</p>
             </div>
             @if (accountService.isAccountOwner()) {
               <button mat-raised-button color="primary" (click)="openCompanyDialog()">
                 <mat-icon>add_business</mat-icon>
-                Nova Empresa
+                {{ 'settings.companies.new' | t }}
               </button>
             }
           </div>
@@ -381,7 +379,7 @@
               <div class="overflow-x-auto">
                 <table mat-table [dataSource]="companies()" class="w-full">
                   <ng-container matColumnDef="name">
-                    <th mat-header-cell *matHeaderCellDef class="font-semibold">Nome</th>
+                    <th mat-header-cell *matHeaderCellDef class="font-semibold">{{ 'common.fields.name' | t }}</th>
                     <td mat-cell *matCellDef="let company">
                       <div>
                         <p class="font-medium">{{ company.name }}</p>
@@ -396,7 +394,7 @@
                   </ng-container>
 
                   <ng-container matColumnDef="phone">
-                    <th mat-header-cell *matHeaderCellDef class="font-semibold">Contacto</th>
+                    <th mat-header-cell *matHeaderCellDef class="font-semibold">{{ 'settings.companies.contact' | t }}</th>
                     <td mat-cell *matCellDef="let company">
                       <div>
                         <p>{{ company.phone || '-' }}</p>
@@ -406,13 +404,13 @@
                   </ng-container>
 
                   <ng-container matColumnDef="actions">
-                    <th mat-header-cell *matHeaderCellDef class="font-semibold">Ações</th>
+                    <th mat-header-cell *matHeaderCellDef class="font-semibold">{{ 'settings.columns.actions' | t }}</th>
                     <td mat-cell *matCellDef="let company">
                       <div class="flex gap-2">
-                        <button mat-icon-button matTooltip="Editar" (click)="openCompanyDialog(company)">
+                        <button mat-icon-button [matTooltip]="'common.actions.edit' | t" (click)="openCompanyDialog(company)">
                           <mat-icon>edit</mat-icon>
                         </button>
-                        <button mat-icon-button matTooltip="Eliminar" color="warn" (click)="deleteCompany(company)">
+                        <button mat-icon-button [matTooltip]="'common.actions.delete' | t" color="warn" (click)="deleteCompany(company)">
                           <mat-icon>delete</mat-icon>
                         </button>
                       </div>
@@ -427,11 +425,11 @@
               @if (companies().length === 0) {
                 <div class="text-center py-8 text-gray-500">
                   <mat-icon class="text-6xl mb-2">business</mat-icon>
-                  <p>Nenhuma empresa encontrada</p>
+                  <p>{{ 'settings.companies.empty' | t }}</p>
                   @if (accountService.isAccountOwner()) {
                     <button mat-raised-button color="primary" (click)="openCompanyDialog()" class="mt-4">
                       <mat-icon>add</mat-icon>
-                      Criar Primeira Empresa
+                      {{ 'settings.companies.createFirst' | t }}
                     </button>
                   }
                 </div>
@@ -441,16 +439,16 @@
         </div>
       </mat-tab>
 
-      <mat-tab label="Utilizadores" [disabled]="locked()">
+      <mat-tab [label]="'settings.tabs.users' | t" [disabled]="locked()">
         <div class="p-6">
           <div class="flex justify-between items-center mb-6">
             <div>
-              <h2 class="text-xl font-semibold">Gestão de Utilizadores</h2>
-              <p class="text-gray-600 text-sm">Gerencie os utilizadores e associe-os às empresas</p>
+              <h2 class="text-xl font-semibold">{{ 'settings.users.title' | t }}</h2>
+              <p class="text-gray-600 text-sm">{{ 'settings.users.subtitle' | t }}</p>
             </div>
             <button mat-raised-button color="primary" (click)="openUserDialog()">
               <mat-icon>person_add</mat-icon>
-              Adicionar Utilizador
+              {{ 'settings.users.add' | t }}
             </button>
           </div>
 
@@ -459,12 +457,12 @@
               <div class="overflow-x-auto">
                 <table mat-table [dataSource]="allUsers()" class="w-full">
                   <ng-container matColumnDef="email">
-                    <th mat-header-cell *matHeaderCellDef class="font-semibold">Email</th>
+                    <th mat-header-cell *matHeaderCellDef class="font-semibold">{{ 'settings.users.email' | t }}</th>
                     <td mat-cell *matCellDef="let user">{{ user.user_email }}</td>
                   </ng-container>
 
                   <ng-container matColumnDef="companies">
-                    <th mat-header-cell *matHeaderCellDef class="font-semibold">Empresas e Papéis</th>
+                    <th mat-header-cell *matHeaderCellDef class="font-semibold">{{ 'settings.users.companiesRoles' | t }}</th>
                     <td mat-cell *matCellDef="let user">
                       <div class="flex flex-wrap gap-1">
                         @for (company of user.companies; track company.company_id) {
@@ -472,7 +470,7 @@
                             <span class="font-semibold">{{ company.company_name }}</span>
                             <span class="text-gray-600 ml-1">({{ getRoleLabel(company.role) }})</span>
                             @if (!company.is_active) {
-                              <span class="text-red-600 ml-1">- Inativo</span>
+                              <span class="text-red-600 ml-1">{{ 'settings.users.inactive' | t }}</span>
                             }
                           </mat-chip>
                         }
@@ -481,15 +479,15 @@
                   </ng-container>
 
                   <ng-container matColumnDef="actions">
-                    <th mat-header-cell *matHeaderCellDef class="font-semibold">Ações</th>
+                    <th mat-header-cell *matHeaderCellDef class="font-semibold">{{ 'settings.columns.actions' | t }}</th>
                     <td mat-cell *matCellDef="let user">
                       <div class="flex gap-2">
                         @if (canManageUser(user)) {
-                          <button mat-icon-button matTooltip="Gerir Acesso" (click)="openUserDialog(user)">
+                          <button mat-icon-button [matTooltip]="'settings.users.manageAccess' | t" (click)="openUserDialog(user)">
                             <mat-icon>manage_accounts</mat-icon>
                           </button>
                         } @else if (user.user_id === currentUserId()) {
-                          <span class="text-xs text-gray-500">Você</span>
+                          <span class="text-xs text-gray-500">{{ 'settings.users.you' | t }}</span>
                         }
                       </div>
                     </td>
@@ -503,10 +501,10 @@
               @if (allUsers().length === 0) {
                 <div class="text-center py-8 text-gray-500">
                   <mat-icon class="text-6xl mb-2">people_outline</mat-icon>
-                  <p>Nenhum utilizador encontrado</p>
+                  <p>{{ 'settings.users.empty' | t }}</p>
                   <button mat-raised-button color="primary" (click)="openUserDialog()" class="mt-4">
                     <mat-icon>add</mat-icon>
-                    Adicionar Primeiro Utilizador
+                    {{ 'settings.users.addFirst' | t }}
                   </button>
                 </div>
               }
@@ -515,23 +513,20 @@
         </div>
       </mat-tab>
 
-      <mat-tab label="Documentos" [disabled]="locked()">
+      <mat-tab [label]="'settings.tabs.documents' | t" [disabled]="locked()">
         <div class="p-6">
-          <h2 class="text-xl font-semibold mb-1">Personalização de Documentos</h2>
-          <p class="text-gray-600 text-sm mb-4">
-            Defina o aspecto das facturas e recibos e o texto das mensagens enviadas aos seus clientes.
-            As definições aplicam-se a todos os documentos da empresa escolhida.
-          </p>
+          <h2 class="text-xl font-semibold mb-1">{{ 'settings.documents.title' | t }}</h2>
+          <p class="text-gray-600 text-sm mb-4">{{ 'settings.documents.description' | t }}</p>
 
           <div class="mb-4">
             <mat-form-field appearance="outline" class="w-full md:w-1/2">
-              <mat-label>Selecione uma Empresa</mat-label>
+              <mat-label>{{ 'settings.companySelect.label' | t }}</mat-label>
               <mat-select [(value)]="selectedCompanyId" (selectionChange)="loadCompanySettings($event.value)">
                 @for (company of companies(); track company.id) {
                   <mat-option [value]="company.id">{{ company.name }}</mat-option>
                 }
               </mat-select>
-              <mat-hint>Selecione a empresa a personalizar</mat-hint>
+              <mat-hint>{{ 'settings.documents.selectHint' | t }}</mat-hint>
             </mat-form-field>
           </div>
 

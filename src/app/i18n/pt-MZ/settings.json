@@ -1,1 +1,258 @@
-{}
+{
+  "page": {
+    "processing": "A processar o convite...",
+    "title": "Configurações",
+    "subtitle": "Gerencie as configurações do sistema, subscrições, empresas e utilizadores"
+  },
+  "tabs": {
+    "system": "Sistema",
+    "subscriptions": "Subscrições",
+    "companies": "Empresas",
+    "users": "Utilizadores",
+    "documents": "Documentos"
+  },
+  "companySelect": {
+    "label": "Selecione uma Empresa"
+  },
+  "columns": {
+    "actions": "Ações"
+  },
+  "system": {
+    "title": "Configurações do Sistema",
+    "selectHint": "Selecione a empresa para configurar",
+    "ownerOnlyNotice": "Apenas o proprietário da empresa pode alterar as configurações do sistema. Pode consultá-las, mas não guardar alterações.",
+    "language": "Idioma",
+    "languageInfo": "Os documentos fiscais são sempre emitidos em português. A língua da interface escolhe-se no seletor de bandeiras no canto superior direito.",
+    "timezone": "Fuso Horário",
+    "timezoneHint": "Usado para mostrar datas e horas no ecrã, documentos e exportações",
+    "dateFormat": "Formato de Data",
+    "dateFormatHint": "O Modelo 30 mantém sempre DD/MM/AAAA",
+    "notificationEmail": "Email para Notificações",
+    "notificationEmailPlaceholder": "notificacoes@empresa.com",
+    "invalidEmail": "Email inválido",
+    "notificationEmailHint": "Recebe os lembretes fiscais e confirmações de subscrição, além do email do proprietário",
+    "enableNotifications": "Habilitar Notificações",
+    "enableNotificationsHint": "Desactivado: deixa de enviar lembretes fiscais por email (continuam visíveis na aplicação). Emails de pagamentos e facturas continuam a ser enviados.",
+    "save": "Guardar Configurações",
+    "empty": "Selecione uma empresa para configurar"
+  },
+  "subscription": {
+    "title": "Gestão de Subscrição",
+    "selectHint": "Selecione a empresa para ver a subscrição",
+    "currentPlan": "Plano Actual: {plan}",
+    "startDate": "Data de Início",
+    "expiryDate": "Data de Expiração",
+    "nextBilling": "Próxima Cobrança",
+    "paymentMethod": "Método de Pagamento",
+    "notDefined": "Não definido",
+    "trialExpired": "Período de teste expirado",
+    "expired": "Subscrição expirada",
+    "lockedMessage": "O sistema está bloqueado. Escolha um plano abaixo para voltar a usar todas as funcionalidades.",
+    "daysRemaining": {
+      "one": "Restam <strong>{count}</strong> dia(s) no período actual.",
+      "other": "Restam <strong>{count}</strong> dia(s) no período actual."
+    },
+    "pastDueTitle": "Pagamento em Atraso",
+    "pastDueMessage": "Por favor, atualize seu método de pagamento para continuar usando o serviço.",
+    "noPlan": "Esta empresa ainda não possui um plano ativo. Escolha um dos tarifários abaixo para subscrever.",
+    "availablePlans": "Planos Disponíveis",
+    "upgradeInfo": "Pode fazer upgrade a qualquer momento. Não é possível fazer downgrade enquanto a subscrição estiver activa.",
+    "mostPopular": "Mais Popular",
+    "trial": "Trial",
+    "trialDays": "14 dias de teste",
+    "period": "Período: {cycle}",
+    "currentPlanBadge": "✓ Plano Atual",
+    "notAvailable": "Não disponível",
+    "switchTo": "Mudar para {cycle}",
+    "downgradeNotAllowed": "Downgrade não permitido",
+    "downgradeBlockedShort": "Não é possível fazer downgrade enquanto a subscrição estiver activa",
+    "availableAfter": "Disponível após {date}",
+    "activateTrial": "Ativar Período de Teste",
+    "upgrade": "Fazer Upgrade (M-Pesa / e-Mola)",
+    "subscribe": "Subscrever (M-Pesa / e-Mola)",
+    "empty": "Selecione uma empresa para ver a subscrição e os planos disponíveis"
+  },
+  "status": {
+    "active": "Ativo",
+    "trialing": "Teste",
+    "pastDue": "Em Atraso",
+    "cancelled": "Cancelado"
+  },
+  "cycles": {
+    "monthly": "Mensal (30 dias)",
+    "quarterly": "Trimestral (90 dias)",
+    "semiannual": "Semestral (180 dias)",
+    "yearly": "Anual (360 dias)",
+    "quarterlyShort": "90 dias",
+    "semiannualShort": "180 dias"
+  },
+  "roles": {
+    "owner": "Proprietário",
+    "admin": "Administrador",
+    "manager": "Gestor",
+    "user": "Utilizador",
+    "invited": "Convidado"
+  },
+  "account": {
+    "title": "Conta",
+    "address": "Endereço:",
+    "name": "Nome da conta"
+  },
+  "companies": {
+    "title": "Gestão de Empresas",
+    "subtitle": "Empresas desta conta",
+    "new": "Nova Empresa",
+    "contact": "Contacto",
+    "empty": "Nenhuma empresa encontrada",
+    "createFirst": "Criar Primeira Empresa"
+  },
+  "users": {
+    "title": "Gestão de Utilizadores",
+    "subtitle": "Gerencie os utilizadores e associe-os às empresas",
+    "add": "Adicionar Utilizador",
+    "email": "Email",
+    "companiesRoles": "Empresas e Papéis",
+    "inactive": "- Inativo",
+    "manageAccess": "Gerir Acesso",
+    "you": "Você",
+    "empty": "Nenhum utilizador encontrado",
+    "addFirst": "Adicionar Primeiro Utilizador"
+  },
+  "documents": {
+    "title": "Personalização de Documentos",
+    "description": "Defina o aspecto das facturas e recibos e o texto das mensagens enviadas aos seus clientes. As definições aplicam-se a todos os documentos da empresa escolhida.",
+    "selectHint": "Selecione a empresa a personalizar"
+  },
+  "messages": {
+    "accountNameUpdated": "Nome da conta actualizado.",
+    "accountUpdateFailed": "Não foi possível actualizar a conta.",
+    "ownerOnly": "Apenas o proprietário da empresa pode alterar as configurações do sistema.",
+    "selectCompanyFirst": "Selecione uma empresa primeiro",
+    "settingsUpdated": "Configurações actualizadas com sucesso",
+    "settingsUpdateError": "Erro ao actualizar configurações",
+    "companyUpdated": "Empresa atualizada com sucesso",
+    "companyCreated": "Empresa criada com sucesso",
+    "sessionExpiredCreate": "A sua sessão expirou. Entre novamente para criar a empresa.",
+    "companyUpdateFailed": "Não foi possível actualizar a empresa.",
+    "companyCreateFailed": "Não foi possível criar a empresa.",
+    "deleteCompanyConfirm": "Tem certeza que deseja eliminar a empresa \"{name}\"?",
+    "companyDeleted": "Empresa eliminada com sucesso",
+    "companyDeleteFailed": "Não foi possível eliminar a empresa.",
+    "accessUpdated": "Acesso atualizado com sucesso",
+    "inviteSent": "Convite enviado para {email}",
+    "removeAccessConfirm": "Tem certeza que deseja remover este acesso?",
+    "accessRemoved": "Acesso removido com sucesso",
+    "removeAccessFailed": "Não foi possível remover o acesso.",
+    "planChanged": "Plano alterado com sucesso",
+    "planChangeError": "Erro ao alterar plano",
+    "downgradeToTrial": "Não é possível voltar ao período de teste depois de subscrever um plano pago.",
+    "downgradeActive": "Não é possível fazer downgrade enquanto a subscrição estiver activa."
+  },
+  "documentTab": {
+    "noCompany": "Seleccione uma empresa para personalizar os seus documentos.",
+    "readOnly": "Apenas o proprietário ou um administrador da empresa pode alterar estas definições.",
+    "template": {
+      "title": "Modelo do documento",
+      "subtitle": "Escolha a disposição das suas facturas, recibos e extractos."
+    },
+    "templates": {
+      "classico": {
+        "label": "Clássico",
+        "description": "Logótipo à esquerda e tabela com cabeçalho cinzento. É o aspecto actual das suas facturas."
+      },
+      "moderno": {
+        "label": "Moderno",
+        "description": "Faixa superior na cor da marca, com o logótipo centrado e tabela às riscas."
+      },
+      "minimalista": {
+        "label": "Minimalista",
+        "description": "Sem fundos nem faixas. Apenas um filete na cor da marca e tabela sem grelha."
+      }
+    },
+    "brand": {
+      "title": "Marca",
+      "subtitle": "O logótipo é partilhado com os dados da empresa.",
+      "primaryColor": "Cor principal",
+      "accentColor": "Cor secundária",
+      "colorFormat": "Use um valor como {example}.",
+      "showLogo": "Mostrar o logótipo nos documentos",
+      "showBankDetails": "Mostrar as coordenadas bancárias",
+      "bankDetailsHint": "Os bancos marcados \"Mostrar nas facturas\" (a conta principal primeiro), M-Pesa e e-Mola aparecem no fim das facturas e extractos. Edite-os nos dados da empresa: Configurações → Empresas → editar → Dados Bancários.",
+      "noBankDetails": "Esta empresa ainda não tem dados bancários, por isso nada será mostrado nos documentos.",
+      "logo": "Logótipo",
+      "noLogo": "Sem logótipo",
+      "replace": "Substituir",
+      "logoFormats": "PNG ou JPG, até 2 MB."
+    },
+    "texts": {
+      "title": "Textos dos documentos",
+      "subtitle": "Deixe em branco para não mostrar nada.",
+      "thankYou": "Mensagem de agradecimento",
+      "thankYouPlaceholder": "Ex: Obrigado pela sua preferência.",
+      "defaultObservations": "Observações por omissão",
+      "defaultObservationsPlaceholder": "Ex: Pagamento no acto da entrega.",
+      "defaultObservationsHint": "Preenche as notas ao criar uma factura nova. Facturas já emitidas não são alteradas.",
+      "footer": "Rodapé",
+      "footerPlaceholder": "Ex: Documento processado por computador."
+    },
+    "print": {
+      "title": "Impressão",
+      "subtitle": "Cada via sai numa página própria, identificada.",
+      "invoiceCopies": "Vias da factura",
+      "receiptCopies": "Vias do recibo",
+      "copies1": "Apenas o original",
+      "copies2": "Original e duplicado",
+      "copies3": "Original, duplicado e triplicado"
+    },
+    "email": {
+      "title": "Mensagens de e-mail",
+      "subtitle": "Clique num marcador para o inserir no campo onde estava a escrever.",
+      "subject": "Assunto",
+      "greeting": "Saudação",
+      "body": "Corpo da mensagem",
+      "tooLong": "Texto demasiado longo.",
+      "signature": "Despedida",
+      "receiptBody": "Corpo da mensagem do recibo",
+      "statementSubject": "Assunto do extracto de conta",
+      "statementBody": "Corpo da mensagem do extracto de conta",
+      "statementHint": "Use os marcadores de extracto, como período e saldo.",
+      "replyTo": "Responder para (opcional)",
+      "replyToPlaceholder": "geral@suaempresa.co.mz",
+      "replyToHint": "As respostas dos clientes são encaminhadas para este endereço.",
+      "invalidEmail": "Endereço de e-mail inválido."
+    },
+    "tokens": {
+      "client": "Nome do cliente",
+      "company": "Nome da sua empresa",
+      "invoiceNumber": "Número da factura",
+      "receiptNumber": "Número do recibo",
+      "total": "Valor total do documento",
+      "amountPaid": "Valor já pago",
+      "amountDue": "Valor por pagar",
+      "issueDate": "Data de emissão",
+      "dueDate": "Data de vencimento",
+      "period": "Extracto: período (01/08/2026 a 31/08/2026)",
+      "openingBalance": "Extracto: saldo antes do período",
+      "totalInvoiced": "Extracto: total facturado no período",
+      "totalPaid": "Extracto: total pago no período",
+      "balance": "Extracto: saldo em dívida na data final"
+    },
+    "reset": "Repor",
+    "preview": {
+      "title": "Pré-visualização",
+      "invoice": "Factura",
+      "receipt": "Recibo",
+      "statement": "Extracto",
+      "note": "Dados de exemplo. Reflecte as alterações enquanto escreve, antes de guardar."
+    },
+    "messages": {
+      "fileTooLarge": "O ficheiro é demasiado grande. Máximo de 2 MB.",
+      "fileReadError": "Não foi possível ler o ficheiro.",
+      "logoUpdated": "Logótipo actualizado.",
+      "logoRemoved": "Logótipo removido.",
+      "logoSaveError": "Não foi possível guardar o logótipo.",
+      "saved": "Personalização de documentos actualizada com sucesso.",
+      "saveError": "Não foi possível guardar a personalização."
+    }
+  }
+}

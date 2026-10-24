@@ -32,6 +32,8 @@ import { SubscriptionLimitDialogComponent } from '../../shared/components/subscr
 import { DocumentSettingsTabComponent } from './document-settings-tab/document-settings-tab.component';
 import { friendlyErrorMessage } from '../../core/utils/error-message';
 import { PreferencesService } from '../../core/services/preferences.service';
+import { currentLocale, t } from '../../core/i18n/i18n';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 @Component({
   selector: 'app-settings',
@@ -53,7 +55,8 @@ import { PreferencesService } from '../../core/services/preferences.service';
     MatSnackBarModule,
     MatTooltipModule,
     MatProgressSpinnerModule,
-    DocumentSettingsTabComponent
+    DocumentSettingsTabComponent,
+    TranslatePipe
   ],
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.css']
@@ -86,11 +89,6 @@ export class SettingsComponent implements OnInit {
   }
   companyColumns = ['name', 'nuit', 'phone', 'actions'];
   userColumns = ['email', 'companies', 'actions'];
-
-  /** Por agora a interface só existe em português; outros idiomas brevemente. */
-  languages = [
-    { value: 'pt', label: 'Português (Moçambique)' }
-  ];
 
   timezones = [
     { value: 'Africa/Maputo', label: 'Africa/Maputo (CAT)' },
@@ -156,7 +154,6 @@ export class SettingsComponent implements OnInit {
     this.systemForm = this.fb.group({
       // Moeda Padrão e Início do Ano Fiscal não são usados pela aplicação
       // (moeda é sempre MZN; o ano fiscal é o ano civil) — por isso não aparecem.
-      language: [{ value: 'pt', disabled: true }],
       timezone: ['Africa/Maputo', Validators.required],
       date_format: ['DD/MM/YYYY', Validators.required],
       enable_notifications: [true],
@@ -190,7 +187,6 @@ export class SettingsComponent implements OnInit {
 
     const settings = this.userManagementService.settings();
     this.systemForm.reset({
-      language: 'pt',
       timezone: settings?.timezone || 'Africa/Maputo',
       date_format: settings?.date_format || 'DD/MM/YYYY',
       enable_notifications: settings?.enable_notifications ?? true,
@@ -199,7 +195,6 @@ export class SettingsComponent implements OnInit {
     // Só o proprietário pode alterar (RLS): para os restantes o formulário fica só de leitura.
     if (this.canEditSystemSettings()) {
       this.systemForm.enable();
-      this.systemForm.get('language')?.disable();
     } else {
       this.systemForm.disable();
     }
@@ -221,9 +216,9 @@ export class SettingsComponent implements OnInit {
     try {
       await this.accountService.updateAccountName(this.accountNameControl.value.trim());
       this.accountNameControl.markAsPristine();
-      this.snackBar.open('Nome da conta actualizado.', 'Fechar', { duration: 3000, panelClass: ['success-snackbar'] });
+      this.snackBar.open(t('settings.messages.accountNameUpdated'), t('common.actions.close'), { duration: 3000, panelClass: ['success-snackbar'] });
     } catch (error) {
-      this.snackBar.open(friendlyErrorMessage(error, 'Não foi possível actualizar a conta.'), 'Fechar', {
+      this.snackBar.open(friendlyErrorMessage(error, t('settings.messages.accountUpdateFailed')), t('common.actions.close'), {
         duration: 5000,
         panelClass: ['error-snackbar']
       });
@@ -240,7 +235,7 @@ export class SettingsComponent implements OnInit {
 
   async saveSystemSettings() {
     if (!this.canEditSystemSettings()) {
-      this.snackBar.open('Apenas o proprietário da empresa pode alterar as configurações do sistema.', 'Fechar', { duration: 5000 });
+      this.snackBar.open(t('settings.messages.ownerOnly'), t('common.actions.close'), { duration: 5000 });
       return;
     }
     if (this.systemForm.invalid) {
@@ -250,12 +245,12 @@ export class SettingsComponent implements OnInit {
 
     const companyId = this.selectedCompanyId();
     if (!companyId) {
-      this.snackBar.open('Selecione uma empresa primeiro', 'Fechar', { duration: 3000 });
+      this.snackBar.open(t('settings.messages.selectCompanyFirst'), t('common.actions.close'), { duration: 3000 });
       return;
     }
 
     this.loading.set(true);
-    const { language: _language, ...values } = this.systemForm.getRawValue();
+    const values = this.systemForm.getRawValue();
     const notificationEmail = (values.notification_email || '').trim();
     const result = await this.userManagementService.updateSystemSettings(companyId, {
       ...values,
@@ -267,11 +262,11 @@ export class SettingsComponent implements OnInit {
 
     if (result.ok) {
       if (result.data) this.preferences.applyIfActive(companyId, result.data);
-      this.snackBar.open('Configurações actualizadas com sucesso', 'Fechar', {
+      this.snackBar.open(t('settings.messages.settingsUpdated'), t('common.actions.close'), {
         duration: 3000
       });
     } else {
-      this.snackBar.open(result.error || 'Erro ao actualizar configurações', 'Fechar', {
+      this.snackBar.open(result.error || t('settings.messages.settingsUpdateError'), t('common.actions.close'), {
         duration: 6000
       });
     }
@@ -292,17 +287,17 @@ export class SettingsComponent implements OnInit {
           await this.activityService.saveCompanyActivities(company.id, companyActivities || []);
           // undefined = as contas não chegaram a ser carregadas no diálogo; não mexer.
           if (bankAccounts) await this.bankAccountService.saveForCompany(company.id, bankAccounts);
-          this.snackBar.open('Empresa atualizada com sucesso', 'Fechar', { duration: 3000 });
+          this.snackBar.open(t('settings.messages.companyUpdated'), t('common.actions.close'), { duration: 3000 });
           await this.companyService.loadCompanies();
         } else {
           const newCompany = await this.companyService.createCompany(companyData);
           if (newCompany) {
             await this.activityService.saveCompanyActivities(newCompany.id, companyActivities || []);
             if (bankAccounts?.length) await this.bankAccountService.saveForCompany(newCompany.id, bankAccounts);
-            this.snackBar.open('Empresa criada com sucesso', 'Fechar', { duration: 3000 });
+            this.snackBar.open(t('settings.messages.companyCreated'), t('common.actions.close'), { duration: 3000 });
             await this.companyService.loadCompanies();
           } else {
-            this.snackBar.open('A sua sessão expirou. Entre novamente para criar a empresa.', 'Fechar', { duration: 6000 });
+            this.snackBar.open(t('settings.messages.sessionExpiredCreate'), t('common.actions.close'), { duration: 6000 });
           }
         }
       } catch (error: any) {
@@ -315,8 +310,8 @@ export class SettingsComponent implements OnInit {
           });
           return;
         }
-        const fallback = company ? 'Não foi possível actualizar a empresa.' : 'Não foi possível criar a empresa.';
-        this.snackBar.open(friendlyErrorMessage(error, fallback), 'Fechar', { duration: 8000 });
+        const fallback = company ? t('settings.messages.companyUpdateFailed') : t('settings.messages.companyCreateFailed');
+        this.snackBar.open(friendlyErrorMessage(error, fallback), t('common.actions.close'), { duration: 8000 });
       }
     });
   }
@@ -329,13 +324,13 @@ export class SettingsComponent implements OnInit {
   }
 
   async deleteCompany(company: Company) {
-    if (!confirm(`Tem certeza que deseja eliminar a empresa "${company.name}"?`)) return;
+    if (!confirm(t('settings.messages.deleteCompanyConfirm', { name: company.name }))) return;
 
     const result = await this.companyService.deleteCompany(company.id);
     if (result.success) {
-      this.snackBar.open('Empresa eliminada com sucesso', 'Fechar', { duration: 3000 });
+      this.snackBar.open(t('settings.messages.companyDeleted'), t('common.actions.close'), { duration: 3000 });
     } else {
-      this.snackBar.open(result.error || 'Não foi possível eliminar a empresa.', 'Fechar', { duration: 6000 });
+      this.snackBar.open(result.error || t('settings.messages.companyDeleteFailed'), t('common.actions.close'), { duration: 6000 });
     }
   }
 
@@ -353,7 +348,7 @@ export class SettingsComponent implements OnInit {
       if (!result) return;
       this.loading.set(true);
       const inviter = this.authService.currentUser();
-      const inviterName = inviter?.user_metadata?.['full_name'] || inviter?.email || 'Um administrador';
+      const inviterName = inviter?.user_metadata?.['full_name'] || inviter?.email || undefined;
 
       const newCompanies: Array<{ company_id: string; role: string }> = result.companies || [];
       const newCompanyIds = new Set(newCompanies.map(c => c.company_id));
@@ -381,8 +376,7 @@ export class SettingsComponent implements OnInit {
           result.fullName || undefined,
           result.phone || undefined,
           companyName,
-          inviterName,
-          this.getRoleLabel(role)
+          inviterName
         );
         if (!res.ok) errors.push(newCompanies.length > 1 ? `${companyName}: ${res.error}` : res.error!);
         if (res.warning) warnings.push(res.warning);
@@ -392,13 +386,13 @@ export class SettingsComponent implements OnInit {
       await this.userManagementService.loadAllUsers();
 
       if (errors.length) {
-        this.snackBar.open(errors.join(' | '), 'Fechar', { duration: 10000 });
+        this.snackBar.open(errors.join(' | '), t('common.actions.close'), { duration: 10000 });
       } else if (warnings.length) {
-        this.snackBar.open(warnings[0], 'Fechar', { duration: 10000 });
+        this.snackBar.open(warnings[0], t('common.actions.close'), { duration: 10000 });
       } else {
         this.snackBar.open(
-          user ? 'Acesso atualizado com sucesso' : `Convite enviado para ${result.email}`,
-          'Fechar',
+          user ? t('settings.messages.accessUpdated') : t('settings.messages.inviteSent', { email: result.email }),
+          t('common.actions.close'),
           { duration: 4000 }
         );
       }
@@ -412,14 +406,14 @@ export class SettingsComponent implements OnInit {
   }
 
   async removeUserFromCompany(userId: string, companyId: string) {
-    if (!confirm('Tem certeza que deseja remover este acesso?')) return;
+    if (!confirm(t('settings.messages.removeAccessConfirm'))) return;
 
     const result = await this.userManagementService.removeUserFromCompany(userId, companyId);
     if (result.ok) {
       await this.userManagementService.loadAllUsers();
-      this.snackBar.open('Acesso removido com sucesso', 'Fechar', { duration: 3000 });
+      this.snackBar.open(t('settings.messages.accessRemoved'), t('common.actions.close'), { duration: 3000 });
     } else {
-      this.snackBar.open(result.error || 'Não foi possível remover o acesso.', 'Fechar', { duration: 6000 });
+      this.snackBar.open(result.error || t('settings.messages.removeAccessFailed'), t('common.actions.close'), { duration: 6000 });
     }
   }
 
@@ -429,12 +423,12 @@ export class SettingsComponent implements OnInit {
     const companyId = this.selectedCompanyId();
 
     if (!companyId) {
-      this.snackBar.open('Selecione uma empresa primeiro', 'Fechar', { duration: 3000 });
+      this.snackBar.open(t('settings.messages.selectCompanyFirst'), t('common.actions.close'), { duration: 3000 });
       return;
     }
 
     if (this.isDowngrade(plan)) {
-      this.snackBar.open(this.downgradeBlockedMessage(plan), 'Fechar', { duration: 6000 });
+      this.snackBar.open(this.downgradeBlockedMessage(plan), t('common.actions.close'), { duration: 6000 });
       return;
     }
 
@@ -475,9 +469,9 @@ export class SettingsComponent implements OnInit {
     this.loading.set(false);
 
     if (success) {
-      this.snackBar.open('Plano alterado com sucesso', 'Fechar', { duration: 3000 });
+      this.snackBar.open(t('settings.messages.planChanged'), t('common.actions.close'), { duration: 3000 });
     } else {
-      this.snackBar.open('Erro ao alterar plano', 'Fechar', { duration: 3000 });
+      this.snackBar.open(t('settings.messages.planChangeError'), t('common.actions.close'), { duration: 3000 });
     }
   }
 
@@ -492,23 +486,23 @@ export class SettingsComponent implements OnInit {
   }
 
   getStatusLabel(status: string): string {
-    const labels: Record<string, string> = {
-      active: 'Ativo',
-      trialing: 'Teste',
-      past_due: 'Em Atraso',
-      cancelled: 'Cancelado'
+    const keys: Record<string, string> = {
+      active: 'settings.status.active',
+      trialing: 'settings.status.trialing',
+      past_due: 'settings.status.pastDue',
+      cancelled: 'settings.status.cancelled'
     };
-    return labels[status] || status;
+    return keys[status] ? t(keys[status]) : status;
   }
 
   getCycleLabel(cycle: string): string {
-    const labels: Record<string, string> = {
-      monthly: 'Mensal (30 dias)',
-      quarterly: 'Trimestral (90 dias)',
-      semiannual: 'Semestral (180 dias)',
-      yearly: 'Anual (360 dias)'
+    const keys: Record<string, string> = {
+      monthly: 'settings.cycles.monthly',
+      quarterly: 'settings.cycles.quarterly',
+      semiannual: 'settings.cycles.semiannual',
+      yearly: 'settings.cycles.yearly'
     };
-    return labels[cycle] || cycle;
+    return keys[cycle] ? t(keys[cycle]) : cycle;
   }
 
   getPlanPriceForCycle(plan: SubscriptionPlan, cycle: 'monthly' | 'quarterly' | 'semiannual' | 'yearly'): number {
@@ -526,14 +520,14 @@ export class SettingsComponent implements OnInit {
   }
 
   getRoleLabel(role: string): string {
-    const labels: Record<string, string> = {
-      owner: 'Proprietário',
-      admin: 'Administrador',
-      manager: 'Gestor',
-      user: 'Utilizador',
-      invited: 'Convidado'
+    const keys: Record<string, string> = {
+      owner: 'settings.roles.owner',
+      admin: 'settings.roles.admin',
+      manager: 'settings.roles.manager',
+      user: 'settings.roles.user',
+      invited: 'settings.roles.invited'
     };
-    return labels[role] || role;
+    return keys[role] ? t(keys[role]) : role;
   }
 
   getCompanyName(companyId: string): string {
@@ -542,7 +536,7 @@ export class SettingsComponent implements OnInit {
 
   formatCurrency(value: number, currency?: string): string {
     const curr = currency || 'MZN';
-    const formatted = new Intl.NumberFormat('pt-MZ', {
+    const formatted = new Intl.NumberFormat(currentLocale(), {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(value);
@@ -574,8 +568,8 @@ export class SettingsComponent implements OnInit {
 
   downgradeBlockedMessage(plan: SubscriptionPlan): string {
     if (plan.monthly_price === 0) {
-      return 'Não é possível voltar ao período de teste depois de subscrever um plano pago.';
+      return t('settings.messages.downgradeToTrial');
     }
-    return 'Não é possível fazer downgrade enquanto a subscrição estiver activa.';
+    return t('settings.messages.downgradeActive');
   }
 }

@@ -1,1 +1,258 @@
-{}
+{
+  "page": {
+    "processing": "Traitement de l'invitation...",
+    "title": "Paramètres",
+    "subtitle": "Gérez les paramètres du système, les abonnements, les entreprises et les utilisateurs"
+  },
+  "tabs": {
+    "system": "Système",
+    "subscriptions": "Abonnements",
+    "companies": "Entreprises",
+    "users": "Utilisateurs",
+    "documents": "Documents"
+  },
+  "companySelect": {
+    "label": "Sélectionnez une entreprise"
+  },
+  "columns": {
+    "actions": "Actions"
+  },
+  "system": {
+    "title": "Paramètres du système",
+    "selectHint": "Sélectionnez l'entreprise à configurer",
+    "ownerOnlyNotice": "Seul le titulaire de l'entreprise peut modifier les paramètres du système. Vous pouvez les consulter, mais pas enregistrer de modifications.",
+    "language": "Langue",
+    "languageInfo": "Les documents fiscaux sont toujours émis en portugais. La langue de l'interface se choisit avec le sélecteur de drapeaux en haut à droite.",
+    "timezone": "Fuseau horaire",
+    "timezoneHint": "Utilisé pour afficher les dates et heures à l'écran, dans les documents et les exports",
+    "dateFormat": "Format de date",
+    "dateFormatHint": "Le Formulaire 30 (Modelo 30) utilise toujours JJ/MM/AAAA",
+    "notificationEmail": "E-mail de notification",
+    "notificationEmailPlaceholder": "notifications@entreprise.com",
+    "invalidEmail": "E-mail invalide",
+    "notificationEmailHint": "Reçoit les rappels fiscaux et les confirmations d'abonnement, en plus de l'e-mail du titulaire",
+    "enableNotifications": "Activer les notifications",
+    "enableNotificationsHint": "Désactivé : les rappels fiscaux ne sont plus envoyés par e-mail (ils restent visibles dans l'application). Les e-mails de paiements et de factures continuent d'être envoyés.",
+    "save": "Enregistrer les paramètres",
+    "empty": "Sélectionnez une entreprise à configurer"
+  },
+  "subscription": {
+    "title": "Gestion de l'abonnement",
+    "selectHint": "Sélectionnez l'entreprise pour voir son abonnement",
+    "currentPlan": "Formule actuelle : {plan}",
+    "startDate": "Date de début",
+    "expiryDate": "Date d'expiration",
+    "nextBilling": "Prochaine facturation",
+    "paymentMethod": "Moyen de paiement",
+    "notDefined": "Non défini",
+    "trialExpired": "Essai gratuit expiré",
+    "expired": "Abonnement expiré",
+    "lockedMessage": "Le système est bloqué. Choisissez une formule ci-dessous pour retrouver toutes les fonctionnalités.",
+    "daysRemaining": {
+      "one": "Il reste <strong>{count}</strong> jour dans la période en cours.",
+      "other": "Il reste <strong>{count}</strong> jours dans la période en cours."
+    },
+    "pastDueTitle": "Paiement en retard",
+    "pastDueMessage": "Veuillez mettre à jour votre moyen de paiement pour continuer à utiliser le service.",
+    "noPlan": "Cette entreprise n'a pas encore de formule active. Choisissez l'une des formules ci-dessous pour vous abonner.",
+    "availablePlans": "Formules disponibles",
+    "upgradeInfo": "Vous pouvez passer à une formule supérieure à tout moment. Il n'est pas possible de passer à une formule inférieure tant que l'abonnement est actif.",
+    "mostPopular": "La plus populaire",
+    "trial": "Essai",
+    "trialDays": "14 jours d'essai gratuit",
+    "period": "Période : {cycle}",
+    "currentPlanBadge": "✓ Formule actuelle",
+    "notAvailable": "Non disponible",
+    "switchTo": "Passer à {cycle}",
+    "downgradeNotAllowed": "Rétrogradation non autorisée",
+    "downgradeBlockedShort": "Impossible de passer à une formule inférieure tant que l'abonnement est actif",
+    "availableAfter": "Disponible après le {date}",
+    "activateTrial": "Activer l'essai gratuit",
+    "upgrade": "Passer à la formule supérieure (M-Pesa / e-Mola)",
+    "subscribe": "S'abonner (M-Pesa / e-Mola)",
+    "empty": "Sélectionnez une entreprise pour voir son abonnement et les formules disponibles"
+  },
+  "status": {
+    "active": "Actif",
+    "trialing": "Essai",
+    "pastDue": "En retard",
+    "cancelled": "Annulé"
+  },
+  "cycles": {
+    "monthly": "Mensuel (30 jours)",
+    "quarterly": "Trimestriel (90 jours)",
+    "semiannual": "Semestriel (180 jours)",
+    "yearly": "Annuel (360 jours)",
+    "quarterlyShort": "90 jours",
+    "semiannualShort": "180 jours"
+  },
+  "roles": {
+    "owner": "Titulaire",
+    "admin": "Administrateur",
+    "manager": "Gestionnaire",
+    "user": "Utilisateur",
+    "invited": "Invité"
+  },
+  "account": {
+    "title": "Compte",
+    "address": "Adresse :",
+    "name": "Nom du compte"
+  },
+  "companies": {
+    "title": "Gestion des entreprises",
+    "subtitle": "Entreprises de ce compte",
+    "new": "Nouvelle entreprise",
+    "contact": "Contact",
+    "empty": "Aucune entreprise trouvée",
+    "createFirst": "Créer votre première entreprise"
+  },
+  "users": {
+    "title": "Gestion des utilisateurs",
+    "subtitle": "Gérez les utilisateurs et associez-les aux entreprises",
+    "add": "Ajouter un utilisateur",
+    "email": "E-mail",
+    "companiesRoles": "Entreprises et rôles",
+    "inactive": "- Inactif",
+    "manageAccess": "Gérer l'accès",
+    "you": "Vous",
+    "empty": "Aucun utilisateur trouvé",
+    "addFirst": "Ajouter votre premier utilisateur"
+  },
+  "documents": {
+    "title": "Personnalisation des documents",
+    "description": "Définissez l'apparence des factures et des reçus ainsi que le texte des messages envoyés à vos clients. Les paramètres s'appliquent à tous les documents de l'entreprise choisie.",
+    "selectHint": "Sélectionnez l'entreprise à personnaliser"
+  },
+  "messages": {
+    "accountNameUpdated": "Nom du compte mis à jour.",
+    "accountUpdateFailed": "Impossible de mettre à jour le compte.",
+    "ownerOnly": "Seul le titulaire de l'entreprise peut modifier les paramètres du système.",
+    "selectCompanyFirst": "Sélectionnez d'abord une entreprise",
+    "settingsUpdated": "Paramètres mis à jour avec succès",
+    "settingsUpdateError": "Erreur lors de la mise à jour des paramètres",
+    "companyUpdated": "Entreprise mise à jour avec succès",
+    "companyCreated": "Entreprise créée avec succès",
+    "sessionExpiredCreate": "Votre session a expiré. Reconnectez-vous pour créer l'entreprise.",
+    "companyUpdateFailed": "Impossible de mettre à jour l'entreprise.",
+    "companyCreateFailed": "Impossible de créer l'entreprise.",
+    "deleteCompanyConfirm": "Voulez-vous vraiment supprimer l'entreprise « {name} » ?",
+    "companyDeleted": "Entreprise supprimée avec succès",
+    "companyDeleteFailed": "Impossible de supprimer l'entreprise.",
+    "accessUpdated": "Accès mis à jour avec succès",
+    "inviteSent": "Invitation envoyée à {email}",
+    "removeAccessConfirm": "Voulez-vous vraiment retirer cet accès ?",
+    "accessRemoved": "Accès retiré avec succès",
+    "removeAccessFailed": "Impossible de retirer l'accès.",
+    "planChanged": "Formule modifiée avec succès",
+    "planChangeError": "Erreur lors du changement de formule",
+    "downgradeToTrial": "Impossible de revenir à l'essai gratuit après avoir souscrit une formule payante.",
+    "downgradeActive": "Impossible de passer à une formule inférieure tant que l'abonnement est actif."
+  },
+  "documentTab": {
+    "noCompany": "Sélectionnez une entreprise pour personnaliser ses documents.",
+    "readOnly": "Seul le titulaire ou un administrateur de l'entreprise peut modifier ces paramètres.",
+    "template": {
+      "title": "Modèle de document",
+      "subtitle": "Choisissez la mise en page de vos factures, reçus et relevés."
+    },
+    "templates": {
+      "classico": {
+        "label": "Classique",
+        "description": "Logo à gauche et tableau avec en-tête gris. C'est l'apparence actuelle de vos factures."
+      },
+      "moderno": {
+        "label": "Moderne",
+        "description": "Bandeau supérieur à la couleur de la marque, logo centré et tableau rayé."
+      },
+      "minimalista": {
+        "label": "Minimaliste",
+        "description": "Sans fonds ni bandeaux. Juste un filet à la couleur de la marque et un tableau sans grille."
+      }
+    },
+    "brand": {
+      "title": "Marque",
+      "subtitle": "Le logo est partagé avec les données de l'entreprise.",
+      "primaryColor": "Couleur principale",
+      "accentColor": "Couleur secondaire",
+      "colorFormat": "Utilisez une valeur comme {example}.",
+      "showLogo": "Afficher le logo sur les documents",
+      "showBankDetails": "Afficher les coordonnées bancaires",
+      "bankDetailsHint": "Les banques cochées « Afficher sur les factures » (le compte principal en premier), M-Pesa et e-Mola apparaissent au bas des factures et des relevés. Modifiez-les dans les données de l'entreprise : Paramètres → Entreprises → modifier → Coordonnées bancaires.",
+      "noBankDetails": "Cette entreprise n'a pas encore de coordonnées bancaires ; rien ne sera donc affiché sur les documents.",
+      "logo": "Logo",
+      "noLogo": "Aucun logo",
+      "replace": "Remplacer",
+      "logoFormats": "PNG ou JPG, 2 Mo maximum."
+    },
+    "texts": {
+      "title": "Textes des documents",
+      "subtitle": "Laissez vide pour ne rien afficher.",
+      "thankYou": "Message de remerciement",
+      "thankYouPlaceholder": "Ex. : Merci de votre confiance.",
+      "defaultObservations": "Observations par défaut",
+      "defaultObservationsPlaceholder": "Ex. : Paiement à la livraison.",
+      "defaultObservationsHint": "Remplit les notes lors de la création d'une nouvelle facture. Les factures déjà émises ne sont pas modifiées.",
+      "footer": "Pied de page",
+      "footerPlaceholder": "Ex. : Document traité par ordinateur."
+    },
+    "print": {
+      "title": "Impression",
+      "subtitle": "Chaque exemplaire est imprimé sur sa propre page, identifiée.",
+      "invoiceCopies": "Exemplaires de la facture",
+      "receiptCopies": "Exemplaires du reçu",
+      "copies1": "Original uniquement",
+      "copies2": "Original et duplicata",
+      "copies3": "Original, duplicata et triplicata"
+    },
+    "email": {
+      "title": "Messages e-mail",
+      "subtitle": "Cliquez sur un marqueur pour l'insérer dans le champ où vous écriviez.",
+      "subject": "Objet",
+      "greeting": "Salutation",
+      "body": "Corps du message",
+      "tooLong": "Texte trop long.",
+      "signature": "Formule de politesse",
+      "receiptBody": "Corps du message du reçu",
+      "statementSubject": "Objet du relevé de compte",
+      "statementBody": "Corps du message du relevé de compte",
+      "statementHint": "Utilisez les marqueurs du relevé, comme la période et le solde.",
+      "replyTo": "Répondre à (facultatif)",
+      "replyToPlaceholder": "contact@votreentreprise.co.mz",
+      "replyToHint": "Les réponses des clients sont transférées à cette adresse.",
+      "invalidEmail": "Adresse e-mail invalide."
+    },
+    "tokens": {
+      "client": "Nom du client",
+      "company": "Nom de votre entreprise",
+      "invoiceNumber": "Numéro de la facture",
+      "receiptNumber": "Numéro du reçu",
+      "total": "Montant total du document",
+      "amountPaid": "Montant déjà payé",
+      "amountDue": "Montant restant dû",
+      "issueDate": "Date d'émission",
+      "dueDate": "Échéance",
+      "period": "Relevé : période (01/08/2026 au 31/08/2026)",
+      "openingBalance": "Relevé : solde avant la période",
+      "totalInvoiced": "Relevé : total facturé sur la période",
+      "totalPaid": "Relevé : total payé sur la période",
+      "balance": "Relevé : solde dû à la date de fin"
+    },
+    "reset": "Réinitialiser",
+    "preview": {
+      "title": "Aperçu",
+      "invoice": "Facture",
+      "receipt": "Reçu",
+      "statement": "Relevé",
+      "note": "Données d'exemple. Reflète vos modifications pendant la saisie, avant l'enregistrement."
+    },
+    "messages": {
+      "fileTooLarge": "Le fichier est trop volumineux. 2 Mo maximum.",
+      "fileReadError": "Impossible de lire le fichier.",
+      "logoUpdated": "Logo mis à jour.",
+      "logoRemoved": "Logo supprimé.",
+      "logoSaveError": "Impossible d'enregistrer le logo.",
+      "saved": "Personnalisation des documents mise à jour avec succès.",
+      "saveError": "Impossible d'enregistrer la personnalisation."
+    }
+  }
+}
