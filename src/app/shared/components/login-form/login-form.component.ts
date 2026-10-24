@@ -12,6 +12,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { AccountService } from '../../../core/services/account.service';
 import { t } from '../../../core/i18n/i18n';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
+import { GoogleSignInButtonComponent } from '../google-sign-in-button/google-sign-in-button.component';
 
 @Component({
   selector: 'app-login-form',
@@ -26,7 +27,8 @@ import { TranslatePipe } from '../../../core/i18n/translate.pipe';
     MatIconModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
-    TranslatePipe
+    TranslatePipe,
+    GoogleSignInButtonComponent
   ],
   templateUrl: './login-form.component.html',
   styleUrls: ['./login-form.component.css']

@@ -29,6 +29,10 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/register/register.component').then(m => m.RegisterComponent)
   },
   {
+    path: 'auth/callback',
+    loadComponent: () => import('./pages/auth-callback/auth-callback.component').then(m => m.AuthCallbackComponent)
+  },
+  {
     path: 'resetar-senha',
     loadComponent: () => import('./pages/reset-password/reset-password.component').then(m => m.ResetPasswordComponent)
   },

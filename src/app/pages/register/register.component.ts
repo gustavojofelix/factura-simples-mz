@@ -25,6 +25,7 @@ import { environment } from '../../../environments/environment';
 import { t } from '../../core/i18n/i18n';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { LanguageSwitcherComponent } from '../../shared/components/language-switcher/language-switcher.component';
+import { GoogleSignInButtonComponent } from '../../shared/components/google-sign-in-button/google-sign-in-button.component';
 
 @Component({
   selector: 'app-register',
@@ -42,7 +43,8 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
     MatSnackBarModule,
     MatDialogModule,
     TranslatePipe,
-    LanguageSwitcherComponent
+    LanguageSwitcherComponent,
+    GoogleSignInButtonComponent
   ],
   templateUrl: './register.component.html',
   styleUrls: ['./register.component.css']
@@ -53,6 +55,7 @@ export class RegisterComponent implements OnInit {
   hidePassword = signal(true);
   hideConfirmPassword = signal(true);
   readonly rootDomain = environment.rootDomain;
+  readonly googleSignInAvailable = inject(AuthService).googleSignInAvailable;
   /** Enquanto o utilizador não editar o endereço, ele segue o nome. */
   private slugEditedByUser = false;
   private destroyRef = inject(DestroyRef);

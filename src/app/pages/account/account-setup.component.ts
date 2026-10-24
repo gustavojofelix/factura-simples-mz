@@ -172,6 +172,11 @@ export class AccountSetupComponent implements OnInit {
     try {
       const { name, slug } = this.form.value;
       const account = await this.accountService.createAccount(slug, name);
+      // Quem se regista com Google só cria a conta aqui: é este o "registo" a notificar.
+      const user = this.authService.currentUser();
+      if (user?.email && this.authService.isOAuthUser(user)) {
+        this.authService.notifySignup(user.email, user.user_metadata?.['full_name'] ?? name, undefined, account.slug);
+      }
       if (this.tenant.usesSubdomains) {
         window.location.href = this.tenant.accountUrl(account.slug, '/configurar-empresa');
       } else {

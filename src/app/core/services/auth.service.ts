@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { SupabaseService } from './supabase.service';
 import { User, AuthError } from '@supabase/supabase-js';
+import { Capacitor } from '@capacitor/core';
 import { AuditLogService } from './audit-log.service';
 import { LanguageService } from '../i18n/language.service';
 import { t } from '../i18n/i18n';
@@ -27,6 +28,8 @@ export interface UserProfile {
 export class AuthService {
   currentUser = signal<User | null>(null);
   isLoading = signal<boolean>(true);
+  /** Na app nativa o redirect OAuth exige deep links (ainda não configurados). */
+  readonly googleSignInAvailable = !Capacitor.isNativePlatform();
 
   private languageService = inject(LanguageService);
   private _isAdminCache: boolean | null = null;
@@ -89,22 +92,7 @@ export class AuthService {
       }
 
       if (data.user) {
-        // Notify admin of new signup
-        this.supabase.client.functions.invoke('notify-admin', {
-          body: {
-            type: 'signup',
-            email,
-            fullName,
-            phone,
-            accountSlug
-          }
-        }).then(({ data, error }) => {
-          // invoke() resolve com { error } em vez de rejeitar.
-          if (error || data?.success === false) {
-            console.error('Error invoking notify-admin:', error ?? data?.error ?? data?.status);
-          }
-        }).catch(err => console.error('Error invoking notify-admin:', err));
-
+        this.notifySignup(email, fullName, phone, accountSlug);
         return { success: true, user: data.user };
       }
 
@@ -126,43 +114,147 @@ export class AuthService {
       }
 
       if (data.user) {
-        // Verificar se a conta do utilizador/subscritor foi suspensa
-        const { data: profile } = await this.supabase.db
-          .from('profiles')
-          .select('status, language')
-          .eq('id', data.user.id)
-          .maybeSingle();
-
-        if (profile?.status === 'suspended') {
-          await this.supabase.auth.signOut();
-          this.currentUser.set(null);
-          await this.auditLogService.log(
-            'Tentativa de Login em Conta Suspensa',
-            'auth',
-            { email: data.user.email }
-          );
-          return {
-            success: false,
-            error: t('auth.messages.accountSuspendedLong')
-          };
-        }
-
-        this.currentUser.set(data.user);
-        this._isAdminCache = null; // Clear cache on new login
-        await this.auditLogService.log(
-          'Entrou no Sistema (Login)',
-          'auth',
-          { email: data.user.email }
-        );
-        // Língua do perfil: se for diferente da actual, a página recarrega já autenticada.
-        await this.languageService.syncWithProfile(data.user.id, profile?.language);
-        return { success: true, user: data.user };
+        return this.finishSignIn(data.user, 'password');
       }
 
       return { success: false, error: t('auth.messages.signInError') };
     } catch (error: any) {
       return { success: false, error: error.message || t('auth.messages.unknownError') };
     }
+  }
+
+  /**
+   * Inicia o login / registo com Google. O browser sai da app e o Supabase
+   * devolve os tokens em #/auth/callback (tratados em completeOAuthSignIn).
+   */
+  async signInWithGoogle(): Promise<AuthResponse> {
+    try {
+      const { error } = await this.supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/#/auth/callback`,
+          queryParams: { prompt: 'select_account' }
+        }
+      });
+      if (error) {
+        return { success: false, error: this.translateError(error) };
+      }
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message || t('auth.messages.unknownError') };
+    }
+  }
+
+  /**
+   * Conclui o login OAuth. Com HashLocationStrategy os tokens chegam como
+   * #/auth/callback#access_token=..., que o Supabase não detecta sozinho.
+   */
+  async completeOAuthSignIn(): Promise<AuthResponse> {
+    try {
+      await this.waitForInitialization();
+      const params = this.readOAuthCallbackParams();
+
+      const providerError = params.get('error_description') || params.get('error');
+      if (providerError) {
+        const cancelled = params.get('error') === 'access_denied';
+        return { success: false, error: cancelled ? t('auth.google.cancelled') : providerError };
+      }
+
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
+      if (accessToken && refreshToken) {
+        const { data, error } = await this.supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        });
+        // Os tokens não devem ficar no histórico do browser.
+        window.history.replaceState(window.history.state, '', `${window.location.pathname}#/auth/callback`);
+        if (error) return { success: false, error: this.translateError(error) };
+        if (!data.user) return { success: false, error: t('auth.google.error') };
+        return this.finishSignIn(data.user, 'google');
+      }
+
+      // Sem tokens (ex.: recarregamento após sincronizar a língua): basta haver sessão.
+      const { data: { session } } = await this.supabase.auth.getSession();
+      if (session?.user) {
+        this.currentUser.set(session.user);
+        return { success: true, user: session.user };
+      }
+      return { success: false, error: t('auth.google.error') };
+    } catch (error: any) {
+      return { success: false, error: error.message || t('auth.google.error') };
+    }
+  }
+
+  /** O utilizador entrou com um fornecedor externo (Google) e não por email/palavra-passe. */
+  isOAuthUser(user: User | null = this.currentUser()): boolean {
+    const provider = user?.app_metadata?.['provider'];
+    return !!provider && provider !== 'email';
+  }
+
+  /** Avisa o administrador de um novo registo (e envia as boas-vindas ao utilizador). */
+  notifySignup(email: string, fullName: string, phone?: string, accountSlug?: string): void {
+    this.supabase.client.functions.invoke('notify-admin', {
+      body: {
+        type: 'signup',
+        email,
+        fullName,
+        phone,
+        accountSlug
+      }
+    }).then(({ data, error }) => {
+      // invoke() resolve com { error } em vez de rejeitar.
+      if (error || data?.success === false) {
+        console.error('Error invoking notify-admin:', error ?? data?.error ?? data?.status);
+      }
+    }).catch(err => console.error('Error invoking notify-admin:', err));
+  }
+
+  private readOAuthCallbackParams(): URLSearchParams {
+    const params = new URLSearchParams(window.location.search);
+    const hash = window.location.hash;
+    for (const separator of ['#', '?']) {
+      const index = hash.indexOf(separator, 1);
+      if (index >= 0) {
+        new URLSearchParams(hash.substring(index + 1)).forEach((value, key) => params.set(key, value));
+      }
+    }
+    return params;
+  }
+
+  /** Passos comuns a qualquer login: conta suspensa, auditoria e língua do perfil. */
+  private async finishSignIn(user: User, method: 'password' | 'google'): Promise<AuthResponse> {
+    // Verificar se a conta do utilizador/subscritor foi suspensa
+    const { data: profile } = await this.supabase.db
+      .from('profiles')
+      .select('status, language')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profile?.status === 'suspended') {
+      await this.supabase.auth.signOut();
+      this.currentUser.set(null);
+      await this.auditLogService.log(
+        'Tentativa de Login em Conta Suspensa',
+        'auth',
+        { email: user.email, method }
+      );
+      return {
+        success: false,
+        error: t('auth.messages.accountSuspendedLong')
+      };
+    }
+
+    this.currentUser.set(user);
+    this._isAdminCache = null; // Clear cache on new login
+    await this.auditLogService.log(
+      'Entrou no Sistema (Login)',
+      'auth',
+      { email: user.email, method }
+    );
+    // Língua do perfil: se for diferente da actual, a página recarrega já autenticada.
+    await this.languageService.syncWithProfile(user.id, profile?.language);
+    return { success: true, user };
   }
 
   async signOut(): Promise<void> {
