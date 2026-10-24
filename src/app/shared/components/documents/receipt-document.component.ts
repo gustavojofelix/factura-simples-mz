@@ -8,6 +8,7 @@ import {
   DEFAULT_DOCUMENT_BRANDING
 } from '../../../core/services/document-settings.service';
 import { documentThemeVars } from './document-theme';
+import { documentPaymentMethodLabel, formatDocumentCurrency } from './document-format';
 
 /**
  * O recibo de pagamento.
@@ -169,11 +170,11 @@ export class ReceiptDocumentComponent {
   receiptNumber = computed(() => this.paymentService.getReceiptNumber(this.payment()));
 
   paymentMethodLabel = computed(() =>
-    this.paymentService.getPaymentMethodLabel(this.payment().payment_method)
+    documentPaymentMethodLabel(this.payment().payment_method)
   );
 
   formatCurrency(value: number): string {
-    return this.invoiceService.formatCurrency(value);
+    return formatDocumentCurrency(value);
   }
 
   formatDate(date: string): string {

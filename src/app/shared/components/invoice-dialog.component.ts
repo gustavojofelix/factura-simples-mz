@@ -17,6 +17,8 @@ import { InvoiceService, InvoiceItem, Invoice } from '../../core/services/invoic
 import { CompanyService } from '../../core/services/company.service';
 import { DocumentSettingsService } from '../../core/services/document-settings.service';
 import { nuitValidator } from '../../core/validators/nuit.validator';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { currentLocale, t } from '../../core/i18n/i18n';
 
 @Component({
   selector: 'app-quick-client-dialog',
@@ -27,37 +29,38 @@ import { nuitValidator } from '../../core/validators/nuit.validator';
     MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
-    MatButtonModule
+    MatButtonModule,
+    TranslatePipe
   ],
   template: `
-    <h2 mat-dialog-title>Cliente Rápido</h2>
+    <h2 mat-dialog-title>{{ 'invoices.quickClient.title' | t }}</h2>
     <mat-dialog-content class="!pt-4">
       <form [formGroup]="form" class="space-y-4">
         <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Nome</mat-label>
-          <input matInput formControlName="name" placeholder="Nome do cliente">
+          <mat-label>{{ 'common.fields.name' | t }}</mat-label>
+          <input matInput formControlName="name" [placeholder]="'invoices.quickClient.namePlaceholder' | t">
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">
-          <mat-label>NUIT (opcional)</mat-label>
+          <mat-label>{{ 'invoices.quickClient.nuitOptional' | t }}</mat-label>
           <input matInput formControlName="nuit">
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Telefone (opcional)</mat-label>
+          <mat-label>{{ 'invoices.quickClient.phoneOptional' | t }}</mat-label>
           <input matInput formControlName="phone">
         </mat-form-field>
       </form>
     </mat-dialog-content>
     <mat-dialog-actions align="end" class="!px-6 !pb-4">
-      <button mat-button mat-dialog-close>Cancelar</button>
+      <button mat-button mat-dialog-close>{{ 'common.actions.cancel' | t }}</button>
       <button
         mat-raised-button
         class="!bg-ispc-orange !text-white"
         [disabled]="form.invalid || saving()"
         (click)="save()"
       >
-        {{ saving() ? 'A guardar...' : 'Criar' }}
+        {{ (saving() ? 'common.status.saving' : 'common.actions.create') | t }}
       </button>
     </mat-dialog-actions>
   `
@@ -87,7 +90,7 @@ export class QuickClientDialogComponent {
     try {
       const client = await this.clientService.createClient(this.form.value);
       if (client) {
-        this.snackBar.open('Cliente criado!', 'Fechar', { duration: 2000 });
+        this.snackBar.open(t('invoices.quickClient.created'), t('common.actions.close'), { duration: 2000 });
         this.dialogRef.close(client);
       }
     } finally {
@@ -110,7 +113,8 @@ export class QuickClientDialogComponent {
     MatButtonModule,
     MatIconModule,
     MatTableModule,
-    MatAutocompleteModule
+    MatAutocompleteModule,
+    TranslatePipe
   ],
   templateUrl: './invoice-dialog.component.html',
   styleUrls: ['./invoice-dialog.component.css']
@@ -151,16 +155,10 @@ export class InvoiceDialogComponent implements OnInit {
     return filtered;
   });
 
-  paymentTerms = [
-    { label: 'Imediato', days: 0 },
-    { label: '5 Dias', days: 5 },
-    { label: '10 Dias', days: 10 },
-    { label: '15 Dias', days: 15 },
-    { label: '30 Dias', days: 30 },
-    { label: '45 Dias', days: 45 },
-    { label: '60 Dias', days: 60 },
-    { label: '90 Dias', days: 90 }
-  ];
+  paymentTerms = [0, 5, 10, 15, 30, 45, 60, 90].map(days => ({
+    label: days === 0 ? t('invoices.list.immediate') : t('invoices.dialog.termDays', { days }),
+    days
+  }));
 
   saving = signal(false);
   isEditing = signal(false);
@@ -303,9 +301,9 @@ export class InvoiceDialogComponent implements OnInit {
     if (!Number.isFinite(qty) || qty <= 0) {
       this.snackBar.open(
         qty === 0
-          ? `O produto "${product.name}" não tem quantidade seleccionada. Indique pelo menos uma unidade.`
-          : 'Indique uma quantidade válida.',
-        'Fechar',
+          ? t('invoices.dialog.messages.noQuantity', { name: product.name })
+          : t('invoices.dialog.messages.invalidQuantity'),
+        t('common.actions.close'),
         { duration: 4000 }
       );
       return;
@@ -315,8 +313,8 @@ export class InvoiceDialogComponent implements OnInit {
     const existingIndex = this.invoiceItems().findIndex(item => item.product_id === product.id);
     if (existingIndex !== -1) {
       this.snackBar.open(
-        `O produto "${product.name}" já foi adicionado à factura. Pode alterar a quantidade na lista abaixo.`,
-        'Fechar',
+        t('invoices.dialog.messages.alreadyAdded', { name: product.name }),
+        t('common.actions.close'),
         { duration: 4000 }
       );
       return;
@@ -327,8 +325,8 @@ export class InvoiceDialogComponent implements OnInit {
       const availableStock = product.stock ?? 0;
       if (availableStock <= 0) {
         this.snackBar.open(
-          `Sem stock disponível para o produto "${product.name}".`,
-          'Fechar',
+          t('invoices.dialog.messages.noStock', { name: product.name }),
+          t('common.actions.close'),
           { duration: 4000 }
         );
         return;
@@ -336,8 +334,8 @@ export class InvoiceDialogComponent implements OnInit {
 
       if (qty > availableStock) {
         this.snackBar.open(
-          `A quantidade solicitada (${qty}) é superior ao stock disponível (${availableStock}) para o produto "${product.name}".`,
-          'Fechar',
+          t('invoices.dialog.messages.qtyExceedsStock', { qty, stock: availableStock, name: product.name }),
+          t('common.actions.close'),
           { duration: 4000 }
         );
         return;
@@ -364,7 +362,7 @@ export class InvoiceDialogComponent implements OnInit {
     this.selectedProduct.set(null);
     this.productSearchTerm.set('');
 
-    this.snackBar.open('Produto adicionado!', '', { duration: 1000 });
+    this.snackBar.open(t('invoices.dialog.messages.productAdded'), '', { duration: 1000 });
   }
   removeItem(index: number) {
     this.invoiceItems.update(items => items.filter((_, i) => i !== index));
@@ -387,8 +385,8 @@ export class InvoiceDialogComponent implements OnInit {
         const availableStock = product.stock ?? 0;
         if (newQty > availableStock) {
           this.snackBar.open(
-            `A quantidade (${newQty}) ultrapassa o stock disponível (${availableStock}) para o produto "${currentItem.product_name}".`,
-            'Fechar',
+            t('invoices.dialog.messages.qtyIncreaseExceedsStock', { qty: newQty, stock: availableStock, name: currentItem.product_name }),
+            t('common.actions.close'),
             { duration: 4000 }
           );
           return;
@@ -433,16 +431,16 @@ export class InvoiceDialogComponent implements OnInit {
           const availableStock = prod.stock ?? 0;
           if (availableStock <= 0) {
             this.snackBar.open(
-              `Não é possível emitir. Sem stock para o produto "${item.product_name}".`,
-              'Fechar',
+              t('invoices.dialog.messages.issueNoStock', { name: item.product_name }),
+              t('common.actions.close'),
               { duration: 4000 }
             );
             return;
           }
           if (item.quantity > availableStock) {
             this.snackBar.open(
-              `Não é possível emitir. O item "${item.product_name}" tem quantidade (${item.quantity}) superior ao stock disponível (${availableStock}).`,
-              'Fechar',
+              t('invoices.dialog.messages.issueQtyExceedsStock', { name: item.product_name, qty: item.quantity, stock: availableStock }),
+              t('common.actions.close'),
               { duration: 4000 }
             );
             return;
@@ -451,7 +449,7 @@ export class InvoiceDialogComponent implements OnInit {
       }
     }
     if (this.step1Form.invalid || this.invoiceItems().length === 0) {
-      this.snackBar.open('Selecione cliente e adicione produtos', 'Fechar', { duration: 3000 });
+      this.snackBar.open(t('invoices.dialog.messages.selectClientAndProducts'), t('common.actions.close'), { duration: 3000 });
       return;
     }
 
@@ -477,7 +475,7 @@ export class InvoiceDialogComponent implements OnInit {
           dueDateString,
           notes
         );
-        message = 'Factura actualizada com sucesso!';
+        message = t('invoices.messages.updated');
       } else {
         result = await this.invoiceService.createInvoice(
           clientId,
@@ -486,14 +484,14 @@ export class InvoiceDialogComponent implements OnInit {
           notes,
           status
         );
-        message = status === 'rascunho' ? 'Rascunho guardado!' : 'Factura emitida com sucesso!';
+        message = status === 'rascunho' ? t('invoices.messages.draftSaved') : t('invoices.messages.issued');
       }
 
       if (result) {
-        this.snackBar.open(message, 'Fechar', { duration: 3000 });
+        this.snackBar.open(message, t('common.actions.close'), { duration: 3000 });
         this.dialogRef.close(result);
       } else {
-        this.snackBar.open(this.invoiceService.lastError || 'Não foi possível guardar a factura.', 'Fechar', { duration: 8000 });
+        this.snackBar.open(this.invoiceService.lastError || t('invoices.messages.saveFailed'), t('common.actions.close'), { duration: 8000 });
       }
     } finally {
       this.saving.set(false);
@@ -501,7 +499,7 @@ export class InvoiceDialogComponent implements OnInit {
   }
 
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('pt-MZ', {
+    return new Intl.NumberFormat(currentLocale(), {
       style: 'decimal',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2

@@ -1,1 +1,193 @@
-{}
+{
+  "list": {
+    "title": "Factures",
+    "subtitle": "Gestion des factures de {company}",
+    "exportExcel": "Exporter vers Excel (.xlsx)",
+    "exportCsv": "Exporter en CSV (.csv)",
+    "newInvoice": "Nouvelle facture",
+    "stats": {
+      "total": "Total",
+      "paid": "Payées",
+      "pending": "En attente",
+      "overdue": "En retard"
+    },
+    "searchPlaceholder": "Rechercher des factures...",
+    "sortBy": "Trier par",
+    "sort": {
+      "date": "Date",
+      "client": "Client",
+      "number": "Numéro",
+      "amount": "Montant"
+    },
+    "ascending": "Croissant",
+    "descending": "Décroissant",
+    "clearFilters": "Effacer les filtres",
+    "noResults": "Aucune facture trouvée",
+    "clearSearch": "Effacer la recherche",
+    "empty": "Vous n'avez pas encore de factures",
+    "createFirst": "Créer votre première facture",
+    "columns": {
+      "number": "N° de facture",
+      "client": "Client",
+      "issuer": "Émise par",
+      "issuedAt": "Date/heure d'émission",
+      "dueDate": "Échéance",
+      "total": "Total",
+      "status": "Statut",
+      "actions": "Actions"
+    },
+    "clientFallback": "Client",
+    "immediate": "Immédiat",
+    "paidAmount": "Payé : {amount}",
+    "pendingAmount": "Reste : {amount}",
+    "menu": {
+      "validateAndIssue": "Valider et émettre",
+      "viewDetails": "Voir les détails",
+      "registerPayment": "Enregistrer un paiement",
+      "printPdf": "Imprimer le PDF",
+      "sendEmail": "Envoyer par e-mail",
+      "deleteDraft": "Supprimer le brouillon",
+      "annul": "Annuler la facture"
+    },
+    "count": {
+      "one": "{count} facture",
+      "other": "{count} factures"
+    },
+    "countFiltered": {
+      "one": "{count} facture sur {total} au total",
+      "other": "{count} factures sur {total} au total"
+    }
+  },
+  "status": {
+    "draft": "Brouillon",
+    "pending": "En attente",
+    "paid": "Payée",
+    "overdue": "En retard",
+    "cancelled": "Annulée"
+  },
+  "annulBlock": {
+    "notIssued": "Seules les factures émises peuvent être annulées.",
+    "hasPayments": "Une facture comportant des paiements ne peut pas être annulée. Annulez d'abord les reçus.",
+    "closedQuarter": "Une facture d'un trimestre déjà clôturé ne peut pas être annulée."
+  },
+  "format": {
+    "dateTime": "{date} à {time}"
+  },
+  "messages": {
+    "confirmIssue": "Voulez-vous valider et émettre cette facture ? Cette action attribuera le numéro séquentiel définitif.",
+    "issued": "Facture émise avec succès !",
+    "issueFailed": "Impossible d'émettre la facture.",
+    "issueError": "Erreur lors de l'émission de la facture",
+    "confirmDeleteDraft": "Voulez-vous vraiment supprimer le brouillon {number} ?",
+    "draftDeleted": "Brouillon supprimé !",
+    "deleteDraftFailed": "Impossible de supprimer le brouillon.",
+    "confirmAnnul": "Voulez-vous vraiment ANNULER la facture {number} ? Cette action rétablira le stock et exclura la facture des calculs d'impôts.",
+    "annulled": "Facture annulée avec succès !",
+    "annulFailed": "Impossible d'annuler la facture.",
+    "annulError": "Erreur lors de l'annulation de la facture",
+    "cannotEdit": "Cette facture ne peut pas être modifiée",
+    "saveFailed": "Impossible d'enregistrer la facture.",
+    "updateFailed": "Impossible de mettre à jour la facture.",
+    "updated": "Facture mise à jour avec succès !",
+    "draftSaved": "Brouillon enregistré !",
+    "notFound": "Facture introuvable"
+  },
+  "export": {
+    "fileName": "Factures",
+    "columns": {
+      "number": "N° de facture",
+      "client": "Client",
+      "clientNuit": "NUIT du client",
+      "issuedBy": "Émise par",
+      "issuedAt": "Date et heure d'émission",
+      "dueDate": "Échéance",
+      "subtotal": "Sous-total (MZN)",
+      "total": "Total (MZN)",
+      "paid": "Payé (MZN)",
+      "pending": "Restant dû (MZN)",
+      "status": "Statut"
+    }
+  },
+  "dialog": {
+    "editTitle": "Modifier la facture",
+    "selectClient": "Sélectionner le client",
+    "client": "Client",
+    "newClient": "Nouveau client",
+    "phone": "Tél. : {phone}",
+    "nextAddItems": "Suivant : ajouter des articles",
+    "stepDetails": "Détails de la facture",
+    "addItemsTitle": "Ajouter des articles (produits ou services)",
+    "searchProduct": "Rechercher un produit ou service",
+    "searchProductPlaceholder": "Saisissez le nom, la description ou l'ID...",
+    "stock": "Stock : {stock}",
+    "searchHint": "Le catalogue se met à jour automatiquement pendant la saisie",
+    "qty": "Qté",
+    "selectedItem": "Article sélectionné :",
+    "unitFallback": "unité",
+    "columns": {
+      "item": "Article",
+      "unitPrice": "Prix unit."
+    },
+    "removeItem": "Retirer l'article",
+    "paymentTerm": "Délai de paiement",
+    "termDays": "{days} jours",
+    "paymentTermHint": "La facture sera marquée en retard après ce délai",
+    "notes": "Notes de la facture",
+    "notesPlaceholder": "Ex. : paiement à la livraison, coordonnées bancaires...",
+    "totalToPay": "Montant total à payer",
+    "emptyItems": "La liste des articles est vide.",
+    "emptyItemsHint": "Recherchez et ajoutez des produits ci-dessus pour commencer.",
+    "draft": "Brouillon",
+    "update": "Mettre à jour",
+    "issue": "Émettre la facture",
+    "messages": {
+      "noQuantity": "Aucune quantité sélectionnée pour le produit « {name} ». Indiquez au moins une unité.",
+      "invalidQuantity": "Indiquez une quantité valide.",
+      "alreadyAdded": "Le produit « {name} » a déjà été ajouté à la facture. Vous pouvez modifier la quantité dans la liste ci-dessous.",
+      "noStock": "Aucun stock disponible pour le produit « {name} ».",
+      "qtyExceedsStock": "La quantité demandée ({qty}) dépasse le stock disponible ({stock}) pour le produit « {name} ».",
+      "qtyIncreaseExceedsStock": "La quantité ({qty}) dépasse le stock disponible ({stock}) pour le produit « {name} ».",
+      "productAdded": "Produit ajouté !",
+      "issueNoStock": "Émission impossible. Aucun stock pour le produit « {name} ».",
+      "issueQtyExceedsStock": "Émission impossible. L'article « {name} » a une quantité ({qty}) supérieure au stock disponible ({stock}).",
+      "selectClientAndProducts": "Sélectionnez un client et ajoutez des produits"
+    }
+  },
+  "quickClient": {
+    "title": "Client rapide",
+    "namePlaceholder": "Nom du client",
+    "nuitOptional": "NUIT (facultatif)",
+    "phoneOptional": "Téléphone (facultatif)",
+    "created": "Client créé !"
+  },
+  "detail": {
+    "title": "Facture {number}",
+    "reprint": "DUPLICATA",
+    "original": "ORIGINAL",
+    "issuedAt": "Date et heure d'émission : {date}",
+    "issuedBy": "Émise par : {name}",
+    "email": "E-mail",
+    "dueDate": "Échéance : {date}",
+    "generatingPdf": "Génération du PDF...",
+    "payments": "Paiements",
+    "paymentColumns": {
+      "receipt": "Reçu",
+      "date": "Date",
+      "method": "Mode",
+      "reference": "Référence",
+      "amount": "Montant",
+      "actions": "Actions"
+    },
+    "annulledBadge": "ANNULÉ",
+    "noPayments": "Aucun paiement enregistré",
+    "messages": {
+      "popupBlocked": "Impossible d'ouvrir la fenêtre d'impression. Vérifiez si votre navigateur bloque les fenêtres pop-up.",
+      "printFailed": "Impossible de préparer l'impression.",
+      "pdfFailed": "Erreur lors de la génération du fichier PDF. Veuillez réessayer.",
+      "noClientEmail": "Le client associé à cette facture n'a pas d'adresse e-mail.",
+      "sendRejected": "L'envoi a été refusé.",
+      "emailSent": "E-mail avec la facture {number} envoyé avec succès à {email} !",
+      "emailFailed": "Une erreur s'est produite lors de l'envoi de l'e-mail."
+    }
+  }
+}

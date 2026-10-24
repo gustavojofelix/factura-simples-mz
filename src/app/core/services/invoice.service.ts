@@ -4,6 +4,7 @@ import { SupabaseService } from './supabase.service';
 import { CompanyService } from './company.service';
 import { AuditLogService } from './audit-log.service';
 import { PreferencesService } from './preferences.service';
+import { currentLocale, t } from '../i18n/i18n';
 
 export interface InvoiceItem {
   id?: string;
@@ -208,13 +209,13 @@ export class InvoiceService {
    */
   getAnnulBlockReason(invoice: Invoice): string | null {
     if (invoice.status === 'rascunho' || invoice.status === 'anulada') {
-      return 'Apenas facturas emitidas podem ser anuladas.';
+      return t('invoices.annulBlock.notIssued');
     }
     if (invoice.status === 'paga' || (Number(invoice.amount_paid) || 0) > 0) {
-      return 'Uma factura com pagamentos não pode ser anulada. Anule primeiro os recibos.';
+      return t('invoices.annulBlock.hasPayments');
     }
     if (!this.isInCurrentQuarter(invoice.date)) {
-      return 'Uma factura de um trimestre já encerrado não pode ser anulada.';
+      return t('invoices.annulBlock.closedQuarter');
     }
     return null;
   }
@@ -233,14 +234,14 @@ export class InvoiceService {
   }
 
   getStatusLabel(status: string): string {
-    const labels: { [key: string]: string } = {
-      'rascunho': 'Rascunho',
-      'pendente': 'Pendente',
-      'paga': 'Paga',
-      'vencida': 'Vencida',
-      'anulada': 'Anulada'
+    const keys: { [key: string]: string } = {
+      'rascunho': 'invoices.status.draft',
+      'pendente': 'invoices.status.pending',
+      'paga': 'invoices.status.paid',
+      'vencida': 'invoices.status.overdue',
+      'anulada': 'invoices.status.cancelled'
     };
-    return labels[status] || status;
+    return keys[status] ? t(keys[status]) : status;
   }
 
   getStatusColor(status: string): string {
@@ -342,7 +343,7 @@ export class InvoiceService {
       return invoice;
     } catch (error) {
       console.error('Erro ao criar factura:', error);
-      this.lastError = friendlyErrorMessage(error, 'Não foi possível guardar a factura.');
+      this.lastError = friendlyErrorMessage(error, t('invoices.messages.saveFailed'));
       return null;
     }
   }
@@ -395,7 +396,7 @@ export class InvoiceService {
       return true;
     } catch (error) {
       console.error('Erro ao emitir factura:', error);
-      this.lastError = friendlyErrorMessage(error, 'Não foi possível emitir a factura.');
+      this.lastError = friendlyErrorMessage(error, t('invoices.messages.issueFailed'));
       return false;
     }
   }
@@ -488,7 +489,7 @@ export class InvoiceService {
       return updatedInvoice;
     } catch (error) {
       console.error('Erro ao actualizar factura:', error);
-      this.lastError = friendlyErrorMessage(error, 'Não foi possível actualizar a factura.');
+      this.lastError = friendlyErrorMessage(error, t('invoices.messages.updateFailed'));
       return null;
     }
   }
@@ -528,7 +529,7 @@ export class InvoiceService {
       return true;
     } catch (error) {
       console.error('Erro ao eliminar factura:', error);
-      this.lastError = friendlyErrorMessage(error, 'Não foi possível eliminar o rascunho.');
+      this.lastError = friendlyErrorMessage(error, t('invoices.messages.deleteDraftFailed'));
       return false;
     }
   }
@@ -541,7 +542,7 @@ export class InvoiceService {
         .eq('id', id)
         .single();
 
-      if (fetchError || !invoice) throw fetchError || new Error('Factura não encontrada');
+      if (fetchError || !invoice) throw fetchError || new Error(t('invoices.messages.notFound'));
 
       const blockReason = this.getAnnulBlockReason(invoice as Invoice);
       if (blockReason) throw new Error(blockReason);
@@ -576,14 +577,18 @@ export class InvoiceService {
       return true;
     } catch (error) {
       console.error('Erro ao anular factura:', error);
-      this.lastError = friendlyErrorMessage(error, 'Não foi possível anular a factura.');
+      this.lastError = friendlyErrorMessage(error, t('invoices.messages.annulFailed'));
       return false;
     }
   }
 
-  formatCurrency(value: number): string {
+  /**
+   * Valor em MZN. Por omissão na língua da interface; os documentos fiscais
+   * usam o próprio formatador em pt-MZ (documents/document-format.ts).
+   */
+  formatCurrency(value: number, locale: string = currentLocale()): string {
     const safeValue = Number.isFinite(Number(value)) ? Number(value) : 0;
-    return new Intl.NumberFormat('pt-MZ', {
+    return new Intl.NumberFormat(locale, {
       style: 'decimal',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
@@ -598,13 +603,21 @@ export class InvoiceService {
 
 
 
-  formatDateTime(dateString?: string): string {
+  /**
+   * Data e hora segundo Configurações > Sistema. O texto de ligação ("às")
+   * segue a língua da interface; com locale 'pt-MZ' (documentos fiscais) fica
+   * sempre em português.
+   */
+  formatDateTime(dateString?: string, locale: string = currentLocale()): string {
     if (!dateString) return '-';
     // Só data (sem hora): não inventar "00:00".
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return this.preferences.formatDate(dateString);
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return dateString;
-    return `${this.preferences.formatDate(date)} às ${this.preferences.formatTime(date)}`;
+    const day = this.preferences.formatDate(date);
+    const time = this.preferences.formatTime(date);
+    if (locale === 'pt-MZ') return `${day} às ${time}`;
+    return t('invoices.format.dateTime', { date: day, time });
   }
 
   async incrementPrintCount(invoiceId: string): Promise<number> {

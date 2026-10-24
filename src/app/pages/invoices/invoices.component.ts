@@ -18,6 +18,8 @@ import { CompanyService } from '../../core/services/company.service';
 import { ExportService } from '../../core/services/export.service';
 import { InvoiceDialogComponent } from '../../shared/components/invoice-dialog.component';
 import { PaymentDialogComponent } from '../../shared/components/payment-dialog.component';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { t } from '../../core/i18n/i18n';
 
 @Component({
   selector: 'app-invoices',
@@ -35,7 +37,8 @@ import { PaymentDialogComponent } from '../../shared/components/payment-dialog.c
     MatSnackBarModule,
     MatDialogModule,
     MatFormFieldModule,
-    MatSelectModule
+    MatSelectModule,
+    TranslatePipe
   ],
   templateUrl: './invoices.component.html',
   styleUrls: ['./invoices.component.css']
@@ -155,15 +158,15 @@ export class InvoicesComponent implements OnInit {
   }
 
   async emitDraft(invoice: Invoice) {
-    if (!confirm(`Deseja validar e emitir esta factura? Esta acção irá atribuir o número sequencial final.`)) {
+    if (!confirm(t('invoices.messages.confirmIssue'))) {
       return;
     }
 
     const success = await this.invoiceService.emitInvoice(invoice.id);
     if (success) {
-      this.snackBar.open('Factura emitida com sucesso!', 'Fechar', { duration: 3000 });
+      this.snackBar.open(t('invoices.messages.issued'), t('common.actions.close'), { duration: 3000 });
     } else {
-      this.snackBar.open(this.invoiceService.lastError || 'Não foi possível emitir a factura.', 'Fechar', { duration: 6000 });
+      this.snackBar.open(this.invoiceService.lastError || t('invoices.messages.issueFailed'), t('common.actions.close'), { duration: 6000 });
     }
   }
 
@@ -172,30 +175,30 @@ export class InvoicesComponent implements OnInit {
   }
 
   async deleteInvoice(invoice: Invoice) {
-    if (!confirm(`Tem certeza que deseja eliminar o rascunho ${invoice.invoice_number}?`)) {
+    if (!confirm(t('invoices.messages.confirmDeleteDraft', { number: invoice.invoice_number }))) {
       return;
     }
 
     const success = await this.invoiceService.deleteInvoice(invoice.id);
 
     if (success) {
-      this.snackBar.open('Rascunho eliminado!', 'Fechar', { duration: 2000 });
+      this.snackBar.open(t('invoices.messages.draftDeleted'), t('common.actions.close'), { duration: 2000 });
     } else {
-      this.snackBar.open(this.invoiceService.lastError || 'Não foi possível eliminar o rascunho.', 'Fechar', { duration: 6000 });
+      this.snackBar.open(this.invoiceService.lastError || t('invoices.messages.deleteDraftFailed'), t('common.actions.close'), { duration: 6000 });
     }
   }
 
   async annulInvoice(invoice: Invoice) {
-    if (!confirm(`Tem certeza que deseja ANULAR a factura ${invoice.invoice_number}? Esta acção irá restaurar o stock e excluir a factura dos cálculos de impostos.`)) {
+    if (!confirm(t('invoices.messages.confirmAnnul', { number: invoice.invoice_number }))) {
       return;
     }
 
     const success = await this.invoiceService.annulInvoice(invoice.id);
 
     if (success) {
-      this.snackBar.open('Factura anulada com sucesso!', 'Fechar', { duration: 3000 });
+      this.snackBar.open(t('invoices.messages.annulled'), t('common.actions.close'), { duration: 3000 });
     } else {
-      this.snackBar.open(this.invoiceService.lastError || 'Não foi possível anular a factura.', 'Fechar', { duration: 6000 });
+      this.snackBar.open(this.invoiceService.lastError || t('invoices.messages.annulFailed'), t('common.actions.close'), { duration: 6000 });
     }
   }
 
@@ -211,40 +214,35 @@ export class InvoicesComponent implements OnInit {
     return this.invoiceService.formatDateTime(dateString);
   }
 
-  exportExcel() {
-    const data = this.filteredInvoices().map(inv => ({
-      'Nº Factura': inv.invoice_number,
-      'Cliente': inv.client?.name || '-',
-      'NUIT Cliente': inv.client?.nuit || '-',
-      'Emitido Por': inv.issuer_name || '-',
-      'Data e Hora de Emissão': this.invoiceService.formatDateTime(inv.created_at || inv.date),
-      'Vencimento': inv.due_date ? this.invoiceService.formatDate(inv.due_date) : 'Imediato',
-      'Subtotal (MZN)': inv.subtotal,
-      'Total (MZN)': inv.total,
-      'Pago (MZN)': inv.amount_paid,
-      'Pendente (MZN)': inv.amount_pending,
-      'Estado': this.invoiceService.getStatusLabel(inv.status)
+  /** Linhas da exportação (Excel/CSV), com cabeçalhos na língua da interface. */
+  private exportRows() {
+    const col = (key: string) => t(`invoices.export.columns.${key}`);
+    return this.filteredInvoices().map(inv => ({
+      [col('number')]: inv.invoice_number,
+      [col('client')]: inv.client?.name || '-',
+      [col('clientNuit')]: inv.client?.nuit || '-',
+      [col('issuedBy')]: inv.issuer_name || '-',
+      [col('issuedAt')]: this.invoiceService.formatDateTime(inv.created_at || inv.date),
+      [col('dueDate')]: inv.due_date ? this.invoiceService.formatDate(inv.due_date) : t('invoices.list.immediate'),
+      [col('subtotal')]: inv.subtotal,
+      [col('total')]: inv.total,
+      [col('paid')]: inv.amount_paid,
+      [col('pending')]: inv.amount_pending,
+      [col('status')]: this.invoiceService.getStatusLabel(inv.status)
     }));
+  }
+
+  private exportFileName(): string {
     const dateStr = new Date().toISOString().split('T')[0];
-    this.exportService.exportToExcel(data, `Facturas_${dateStr}`);
+    return `${t('invoices.export.fileName')}_${dateStr}`;
+  }
+
+  exportExcel() {
+    this.exportService.exportToExcel(this.exportRows(), this.exportFileName());
   }
 
   exportCsv() {
-    const data = this.filteredInvoices().map(inv => ({
-      'Nº Factura': inv.invoice_number,
-      'Cliente': inv.client?.name || '-',
-      'NUIT Cliente': inv.client?.nuit || '-',
-      'Emitido Por': inv.issuer_name || '-',
-      'Data e Hora de Emissão': this.invoiceService.formatDateTime(inv.created_at || inv.date),
-      'Vencimento': inv.due_date ? this.invoiceService.formatDate(inv.due_date) : 'Imediato',
-      'Subtotal (MZN)': inv.subtotal,
-      'Total (MZN)': inv.total,
-      'Pago (MZN)': inv.amount_paid,
-      'Pendente (MZN)': inv.amount_pending,
-      'Estado': this.invoiceService.getStatusLabel(inv.status)
-    }));
-    const dateStr = new Date().toISOString().split('T')[0];
-    this.exportService.exportToCsv(data, `Facturas_${dateStr}`);
+    this.exportService.exportToCsv(this.exportRows(), this.exportFileName());
   }
 
   getStatusColor(status: string): string {
@@ -286,14 +284,14 @@ export class InvoicesComponent implements OnInit {
     dialogRef.afterClosed().subscribe((success: boolean) => {
       if (success) {
         this.invoiceService.loadInvoices();
-        this.snackBar.open('Pagamento registado com sucesso!', 'Fechar', { duration: 3000 });
+        this.snackBar.open(t('payments.messages.registered'), t('common.actions.close'), { duration: 3000 });
       }
     });
   }
 
   async editInvoice(invoice: Invoice) {
     if (!this.invoiceService.canEditInvoice(invoice)) {
-      this.snackBar.open('Não é possível editar esta factura', 'Fechar', { duration: 3000 });
+      this.snackBar.open(t('invoices.messages.cannotEdit'), t('common.actions.close'), { duration: 3000 });
       return;
     }
 

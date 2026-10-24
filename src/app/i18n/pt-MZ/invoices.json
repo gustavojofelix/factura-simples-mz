@@ -1,1 +1,193 @@
-{}
+{
+  "list": {
+    "title": "Facturas",
+    "subtitle": "Gestão de facturas de {company}",
+    "exportExcel": "Exportar para Excel (.xlsx)",
+    "exportCsv": "Exportar para CSV (.csv)",
+    "newInvoice": "Nova Factura",
+    "stats": {
+      "total": "Total",
+      "paid": "Pagas",
+      "pending": "Pendentes",
+      "overdue": "Vencidas"
+    },
+    "searchPlaceholder": "Pesquisar facturas...",
+    "sortBy": "Ordenar por",
+    "sort": {
+      "date": "Data",
+      "client": "Cliente",
+      "number": "Número",
+      "amount": "Valor"
+    },
+    "ascending": "Crescente",
+    "descending": "Decrescente",
+    "clearFilters": "Limpar Filtros",
+    "noResults": "Nenhuma factura encontrada",
+    "clearSearch": "Limpar pesquisa",
+    "empty": "Ainda não tem facturas",
+    "createFirst": "Criar Primeira Factura",
+    "columns": {
+      "number": "Nº Factura",
+      "client": "Cliente",
+      "issuer": "Emitido por",
+      "issuedAt": "Data/Hora Emissão",
+      "dueDate": "Vencimento",
+      "total": "Total",
+      "status": "Estado",
+      "actions": "Acções"
+    },
+    "clientFallback": "Cliente",
+    "immediate": "Imediato",
+    "paidAmount": "Pago: {amount}",
+    "pendingAmount": "Pend: {amount}",
+    "menu": {
+      "validateAndIssue": "Validar e Emitir",
+      "viewDetails": "Ver Detalhes",
+      "registerPayment": "Registar Pagamento",
+      "printPdf": "Imprimir PDF",
+      "sendEmail": "Enviar Email",
+      "deleteDraft": "Eliminar Rascunho",
+      "annul": "Anular Factura"
+    },
+    "count": {
+      "one": "{count} factura(s)",
+      "other": "{count} factura(s)"
+    },
+    "countFiltered": {
+      "one": "{count} factura(s) de {total} no total",
+      "other": "{count} factura(s) de {total} no total"
+    }
+  },
+  "status": {
+    "draft": "Rascunho",
+    "pending": "Pendente",
+    "paid": "Paga",
+    "overdue": "Vencida",
+    "cancelled": "Anulada"
+  },
+  "annulBlock": {
+    "notIssued": "Apenas facturas emitidas podem ser anuladas.",
+    "hasPayments": "Uma factura com pagamentos não pode ser anulada. Anule primeiro os recibos.",
+    "closedQuarter": "Uma factura de um trimestre já encerrado não pode ser anulada."
+  },
+  "format": {
+    "dateTime": "{date} às {time}"
+  },
+  "messages": {
+    "confirmIssue": "Deseja validar e emitir esta factura? Esta acção irá atribuir o número sequencial final.",
+    "issued": "Factura emitida com sucesso!",
+    "issueFailed": "Não foi possível emitir a factura.",
+    "issueError": "Erro ao emitir factura",
+    "confirmDeleteDraft": "Tem certeza que deseja eliminar o rascunho {number}?",
+    "draftDeleted": "Rascunho eliminado!",
+    "deleteDraftFailed": "Não foi possível eliminar o rascunho.",
+    "confirmAnnul": "Tem certeza que deseja ANULAR a factura {number}? Esta acção irá restaurar o stock e excluir a factura dos cálculos de impostos.",
+    "annulled": "Factura anulada com sucesso!",
+    "annulFailed": "Não foi possível anular a factura.",
+    "annulError": "Erro ao anular factura",
+    "cannotEdit": "Não é possível editar esta factura",
+    "saveFailed": "Não foi possível guardar a factura.",
+    "updateFailed": "Não foi possível actualizar a factura.",
+    "updated": "Factura actualizada com sucesso!",
+    "draftSaved": "Rascunho guardado!",
+    "notFound": "Factura não encontrada"
+  },
+  "export": {
+    "fileName": "Facturas",
+    "columns": {
+      "number": "Nº Factura",
+      "client": "Cliente",
+      "clientNuit": "NUIT Cliente",
+      "issuedBy": "Emitido Por",
+      "issuedAt": "Data e Hora de Emissão",
+      "dueDate": "Vencimento",
+      "subtotal": "Subtotal (MZN)",
+      "total": "Total (MZN)",
+      "paid": "Pago (MZN)",
+      "pending": "Pendente (MZN)",
+      "status": "Estado"
+    }
+  },
+  "dialog": {
+    "editTitle": "Editar Factura",
+    "selectClient": "Selecionar Cliente",
+    "client": "Cliente",
+    "newClient": "Novo Cliente",
+    "phone": "Tel: {phone}",
+    "nextAddItems": "Próximo: Adicionar Itens",
+    "stepDetails": "Detalhes da Factura",
+    "addItemsTitle": "Adicionar Itens (Produtos ou Serviços)",
+    "searchProduct": "Pesquisar Produto ou Serviço",
+    "searchProductPlaceholder": "Digite o nome, descrição ou ID...",
+    "stock": "Stock: {stock}",
+    "searchHint": "O catálogo é atualizado automaticamente conforme você digita",
+    "qty": "Qtd",
+    "selectedItem": "Item selecionado:",
+    "unitFallback": "unidade",
+    "columns": {
+      "item": "Item",
+      "unitPrice": "Preço Unit."
+    },
+    "removeItem": "Remover Item",
+    "paymentTerm": "Prazo de Pagamento",
+    "termDays": "{days} Dias",
+    "paymentTermHint": "A factura será marcada como vencida após este prazo",
+    "notes": "Notas da Factura",
+    "notesPlaceholder": "Ex: Pagamento no ato da entrega, Dados bancários...",
+    "totalToPay": "Valor Total a Pagar",
+    "emptyItems": "A lista de itens está vazia.",
+    "emptyItemsHint": "Pesquise e adicione produtos acima para começar.",
+    "draft": "Rascunho",
+    "update": "Actualizar",
+    "issue": "Emitir Factura",
+    "messages": {
+      "noQuantity": "O produto \"{name}\" não tem quantidade seleccionada. Indique pelo menos uma unidade.",
+      "invalidQuantity": "Indique uma quantidade válida.",
+      "alreadyAdded": "O produto \"{name}\" já foi adicionado à factura. Pode alterar a quantidade na lista abaixo.",
+      "noStock": "Sem stock disponível para o produto \"{name}\".",
+      "qtyExceedsStock": "A quantidade solicitada ({qty}) é superior ao stock disponível ({stock}) para o produto \"{name}\".",
+      "qtyIncreaseExceedsStock": "A quantidade ({qty}) ultrapassa o stock disponível ({stock}) para o produto \"{name}\".",
+      "productAdded": "Produto adicionado!",
+      "issueNoStock": "Não é possível emitir. Sem stock para o produto \"{name}\".",
+      "issueQtyExceedsStock": "Não é possível emitir. O item \"{name}\" tem quantidade ({qty}) superior ao stock disponível ({stock}).",
+      "selectClientAndProducts": "Selecione cliente e adicione produtos"
+    }
+  },
+  "quickClient": {
+    "title": "Cliente Rápido",
+    "namePlaceholder": "Nome do cliente",
+    "nuitOptional": "NUIT (opcional)",
+    "phoneOptional": "Telefone (opcional)",
+    "created": "Cliente criado!"
+  },
+  "detail": {
+    "title": "Factura {number}",
+    "reprint": "2ª VIA",
+    "original": "ORIGINAL",
+    "issuedAt": "Data e Hora de Emissão: {date}",
+    "issuedBy": "Emitido por: {name}",
+    "email": "Email",
+    "dueDate": "Vencimento: {date}",
+    "generatingPdf": "A gerar PDF...",
+    "payments": "Pagamentos",
+    "paymentColumns": {
+      "receipt": "Recibo",
+      "date": "Data",
+      "method": "Método",
+      "reference": "Referência",
+      "amount": "Valor",
+      "actions": "Ações"
+    },
+    "annulledBadge": "ANULADO",
+    "noPayments": "Nenhum pagamento registado",
+    "messages": {
+      "popupBlocked": "Não foi possível abrir a janela de impressão. Verifique se o navegador está a bloquear janelas.",
+      "printFailed": "Não foi possível preparar a impressão.",
+      "pdfFailed": "Erro ao gerar o ficheiro PDF. Por favor, tente novamente.",
+      "noClientEmail": "O cliente associado a esta factura não possui endereço de e-mail.",
+      "sendRejected": "O envio foi recusado.",
+      "emailSent": "E-mail com a factura {number} enviado com sucesso para {email}!",
+      "emailFailed": "Ocorreu um erro ao enviar o e-mail."
+    }
+  }
+}

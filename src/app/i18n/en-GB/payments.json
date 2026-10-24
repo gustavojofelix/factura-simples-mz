@@ -1,1 +1,95 @@
-{}
+{
+  "methods": {
+    "cash": "Cash",
+    "bankTransfer": "Bank Transfer",
+    "cheque": "Cheque",
+    "mobileWallet": "Mobile Wallet",
+    "other": "Other"
+  },
+  "messages": {
+    "registered": "Payment recorded successfully!",
+    "createFailed": "The payment could not be recorded.",
+    "receiptAnnulled": "Receipt cancelled.",
+    "annulReceiptFailed": "The receipt could not be cancelled."
+  },
+  "dialog": {
+    "title": "Record Payment",
+    "invoiceLabel": "Invoice:",
+    "totalLabel": "Total:",
+    "paidLabel": "Paid:",
+    "pendingLabel": "Outstanding:",
+    "amount": "Payment Amount",
+    "amountMin": "Amount must be greater than zero",
+    "amountMax": "Amount cannot exceed the outstanding balance",
+    "partial": "Partial Payment",
+    "full": "Full Payment",
+    "date": "Payment Date",
+    "dateMin": "The date cannot be earlier than the invoice date ({date})",
+    "dateMax": "The date cannot be later than today ({date})",
+    "method": "Payment Method",
+    "reference": "Reference (Optional)",
+    "referencePlaceholder": "Transaction no., cheque, etc.",
+    "notes": "Notes (Optional)",
+    "errorDateMin": "The payment date cannot be earlier than the invoice date ({date}).",
+    "errorDateMax": "The payment date cannot be later than today ({date}).",
+    "saveFailed": "The payment could not be recorded. Please try again."
+  },
+  "receipt": {
+    "title": "Payment Receipt",
+    "loadError": "Error loading receipt",
+    "sendEmail": "Send Email",
+    "pdfFailed": "The receipt PDF could not be generated.",
+    "emailSent": "Receipt sent successfully to {email}.",
+    "emailFailed": "An error occurred while sending the receipt."
+  },
+  "annul": {
+    "title": "Cancel receipt {number}",
+    "description": "The {amount} receipt will be marked as cancelled and will no longer count as a payment. The number is not reused. This action cannot be undone.",
+    "reason": "Reason for cancellation",
+    "reasonPlaceholder": "E.g.: payment recorded twice",
+    "confirm": "Cancel receipt"
+  },
+  "subscription": {
+    "title": "Subscription Activation",
+    "planPrice": "{plan} plan • {price} {currency}/{cycle}",
+    "voucherQuestion": "Have a voucher / coupon?",
+    "applied": "Applied",
+    "voucherPlaceholder": "E.g.: BEMVINDO20",
+    "apply": "Apply",
+    "finalAmount": "Final Amount Due",
+    "planBadge": "{plan} plan",
+    "freeCovered": "The voucher covers 100% of the amount! You can activate the subscription right away at no cost.",
+    "activateFree": "Activate Free Subscription",
+    "walletLabel": "Mobile Wallet for Payment",
+    "phoneLabel": "M-Pesa / e-Mola number",
+    "sending": "Sending request...",
+    "sendRequest": "Send Request for {amount} {currency}",
+    "confirmTitle": "Confirm on your phone",
+    "sentToBefore": "A payment request has been sent to",
+    "sentToAfter": ".",
+    "enterPinBefore": "Please enter your",
+    "enterPinAfter": "PIN to confirm the payment.",
+    "autoActivate": "The plan will be activated automatically once the payment is confirmed.",
+    "failed": "The payment was not completed (cancelled, insufficient balance or timed out). You can close and try again.",
+    "waiting": "Waiting for payment confirmation...",
+    "reference": "Reference:",
+    "cycles": {
+      "monthly": "30 days",
+      "quarterly": "90 days",
+      "semiannual": "180 days",
+      "yearly": "360 days"
+    },
+    "phoneRequired": "Phone number is required",
+    "phoneInvalid": "Invalid phone number (e.g. 841234567 or 861234567)",
+    "messages": {
+      "confirmed": "Payment confirmed! {plan} plan activated.",
+      "voucherError": "Error validating voucher.",
+      "noTrialBack": "You cannot return to the free trial after subscribing to a paid plan.",
+      "noDowngrade": "You cannot downgrade while the subscription is active.",
+      "activatedVoucher": "Subscription activated successfully with voucher!",
+      "activateError": "Error activating subscription.",
+      "activateUnexpected": "Unexpected error activating subscription.",
+      "requestError": "Error submitting payment request"
+    }
+  }
+}

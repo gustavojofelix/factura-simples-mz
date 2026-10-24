@@ -1,1 +1,95 @@
-{}
+{
+  "methods": {
+    "cash": "Espèces",
+    "bankTransfer": "Virement bancaire",
+    "cheque": "Chèque",
+    "mobileWallet": "Portefeuille mobile",
+    "other": "Autre"
+  },
+  "messages": {
+    "registered": "Paiement enregistré avec succès !",
+    "createFailed": "Impossible d'enregistrer le paiement.",
+    "receiptAnnulled": "Reçu annulé.",
+    "annulReceiptFailed": "Impossible d'annuler le reçu."
+  },
+  "dialog": {
+    "title": "Enregistrer un paiement",
+    "invoiceLabel": "Facture :",
+    "totalLabel": "Total :",
+    "paidLabel": "Payé :",
+    "pendingLabel": "Restant dû :",
+    "amount": "Montant du paiement",
+    "amountMin": "Le montant doit être supérieur à zéro",
+    "amountMax": "Le montant ne peut pas dépasser le restant dû",
+    "partial": "Paiement partiel",
+    "full": "Paiement total",
+    "date": "Date du paiement",
+    "dateMin": "La date ne peut pas être antérieure à la date de la facture ({date})",
+    "dateMax": "La date ne peut pas être postérieure à aujourd'hui ({date})",
+    "method": "Mode de paiement",
+    "reference": "Référence (facultatif)",
+    "referencePlaceholder": "N° de transaction, chèque, etc.",
+    "notes": "Remarques (facultatif)",
+    "errorDateMin": "La date du paiement ne peut pas être antérieure à la date de la facture ({date}).",
+    "errorDateMax": "La date du paiement ne peut pas être postérieure à aujourd'hui ({date}).",
+    "saveFailed": "Impossible d'enregistrer le paiement. Veuillez réessayer."
+  },
+  "receipt": {
+    "title": "Reçu de paiement",
+    "loadError": "Erreur lors du chargement du reçu",
+    "sendEmail": "Envoyer par e-mail",
+    "pdfFailed": "Impossible de générer le reçu en PDF.",
+    "emailSent": "Reçu envoyé avec succès à {email}.",
+    "emailFailed": "Une erreur s'est produite lors de l'envoi du reçu."
+  },
+  "annul": {
+    "title": "Annuler le reçu {number}",
+    "description": "Le reçu de {amount} sera marqué comme annulé et ne comptera plus comme paiement. Le numéro n'est pas réutilisé. Cette action est irréversible.",
+    "reason": "Motif de l'annulation",
+    "reasonPlaceholder": "Ex. : paiement enregistré en double",
+    "confirm": "Annuler le reçu"
+  },
+  "subscription": {
+    "title": "Activation de l'abonnement",
+    "planPrice": "Formule {plan} • {price} {currency}/{cycle}",
+    "voucherQuestion": "Vous avez un bon de réduction / code promo ?",
+    "applied": "Appliqué",
+    "voucherPlaceholder": "Ex. : BEMVINDO20",
+    "apply": "Appliquer",
+    "finalAmount": "Montant final à payer",
+    "planBadge": "Formule {plan}",
+    "freeCovered": "Le bon couvre 100 % du montant ! Vous pouvez activer l'abonnement immédiatement et gratuitement.",
+    "activateFree": "Activer l'abonnement gratuit",
+    "walletLabel": "Portefeuille mobile pour le paiement",
+    "phoneLabel": "Numéro M-Pesa / e-Mola",
+    "sending": "Envoi de la demande...",
+    "sendRequest": "Envoyer une demande de {amount} {currency}",
+    "confirmTitle": "Confirmez sur votre téléphone",
+    "sentToBefore": "Une demande de paiement a été envoyée au",
+    "sentToAfter": ".",
+    "enterPinBefore": "Veuillez saisir votre code PIN",
+    "enterPinAfter": "pour confirmer le paiement.",
+    "autoActivate": "La formule sera activée automatiquement après la confirmation du paiement.",
+    "failed": "Le paiement n'a pas abouti (annulé, solde insuffisant ou délai dépassé). Vous pouvez fermer et réessayer.",
+    "waiting": "En attente de la confirmation du paiement...",
+    "reference": "Référence :",
+    "cycles": {
+      "monthly": "30 jours",
+      "quarterly": "90 jours",
+      "semiannual": "180 jours",
+      "yearly": "360 jours"
+    },
+    "phoneRequired": "Le numéro de téléphone est obligatoire",
+    "phoneInvalid": "Numéro de téléphone invalide (ex. : 841234567 ou 861234567)",
+    "messages": {
+      "confirmed": "Paiement confirmé ! Formule {plan} activée.",
+      "voucherError": "Erreur lors de la validation du bon.",
+      "noTrialBack": "Impossible de revenir à l'essai gratuit après avoir souscrit une formule payante.",
+      "noDowngrade": "Impossible de passer à une formule inférieure tant que l'abonnement est actif.",
+      "activatedVoucher": "Abonnement activé avec succès grâce au bon !",
+      "activateError": "Erreur lors de l'activation de l'abonnement.",
+      "activateUnexpected": "Erreur inattendue lors de l'activation de l'abonnement.",
+      "requestError": "Erreur lors de la demande de paiement"
+    }
+  }
+}

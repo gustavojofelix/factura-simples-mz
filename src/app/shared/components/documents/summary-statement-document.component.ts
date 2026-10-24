@@ -12,6 +12,7 @@ import {
 import { formatIsoDate } from '../../../core/utils/date.util';
 import { PreferencesService } from '../../../core/services/preferences.service';
 import { documentThemeVars } from './document-theme';
+import { documentStatementStatusLabel, formatDocumentCurrency } from './document-format';
 
 /**
  * Extracto geral dos clientes: a posição de cada cliente da empresa no período.
@@ -161,11 +162,11 @@ export class SummaryStatementDocumentComponent {
   debtorCount = computed(() => this.rows().filter(r => r.status !== 'pago').length);
 
   statusLabel(row: ClientStatementSummaryRow): string {
-    return this.statementService.getStatusLabel(row.status);
+    return documentStatementStatusLabel(row.status);
   }
 
   formatCurrency(value: number): string {
-    return this.statementService.formatCurrency(value);
+    return formatDocumentCurrency(value);
   }
 
   formatDate(iso: string): string {

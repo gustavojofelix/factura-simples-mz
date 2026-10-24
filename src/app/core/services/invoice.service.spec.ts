@@ -4,8 +4,15 @@ import { InvoiceService } from './invoice.service';
 import { SupabaseService } from './supabase.service';
 import { CompanyService } from './company.service';
 import { AuditLogService } from './audit-log.service';
+import { LANGUAGE_STORAGE_KEY, initI18n } from '../i18n/i18n';
 
 describe('InvoiceService', () => {
+  // Os textos esperados são os de pt-MZ.
+  beforeAll(async () => {
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, 'pt-MZ');
+    await initI18n();
+  });
+
   let service: InvoiceService;
   let supabaseMock: any;
   let companyMock: any;

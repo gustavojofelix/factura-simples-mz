@@ -8,6 +8,7 @@ import {
   DEFAULT_DOCUMENT_BRANDING
 } from '../../../core/services/document-settings.service';
 import { documentThemeVars } from './document-theme';
+import { DOCUMENT_LOCALE, formatDocumentCurrency } from './document-format';
 
 /**
  * O documento fiscal da factura.
@@ -237,11 +238,11 @@ export class InvoiceDocumentComponent {
   );
 
   formatCurrency(value: number): string {
-    return this.invoiceService.formatCurrency(value);
+    return formatDocumentCurrency(value);
   }
 
   formatDateTime(date?: string): string {
-    return this.invoiceService.formatDateTime(date);
+    return this.invoiceService.formatDateTime(date, DOCUMENT_LOCALE);
   }
 
   formatDate(date: string): string {

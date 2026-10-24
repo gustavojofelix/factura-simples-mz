@@ -4,6 +4,7 @@ import { SupabaseService } from './supabase.service';
 import { CompanyService } from './company.service';
 import { AuditLogService } from './audit-log.service';
 import { PreferencesService } from './preferences.service';
+import { currentLocale, t } from '../i18n/i18n';
 
 export interface Payment {
   id: string;
@@ -88,7 +89,7 @@ export class PaymentService {
       return data;
     } catch (error) {
       console.error('Erro ao criar pagamento:', error);
-      this.lastError = friendlyErrorMessage(error, 'Não foi possível registar o pagamento.');
+      this.lastError = friendlyErrorMessage(error, t('payments.messages.createFailed'));
       return null;
     }
   }
@@ -127,8 +128,8 @@ export class PaymentService {
       details,
       payment.id,
       invoice?.invoice_number
-        ? `${invoice.invoice_number} · ${this.formatCurrency(amount)}`
-        : `PAG-${this.formatCurrency(amount)}`,
+        ? `${invoice.invoice_number} · ${this.formatCurrency(amount, 'pt-MZ')}`
+        : `PAG-${this.formatCurrency(amount, 'pt-MZ')}`,
       invoice?.company_id || company?.id
     );
   }
@@ -241,18 +242,20 @@ export class PaymentService {
   }
 
   getPaymentMethodLabel(method: string): string {
-    const methods: { [key: string]: string } = {
-      'dinheiro': 'Dinheiro',
-      'transferencia': 'Transferência Bancária',
-      'cheque': 'Cheque',
-      'carteira_movel': 'Carteira Móvel',
-      'outro': 'Outro'
+    // O recibo (documento fiscal) usa documents/document-format.ts, sempre em português.
+    const keys: { [key: string]: string } = {
+      'dinheiro': 'payments.methods.cash',
+      'transferencia': 'payments.methods.bankTransfer',
+      'cheque': 'payments.methods.cheque',
+      'carteira_movel': 'payments.methods.mobileWallet',
+      'outro': 'payments.methods.other'
     };
-    return methods[method] || method;
+    return keys[method] ? t(keys[method]) : method;
   }
 
-  formatCurrency(value: number): string {
-    return new Intl.NumberFormat('pt-MZ', {
+  /** Valor em MZN, por omissão na língua da interface. */
+  formatCurrency(value: number, locale: string = currentLocale()): string {
+    return new Intl.NumberFormat(locale, {
       style: 'decimal',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2

@@ -11,6 +11,8 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { PaymentService } from '../../core/services/payment.service';
 import { ReceiptDetailComponent } from './receipt-detail.component';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { currentLocale, t } from '../../core/i18n/i18n';
 
 export interface PaymentDialogData {
   invoiceId: string;
@@ -33,77 +35,78 @@ export interface PaymentDialogData {
     MatButtonModule,
     MatSelectModule,
     MatDatepickerModule,
-    MatNativeDateModule
+    MatNativeDateModule,
+    TranslatePipe
   ],
   template: `
-    <h2 mat-dialog-title>Registar Pagamento</h2>
+    <h2 mat-dialog-title>{{ 'payments.dialog.title' | t }}</h2>
     <mat-dialog-content>
       <div class="mb-4">
-        <p class="text-sm text-gray-600">Factura: <span class="font-medium">{{ data.invoiceNumber }}</span></p>
-        <p class="text-sm text-gray-600">Total: <span class="font-medium">{{ formatCurrency(data.totalAmount) }}</span></p>
-        <p class="text-sm text-gray-600">Pago: <span class="font-medium text-green-600">{{ formatCurrency(data.amountPaid) }}</span></p>
-        <p class="text-sm text-gray-600">Pendente: <span class="font-medium text-orange-600">{{ formatCurrency(data.amountPending) }}</span></p>
+        <p class="text-sm text-gray-600">{{ 'payments.dialog.invoiceLabel' | t }} <span class="font-medium">{{ data.invoiceNumber }}</span></p>
+        <p class="text-sm text-gray-600">{{ 'payments.dialog.totalLabel' | t }} <span class="font-medium">{{ formatCurrency(data.totalAmount) }}</span></p>
+        <p class="text-sm text-gray-600">{{ 'payments.dialog.paidLabel' | t }} <span class="font-medium text-green-600">{{ formatCurrency(data.amountPaid) }}</span></p>
+        <p class="text-sm text-gray-600">{{ 'payments.dialog.pendingLabel' | t }} <span class="font-medium text-orange-600">{{ formatCurrency(data.amountPending) }}</span></p>
       </div>
 
       <form [formGroup]="paymentForm" class="flex flex-col gap-4">
         <mat-form-field>
-          <mat-label>Valor do Pagamento</mat-label>
+          <mat-label>{{ 'payments.dialog.amount' | t }}</mat-label>
           <input matInput type="number" formControlName="amount" step="0.01" min="0.01" [max]="data.amountPending">
           <span matSuffix>MZN</span>
           @if (paymentForm.get('amount')?.hasError('required')) {
-            <mat-error>Campo obrigatório</mat-error>
+            <mat-error>{{ 'common.validation.required' | t }}</mat-error>
           }
           @if (paymentForm.get('amount')?.hasError('min')) {
-            <mat-error>Valor deve ser maior que zero</mat-error>
+            <mat-error>{{ 'payments.dialog.amountMin' | t }}</mat-error>
           }
           @if (paymentForm.get('amount')?.hasError('max')) {
-            <mat-error>Valor não pode ser maior que o pendente</mat-error>
+            <mat-error>{{ 'payments.dialog.amountMax' | t }}</mat-error>
           }
         </mat-form-field>
 
         <div class="flex gap-2">
           <button type="button" mat-stroked-button class="flex-1" (click)="setPartialPayment()">
-            Pagamento Parcial
+            {{ 'payments.dialog.partial' | t }}
           </button>
           <button type="button" mat-stroked-button class="flex-1" (click)="setFullPayment()">
-            Pagamento Total
+            {{ 'payments.dialog.full' | t }}
           </button>
         </div>
 
         <mat-form-field>
-          <mat-label>Data do Pagamento</mat-label>
+          <mat-label>{{ 'payments.dialog.date' | t }}</mat-label>
           <input matInput [matDatepicker]="picker" formControlName="payment_date" [min]="minDate" [max]="maxDate">
           <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
           <mat-datepicker #picker></mat-datepicker>
           @if (paymentForm.get('payment_date')?.hasError('required')) {
-            <mat-error>Campo obrigatório</mat-error>
+            <mat-error>{{ 'common.validation.required' | t }}</mat-error>
           }
           @if (paymentForm.get('payment_date')?.hasError('matDatepickerMin')) {
-            <mat-error>A data não pode ser anterior à data da factura ({{ getMinDateFormatted() }})</mat-error>
+            <mat-error>{{ 'payments.dialog.dateMin' | t: { date: getMinDateFormatted() } }}</mat-error>
           }
           @if (paymentForm.get('payment_date')?.hasError('matDatepickerMax')) {
-            <mat-error>A data não pode ser posterior à data actual ({{ getMaxDateFormatted() }})</mat-error>
+            <mat-error>{{ 'payments.dialog.dateMax' | t: { date: getMaxDateFormatted() } }}</mat-error>
           }
         </mat-form-field>
 
         <mat-form-field>
-          <mat-label>Método de Pagamento</mat-label>
+          <mat-label>{{ 'payments.dialog.method' | t }}</mat-label>
           <mat-select formControlName="payment_method">
-            <mat-option value="dinheiro">Dinheiro</mat-option>
-            <mat-option value="transferencia">Transferência Bancária</mat-option>
-            <mat-option value="cheque">Cheque</mat-option>
-            <mat-option value="carteira_movel">Carteira Móvel</mat-option>
-            <mat-option value="outro">Outro</mat-option>
+            <mat-option value="dinheiro">{{ 'payments.methods.cash' | t }}</mat-option>
+            <mat-option value="transferencia">{{ 'payments.methods.bankTransfer' | t }}</mat-option>
+            <mat-option value="cheque">{{ 'payments.methods.cheque' | t }}</mat-option>
+            <mat-option value="carteira_movel">{{ 'payments.methods.mobileWallet' | t }}</mat-option>
+            <mat-option value="outro">{{ 'payments.methods.other' | t }}</mat-option>
           </mat-select>
         </mat-form-field>
 
         <mat-form-field>
-          <mat-label>Referência (Opcional)</mat-label>
-          <input matInput formControlName="reference" placeholder="Nº de transação, cheque, etc.">
+          <mat-label>{{ 'payments.dialog.reference' | t }}</mat-label>
+          <input matInput formControlName="reference" [placeholder]="'payments.dialog.referencePlaceholder' | t">
         </mat-form-field>
 
         <mat-form-field>
-          <mat-label>Observações (Opcional)</mat-label>
+          <mat-label>{{ 'payments.dialog.notes' | t }}</mat-label>
           <textarea matInput formControlName="notes" rows="3"></textarea>
         </mat-form-field>
       </form>
@@ -115,9 +118,9 @@ export interface PaymentDialogData {
       }
     </mat-dialog-content>
     <mat-dialog-actions align="end">
-      <button mat-button (click)="cancel()">Cancelar</button>
+      <button mat-button (click)="cancel()">{{ 'common.actions.cancel' | t }}</button>
       <button mat-raised-button color="primary" (click)="save()" [disabled]="!paymentForm.valid || isSaving()">
-        {{ isSaving() ? 'A guardar...' : 'Registar Pagamento' }}
+        {{ (isSaving() ? 'common.status.saving' : 'payments.dialog.title') | t }}
       </button>
     </mat-dialog-actions>
   `,
@@ -170,11 +173,11 @@ export class PaymentDialogComponent {
 
   getMinDateFormatted(): string {
     if (!this.minDate) return '';
-    return this.minDate.toLocaleDateString('pt-MZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return this.minDate.toLocaleDateString(currentLocale(), { day: '2-digit', month: '2-digit', year: 'numeric' });
   }
 
   getMaxDateFormatted(): string {
-    return this.maxDate.toLocaleDateString('pt-MZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return this.maxDate.toLocaleDateString(currentLocale(), { day: '2-digit', month: '2-digit', year: 'numeric' });
   }
 
   setPartialPayment() {
@@ -200,13 +203,13 @@ export class PaymentDialogComponent {
       const min = new Date(this.minDate);
       min.setHours(0, 0, 0, 0);
       if (paymentDate < min) {
-        this.errorMessage.set(`A data do pagamento não pode ser anterior à data da factura (${this.getMinDateFormatted()}).`);
+        this.errorMessage.set(t('payments.dialog.errorDateMin', { date: this.getMinDateFormatted() }));
         return;
       }
     }
 
     if (paymentDate > today) {
-      this.errorMessage.set(`A data do pagamento não pode ser posterior à data actual (${this.getMaxDateFormatted()}).`);
+      this.errorMessage.set(t('payments.dialog.errorDateMax', { date: this.getMaxDateFormatted() }));
       return;
     }
 
@@ -237,10 +240,10 @@ export class PaymentDialogComponent {
           });
         }, 300);
       } else {
-        this.errorMessage.set(this.paymentService.lastError || 'Não foi possível registar o pagamento. Tente novamente.');
+        this.errorMessage.set(this.paymentService.lastError || t('payments.dialog.saveFailed'));
       }
     } catch (error) {
-      this.errorMessage.set(this.paymentService.lastError || 'Não foi possível registar o pagamento. Tente novamente.');
+      this.errorMessage.set(this.paymentService.lastError || t('payments.dialog.saveFailed'));
     } finally {
       this.isSaving.set(false);
     }

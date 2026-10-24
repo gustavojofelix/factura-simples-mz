@@ -1,1 +1,95 @@
-{}
+{
+  "methods": {
+    "cash": "Dinheiro",
+    "bankTransfer": "Transferência Bancária",
+    "cheque": "Cheque",
+    "mobileWallet": "Carteira Móvel",
+    "other": "Outro"
+  },
+  "messages": {
+    "registered": "Pagamento registado com sucesso!",
+    "createFailed": "Não foi possível registar o pagamento.",
+    "receiptAnnulled": "Recibo anulado.",
+    "annulReceiptFailed": "Não foi possível anular o recibo."
+  },
+  "dialog": {
+    "title": "Registar Pagamento",
+    "invoiceLabel": "Factura:",
+    "totalLabel": "Total:",
+    "paidLabel": "Pago:",
+    "pendingLabel": "Pendente:",
+    "amount": "Valor do Pagamento",
+    "amountMin": "Valor deve ser maior que zero",
+    "amountMax": "Valor não pode ser maior que o pendente",
+    "partial": "Pagamento Parcial",
+    "full": "Pagamento Total",
+    "date": "Data do Pagamento",
+    "dateMin": "A data não pode ser anterior à data da factura ({date})",
+    "dateMax": "A data não pode ser posterior à data actual ({date})",
+    "method": "Método de Pagamento",
+    "reference": "Referência (Opcional)",
+    "referencePlaceholder": "Nº de transação, cheque, etc.",
+    "notes": "Observações (Opcional)",
+    "errorDateMin": "A data do pagamento não pode ser anterior à data da factura ({date}).",
+    "errorDateMax": "A data do pagamento não pode ser posterior à data actual ({date}).",
+    "saveFailed": "Não foi possível registar o pagamento. Tente novamente."
+  },
+  "receipt": {
+    "title": "Recibo de Pagamento",
+    "loadError": "Erro ao carregar recibo",
+    "sendEmail": "Enviar Email",
+    "pdfFailed": "Não foi possível gerar o recibo em PDF.",
+    "emailSent": "Recibo enviado com sucesso para {email}.",
+    "emailFailed": "Ocorreu um erro ao enviar o recibo."
+  },
+  "annul": {
+    "title": "Anular recibo {number}",
+    "description": "O recibo de {amount} fica marcado como anulado e deixa de contar como pagamento. O número não é reutilizado. Esta acção não pode ser desfeita.",
+    "reason": "Motivo da anulação",
+    "reasonPlaceholder": "Ex.: pagamento registado em duplicado",
+    "confirm": "Anular recibo"
+  },
+  "subscription": {
+    "title": "Ativação da Subscrição",
+    "planPrice": "Plano {plan} • {price} {currency}/{cycle}",
+    "voucherQuestion": "Tem um Voucher / Cupom?",
+    "applied": "Aplicado",
+    "voucherPlaceholder": "Ex: BEMVINDO20",
+    "apply": "Aplicar",
+    "finalAmount": "Valor Final a Pagar",
+    "planBadge": "Plano {plan}",
+    "freeCovered": "O voucher cobre 100% do valor! Pode ativar a subscrição imediatamente sem custo.",
+    "activateFree": "Ativar Subscrição Grátis",
+    "walletLabel": "Carteira Móvel para Pagamento",
+    "phoneLabel": "Número M-Pesa / e-Mola",
+    "sending": "A enviar pedido...",
+    "sendRequest": "Enviar Pedido de {amount} {currency}",
+    "confirmTitle": "Confirme no seu telemóvel",
+    "sentToBefore": "Um pedido de pagamento foi enviado para",
+    "sentToAfter": ".",
+    "enterPinBefore": "Por favor, introduza o seu PIN",
+    "enterPinAfter": "para confirmar o pagamento.",
+    "autoActivate": "O plano será ativado automaticamente após a confirmação do pagamento.",
+    "failed": "O pagamento não foi concluído (cancelado, saldo insuficiente ou tempo esgotado). Pode fechar e tentar novamente.",
+    "waiting": "A aguardar a confirmação do pagamento...",
+    "reference": "Referência:",
+    "cycles": {
+      "monthly": "30 dias",
+      "quarterly": "90 dias",
+      "semiannual": "180 dias",
+      "yearly": "360 dias"
+    },
+    "phoneRequired": "O número de telefone é obrigatório",
+    "phoneInvalid": "Número de telefone inválido (ex: 841234567 ou 861234567)",
+    "messages": {
+      "confirmed": "Pagamento confirmado! Plano {plan} activado.",
+      "voucherError": "Erro ao validar voucher.",
+      "noTrialBack": "Não é possível voltar ao período de teste depois de subscrever um plano pago.",
+      "noDowngrade": "Não é possível fazer downgrade enquanto a subscrição estiver activa.",
+      "activatedVoucher": "Subscrição ativada com sucesso via Voucher!",
+      "activateError": "Erro ao ativar subscrição.",
+      "activateUnexpected": "Erro inesperado ao ativar subscrição.",
+      "requestError": "Erro ao efetuar pedido de pagamento"
+    }
+  }
+}

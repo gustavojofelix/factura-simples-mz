@@ -1,1 +1,193 @@
-{}
+{
+  "list": {
+    "title": "Invoices",
+    "subtitle": "Invoice management for {company}",
+    "exportExcel": "Export to Excel (.xlsx)",
+    "exportCsv": "Export to CSV (.csv)",
+    "newInvoice": "New Invoice",
+    "stats": {
+      "total": "Total",
+      "paid": "Paid",
+      "pending": "Pending",
+      "overdue": "Overdue"
+    },
+    "searchPlaceholder": "Search invoices...",
+    "sortBy": "Sort by",
+    "sort": {
+      "date": "Date",
+      "client": "Client",
+      "number": "Number",
+      "amount": "Amount"
+    },
+    "ascending": "Ascending",
+    "descending": "Descending",
+    "clearFilters": "Clear Filters",
+    "noResults": "No invoices found",
+    "clearSearch": "Clear search",
+    "empty": "You don't have any invoices yet",
+    "createFirst": "Create First Invoice",
+    "columns": {
+      "number": "Invoice No.",
+      "client": "Client",
+      "issuer": "Issued by",
+      "issuedAt": "Issue Date/Time",
+      "dueDate": "Due date",
+      "total": "Total",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "clientFallback": "Client",
+    "immediate": "Immediate",
+    "paidAmount": "Paid: {amount}",
+    "pendingAmount": "Due: {amount}",
+    "menu": {
+      "validateAndIssue": "Validate and Issue",
+      "viewDetails": "View Details",
+      "registerPayment": "Record Payment",
+      "printPdf": "Print PDF",
+      "sendEmail": "Send Email",
+      "deleteDraft": "Delete Draft",
+      "annul": "Cancel Invoice"
+    },
+    "count": {
+      "one": "{count} invoice",
+      "other": "{count} invoices"
+    },
+    "countFiltered": {
+      "one": "{count} invoice of {total} in total",
+      "other": "{count} invoices of {total} in total"
+    }
+  },
+  "status": {
+    "draft": "Draft",
+    "pending": "Pending",
+    "paid": "Paid",
+    "overdue": "Overdue",
+    "cancelled": "Cancelled"
+  },
+  "annulBlock": {
+    "notIssued": "Only issued invoices can be cancelled.",
+    "hasPayments": "An invoice with payments cannot be cancelled. Cancel the receipts first.",
+    "closedQuarter": "An invoice from a closed quarter cannot be cancelled."
+  },
+  "format": {
+    "dateTime": "{date} at {time}"
+  },
+  "messages": {
+    "confirmIssue": "Do you want to validate and issue this invoice? This will assign the final sequential number.",
+    "issued": "Invoice issued successfully!",
+    "issueFailed": "The invoice could not be issued.",
+    "issueError": "Error issuing invoice",
+    "confirmDeleteDraft": "Are you sure you want to delete draft {number}?",
+    "draftDeleted": "Draft deleted!",
+    "deleteDraftFailed": "The draft could not be deleted.",
+    "confirmAnnul": "Are you sure you want to CANCEL invoice {number}? This will restore the stock and exclude the invoice from tax calculations.",
+    "annulled": "Invoice cancelled successfully!",
+    "annulFailed": "The invoice could not be cancelled.",
+    "annulError": "Error cancelling invoice",
+    "cannotEdit": "This invoice cannot be edited",
+    "saveFailed": "The invoice could not be saved.",
+    "updateFailed": "The invoice could not be updated.",
+    "updated": "Invoice updated successfully!",
+    "draftSaved": "Draft saved!",
+    "notFound": "Invoice not found"
+  },
+  "export": {
+    "fileName": "Invoices",
+    "columns": {
+      "number": "Invoice No.",
+      "client": "Client",
+      "clientNuit": "Client NUIT",
+      "issuedBy": "Issued By",
+      "issuedAt": "Issue Date and Time",
+      "dueDate": "Due Date",
+      "subtotal": "Subtotal (MZN)",
+      "total": "Total (MZN)",
+      "paid": "Paid (MZN)",
+      "pending": "Outstanding (MZN)",
+      "status": "Status"
+    }
+  },
+  "dialog": {
+    "editTitle": "Edit Invoice",
+    "selectClient": "Select Client",
+    "client": "Client",
+    "newClient": "New Client",
+    "phone": "Tel: {phone}",
+    "nextAddItems": "Next: Add Items",
+    "stepDetails": "Invoice Details",
+    "addItemsTitle": "Add Items (Products or Services)",
+    "searchProduct": "Search Product or Service",
+    "searchProductPlaceholder": "Type the name, description or ID...",
+    "stock": "Stock: {stock}",
+    "searchHint": "The catalogue updates automatically as you type",
+    "qty": "Qty",
+    "selectedItem": "Selected item:",
+    "unitFallback": "unit",
+    "columns": {
+      "item": "Item",
+      "unitPrice": "Unit Price"
+    },
+    "removeItem": "Remove Item",
+    "paymentTerm": "Payment Term",
+    "termDays": "{days} Days",
+    "paymentTermHint": "The invoice will be marked as overdue after this term",
+    "notes": "Invoice Notes",
+    "notesPlaceholder": "E.g.: Payment on delivery, bank details...",
+    "totalToPay": "Total Amount Due",
+    "emptyItems": "The item list is empty.",
+    "emptyItemsHint": "Search for and add products above to get started.",
+    "draft": "Draft",
+    "update": "Update",
+    "issue": "Issue Invoice",
+    "messages": {
+      "noQuantity": "No quantity selected for product \"{name}\". Enter at least one unit.",
+      "invalidQuantity": "Enter a valid quantity.",
+      "alreadyAdded": "Product \"{name}\" has already been added to the invoice. You can change the quantity in the list below.",
+      "noStock": "No stock available for product \"{name}\".",
+      "qtyExceedsStock": "The requested quantity ({qty}) exceeds the available stock ({stock}) for product \"{name}\".",
+      "qtyIncreaseExceedsStock": "The quantity ({qty}) exceeds the available stock ({stock}) for product \"{name}\".",
+      "productAdded": "Product added!",
+      "issueNoStock": "Cannot issue. No stock for product \"{name}\".",
+      "issueQtyExceedsStock": "Cannot issue. Item \"{name}\" has a quantity ({qty}) greater than the available stock ({stock}).",
+      "selectClientAndProducts": "Select a client and add products"
+    }
+  },
+  "quickClient": {
+    "title": "Quick Client",
+    "namePlaceholder": "Client name",
+    "nuitOptional": "NUIT (optional)",
+    "phoneOptional": "Phone (optional)",
+    "created": "Client created!"
+  },
+  "detail": {
+    "title": "Invoice {number}",
+    "reprint": "COPY",
+    "original": "ORIGINAL",
+    "issuedAt": "Issue date and time: {date}",
+    "issuedBy": "Issued by: {name}",
+    "email": "Email",
+    "dueDate": "Due date: {date}",
+    "generatingPdf": "Generating PDF...",
+    "payments": "Payments",
+    "paymentColumns": {
+      "receipt": "Receipt",
+      "date": "Date",
+      "method": "Method",
+      "reference": "Reference",
+      "amount": "Amount",
+      "actions": "Actions"
+    },
+    "annulledBadge": "CANCELLED",
+    "noPayments": "No payments recorded",
+    "messages": {
+      "popupBlocked": "The print window could not be opened. Check whether your browser is blocking pop-ups.",
+      "printFailed": "Printing could not be prepared.",
+      "pdfFailed": "Error generating the PDF file. Please try again.",
+      "noClientEmail": "The client linked to this invoice has no email address.",
+      "sendRejected": "Sending was refused.",
+      "emailSent": "Email with invoice {number} sent successfully to {email}!",
+      "emailFailed": "An error occurred while sending the email."
+    }
+  }
+}

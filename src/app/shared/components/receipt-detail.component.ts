@@ -17,6 +17,8 @@ import {
   DEFAULT_DOCUMENT_BRANDING
 } from '../../core/services/document-settings.service';
 import { ReceiptDocumentComponent } from './documents/receipt-document.component';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { t } from '../../core/i18n/i18n';
 
 export interface ReceiptDialogData {
   paymentId: string;
@@ -34,12 +36,13 @@ export interface ReceiptDialogData {
     MatCardModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
-    ReceiptDocumentComponent
+    ReceiptDocumentComponent,
+    TranslatePipe
   ],
   template: `
     <div class="receipt-dialog">
       <h2 mat-dialog-title class="flex items-center justify-between">
-        <span>Recibo de Pagamento</span>
+        <span>{{ 'payments.receipt.title' | t }}</span>
         <button mat-icon-button (click)="close()">
           <mat-icon>close</mat-icon>
         </button>
@@ -49,7 +52,7 @@ export interface ReceiptDialogData {
         @if (isLoading()) {
           <div class="text-center py-8">
             <mat-spinner diameter="36" class="mx-auto mb-3"></mat-spinner>
-            <p class="text-gray-500">A carregar...</p>
+            <p class="text-gray-500">{{ 'common.status.loading' | t }}</p>
           </div>
         } @else if (payment() && invoice()) {
           <!-- Documento fiscal. É isto que sai em PDF. -->
@@ -57,7 +60,7 @@ export interface ReceiptDialogData {
             @if (isGeneratingPdf()) {
               <div class="absolute inset-0 bg-white/80 z-50 flex flex-col items-center justify-center no-print">
                 <mat-spinner diameter="36" class="mb-2"></mat-spinner>
-                <p class="text-sm font-medium text-gray-600">A gerar PDF...</p>
+                <p class="text-sm font-medium text-gray-600">{{ 'invoices.detail.generatingPdf' | t }}</p>
               </div>
             }
             <app-receipt-document
@@ -69,25 +72,25 @@ export interface ReceiptDialogData {
           </div>
         } @else {
           <div class="text-center py-8">
-            <p class="text-gray-500">Erro ao carregar recibo</p>
+            <p class="text-gray-500">{{ 'payments.receipt.loadError' | t }}</p>
           </div>
         }
       </mat-dialog-content>
 
       <mat-dialog-actions align="end" class="border-t">
-        <button mat-button (click)="close()">Fechar</button>
+        <button mat-button (click)="close()">{{ 'common.actions.close' | t }}</button>
         <button mat-stroked-button (click)="downloadReceipt()" [disabled]="!payment() || isGeneratingPdf()">
           <mat-icon>file_download</mat-icon>
           PDF
         </button>
         <button mat-stroked-button (click)="printReceipt()" [disabled]="!payment() || isGeneratingPdf()">
           <mat-icon>print</mat-icon>
-          Imprimir
+          {{ 'common.actions.print' | t }}
         </button>
         <button mat-stroked-button (click)="sendEmail()"
           [disabled]="!payment() || !invoice()?.client?.email || isGeneratingPdf() || paymentService.isAnnulled(payment()!)">
           <mat-icon>email</mat-icon>
-          Enviar Email
+          {{ 'payments.receipt.sendEmail' | t }}
         </button>
       </mat-dialog-actions>
     </div>
@@ -211,7 +214,7 @@ export class ReceiptDetailComponent implements OnInit {
       this.pdfService.downloadPdf(blob, this.receiptFileName());
     } catch (error) {
       console.error('Erro ao gerar o recibo em PDF:', error);
-      this.snackBar.open('Não foi possível gerar o recibo em PDF.', 'Fechar', { duration: 4000 });
+      this.snackBar.open(t('payments.receipt.pdfFailed'), t('common.actions.close'), { duration: 4000 });
     } finally {
       this.isGeneratingPdf.set(false);
     }
@@ -234,14 +237,14 @@ export class ReceiptDetailComponent implements OnInit {
         printWindow.onload = () => printWindow.print();
       } else {
         this.snackBar.open(
-          'Não foi possível abrir a janela de impressão. Verifique se o navegador está a bloquear janelas.',
-          'Fechar',
+          t('invoices.detail.messages.popupBlocked'),
+          t('common.actions.close'),
           { duration: 5000 }
         );
       }
     } catch (error) {
       console.error('Erro ao preparar a impressão do recibo:', error);
-      this.snackBar.open('Não foi possível preparar a impressão.', 'Fechar', { duration: 4000 });
+      this.snackBar.open(t('invoices.detail.messages.printFailed'), t('common.actions.close'), { duration: 4000 });
     } finally {
       this.isGeneratingPdf.set(false);
     }
@@ -253,7 +256,7 @@ export class ReceiptDetailComponent implements OnInit {
     if (!payment || !invoice) return;
 
     if (!invoice.client?.email) {
-      this.snackBar.open('O cliente associado a esta factura não possui endereço de e-mail.', 'Fechar', { duration: 4000 });
+      this.snackBar.open(t('invoices.detail.messages.noClientEmail'), t('common.actions.close'), { duration: 4000 });
       return;
     }
 
@@ -285,19 +288,19 @@ export class ReceiptDetailComponent implements OnInit {
       });
 
       if (error) throw new Error(await this.extrairMensagemDeErro(error));
-      if (data && data.success === false) throw new Error(data.error || 'O envio foi recusado.');
+      if (data && data.success === false) throw new Error(data.error || t('invoices.detail.messages.sendRejected'));
 
       this.snackBar.open(
-        `Recibo enviado com sucesso para ${invoice.client.email}.`,
-        'Fechar',
+        t('payments.receipt.emailSent', { email: invoice.client.email }),
+        t('common.actions.close'),
         { duration: 5000 }
       );
     } catch (error) {
       console.error('Erro ao enviar o recibo:', error);
       const mensagem = error instanceof Error && error.message
         ? error.message
-        : 'Ocorreu um erro ao enviar o recibo.';
-      this.snackBar.open(mensagem, 'Fechar', { duration: 6000 });
+        : t('payments.receipt.emailFailed');
+      this.snackBar.open(mensagem, t('common.actions.close'), { duration: 6000 });
     } finally {
       this.isGeneratingPdf.set(false);
     }
@@ -317,7 +320,7 @@ export class ReceiptDetailComponent implements OnInit {
     }
 
     if (error instanceof Error && error.message) return error.message;
-    return 'Ocorreu um erro ao enviar o recibo.';
+    return t('payments.receipt.emailFailed');
   }
 
   close() {

@@ -11,6 +11,8 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { SubscriptionService, SubscriptionPlan } from '../../../core/services/subscription.service';
 import { VoucherService, VoucherValidationResult } from '../../../core/services/voucher.service';
 import { SupabaseService } from '../../../core/services/supabase.service';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
+import { t } from '../../../core/i18n/i18n';
 
 export interface PaymentDialogData {
   companyId: string;
@@ -32,7 +34,8 @@ export interface PaymentDialogData {
     MatInputModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    TranslatePipe
   ],
   template: `
     <div class="relative p-6 max-w-md w-full bg-slate-900 text-white rounded-2xl border border-slate-800 shadow-2xl space-y-5">
@@ -43,8 +46,8 @@ export interface PaymentDialogData {
             <mat-icon>credit_card</mat-icon>
           </div>
           <div>
-            <h2 class="text-lg font-bold text-white leading-tight">Ativação da Subscrição</h2>
-            <p class="text-xs text-slate-400">Plano {{ data.plan.name }} • {{ getOriginalPrice() | number:'1.0-0' }} {{ data.plan.currency || 'MZN' }}/{{ getCycleSuffix() }}</p>
+            <h2 class="text-lg font-bold text-white leading-tight">{{ 'payments.subscription.title' | t }}</h2>
+            <p class="text-xs text-slate-400">{{ 'payments.subscription.planPrice' | t: { plan: data.plan.name, price: (getOriginalPrice() | number:'1.0-0'), currency: data.plan.currency || 'MZN', cycle: getCycleSuffix() } }}</p>
           </div>
         </div>
         <button mat-icon-button (click)="dialogRef.close(false)" [disabled]="loading()" class="!text-slate-400 hover:!text-white">
@@ -57,10 +60,10 @@ export interface PaymentDialogData {
         <div class="flex items-center justify-between">
           <span class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
             <mat-icon class="!text-sm !w-4 !h-4 text-amber-400">card_giftcard</mat-icon>
-            Tem um Voucher / Cupom?
+            {{ 'payments.subscription.voucherQuestion' | t }}
           </span>
           <span *ngIf="voucherResult()?.valid" class="text-[11px] font-bold text-green-400 flex items-center gap-1">
-            <mat-icon class="!text-xs !w-3.5 !h-3.5">check_circle</mat-icon> Aplicado
+            <mat-icon class="!text-xs !w-3.5 !h-3.5">check_circle</mat-icon> {{ 'payments.subscription.applied' | t }}
           </span>
         </div>
 
@@ -68,7 +71,7 @@ export interface PaymentDialogData {
           <input
             type="text"
             [(ngModel)]="voucherInput"
-            placeholder="Ex: BEMVINDO20"
+            [placeholder]="'payments.subscription.voucherPlaceholder' | t"
             [disabled]="loading() || (voucherResult()?.valid || false)"
             class="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs font-mono uppercase font-bold text-amber-300 focus:ring-2 focus:ring-amber-500 outline-none placeholder:font-sans placeholder:font-normal placeholder:text-slate-500"
           >
@@ -80,7 +83,7 @@ export interface PaymentDialogData {
             class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-lg transition-all disabled:opacity-50 flex items-center gap-1"
           >
             <mat-spinner *ngIf="validatingVoucher()" diameter="14" class="white-spinner"></mat-spinner>
-            <span>Aplicar</span>
+            <span>{{ 'payments.subscription.apply' | t }}</span>
           </button>
           <button
             *ngIf="voucherResult()?.valid"
@@ -88,7 +91,7 @@ export interface PaymentDialogData {
             (click)="removeVoucher()"
             class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-lg transition-all"
           >
-            Remover
+            {{ 'common.actions.remove' | t }}
           </button>
         </div>
 
@@ -101,7 +104,7 @@ export interface PaymentDialogData {
       <!-- PRICE SUMMARY BOX -->
       <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 flex justify-between items-center">
         <div>
-          <span class="text-xs text-slate-400 block">Valor Final a Pagar</span>
+          <span class="text-xs text-slate-400 block">{{ 'payments.subscription.finalAmount' | t }}</span>
           <div class="flex items-baseline gap-2">
             <span *ngIf="voucherResult()?.valid && (voucherResult()?.discountAmount || 0) > 0" class="text-xs text-slate-400 line-through">
               {{ getOriginalPrice() | number:'1.0-0' }} {{ data.plan.currency || 'MZN' }}
@@ -113,7 +116,7 @@ export interface PaymentDialogData {
         </div>
         <div class="text-right">
           <span class="text-[11px] px-2.5 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 font-bold uppercase">
-            Plano {{ data.plan.name }}
+            {{ 'payments.subscription.planBadge' | t: { plan: data.plan.name } }}
           </span>
         </div>
       </div>
@@ -122,12 +125,12 @@ export interface PaymentDialogData {
       <div *ngIf="getFinalPrice() === 0" class="space-y-4 pt-2">
         <div class="p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-green-300 text-xs font-medium flex items-center gap-2">
           <mat-icon class="text-green-400">verified</mat-icon>
-          <span>O voucher cobre 100% do valor! Pode ativar a subscrição imediatamente sem custo.</span>
+          <span>{{ 'payments.subscription.freeCovered' | t }}</span>
         </div>
 
         <div class="flex items-center gap-3">
           <button mat-button type="button" (click)="dialogRef.close(false)" [disabled]="loading()" class="!text-slate-400 hover:!text-white flex-1">
-            Cancelar
+            {{ 'common.actions.cancel' | t }}
           </button>
           <button
             type="button"
@@ -136,7 +139,7 @@ export interface PaymentDialogData {
             class="flex-1 h-11 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
           >
             <mat-spinner *ngIf="loading()" diameter="18" class="white-spinner"></mat-spinner>
-            <span *ngIf="!loading()">Ativar Subscrição Grátis</span>
+            <span *ngIf="!loading()">{{ 'payments.subscription.activateFree' | t }}</span>
           </button>
         </div>
       </div>
@@ -145,7 +148,7 @@ export interface PaymentDialogData {
       <div *ngIf="getFinalPrice() > 0" class="space-y-4">
         <!-- Payment Method Selection -->
         <div class="space-y-2">
-          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Carteira Móvel para Pagamento</label>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">{{ 'payments.subscription.walletLabel' | t }}</label>
           <div class="grid grid-cols-2 gap-3">
             <!-- M-Pesa Option -->
             <button type="button"
@@ -179,7 +182,7 @@ export interface PaymentDialogData {
         <form [formGroup]="paymentForm" (ngSubmit)="onSubmit()" class="space-y-4">
           <div>
             <mat-form-field appearance="outline" class="w-full !m-0 custom-dark-form-field">
-              <mat-label class="!text-slate-300">Número M-Pesa / e-Mola</mat-label>
+              <mat-label class="!text-slate-300">{{ 'payments.subscription.phoneLabel' | t }}</mat-label>
               <input matInput type="tel" formControlName="phone" placeholder="84 123 4567" class="!text-white">
               <mat-icon matPrefix class="!text-orange-400">phone_iphone</mat-icon>
               @if (getErrorMessage('phone')) {
@@ -191,7 +194,7 @@ export interface PaymentDialogData {
           <!-- Actions -->
           <div class="flex items-center gap-3 pt-1">
             <button mat-button type="button" (click)="dialogRef.close(false)" [disabled]="loading()" class="!text-slate-400 hover:!text-white flex-1">
-              Cancelar
+              {{ 'common.actions.cancel' | t }}
             </button>
             <button mat-raised-button type="submit"
               [class]="selectedMethod() === 'mpesa' ? '!bg-red-600 hover:!bg-red-500' : '!bg-amber-500 hover:!bg-amber-400 !text-slate-950'"
@@ -200,11 +203,11 @@ export interface PaymentDialogData {
               @if (loading()) {
                 <div class="flex items-center gap-2">
                   <mat-spinner diameter="18" class="!text-white white-spinner"></mat-spinner>
-                  <span>A enviar pedido...</span>
+                  <span>{{ 'payments.subscription.sending' | t }}</span>
                 </div>
               } @else {
                 <div class="flex items-center justify-center gap-2">
-                  <span>Enviar Pedido de {{ getFinalPrice() | number:'1.0-0' }} {{ data.plan.currency || 'MZN' }}</span>
+                  <span>{{ 'payments.subscription.sendRequest' | t: { amount: (getFinalPrice() | number:'1.0-0'), currency: data.plan.currency || 'MZN' } }}</span>
                   <mat-icon class="!text-sm !w-4 !h-4">send</mat-icon>
                 </div>
               }
@@ -220,29 +223,29 @@ export interface PaymentDialogData {
             <mat-icon class="!text-4xl text-amber-400">phonelink_ring</mat-icon>
           </div>
           <div>
-            <h3 class="text-lg font-bold text-white mb-1">Confirme no seu telemóvel</h3>
+            <h3 class="text-lg font-bold text-white mb-1">{{ 'payments.subscription.confirmTitle' | t }}</h3>
             <p class="text-sm text-slate-400 leading-relaxed">
-              Um pedido de pagamento foi enviado para <strong class="text-white">{{ paymentForm.value.phone }}</strong>.<br>
-              Por favor, introduza o seu PIN <strong class="text-amber-400">{{ selectedMethod() === 'mpesa' ? 'M-Pesa' : 'e-Mola' }}</strong> para confirmar o pagamento.
+              {{ 'payments.subscription.sentToBefore' | t }} <strong class="text-white">{{ paymentForm.value.phone }}</strong>{{ 'payments.subscription.sentToAfter' | t }}<br>
+              {{ 'payments.subscription.enterPinBefore' | t }} <strong class="text-amber-400">{{ selectedMethod() === 'mpesa' ? 'M-Pesa' : 'e-Mola' }}</strong> {{ 'payments.subscription.enterPinAfter' | t }}
             </p>
-            <p class="text-xs text-slate-500 mt-2">O plano será ativado automaticamente após a confirmação do pagamento.</p>
+            <p class="text-xs text-slate-500 mt-2">{{ 'payments.subscription.autoActivate' | t }}</p>
           </div>
           @if (paymentFailed()) {
-            <p class="text-sm text-red-400 font-semibold">O pagamento não foi concluído (cancelado, saldo insuficiente ou tempo esgotado). Pode fechar e tentar novamente.</p>
+            <p class="text-sm text-red-400 font-semibold">{{ 'payments.subscription.failed' | t }}</p>
           } @else {
             <div class="flex items-center gap-2 text-xs text-slate-400">
               <mat-spinner diameter="14"></mat-spinner>
-              <span>A aguardar a confirmação do pagamento...</span>
+              <span>{{ 'payments.subscription.waiting' | t }}</span>
             </div>
           }
           @if (referenceCode()) {
             <div class="px-4 py-2 bg-slate-800 rounded-lg border border-slate-700">
-              <span class="text-xs text-slate-400">Referência: </span>
+              <span class="text-xs text-slate-400">{{ 'payments.subscription.reference' | t }} </span>
               <span class="text-xs font-mono text-amber-300 font-bold">{{ referenceCode() }}</span>
             </div>
           }
           <button mat-raised-button (click)="dialogRef.close(false)" class="!bg-slate-700 hover:!bg-slate-600 !text-white !rounded-xl !font-bold !px-8">
-            Fechar
+            {{ 'common.actions.close' | t }}
           </button>
         </div>
       }
@@ -326,7 +329,7 @@ export class PaymentDialogComponent implements OnInit, OnDestroy {
       if (status === 'completed') {
         this.pollTimer = null;
         await this.subscriptionService.loadSubscription(this.data.companyId);
-        this.snackBar.open(`Pagamento confirmado! Plano ${this.data.plan.name} activado.`, 'Fechar', { duration: 5000 });
+        this.snackBar.open(t('payments.subscription.messages.confirmed', { plan: this.data.plan.name }), t('common.actions.close'), { duration: 5000 });
         this.dialogRef.close(true);
         return;
       }
@@ -365,10 +368,10 @@ export class PaymentDialogComponent implements OnInit, OnDestroy {
 
   getCycleSuffix(): string {
     switch (this.data.billingCycle) {
-      case 'quarterly': return '90 dias';
-      case 'semiannual': return '180 dias';
-      case 'yearly': return '360 dias';
-      case 'monthly': default: return '30 dias';
+      case 'quarterly': return t('payments.subscription.cycles.quarterly');
+      case 'semiannual': return t('payments.subscription.cycles.semiannual');
+      case 'yearly': return t('payments.subscription.cycles.yearly');
+      case 'monthly': default: return t('payments.subscription.cycles.monthly');
     }
   }
 
@@ -400,7 +403,7 @@ export class PaymentDialogComponent implements OnInit, OnDestroy {
       this.voucherMessage = res.message;
     } catch (e: any) {
       this.voucherResult.set(null);
-      this.voucherMessage = e.message || 'Erro ao validar voucher.';
+      this.voucherMessage = e.message || t('payments.subscription.messages.voucherError');
     } finally {
       this.validatingVoucher.set(false);
     }
@@ -417,9 +420,9 @@ export class PaymentDialogComponent implements OnInit, OnDestroy {
     if (!this.subscriptionService.isDowngrade(this.data.plan)) return false;
     this.snackBar.open(
       this.data.plan.monthly_price === 0
-        ? 'Não é possível voltar ao período de teste depois de subscrever um plano pago.'
-        : 'Não é possível fazer downgrade enquanto a subscrição estiver activa.',
-      'Fechar',
+        ? t('payments.subscription.messages.noTrialBack')
+        : t('payments.subscription.messages.noDowngrade'),
+      t('common.actions.close'),
       { duration: 6000 },
     );
     return true;
@@ -455,14 +458,14 @@ export class PaymentDialogComponent implements OnInit, OnDestroy {
       this.loading.set(false);
 
       if (success) {
-        this.snackBar.open('Subscrição ativada com sucesso via Voucher!', 'Fechar', { duration: 5000 });
+        this.snackBar.open(t('payments.subscription.messages.activatedVoucher'), t('common.actions.close'), { duration: 5000 });
         this.dialogRef.close(true);
       } else {
-        this.snackBar.open('Erro ao ativar subscrição.', 'Fechar', { duration: 5000 });
+        this.snackBar.open(t('payments.subscription.messages.activateError'), t('common.actions.close'), { duration: 5000 });
       }
     } catch (e: any) {
       this.loading.set(false);
-      this.snackBar.open(e.message || 'Erro inesperado ao ativar subscrição.', 'Fechar', { duration: 5000 });
+      this.snackBar.open(e.message || t('payments.subscription.messages.activateUnexpected'), t('common.actions.close'), { duration: 5000 });
     }
   }
 
@@ -514,8 +517,8 @@ export class PaymentDialogComponent implements OnInit, OnDestroy {
     } else {
       this.loading.set(false);
       this.snackBar.open(
-        result.error || 'Erro ao efetuar pedido de pagamento',
-        'Fechar',
+        result.error || t('payments.subscription.messages.requestError'),
+        t('common.actions.close'),
         { duration: 6000 }
       );
     }
@@ -526,10 +529,10 @@ export class PaymentDialogComponent implements OnInit, OnDestroy {
     if (!control || !control.touched) return '';
 
     if (control.hasError('required')) {
-      return 'O número de telefone é obrigatório';
+      return t('payments.subscription.phoneRequired');
     }
     if (control.hasError('pattern')) {
-      return 'Número de telefone inválido (ex: 841234567 ou 861234567)';
+      return t('payments.subscription.phoneInvalid');
     }
     return '';
   }

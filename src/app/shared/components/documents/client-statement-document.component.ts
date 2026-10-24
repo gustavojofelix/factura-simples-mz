@@ -14,6 +14,7 @@ import {
 import { formatIsoDate } from '../../../core/utils/date.util';
 import { PreferencesService } from '../../../core/services/preferences.service';
 import { documentThemeVars } from './document-theme';
+import { formatDocumentCurrency } from './document-format';
 
 /**
  * Extracto de um cliente: movimentos do período com saldo corrido.
@@ -277,7 +278,7 @@ export class ClientStatementDocumentComponent {
   finalBalance = computed(() => this.clientTotals().balance);
 
   formatCurrency(value: number): string {
-    return this.statementService.formatCurrency(value);
+    return formatDocumentCurrency(value);
   }
 
   formatDate(iso: string): string {

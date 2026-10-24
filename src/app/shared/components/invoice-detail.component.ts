@@ -27,6 +27,8 @@ import { InvoiceDialogComponent } from './invoice-dialog.component';
 import { PdfService } from '../../core/services/pdf.service';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { SupabaseService } from '../../core/services/supabase.service';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { t } from '../../core/i18n/i18n';
 
 @Component({
   selector: 'app-invoice-detail',
@@ -41,14 +43,15 @@ import { SupabaseService } from '../../core/services/supabase.service';
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatTooltipModule,
-    InvoiceDocumentComponent
+    InvoiceDocumentComponent,
+    TranslatePipe
   ],
   template: `
     <div class="max-w-5xl mx-auto p-6 printable-content">
       @if (isLoading()) {
         <div class="text-center py-8">
           <mat-spinner diameter="40" class="mx-auto mb-4"></mat-spinner>
-          <p class="text-gray-500">A carregar...</p>
+          <p class="text-gray-500">{{ 'common.status.loading' | t }}</p>
         </div>
       } @else if (invoice()) {
         <!-- Barra de acções e estado. É interface da aplicação e fica de fora
@@ -57,32 +60,32 @@ import { SupabaseService } from '../../core/services/supabase.service';
           <div class="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-4">
               <div>
                 <div class="flex items-center gap-3">
-                  <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Factura {{ invoice()!.invoice_number }}</h1>
+                  <h1 class="text-xl sm:text-2xl font-bold text-gray-900">{{ 'invoices.detail.title' | t: { number: invoice()!.invoice_number } }}</h1>
                   @if ((invoice()!.print_count || 0) > 1) {
                     <span class="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-amber-100 text-amber-900 border border-amber-300 shadow-xs">
-                      2ª VIA
+                      {{ 'invoices.detail.reprint' | t }}
                     </span>
                   } @else {
                     <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
-                      ORIGINAL
+                      {{ 'invoices.detail.original' | t }}
                     </span>
                   }
                 </div>
                 <div class="flex flex-col gap-0.5 mt-1">
-                  <p class="text-sm font-medium text-slate-700">Data e Hora de Emissão: {{ formatDateTime(invoice()!.created_at || invoice()!.date) }}</p>
-                  <p class="text-xs text-slate-400">Emitido por: {{ invoice()!.issuer_name || '-' }}</p>
+                  <p class="text-sm font-medium text-slate-700">{{ 'invoices.detail.issuedAt' | t: { date: formatDateTime(invoice()!.created_at || invoice()!.date) } }}</p>
+                  <p class="text-xs text-slate-400">{{ 'invoices.detail.issuedBy' | t: { name: invoice()!.issuer_name || '-' } }}</p>
                 </div>
               </div>
               <div class="grid grid-cols-2 lg:flex lg:flex-wrap lg:flex-row gap-2 w-full lg:w-auto">
                 @if (invoice()!.status === 'rascunho') {
                   <button mat-raised-button class="!bg-ispc-orange !text-white col-span-2 lg:col-span-1 w-full lg:w-auto !text-xs sm:!text-sm" (click)="emitDraft()">
                     <mat-icon class="!text-xs mr-1">check_circle</mat-icon>
-                    Validar e Emitir
+                    {{ 'invoices.list.menu.validateAndIssue' | t }}
                   </button>
                 }
                 <button mat-stroked-button class="col-span-1 w-full lg:w-auto !text-xs sm:!text-sm" (click)="goBack()">
                   <mat-icon class="!text-xs mr-1">arrow_back</mat-icon>
-                  Voltar
+                  {{ 'common.actions.back' | t }}
                 </button>
                 <button mat-stroked-button class="col-span-1 w-full lg:w-auto !text-xs sm:!text-sm" (click)="downloadInvoicePdf()" [disabled]="invoice()!.status === 'rascunho' || isGeneratingPdf()">
                   <mat-icon class="!text-xs mr-1">file_download</mat-icon>
@@ -90,22 +93,22 @@ import { SupabaseService } from '../../core/services/supabase.service';
                 </button>
                 <button mat-stroked-button class="col-span-1 w-full lg:w-auto !text-xs sm:!text-sm" (click)="printInvoice()" [disabled]="invoice()!.status === 'rascunho' || isGeneratingPdf()">
                   <mat-icon class="!text-xs mr-1">print</mat-icon>
-                  Imprimir
+                  {{ 'common.actions.print' | t }}
                 </button>
                 <button mat-stroked-button class="col-span-1 w-full lg:w-auto !text-xs sm:!text-sm" (click)="sendEmail()" [disabled]="!invoice()!.client?.email || invoice()!.status === 'rascunho'">
                   <mat-icon class="!text-xs mr-1">email</mat-icon>
-                  Email
+                  {{ 'invoices.detail.email' | t }}
                 </button>
                 @if (invoiceService.canEditInvoice(invoice()!)) {
                   <button mat-raised-button class="!bg-ispc-orange !text-white col-span-2 lg:col-span-1 w-full lg:w-auto !text-xs sm:!text-sm" (click)="editInvoice()">
                     <mat-icon class="!text-xs mr-1">edit</mat-icon>
-                    Editar
+                    {{ 'common.actions.edit' | t }}
                   </button>
                 }
                 @if (invoiceService.canAnnulInvoice(invoice()!)) {
                   <button mat-raised-button color="warn" class="col-span-2 w-full lg:w-auto !text-xs sm:!text-sm" (click)="annulInvoice()">
                     <mat-icon class="!text-xs mr-1">block</mat-icon>
-                    Anular Factura
+                    {{ 'invoices.list.menu.annul' | t }}
                   </button>
                 }
               </div>
@@ -120,7 +123,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
               </span>
               @if (invoice()!.due_date) {
                 <span class="text-sm text-gray-600">
-                  Vencimento: {{ formatDate(invoice()!.due_date!) }}
+                  {{ 'invoices.detail.dueDate' | t: { date: formatDate(invoice()!.due_date!) } }}
                 </span>
               }
             </div>
@@ -133,7 +136,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
             @if (isGeneratingPdf()) {
               <div class="absolute inset-0 bg-white/80 z-50 flex flex-col items-center justify-center no-print">
                 <mat-spinner diameter="40" class="mb-2"></mat-spinner>
-                <p class="text-sm font-medium text-gray-600">A gerar PDF...</p>
+                <p class="text-sm font-medium text-gray-600">{{ 'invoices.detail.generatingPdf' | t }}</p>
               </div>
             }
             <app-invoice-document
@@ -148,11 +151,11 @@ import { SupabaseService } from '../../core/services/supabase.service';
           <div class="bg-white rounded-lg shadow-sm mt-4 no-print">
             <div class="p-4 sm:p-6">
             <div class="flex justify-between items-center mb-4">
-              <h3 class="text-base sm:text-lg font-semibold">Pagamentos</h3>
+              <h3 class="text-base sm:text-lg font-semibold">{{ 'invoices.detail.payments' | t }}</h3>
               @if (invoice()!.status !== 'rascunho' && invoiceService.canManagePayments(invoice()!)) {
                 <button mat-raised-button color="primary" (click)="openPaymentDialog()" class="no-print !h-10 !rounded-lg !text-xs sm:!text-sm">
                   <mat-icon>add</mat-icon>
-                  Registar Pagamento
+                  {{ 'invoices.list.menu.registerPayment' | t }}
                 </button>
               }
             </div>
@@ -162,12 +165,12 @@ import { SupabaseService } from '../../core/services/supabase.service';
                 <table class="w-full text-sm">
                   <thead class="bg-gray-50">
                     <tr class="text-xs sm:text-sm">
-                      <th class="text-left p-3 font-semibold text-gray-700 whitespace-nowrap">Recibo</th>
-                      <th class="text-left p-3 font-semibold text-gray-700 whitespace-nowrap">Data</th>
-                      <th class="text-left p-3 font-semibold text-gray-700 whitespace-nowrap">Método</th>
-                      <th class="text-left p-3 font-semibold text-gray-700 whitespace-nowrap">Referência</th>
-                      <th class="text-right p-3 font-semibold text-gray-700 whitespace-nowrap">Valor</th>
-                      <th class="text-right p-3 font-semibold text-gray-700 no-print whitespace-nowrap">Ações</th>
+                      <th class="text-left p-3 font-semibold text-gray-700 whitespace-nowrap">{{ 'invoices.detail.paymentColumns.receipt' | t }}</th>
+                      <th class="text-left p-3 font-semibold text-gray-700 whitespace-nowrap">{{ 'invoices.detail.paymentColumns.date' | t }}</th>
+                      <th class="text-left p-3 font-semibold text-gray-700 whitespace-nowrap">{{ 'invoices.detail.paymentColumns.method' | t }}</th>
+                      <th class="text-left p-3 font-semibold text-gray-700 whitespace-nowrap">{{ 'invoices.detail.paymentColumns.reference' | t }}</th>
+                      <th class="text-right p-3 font-semibold text-gray-700 whitespace-nowrap">{{ 'invoices.detail.paymentColumns.amount' | t }}</th>
+                      <th class="text-right p-3 font-semibold text-gray-700 no-print whitespace-nowrap">{{ 'invoices.detail.paymentColumns.actions' | t }}</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-gray-100">
@@ -178,7 +181,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
                           {{ paymentService.getReceiptNumber(payment) }}
                           @if (paymentService.isAnnulled(payment)) {
                             <span class="ml-1 inline-block no-underline px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700"
-                              [title]="payment.annulment_reason || ''">ANULADO</span>
+                              [title]="payment.annulment_reason || ''">{{ 'invoices.detail.annulledBadge' | t }}</span>
                           }
                         </td>
                         <td class="p-3 whitespace-nowrap">{{ formatDate(payment.payment_date) }}</td>
@@ -191,7 +194,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
                           </button>
                           @if (canAnnulReceipt(payment)) {
                             <button mat-icon-button (click)="annulPayment(payment)" color="warn"
-                              matTooltip="Anular recibo" aria-label="Anular recibo">
+                              [matTooltip]="'payments.annul.confirm' | t" [attr.aria-label]="'payments.annul.confirm' | t">
                               <mat-icon>block</mat-icon>
                             </button>
                           }
@@ -202,13 +205,13 @@ import { SupabaseService } from '../../core/services/supabase.service';
                 </table>
               </div>
             } @else {
-              <p class="text-gray-500 text-center py-4 text-xs sm:text-sm">Nenhum pagamento registado</p>
+              <p class="text-gray-500 text-center py-4 text-xs sm:text-sm">{{ 'invoices.detail.noPayments' | t }}</p>
             }
           </div>
         </div>
       } @else {
         <div class="text-center py-8">
-          <p class="text-gray-500">Factura não encontrada</p>
+          <p class="text-gray-500">{{ 'invoices.messages.notFound' | t }}</p>
         </div>
       }
     </div>
@@ -460,9 +463,9 @@ export class InvoiceDetailComponent {
       if (result.success && this.invoice()) {
         await this.loadInvoice(this.invoice()!.id);
         await this.invoiceService.loadInvoices();
-        this.snackBar.open('Recibo anulado.', 'Fechar', { duration: 3000 });
+        this.snackBar.open(t('payments.messages.receiptAnnulled'), t('common.actions.close'), { duration: 3000 });
       } else {
-        this.snackBar.open(result.error || 'Não foi possível anular o recibo.', 'Fechar', { duration: 4000 });
+        this.snackBar.open(result.error || t('payments.messages.annulReceiptFailed'), t('common.actions.close'), { duration: 4000 });
       }
     });
   }
@@ -532,8 +535,8 @@ export class InvoiceDetailComponent {
         };
       } else {
         this.snackBar.open(
-          'Não foi possível abrir a janela de impressão. Verifique se o navegador está a bloquear janelas.',
-          'Fechar',
+          t('invoices.detail.messages.popupBlocked'),
+          t('common.actions.close'),
           { duration: 5000 }
         );
       }
@@ -542,7 +545,7 @@ export class InvoiceDetailComponent {
       // Mandar imprimir a página inteira deixou de ser um recurso válido: as
       // regras de impressão já não alcançam o documento, que passou a ser um
       // componente próprio, e sairia deformado.
-      this.snackBar.open('Não foi possível preparar a impressão.', 'Fechar', { duration: 4000 });
+      this.snackBar.open(t('invoices.detail.messages.printFailed'), t('common.actions.close'), { duration: 4000 });
     } finally {
       this.isGeneratingPdf.set(false);
     }
@@ -563,7 +566,7 @@ export class InvoiceDetailComponent {
       this.pdfService.downloadPdf(blob, `Factura_${invoice.invoice_number}`);
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
-      this.snackBar.open('Erro ao gerar o ficheiro PDF. Por favor, tente novamente.', 'Fechar', { duration: 4000 });
+      this.snackBar.open(t('invoices.detail.messages.pdfFailed'), t('common.actions.close'), { duration: 4000 });
     } finally {
       this.isGeneratingPdf.set(false);
     }
@@ -573,16 +576,16 @@ export class InvoiceDetailComponent {
     const invoice = this.invoice();
     if (!invoice || !this.invoiceService.canAnnulInvoice(invoice)) return;
 
-    if (!confirm(`Tem certeza que deseja ANULAR a factura ${invoice.invoice_number}? Esta acção irá restaurar o stock e excluir a factura dos cálculos de impostos.`)) {
+    if (!confirm(t('invoices.messages.confirmAnnul', { number: invoice.invoice_number }))) {
       return;
     }
 
     const success = await this.invoiceService.annulInvoice(invoice.id);
     if (success) {
       await this.loadInvoice(invoice.id);
-      this.snackBar.open('Factura anulada com sucesso!', 'Fechar', { duration: 3000 });
+      this.snackBar.open(t('invoices.messages.annulled'), t('common.actions.close'), { duration: 3000 });
     } else {
-      this.snackBar.open('Erro ao anular factura', 'Fechar', { duration: 3000 });
+      this.snackBar.open(t('invoices.messages.annulError'), t('common.actions.close'), { duration: 3000 });
     }
   }
 
@@ -590,16 +593,16 @@ export class InvoiceDetailComponent {
     const invoice = this.invoice();
     if (!invoice || invoice.status !== 'rascunho') return;
 
-    if (!confirm(`Deseja validar e emitir esta factura? Esta acção irá atribuir o número sequencial final.`)) {
+    if (!confirm(t('invoices.messages.confirmIssue'))) {
       return;
     }
 
     const success = await this.invoiceService.emitInvoice(invoice.id);
     if (success) {
       await this.loadInvoice(invoice.id);
-      this.snackBar.open('Factura emitida com sucesso!', 'Fechar', { duration: 3000 });
+      this.snackBar.open(t('invoices.messages.issued'), t('common.actions.close'), { duration: 3000 });
     } else {
-      this.snackBar.open('Erro ao emitir factura', 'Fechar', { duration: 3000 });
+      this.snackBar.open(t('invoices.messages.issueError'), t('common.actions.close'), { duration: 3000 });
     }
   }
 
@@ -608,7 +611,7 @@ export class InvoiceDetailComponent {
     if (!invoice) return;
 
     if (!invoice.client?.email) {
-      this.snackBar.open('O cliente associado a esta factura não possui endereço de e-mail.', 'Fechar', { duration: 4000 });
+      this.snackBar.open(t('invoices.detail.messages.noClientEmail'), t('common.actions.close'), { duration: 4000 });
       return;
     }
 
@@ -636,16 +639,16 @@ export class InvoiceDetailComponent {
         throw new Error(await this.extrairMensagemDeErro(error));
       }
       if (data && data.success === false) {
-        throw new Error(data.error || 'O envio foi recusado.');
+        throw new Error(data.error || t('invoices.detail.messages.sendRejected'));
       }
 
-      this.snackBar.open(`E-mail com a factura ${invoice.invoice_number} enviado com sucesso para ${invoice.client.email}!`, 'Fechar', { duration: 5000 });
+      this.snackBar.open(t('invoices.detail.messages.emailSent', { number: invoice.invoice_number, email: invoice.client.email }), t('common.actions.close'), { duration: 5000 });
     } catch (error) {
       console.error('Erro ao processar e-mail:', error);
       const mensagem = error instanceof Error && error.message
         ? error.message
-        : 'Ocorreu um erro ao enviar o e-mail.';
-      this.snackBar.open(mensagem, 'Fechar', { duration: 6000 });
+        : t('invoices.detail.messages.emailFailed');
+      this.snackBar.open(mensagem, t('common.actions.close'), { duration: 6000 });
     } finally {
       this.isGeneratingPdf.set(false);
     }
@@ -669,7 +672,7 @@ export class InvoiceDetailComponent {
     }
 
     if (error instanceof Error && error.message) return error.message;
-    return 'Ocorreu um erro ao enviar o e-mail.';
+    return t('invoices.detail.messages.emailFailed');
   }
 
   goBack() {
