@@ -68,11 +68,22 @@ export class UserManagementService {
     private auditLogService: AuditLogService
   ) {}
 
-  async loadAllUsers(): Promise<void> {
+  /**
+   * Utilizadores das empresas indicadas (as do subscritor activo).
+   *
+   * O filtro por empresa é obrigatório: só com a RLS, a lista incluía os
+   * utilizadores de outros subscritores — todos, para um administrador da
+   * plataforma, e os das empresas de outras contas a que o utilizador também
+   * pertence.
+   */
+  async loadAllUsers(companyIds: string[]): Promise<void> {
     const user = this.authService.currentUser();
     if (!user) return;
+    if (!companyIds.length) {
+      this.allUsersSignal.set([]);
+      return;
+    }
 
-    // Single query: get company_users with profile data via join
     const { data, error } = await this.supabase.client
       .from('company_users')
       .select(`
@@ -90,6 +101,7 @@ export class UserManagementService {
           full_name
         )
       `)
+      .in('company_id', companyIds)
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -228,16 +240,19 @@ export class UserManagementService {
         return { ok: false, error: t('company.users.createAccountFailed') };
       }
 
-      // 3. Criar o acesso
-      const { error } = await this.supabase.client
-        .from('company_users')
-        .insert({
-          company_id: companyId,
-          user_id: targetUserId,
-          role,
-          is_active: true
-        });
-      if (error) throw error;
+      // 3. Criar o acesso. A função invite-user já o cria antes de enviar o
+      //    email (accessCreated); isto fica para versões anteriores da função.
+      if (!inviteData?.accessCreated) {
+        const { error } = await this.supabase.client
+          .from('company_users')
+          .insert({
+            company_id: companyId,
+            user_id: targetUserId,
+            role,
+            is_active: true
+          });
+        if (error) throw error;
+      }
 
       await this.auditLogService.log(
         'Adicionou Utilizador à Empresa',

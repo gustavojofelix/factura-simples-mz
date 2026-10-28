@@ -177,10 +177,9 @@ export class SettingsComponent implements OnInit {
 
   async loadAllData() {
     this.loading.set(true);
-    await Promise.all([
-      this.companyService.loadCompanies(),
-      this.userManagementService.loadAllUsers()
-    ]);
+    // Os utilizadores dependem das empresas do subscritor, por isso vêm depois.
+    await this.companyService.loadCompanies();
+    await this.loadUsers();
     const list = this.companies();
     if (list.length > 0 && !this.selectedCompanyId()) {
       const active = this.companyService.activeCompany();
@@ -396,7 +395,7 @@ export class SettingsComponent implements OnInit {
       }
 
       this.loading.set(false);
-      await this.userManagementService.loadAllUsers();
+      await this.loadUsers();
 
       if (errors.length) {
         this.snackBar.open(errors.join(' | '), t('common.actions.close'), { duration: 10000 });
@@ -411,6 +410,14 @@ export class SettingsComponent implements OnInit {
       }
     });
   }
+
+  /** Utilizadores das empresas do subscritor activo. */
+  private loadUsers(): Promise<void> {
+    return this.userManagementService.loadAllUsers(this.companies().map(c => c.id));
+  }
+
+  /** Só o proprietário de pelo menos uma empresa pode convidar (RLS e função invite-user). */
+  canInviteUsers = computed(() => this.companies().some(c => this.companyService.isOwner(c.id)));
 
   /** O proprietário (e o próprio utilizador) não são geridos a partir desta lista. */
   canManageUser(user: UserWithCompanies): boolean {
@@ -433,7 +440,7 @@ export class SettingsComponent implements OnInit {
       const res = await this.userManagementService.removeUserFromCompany(user.user_id, company.company_id);
       if (!res.ok) errors.push(managed.length > 1 ? `${company.company_name}: ${res.error}` : res.error!);
     }
-    await this.userManagementService.loadAllUsers();
+    await this.loadUsers();
     this.loading.set(false);
 
     if (errors.length) {
@@ -448,7 +455,7 @@ export class SettingsComponent implements OnInit {
 
     const result = await this.userManagementService.removeUserFromCompany(userId, companyId);
     if (result.ok) {
-      await this.userManagementService.loadAllUsers();
+      await this.loadUsers();
       this.snackBar.open(t('settings.messages.accessRemoved'), t('common.actions.close'), { duration: 3000 });
     } else {
       this.snackBar.open(result.error || t('settings.messages.removeAccessFailed'), t('common.actions.close'), { duration: 6000 });

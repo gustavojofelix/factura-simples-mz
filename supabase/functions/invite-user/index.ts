@@ -57,6 +57,16 @@ const ERRORS = {
     'en-GB': "Could not create the user's account.",
     'fr-FR': "Impossible de créer le compte de l'utilisateur.",
   },
+  USER_LIMIT_REACHED: {
+    'pt-MZ': 'O limite de utilizadores do plano desta empresa foi atingido. Faça upgrade do plano para adicionar mais utilizadores.',
+    'en-GB': "This company's plan user limit has been reached. Upgrade the plan to add more users.",
+    'fr-FR': "La limite d'utilisateurs de la formule de cette entreprise est atteinte. Passez à une formule supérieure pour ajouter des utilisateurs.",
+  },
+  ACCESS_FAILED: {
+    'pt-MZ': 'Não foi possível dar acesso à empresa. O convite não foi enviado.',
+    'en-GB': 'Could not grant access to the company. The invitation was not sent.',
+    'fr-FR': "Impossible de donner accès à l'entreprise. L'invitation n'a pas été envoyée.",
+  },
   EMAIL_NOT_SENT: {
     'pt-MZ': 'O acesso foi criado, mas o email de convite não pôde ser enviado. Peça ao utilizador para usar "Esqueci a senha" no ecrã de entrada.',
     'en-GB': 'Access was created, but the invitation e-mail could not be sent. Ask the user to use "Forgot password" on the sign-in screen.',
@@ -321,7 +331,41 @@ serve(async (req) => {
       if (profileError) console.warn('Não foi possível actualizar o perfil:', profileError.message)
     }
 
-    // 4. Enviar o email
+    // 4. Criar o acesso à empresa ANTES de enviar o email. Antes era a app a
+    //    criá-lo depois do convite: se falhasse (ex.: limite de utilizadores do
+    //    plano), o convidado recebia o email mas ficava sem acesso.
+    let accessCreated = false
+    const accessRole = typeof roleCode === 'string' && ['admin', 'manager', 'user'].includes(roleCode) ? roleCode : null
+    if (!isPlatformAdmin && accessRole) {
+      const { data: existingAccess } = await supabaseClient
+        .from('company_users')
+        .select('id, role')
+        .eq('company_id', companyId)
+        .eq('user_id', targetUserId)
+        .maybeSingle()
+
+      const { error: accessError } = existingAccess
+        ? (existingAccess.role === 'owner'
+            ? { error: null }
+            : await supabaseClient
+                .from('company_users')
+                .update({ role: accessRole, is_active: true, updated_at: new Date().toISOString() })
+                .eq('id', existingAccess.id))
+        : await supabaseClient
+            .from('company_users')
+            .insert({ company_id: companyId, user_id: targetUserId, role: accessRole, is_active: true })
+
+      if (accessError) {
+        console.error('Falha ao criar o acesso:', accessError)
+        if (accessError.details === 'SUBSCRIPTION_LIMIT_REACHED') {
+          throw new HttpError(409, pick(ERRORS.USER_LIMIT_REACHED, uiLang), 'SUBSCRIPTION_LIMIT_REACHED')
+        }
+        throw new HttpError(500, pick(ERRORS.ACCESS_FAILED, uiLang), 'ACCESS_FAILED')
+      }
+      accessCreated = true
+    }
+
+    // 5. Enviar o email
     const transporter = nodemailer.createTransport({
       host: smtpHost,
       port: smtpPort,
@@ -398,6 +442,7 @@ serve(async (req) => {
         success: true,
         emailSent: false,
         warning: pick(ERRORS.EMAIL_NOT_SENT, uiLang),
+        accessCreated,
         user: { id: targetUserId, email: cleanEmail },
       })
     }
@@ -406,6 +451,7 @@ serve(async (req) => {
       success: true,
       emailSent: true,
       isNewUser,
+      accessCreated,
       user: { id: targetUserId, email: cleanEmail },
     })
   } catch (error: any) {

@@ -459,10 +459,12 @@
               <h2 class="text-xl font-semibold">{{ 'settings.users.title' | t }}</h2>
               <p class="text-gray-600 text-sm">{{ 'settings.users.subtitle' | t }}</p>
             </div>
-            <button mat-raised-button color="primary" (click)="openUserDialog()">
-              <mat-icon>person_add</mat-icon>
-              {{ 'settings.users.add' | t }}
-            </button>
+            @if (canInviteUsers()) {
+              <button mat-raised-button color="primary" (click)="openUserDialog()">
+                <mat-icon>person_add</mat-icon>
+                {{ 'settings.users.add' | t }}
+              </button>
+            }
           </div>
 
           <mat-card>
@@ -518,10 +520,12 @@
                 <div class="text-center py-8 text-gray-500">
                   <mat-icon class="text-6xl mb-2">people_outline</mat-icon>
                   <p>{{ 'settings.users.empty' | t }}</p>
-                  <button mat-raised-button color="primary" (click)="openUserDialog()" class="mt-4">
-                    <mat-icon>add</mat-icon>
-                    {{ 'settings.users.addFirst' | t }}
-                  </button>
+                  @if (canInviteUsers()) {
+                    <button mat-raised-button color="primary" (click)="openUserDialog()" class="mt-4">
+                      <mat-icon>add</mat-icon>
+                      {{ 'settings.users.addFirst' | t }}
+                    </button>
+                  }
                 </div>
               }
             </mat-card-content>
