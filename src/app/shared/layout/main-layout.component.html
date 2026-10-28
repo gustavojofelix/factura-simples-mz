@@ -262,10 +262,10 @@
             }
 
             <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <a href="mailto:suporte@ispc.co.mz" class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 shadow-lg shadow-red-200 transition-all text-sm">
+              <button type="button" (click)="contactSupport()" class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 shadow-lg shadow-red-200 transition-all text-sm">
                 <mat-icon class="mr-2 !text-lg">support_agent</mat-icon>
                 {{ 'layout.suspended.contactSupport' | t }}
-              </a>
+              </button>
               <button mat-button (click)="logout()" class="w-full sm:w-auto !text-gray-500 hover:!text-gray-800 !text-sm">
                 {{ 'layout.suspended.signOut' | t }}
               </button>
@@ -289,7 +289,7 @@
                   <p class="text-sm text-slate-600 mb-3 leading-relaxed">
                     {{ 'layout.subscription.trialBody' | t }}
                   </p>
-                  <button mat-raised-button routerLink="/configuracoes" class="!bg-ispc-orange !text-white !h-10">
+                  <button mat-raised-button routerLink="/configuracoes" [queryParams]="{ tab: 'subscricao' }" class="!bg-ispc-orange !text-white !h-10">
                     {{ 'layout.subscription.viewPlans' | t }}
                   </button>
                 </div>

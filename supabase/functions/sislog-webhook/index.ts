@@ -178,22 +178,26 @@ serve(async (req) => {
       return new Response("OK", { status: 200 });
     }
 
-    // 0. Downgrade enquanto a subscrição está activa? (ex.: dois pagamentos
-    // pendentes em corrida). O dinheiro já foi cobrado, por isso os dias são
+    // 0. Downgrade (plano inferior, ou ciclo mais curto com a subscrição
+    // activa)? Ex.: dois pagamentos pendentes em corrida. O dinheiro já foi cobrado, por isso os dias são
     // somados, mas o plano superior actual é mantido e o pagamento fica
     // assinalado (sislog_response.downgrade_ignored) para revisão do admin.
     let downgradeIgnored = false;
     {
       const { data: isDowngrade, error: downgradeError } = await supabase.rpc(
         "is_subscription_downgrade",
-        { p_company_id: payment.company_id, p_target_plan: payment.plan_name },
+        {
+          p_company_id: payment.company_id,
+          p_target_plan: payment.plan_name,
+          p_target_cycle: payment.billing_cycle,
+        },
       );
       if (downgradeError) {
         console.warn("[SislogWebhook] is_subscription_downgrade failed:", downgradeError.message);
       } else if (isDowngrade === true) {
         downgradeIgnored = true;
         console.warn(
-          `[SislogWebhook] Payment ${payment.id} requested a downgrade to "${payment.plan_name}" while the current subscription is active — keeping the current plan and only extending the period.`,
+          `[SislogWebhook] Payment ${payment.id} requested a downgrade to "${payment.plan_name}" (${payment.billing_cycle}) — keeping the current plan and only extending the period.`,
         );
       }
     }

@@ -78,7 +78,9 @@
   },
   "errors": {
     "unreachable": "Não foi possível contactar o assistente.",
-    "network": "Ocorreu um erro de ligação. Verifique a Internet e tente novamente."
+    "network": "Ocorreu um erro de ligação. Verifique a Internet e tente novamente.",
+    "timeout": "O assistente demorou demasiado a responder. Tente novamente.",
+    "session": "A sua sessão expirou. Entre novamente para usar o assistente."
   },
   "documents": {
     "bucketMissing": "O sistema de arquivos (bucket) \"company-documents\" não existe no Supabase. Por favor, crie-o no Dashboard.",

@@ -78,7 +78,9 @@
   },
   "errors": {
     "unreachable": "Impossible de joindre l'assistant.",
-    "network": "Une erreur de connexion est survenue. Vérifiez votre connexion Internet et réessayez."
+    "network": "Une erreur de connexion est survenue. Vérifiez votre connexion Internet et réessayez.",
+    "timeout": "L'assistant a mis trop de temps à répondre. Veuillez réessayer.",
+    "session": "Votre session a expiré. Reconnectez-vous pour utiliser l'assistant."
   },
   "documents": {
     "bucketMissing": "Le bucket de stockage « company-documents » n'existe pas dans Supabase. Veuillez le créer dans le Dashboard.",

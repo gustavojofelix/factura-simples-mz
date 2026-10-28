@@ -43,7 +43,7 @@
   },
   "details": {
     "subscriptionExpired": "L'abonnement de cette entreprise a expiré. Renouvelez la formule dans Paramètres → Abonnement pour continuer.",
-    "downgradeBlocked": "Impossible de passer à une formule inférieure tant que l'abonnement est actif."
+    "downgradeBlocked": "Impossible de passer à une formule inférieure."
   },
   "text": {
     "network": "Pas de connexion au serveur. Vérifiez votre connexion internet et réessayez.",

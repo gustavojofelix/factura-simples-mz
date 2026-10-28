@@ -1,6 +1,6 @@
 {
   "page": {
-    "processing": "A processar o convite...",
+    "processing": "A processar...",
     "title": "Configurações",
     "subtitle": "Gerencie as configurações do sistema, subscrições, empresas e utilizadores"
   },
@@ -56,7 +56,7 @@
     "pastDueMessage": "Por favor, atualize seu método de pagamento para continuar usando o serviço.",
     "noPlan": "Esta empresa ainda não possui um plano ativo. Escolha um dos tarifários abaixo para subscrever.",
     "availablePlans": "Planos Disponíveis",
-    "upgradeInfo": "Pode fazer upgrade a qualquer momento. Não é possível fazer downgrade enquanto a subscrição estiver activa.",
+    "upgradeInfo": "Pode fazer upgrade a qualquer momento. Não é possível mudar para um plano inferior, nem para um período mais curto enquanto a subscrição estiver activa.",
     "mostPopular": "Mais Popular",
     "trial": "Trial",
     "trialDays": "14 dias de teste",
@@ -65,12 +65,13 @@
     "notAvailable": "Não disponível",
     "switchTo": "Mudar para {cycle}",
     "downgradeNotAllowed": "Downgrade não permitido",
-    "downgradeBlockedShort": "Não é possível fazer downgrade enquanto a subscrição estiver activa",
+    "downgradeBlockedShort": "Não é possível mudar para um plano inferior",
     "availableAfter": "Disponível após {date}",
     "activateTrial": "Ativar Período de Teste",
     "upgrade": "Fazer Upgrade (M-Pesa / e-Mola)",
     "subscribe": "Subscrever (M-Pesa / e-Mola)",
-    "empty": "Selecione uma empresa para ver a subscrição e os planos disponíveis"
+    "empty": "Selecione uma empresa para ver a subscrição e os planos disponíveis",
+    "shorterCycleBlockedShort": "Não é possível reduzir o período enquanto a subscrição estiver activa"
   },
   "status": {
     "active": "Ativo",
@@ -116,7 +117,8 @@
     "manageAccess": "Gerir Acesso",
     "you": "Você",
     "empty": "Nenhum utilizador encontrado",
-    "addFirst": "Adicionar Primeiro Utilizador"
+    "addFirst": "Adicionar Primeiro Utilizador",
+    "removeAccess": "Remover acesso"
   },
   "documents": {
     "title": "Personalização de Documentos",
@@ -146,7 +148,9 @@
     "planChanged": "Plano alterado com sucesso",
     "planChangeError": "Erro ao alterar plano",
     "downgradeToTrial": "Não é possível voltar ao período de teste depois de subscrever um plano pago.",
-    "downgradeActive": "Não é possível fazer downgrade enquanto a subscrição estiver activa."
+    "downgradeActive": "Não é possível fazer downgrade para um plano inferior.",
+    "shorterCycleBlocked": "Não é possível mudar para um período mais curto enquanto a subscrição estiver activa.",
+    "revokeAccessConfirm": "Remover o acesso de {email} a: {companies}?"
   },
   "documentTab": {
     "noCompany": "Seleccione uma empresa para personalizar os seus documentos.",

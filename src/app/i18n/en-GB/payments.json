@@ -85,7 +85,7 @@
       "confirmed": "Payment confirmed! {plan} plan activated.",
       "voucherError": "Error validating voucher.",
       "noTrialBack": "You cannot return to the free trial after subscribing to a paid plan.",
-      "noDowngrade": "You cannot downgrade while the subscription is active.",
+      "noDowngrade": "Downgrading the plan is not possible.",
       "activatedVoucher": "Subscription activated successfully with voucher!",
       "activateError": "Error activating subscription.",
       "activateUnexpected": "Unexpected error activating subscription.",

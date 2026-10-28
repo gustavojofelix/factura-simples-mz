@@ -50,7 +50,9 @@
     "switchTo": "Mudar para outro contribuinte activo:",
     "access": "Aceder",
     "contactSupport": "Contactar Apoio ao Cliente",
-    "signOut": "Terminar Sessão"
+    "signOut": "Terminar Sessão",
+    "supportSubject": "Contribuinte suspenso: {company} (NUIT {nuit})",
+    "supportMessage": "Olá, o acesso à empresa {company} (NUIT {nuit}) foi suspenso no ISPC Fácil. Gostaria de saber o motivo e como reactivar a conta.\n\nUtilizador: {email}"
   },
   "subscription": {
     "trialTitle": {

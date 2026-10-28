@@ -89,8 +89,6 @@
     },
     "reference": "Referência",
     "referencePlaceholder": "Número de referência do pagamento",
-    "receiptUrl": "URL do Comprovativo",
-    "receiptUrlHint": "Link para o comprovativo de pagamento",
     "notes": "Notas",
     "notesPlaceholder": "Observações adicionais"
   },
@@ -102,5 +100,24 @@
     "generatingPdf": "A gerar PDF...",
     "downloadPdf": "Descarregar PDF",
     "pdfError": "Não foi possível gerar o PDF. Por favor, tente novamente."
+  },
+  "proof": {
+    "label": "Comprovativo de pagamento",
+    "choose": "Anexar comprovativo (PDF ou imagem)",
+    "replace": "Substituir",
+    "hint": "PDF, JPG, PNG ou WEBP, até 5 MB. Pode também anexar mais tarde.",
+    "invalidType": "Formato não suportado. Use PDF, JPG, PNG ou WEBP.",
+    "tooLarge": "O ficheiro excede {size} MB.",
+    "uploadFailed": "Não foi possível carregar o comprovativo. Tente novamente.",
+    "attachFailed": "Não foi possível anexar o comprovativo a este pagamento.",
+    "openFailed": "Não foi possível abrir o comprovativo.",
+    "dialogTitle": "Comprovativos de Pagamento",
+    "noPayments": "Ainda não há pagamentos registados.",
+    "attached": "Comprovativo anexado",
+    "missing": "Sem comprovativo",
+    "view": "Ver",
+    "attach": "Anexar comprovativo",
+    "attachTooltip": "Anexar comprovativo de pagamento",
+    "viewTooltip": "Comprovativos de pagamento"
   }
 }

@@ -51,11 +51,12 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY') || '';
     const supabase           = createClient(supabaseUrl, supabaseServiceKey);
 
-    // ── Bloquear downgrade enquanto a subscrição actual estiver activa ──────
+    // ── Bloquear downgrade (plano inferior, ou ciclo mais curto com a subscrição activa) ──
     // Verificado ANTES do pedido USSD para que o cliente nunca seja cobrado.
     const { data: isDowngrade, error: downgradeError } = await supabase.rpc('is_subscription_downgrade', {
-      p_company_id:  companyId,
-      p_target_plan: planName,
+      p_company_id:   companyId,
+      p_target_plan:  planName,
+      p_target_cycle: billingCycle,
     });
     if (downgradeError) {
       // Migração ainda não aplicada ou erro transitório: não bloquear o pagamento.
@@ -63,21 +64,16 @@ serve(async (req) => {
     } else if (isDowngrade === true) {
       const { data: currentSub } = await supabase
         .from('subscriptions')
-        .select('plan_name, end_date')
+        .select('plan_name')
         .eq('company_id', companyId)
         .order('updated_at', { ascending: false })
         .limit(1)
         .maybeSingle();
-      let untilText = '';
-      if (currentSub?.end_date) {
-        const [y, m, d] = String(currentSub.end_date).slice(0, 10).split('-');
-        untilText = ` (até ${d}/${m}/${y})`;
-      }
       return new Response(
         JSON.stringify({
           success: false,
           code:    'SUBSCRIPTION_DOWNGRADE_BLOCKED',
-          error:   `Não é possível mudar para um plano inferior enquanto a subscrição actual${currentSub?.plan_name ? ` (${currentSub.plan_name})` : ''} estiver activa${untilText}. Poderá escolher outro plano após a expiração.`,
+          error:   `Não é possível fazer downgrade do plano actual${currentSub?.plan_name ? ` (${currentSub.plan_name})` : ''}. Só é possível manter o plano ou mudar para um plano superior.`,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );

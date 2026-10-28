@@ -30,6 +30,9 @@ const MAX_TURNS = 6;
 /** Mensagens de histórico reenviadas a cada pedido. */
 const HISTORY_LIMIT = 20;
 
+/** Intervalo dos comentários SSE que mantêm a ligação viva. */
+const KEEPALIVE_MS = 15_000;
+
 // Preços do Claude Opus 5, por milhão de tokens. Usados apenas para registar
 // custo estimado por empresa no backoffice.
 const PRICE_INPUT = 5.0;
@@ -402,6 +405,18 @@ Deno.serve(async (req) => {
         }
       };
 
+      // Enquanto o modelo pensa ou as ferramentas correm, não sai nada no
+      // stream. Um comentário SSE periódico mantém a ligação viva em proxies e
+      // redes móveis e permite ao cliente distinguir "a pensar" de "ligação
+      // morta" (o cliente desiste ao fim de algum tempo sem receber bytes).
+      const keepAlive = setInterval(() => {
+        try {
+          controller.enqueue(new TextEncoder().encode(": ping\n\n"));
+        } catch {
+          clearInterval(keepAlive);
+        }
+      }, KEEPALIVE_MS);
+
       enviar("meta", { conversation_id: conversationId });
 
       // Não é async de propósito: `.stream()` devolve o objecto de stream de
@@ -596,6 +611,7 @@ Deno.serve(async (req) => {
         console.error("ai-assistant: falha a gravar", err);
       }
 
+      clearInterval(keepAlive);
       enviar("done", {
         conversation_id: conversationId,
         anexos,
@@ -603,7 +619,11 @@ Deno.serve(async (req) => {
         duracao_ms: duracao,
       });
 
-      controller.close();
+      try {
+        controller.close();
+      } catch {
+        // O cliente já se tinha desligado.
+      }
     },
   });
 

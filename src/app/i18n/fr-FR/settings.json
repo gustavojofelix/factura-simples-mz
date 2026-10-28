@@ -1,6 +1,6 @@
 {
   "page": {
-    "processing": "Traitement de l'invitation...",
+    "processing": "Traitement en cours...",
     "title": "Paramètres",
     "subtitle": "Gérez les paramètres du système, les abonnements, les entreprises et les utilisateurs"
   },
@@ -56,7 +56,7 @@
     "pastDueMessage": "Veuillez mettre à jour votre moyen de paiement pour continuer à utiliser le service.",
     "noPlan": "Cette entreprise n'a pas encore de formule active. Choisissez l'une des formules ci-dessous pour vous abonner.",
     "availablePlans": "Formules disponibles",
-    "upgradeInfo": "Vous pouvez passer à une formule supérieure à tout moment. Il n'est pas possible de passer à une formule inférieure tant que l'abonnement est actif.",
+    "upgradeInfo": "Vous pouvez passer à une formule supérieure à tout moment. Il n'est pas possible de passer à une formule inférieure, ni à une période plus courte tant que l'abonnement est actif.",
     "mostPopular": "La plus populaire",
     "trial": "Essai",
     "trialDays": "14 jours d'essai gratuit",
@@ -65,12 +65,13 @@
     "notAvailable": "Non disponible",
     "switchTo": "Passer à {cycle}",
     "downgradeNotAllowed": "Rétrogradation non autorisée",
-    "downgradeBlockedShort": "Impossible de passer à une formule inférieure tant que l'abonnement est actif",
+    "downgradeBlockedShort": "Impossible de passer à une formule inférieure",
     "availableAfter": "Disponible après le {date}",
     "activateTrial": "Activer l'essai gratuit",
     "upgrade": "Passer à la formule supérieure (M-Pesa / e-Mola)",
     "subscribe": "S'abonner (M-Pesa / e-Mola)",
-    "empty": "Sélectionnez une entreprise pour voir son abonnement et les formules disponibles"
+    "empty": "Sélectionnez une entreprise pour voir son abonnement et les formules disponibles",
+    "shorterCycleBlockedShort": "Impossible de réduire la période tant que l'abonnement est actif"
   },
   "status": {
     "active": "Actif",
@@ -116,7 +117,8 @@
     "manageAccess": "Gérer l'accès",
     "you": "Vous",
     "empty": "Aucun utilisateur trouvé",
-    "addFirst": "Ajouter votre premier utilisateur"
+    "addFirst": "Ajouter votre premier utilisateur",
+    "removeAccess": "Retirer l'accès"
   },
   "documents": {
     "title": "Personnalisation des documents",
@@ -146,7 +148,9 @@
     "planChanged": "Formule modifiée avec succès",
     "planChangeError": "Erreur lors du changement de formule",
     "downgradeToTrial": "Impossible de revenir à l'essai gratuit après avoir souscrit une formule payante.",
-    "downgradeActive": "Impossible de passer à une formule inférieure tant que l'abonnement est actif."
+    "downgradeActive": "Impossible de passer à une formule inférieure.",
+    "shorterCycleBlocked": "Impossible de passer à une période plus courte tant que l'abonnement est actif.",
+    "revokeAccessConfirm": "Retirer l'accès de {email} à : {companies} ?"
   },
   "documentTab": {
     "noCompany": "Sélectionnez une entreprise pour personnaliser ses documents.",

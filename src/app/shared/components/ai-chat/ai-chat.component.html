@@ -53,7 +53,7 @@
       <p class="text-sm text-slate-500 leading-relaxed mb-5 max-w-xs">
         {{ 'ai.chat.lockedBody' | t }}
       </p>
-      <a routerLink="/configuracoes" mat-raised-button class="!bg-ispc-orange !text-white !h-10 !px-5 !rounded-xl">
+      <a routerLink="/configuracoes" [queryParams]="{ tab: 'subscricao' }" mat-raised-button class="!bg-ispc-orange !text-white !h-10 !px-5 !rounded-xl">
         {{ 'ai.chat.viewPlans' | t }}
       </a>
     </div>
@@ -171,7 +171,7 @@
         <div class="ai-chat__quota-block">
           <mat-icon class="!text-[18px] !w-[18px] !h-[18px] text-amber-600 shrink-0">info</mat-icon>
           <span class="flex-1">{{ 'ai.chat.quotaReached' | t }}</span>
-          <a routerLink="/configuracoes" class="font-bold text-ispc-orange whitespace-nowrap">{{ 'ai.chat.viewPlans' | t }}</a>
+          <a routerLink="/configuracoes" [queryParams]="{ tab: 'subscricao' }" class="font-bold text-ispc-orange whitespace-nowrap">{{ 'ai.chat.viewPlans' | t }}</a>
         </div>
       } @else {
         <div class="ai-chat__input-row">

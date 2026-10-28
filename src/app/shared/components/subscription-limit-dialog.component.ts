@@ -110,7 +110,7 @@ export class SubscriptionLimitDialogComponent {
 
   upgrade() {
     this.dialogRef.close();
-    // Navigate to /configuracoes and set the Subscrições tab (index 1) via state
-    this.router.navigate(['/configuracoes'], { state: { tab: 1 } });
+    // Abre Configurações directamente no separador Subscrições
+    this.router.navigate(['/configuracoes'], { queryParams: { tab: 'subscricao' } });
   }
 }

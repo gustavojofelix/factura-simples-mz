@@ -53,6 +53,18 @@ export interface TaxPayment {
   created_at: string;
 }
 
+const PROOF_BUCKET = 'company-documents';
+const PROOF_MAX_BYTES = 5 * 1024 * 1024;
+const PROOF_MIME_TYPES = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp'];
+
+/** Valor para o atributo accept do input de ficheiro do comprovativo. */
+export const PROOF_ACCEPT = PROOF_MIME_TYPES.join(',');
+
+/** receipt_url antigo (URL escrita à mão) em vez de um caminho no bucket. */
+function isExternalUrl(value: string): boolean {
+  return /^https?:\/\//i.test(value);
+}
+
 export interface TaxCalculation {
   period: number;
   year: number;
@@ -585,6 +597,83 @@ export class TaxService {
       console.error('Erro ao adicionar pagamento:', error);
       return false;
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Comprovativos de pagamento (bucket privado company-documents)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Valida o ficheiro do comprovativo. Devolve a mensagem de erro, ou null se
+   * for aceite (PDF ou imagem, até 5 MB).
+   */
+  validateProofFile(file: File): string | null {
+    if (!PROOF_MIME_TYPES.includes(file.type)) return t('taxes.proof.invalidType');
+    if (file.size > PROOF_MAX_BYTES) return t('taxes.proof.tooLarge', { size: PROOF_MAX_BYTES / (1024 * 1024) });
+    return null;
+  }
+
+  /** Carrega o comprovativo e devolve o caminho dentro do bucket. */
+  async uploadPaymentProof(companyId: string, file: File): Promise<string> {
+    const ext = (file.name.split('.').pop() || 'pdf').toLowerCase().replace(/[^a-z0-9]/g, '') || 'pdf';
+    const path = `${companyId}/tax_payment_${Date.now()}.${ext}`;
+    const { error } = await this.supabase.client.storage
+      .from(PROOF_BUCKET)
+      .upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type });
+    if (error) {
+      console.error('Erro ao carregar comprovativo:', error);
+      throw new Error(t('taxes.proof.uploadFailed'));
+    }
+    return path;
+  }
+
+  /** Remove um comprovativo carregado (melhor esforço; URLs externas são ignoradas). */
+  async removePaymentProof(receiptUrl?: string | null): Promise<void> {
+    if (!receiptUrl || isExternalUrl(receiptUrl)) return;
+    const { error } = await this.supabase.client.storage.from(PROOF_BUCKET).remove([receiptUrl]);
+    if (error) console.warn('Não foi possível remover o comprovativo antigo:', error.message);
+  }
+
+  /** Anexa (ou substitui) o comprovativo de um pagamento já registado. */
+  async attachPaymentProof(payment: TaxPayment, declaration: TaxDeclaration, file: File): Promise<boolean> {
+    const path = await this.uploadPaymentProof(declaration.company_id, file);
+    const { data, error } = await this.supabase.db
+      .from('tax_payments')
+      .update({ receipt_url: path })
+      .eq('id', payment.id)
+      .select('id');
+
+    // Com RLS, um UPDATE sem permissão não dá erro: apenas não altera nada.
+    if (error || !data?.length) {
+      if (error) console.error('Erro ao anexar comprovativo:', error);
+      await this.removePaymentProof(path);
+      return false;
+    }
+
+    await this.removePaymentProof(payment.receipt_url);
+    await this.auditLogService.log(
+      'Anexou Comprovativo de Pagamento de Imposto',
+      'payments',
+      { amount: Number(payment.amount) || 0, payment_date: payment.payment_date, file: file.name },
+      declaration.id,
+      `${declaration.period}º Trim ${declaration.year}`,
+      declaration.company_id
+    );
+    await this.loadDeclarations();
+    return true;
+  }
+
+  /** URL para abrir o comprovativo: assinada (1 h) para ficheiros do bucket, ou a URL externa antiga. */
+  async getPaymentProofUrl(receiptUrl: string): Promise<string | null> {
+    if (isExternalUrl(receiptUrl)) return receiptUrl;
+    const { data, error } = await this.supabase.client.storage
+      .from(PROOF_BUCKET)
+      .createSignedUrl(receiptUrl, 3600);
+    if (error) {
+      console.error('Erro ao abrir comprovativo:', error);
+      return null;
+    }
+    return data.signedUrl;
   }
 
   async getDeclarationPayments(declarationId: string): Promise<TaxPayment[]> {

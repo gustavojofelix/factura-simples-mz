@@ -75,6 +75,15 @@ const TOOL_LABELS: Record<string, string> = {
   consultar_base_fiscal: 'ai.tools.consultar_base_fiscal'
 };
 
+/** Tempo máximo sem receber bytes do servidor (que envia um ping a cada 15 s). */
+const INACTIVITY_MS = 90_000;
+
+/** Tempo máximo para obter o token da sessão. */
+const SESSION_TIMEOUT_MS = 10_000;
+
+/** Intervalo mínimo entre redesenhos do texto em streaming. */
+const RENDER_INTERVAL_MS = 80;
+
 export function toolLabel(nome: string): string {
   return t(TOOL_LABELS[nome] ?? 'ai.tools.default');
 }
@@ -214,10 +223,6 @@ export class AiAssistantService {
     const texto = pergunta.trim();
     if (!texto) return;
 
-    const { data: sessionData } = await this.supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
-    if (!token) return;
-
     this.messages.update(m => [...m, { role: 'user', content: texto }]);
     this.messages.update(m => [
       ...m,
@@ -237,7 +242,28 @@ export class AiAssistantService {
 
     this.abortController = new AbortController();
 
+    // Sem bytes do servidor durante INACTIVITY_MS (o servidor envia um ping a
+    // cada 15 s enquanto pensa), a ligação é dada como morta e o pedido é
+    // abortado. Sem isto, uma ligação presa deixava o chat bloqueado até
+    // recarregar a página.
+    let semResposta = false;
+    let vigia: ReturnType<typeof setTimeout> | undefined;
+    const rearmar = () => {
+      clearTimeout(vigia);
+      vigia = setTimeout(() => {
+        semResposta = true;
+        this.abortController?.abort();
+      }, INACTIVITY_MS);
+    };
+
     try {
+      const token = await this.accessToken();
+      if (!token) {
+        actualizarResposta({ content: t('ai.errors.session'), streaming: false, error: 'SESSION' });
+        return;
+      }
+
+      rearmar();
       const resposta = await fetch(
         `${environment.supabaseUrl}/functions/v1/ai-assistant`,
         {
@@ -269,9 +295,16 @@ export class AiAssistantService {
         return;
       }
 
-      await this.consumirSse(resposta, actualizarResposta);
+      await this.consumirSse(resposta, actualizarResposta, rearmar);
     } catch (err: any) {
-      if (err?.name === 'AbortError') {
+      if (err?.name === 'AbortError' && semResposta) {
+        const parcial = this.messages()[indiceResposta]?.content;
+        actualizarResposta({
+          content: parcial ? `${parcial}\n\n${t('ai.errors.timeout')}` : t('ai.errors.timeout'),
+          streaming: false,
+          error: 'TIMEOUT'
+        });
+      } else if (err?.name === 'AbortError') {
         actualizarResposta({ streaming: false });
       } else {
         actualizarResposta({
@@ -281,11 +314,22 @@ export class AiAssistantService {
         });
       }
     } finally {
+      clearTimeout(vigia);
       this.isStreaming.set(false);
       this.currentTool.set(null);
       this.abortController = null;
       await this.loadQuota();
     }
+  }
+
+  /** Token da sessão, sem deixar o chat pendurado se o cliente de auth não responder. */
+  private async accessToken(): Promise<string | null> {
+    const limite = new Promise<null>(resolve => setTimeout(() => resolve(null), SESSION_TIMEOUT_MS));
+    const sessao = this.supabase.auth
+      .getSession()
+      .then(({ data }) => data.session?.access_token ?? null)
+      .catch(() => null);
+    return Promise.race([sessao, limite]);
   }
 
   /** Interrompe a resposta em curso. */
@@ -295,77 +339,118 @@ export class AiAssistantService {
 
   private async consumirSse(
     resposta: Response,
-    actualizar: (patch: Partial<AiMessage>) => void
+    actualizar: (patch: Partial<AiMessage>) => void,
+    aoReceber: () => void
   ): Promise<void> {
     const reader = resposta.body?.getReader();
-    if (!reader) return;
+    if (!reader) {
+      actualizar({ content: t('ai.errors.unreachable'), streaming: false, error: 'NO_BODY' });
+      return;
+    }
 
     const decoder = new TextDecoder();
     let buffer = '';
     let acumulado = '';
+    let terminado = false;
     const ferramentas: string[] = [];
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+    // O texto chega em muitos pedaços pequenos. Redesenhar a mensagem (e o
+    // Markdown inteiro) a cada um bloqueava a interface em telemóveis mais
+    // lentos; agrupa-se num redesenho a cada RENDER_INTERVAL_MS.
+    let redesenho: ReturnType<typeof setTimeout> | undefined;
+    const agendarTexto = () => {
+      if (redesenho !== undefined) return;
+      redesenho = setTimeout(() => {
+        redesenho = undefined;
+        actualizar({ content: acumulado });
+      }, RENDER_INTERVAL_MS);
+    };
+    const cancelarRedesenho = () => {
+      clearTimeout(redesenho);
+      redesenho = undefined;
+    };
 
-      buffer += decoder.decode(value, { stream: true });
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        aoReceber();
 
-      // Os eventos SSE terminam numa linha em branco. Um chunk da rede pode
-      // cortar um evento a meio, por isso só se processa o que estiver completo
-      // e o resto fica no buffer para o chunk seguinte.
-      const blocos = buffer.split('\n\n');
-      buffer = blocos.pop() ?? '';
+        buffer += decoder.decode(value, { stream: true });
 
-      for (const bloco of blocos) {
-        const linhaEvento = bloco.split('\n').find(l => l.startsWith('event: '));
-        const linhaDados = bloco.split('\n').find(l => l.startsWith('data: '));
-        if (!linhaEvento || !linhaDados) continue;
+        // Os eventos SSE terminam numa linha em branco. Um chunk da rede pode
+        // cortar um evento a meio, por isso só se processa o que estiver completo
+        // e o resto fica no buffer para o chunk seguinte.
+        const blocos = buffer.split('\n\n');
+        buffer = blocos.pop() ?? '';
 
-        const evento = linhaEvento.slice(7).trim();
-        let dados: any;
-        try {
-          dados = JSON.parse(linhaDados.slice(6));
-        } catch {
-          continue;
-        }
+        for (const bloco of blocos) {
+          const linhaEvento = bloco.split('\n').find(l => l.startsWith('event: '));
+          const linhaDados = bloco.split('\n').find(l => l.startsWith('data: '));
+          if (!linhaEvento || !linhaDados) continue;
 
-        switch (evento) {
-          case 'meta':
-            if (dados.conversation_id) {
-              this.activeConversationId.set(dados.conversation_id);
-            }
-            break;
+          const evento = linhaEvento.slice(7).trim();
+          let dados: any;
+          try {
+            dados = JSON.parse(linhaDados.slice(6));
+          } catch {
+            continue;
+          }
 
-          case 'tool':
-            this.currentTool.set(dados.nome);
-            if (!ferramentas.includes(dados.nome)) ferramentas.push(dados.nome);
-            break;
+          switch (evento) {
+            case 'meta':
+              if (dados.conversation_id) {
+                this.activeConversationId.set(dados.conversation_id);
+              }
+              break;
 
-          case 'delta':
-            acumulado += dados.text ?? '';
-            this.currentTool.set(null);
-            actualizar({ content: acumulado });
-            break;
+            case 'tool':
+              this.currentTool.set(dados.nome);
+              if (!ferramentas.includes(dados.nome)) ferramentas.push(dados.nome);
+              break;
 
-          case 'error':
-            // O servidor envia ainda um 'done' depois do erro, que reescreve o
-            // conteúdo com o acumulado; sem isto a mensagem desaparecia.
-            acumulado = dados.message;
-            actualizar({ content: acumulado, streaming: false, error: dados.code });
-            break;
+            case 'delta':
+              acumulado += dados.text ?? '';
+              if (this.currentTool()) this.currentTool.set(null);
+              agendarTexto();
+              break;
 
-          case 'done':
-            actualizar({
-              content: acumulado,
-              attachments: dados.anexos ?? [],
-              tools: ferramentas,
-              streaming: false
-            });
-            await this.loadConversations();
-            break;
+            case 'error':
+              // O servidor envia ainda um 'done' depois do erro, que reescreve o
+              // conteúdo com o acumulado; sem isto a mensagem desaparecia.
+              cancelarRedesenho();
+              acumulado = dados.message;
+              actualizar({ content: acumulado, streaming: false, error: dados.code });
+              break;
+
+            case 'done':
+              cancelarRedesenho();
+              terminado = true;
+              actualizar({
+                content: acumulado,
+                attachments: dados.anexos ?? [],
+                tools: ferramentas,
+                streaming: false
+              });
+              await this.loadConversations();
+              break;
+          }
         }
       }
+    } finally {
+      cancelarRedesenho();
+    }
+
+    // A ligação fechou sem 'done' (ex.: a função foi terminada pelo servidor):
+    // fecha a mensagem em vez de a deixar "a pensar" para sempre.
+    if (!terminado) {
+      actualizar({
+        content: acumulado || t('ai.errors.unreachable'),
+        streaming: false,
+        error: acumulado ? null : 'INCOMPLETE',
+        tools: ferramentas
+      });
+      await this.loadConversations();
     }
   }
 

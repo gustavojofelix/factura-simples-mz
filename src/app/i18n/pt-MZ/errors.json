@@ -43,7 +43,7 @@
   },
   "details": {
     "subscriptionExpired": "A subscrição desta empresa expirou. Renove o plano em Configurações → Subscrição para continuar.",
-    "downgradeBlocked": "Não é possível fazer downgrade enquanto a subscrição estiver activa."
+    "downgradeBlocked": "Não é possível fazer downgrade do plano."
   },
   "text": {
     "network": "Sem ligação ao servidor. Verifique a sua internet e tente novamente.",

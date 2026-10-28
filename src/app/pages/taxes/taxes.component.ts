@@ -17,6 +17,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { TaxService, TaxCalculation, TaxDeclaration, TaxSummary, IspcSplit } from '../../core/services/tax.service';
 import { CompanyService } from '../../core/services/company.service';
 import { TaxPaymentDialogComponent } from '../../shared/components/tax-payment-dialog.component';
+import { TaxPaymentProofsDialogComponent } from '../../shared/components/tax-payment-proofs-dialog.component';
 import { Model30Component } from '../../shared/components/model30.component';
 import { Model30ExcelService } from '../../core/services/model30-excel.service';
 import { AuditLogService } from '../../core/services/audit-log.service';
@@ -236,7 +237,7 @@ export class TaxesComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(async (result) => {
       if (result) {
-        await this.taxService.addPayment(
+        const saved = await this.taxService.addPayment(
           declaration.id,
           result.amount,
           result.paymentDate,
@@ -245,9 +246,24 @@ export class TaxesComponent implements OnInit {
           result.receiptUrl,
           result.notes
         );
+        // O comprovativo já foi carregado; sem pagamento gravado fica órfão.
+        if (!saved) await this.taxService.removePaymentProof(result.receiptUrl);
         await this.updateSummary();
       }
     });
+  }
+
+  openPaymentProofs(declaration: TaxDeclaration) {
+    this.dialog.open(TaxPaymentProofsDialogComponent, {
+      width: '560px',
+      maxWidth: '95vw',
+      data: { declaration }
+    });
+  }
+
+  /** Pagamentos da declaração sem comprovativo anexado. */
+  countMissingProofs(declaration: TaxDeclaration): number {
+    return (declaration.payments || []).filter(p => !p.receipt_url).length;
   }
 
   openModel30(declaration: TaxDeclaration) {

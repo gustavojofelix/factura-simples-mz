@@ -83,5 +83,14 @@
   "errors": {
     "generic": "Something went wrong. Please try again.",
     "network": "Connection error. Please check your internet."
+  },
+  "support": {
+    "title": "Contact Customer Support",
+    "subtitle": "Choose a channel. The message below already includes your company details.",
+    "call": "Call",
+    "email": "Send email",
+    "copy": "Copy",
+    "copied": "Copied",
+    "messageLabel": "Message"
   }
 }

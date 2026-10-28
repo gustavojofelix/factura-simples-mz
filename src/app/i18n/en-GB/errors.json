@@ -43,7 +43,7 @@
   },
   "details": {
     "subscriptionExpired": "This company's subscription has expired. Renew the plan in Settings → Subscription to continue.",
-    "downgradeBlocked": "Downgrading is not possible while the subscription is active."
+    "downgradeBlocked": "Downgrading the plan is not possible."
   },
   "text": {
     "network": "No connection to the server. Check your internet connection and try again.",

@@ -50,7 +50,9 @@
     "switchTo": "Passer à un autre contribuable actif :",
     "access": "Accéder",
     "contactSupport": "Contacter le service client",
-    "signOut": "Se déconnecter"
+    "signOut": "Se déconnecter",
+    "supportSubject": "Contribuable suspendu : {company} (NUIT {nuit})",
+    "supportMessage": "Bonjour, l'accès à l'entreprise {company} (NUIT {nuit}) a été suspendu sur ISPC Fácil. J'aimerais connaître la raison et savoir comment réactiver le compte.\n\nUtilisateur : {email}"
   },
   "subscription": {
     "trialTitle": {

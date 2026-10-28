@@ -9,7 +9,7 @@ export interface Subscription {
   plan_id?: string;
   plan_name: string;
   status: "active" | "past_due" | "cancelled" | "trialing";
-  billing_cycle: "monthly" | "quarterly" | "semiannual" | "yearly";
+  billing_cycle: BillingCycle;
   amount: number;
   currency: string;
   payment_method?: string;
@@ -50,6 +50,18 @@ export function maputoToday(): string {
     month: '2-digit',
     day: '2-digit',
   }).format(new Date());
+}
+
+export type BillingCycle = "monthly" | "quarterly" | "semiannual" | "yearly";
+
+/** Duração do ciclo em dias, igual a public.subscription_cycle_days() no SQL. */
+export function cycleDays(cycle: string): number {
+  switch (cycle) {
+    case 'quarterly': return 90;
+    case 'semiannual': return 180;
+    case 'yearly': return 360;
+    default: return 30;
+  }
 }
 
 /** Nível por omissão de um plano (igual ao backfill da migração 20261009120000). */
@@ -573,7 +585,7 @@ export class SubscriptionService {
   ): Promise<boolean> {
     const plan = this.findPlan(planName);
     if (!plan) return false;
-    if (this.isDowngrade(plan)) return false;
+    if (this.isDowngrade(plan, billingCycle)) return false;
 
     let amount = plan.monthly_price;
 
@@ -682,21 +694,27 @@ export class SubscriptionService {
   }
 
   /**
-   * Mudar para `target` é um downgrade não permitido?
+   * Mudar para `target` (no ciclo `cycle`) é um downgrade não permitido?
    * - pago -> gratuito (Trial): sempre bloqueado;
-   * - nível inferior: bloqueado só enquanto a subscrição actual estiver activa;
-   * - mesmo nível ou só mudança de ciclo: permitido.
+   * - nível inferior: sempre bloqueado, mesmo depois de expirar;
+   * - ciclo mais curto (ex.: Anual -> Mensal) com a subscrição activa:
+   *   bloqueado, salvo se o plano alvo for de nível superior.
    * Igual a public.subscription_change_is_downgrade() no SQL.
    */
-  isDowngrade(target: SubscriptionPlan): boolean {
+  isDowngrade(target: SubscriptionPlan, cycle?: BillingCycle): boolean {
+    const sub = this.subscriptionSignal();
     const current = this.currentPlanLevel();
-    if (!current) return false;
+    if (!sub || !current) return false;
     if (current.monthly_price > 0 && target.monthly_price === 0) return true;
-    if (!this.hasActivePeriod()) return false;
+
+    const samePlan = (sub.plan_name || '').trim().toLowerCase() === target.name.trim().toLowerCase();
     const curTier = current.tier;
     const newTier = this.planTier(target);
-    if (curTier === null || newTier === null) return false;
-    return newTier < curTier;
+    if (!samePlan && curTier !== null && newTier !== null && newTier < curTier) return true;
+
+    if (!cycle || !sub.billing_cycle || !this.hasActivePeriod()) return false;
+    if (!samePlan && curTier !== null && newTier !== null && newTier > curTier) return false;
+    return cycleDays(cycle) < cycleDays(sub.billing_cycle);
   }
 
   isSubscriptionActive(): boolean {

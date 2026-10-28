@@ -85,7 +85,7 @@
       "confirmed": "Paiement confirmé ! Formule {plan} activée.",
       "voucherError": "Erreur lors de la validation du bon.",
       "noTrialBack": "Impossible de revenir à l'essai gratuit après avoir souscrit une formule payante.",
-      "noDowngrade": "Impossible de passer à une formule inférieure tant que l'abonnement est actif.",
+      "noDowngrade": "Impossible de passer à une formule inférieure.",
       "activatedVoucher": "Abonnement activé avec succès grâce au bon !",
       "activateError": "Erreur lors de l'activation de l'abonnement.",
       "activateUnexpected": "Erreur inattendue lors de l'activation de l'abonnement.",

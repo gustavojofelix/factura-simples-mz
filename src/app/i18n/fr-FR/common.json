@@ -83,5 +83,14 @@
   "errors": {
     "generic": "Une erreur s'est produite. Veuillez réessayer.",
     "network": "Erreur de connexion. Vérifiez votre connexion internet."
+  },
+  "support": {
+    "title": "Contacter le Service Client",
+    "subtitle": "Choisissez un canal. Le message ci-dessous contient déjà les données de votre entreprise.",
+    "call": "Appeler",
+    "email": "Envoyer un e-mail",
+    "copy": "Copier",
+    "copied": "Copié",
+    "messageLabel": "Message"
   }
 }

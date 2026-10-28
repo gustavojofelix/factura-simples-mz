@@ -1,6 +1,6 @@
 {
   "page": {
-    "processing": "Processing the invitation...",
+    "processing": "Processing...",
     "title": "Settings",
     "subtitle": "Manage system settings, subscriptions, companies and users"
   },
@@ -56,7 +56,7 @@
     "pastDueMessage": "Please update your payment method to keep using the service.",
     "noPlan": "This company does not have an active plan yet. Choose one of the plans below to subscribe.",
     "availablePlans": "Available plans",
-    "upgradeInfo": "You can upgrade at any time. Downgrading is not possible while the subscription is active.",
+    "upgradeInfo": "You can upgrade at any time. You cannot move to a lower plan, nor to a shorter period while the subscription is active.",
     "mostPopular": "Most popular",
     "trial": "Trial",
     "trialDays": "14-day free trial",
@@ -65,12 +65,13 @@
     "notAvailable": "Not available",
     "switchTo": "Switch to {cycle}",
     "downgradeNotAllowed": "Downgrade not allowed",
-    "downgradeBlockedShort": "Downgrading is not possible while the subscription is active",
+    "downgradeBlockedShort": "You cannot move to a lower plan",
     "availableAfter": "Available after {date}",
     "activateTrial": "Start free trial",
     "upgrade": "Upgrade (M-Pesa / e-Mola)",
     "subscribe": "Subscribe (M-Pesa / e-Mola)",
-    "empty": "Select a company to view its subscription and the available plans"
+    "empty": "Select a company to view its subscription and the available plans",
+    "shorterCycleBlockedShort": "You cannot shorten the period while the subscription is active"
   },
   "status": {
     "active": "Active",
@@ -116,7 +117,8 @@
     "manageAccess": "Manage access",
     "you": "You",
     "empty": "No users found",
-    "addFirst": "Add your first user"
+    "addFirst": "Add your first user",
+    "removeAccess": "Remove access"
   },
   "documents": {
     "title": "Document customisation",
@@ -146,7 +148,9 @@
     "planChanged": "Plan changed successfully",
     "planChangeError": "Error changing plan",
     "downgradeToTrial": "You cannot go back to the free trial after subscribing to a paid plan.",
-    "downgradeActive": "Downgrading is not possible while the subscription is active."
+    "downgradeActive": "Downgrading to a lower plan is not possible.",
+    "shorterCycleBlocked": "You cannot switch to a shorter period while the subscription is active.",
+    "revokeAccessConfirm": "Remove access for {email} to: {companies}?"
   },
   "documentTab": {
     "noCompany": "Select a company to customise its documents.",

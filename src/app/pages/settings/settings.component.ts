@@ -1,5 +1,6 @@
-import { Component, OnInit, computed, effect, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Component, DestroyRef, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
 import { SUBSCRIPTION_TAB_INDEX } from '../../core/guards/subscription.guard';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -20,7 +21,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CompanyService, Company } from '../../core/services/company.service';
 import { AccountService } from '../../core/services/account.service';
 import { TenantService } from '../../core/services/tenant.service';
-import { SubscriptionService, SubscriptionPlan } from '../../core/services/subscription.service';
+import { SubscriptionService, SubscriptionPlan, BillingCycle } from '../../core/services/subscription.service';
 import { UserManagementService, UserWithCompanies } from '../../core/services/user-management.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CompanyDialogComponent } from '../../shared/components/company-dialog.component';
@@ -72,6 +73,8 @@ export class SettingsComponent implements OnInit {
   subscription = this.subscriptionService.subscription;
 
   selectedTab = signal(0);
+  private destroyRef = inject(DestroyRef);
+  private router = inject(Router);
 
   /** Subscrição da empresa activa expirada: só o separador de subscrição fica disponível. */
   locked = computed(() => {
@@ -137,17 +140,27 @@ export class SettingsComponent implements OnInit {
       this.currentUserId.set(user.id);
     }
 
-    // Pre-select tab if navigated with a state (e.g. from the subscription-limit dialog)
-    const navState = history.state;
-    if (navState && typeof navState['tab'] === 'number') {
-      this.selectedTab.set(navState['tab']);
-    }
-    if (this.route.snapshot.queryParamMap.get('tab') === 'subscricao') {
-      this.selectedTab.set(SUBSCRIPTION_TAB_INDEX);
-    }
+    // ?tab=subscricao ("Ver Planos", limite do plano, subscrição expirada) abre o
+    // separador Subscrições — também quando já se está nesta página, porque o
+    // componente é reaproveitado e o ngOnInit não volta a correr.
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
+      if (params.get('tab') === 'subscricao') {
+        this.selectedTab.set(SUBSCRIPTION_TAB_INDEX);
+      }
+    });
 
     this.initializeForms();
     await this.loadAllData();
+  }
+
+  /**
+   * Ao sair do separador Subscrições, retira ?tab=subscricao do URL; senão um
+   * novo "Ver Planos" navegaria para o mesmo URL e o router ignorá-lo-ia.
+   */
+  onTabChange(index: number) {
+    if (index !== SUBSCRIPTION_TAB_INDEX && this.route.snapshot.queryParamMap.get('tab') === 'subscricao') {
+      this.router.navigate([], { relativeTo: this.route, queryParams: { tab: null }, queryParamsHandling: 'merge', replaceUrl: true });
+    }
   }
 
   initializeForms() {
@@ -405,6 +418,31 @@ export class SettingsComponent implements OnInit {
     return user.companies.some(c => c.role !== 'owner' && this.companyService.isOwner(c.company_id));
   }
 
+  /** Retira ao utilizador o acesso a todas as empresas que o utilizador actual gere. */
+  async revokeUserAccess(user: UserWithCompanies) {
+    const managed = user.companies.filter(c => c.role !== 'owner' && this.companyService.isOwner(c.company_id));
+    if (!managed.length) return;
+    if (!confirm(t('settings.messages.revokeAccessConfirm', {
+      email: user.user_email,
+      companies: managed.map(c => c.company_name).join(', ')
+    }))) return;
+
+    this.loading.set(true);
+    const errors: string[] = [];
+    for (const company of managed) {
+      const res = await this.userManagementService.removeUserFromCompany(user.user_id, company.company_id);
+      if (!res.ok) errors.push(managed.length > 1 ? `${company.company_name}: ${res.error}` : res.error!);
+    }
+    await this.userManagementService.loadAllUsers();
+    this.loading.set(false);
+
+    if (errors.length) {
+      this.snackBar.open(errors.join(' | '), t('common.actions.close'), { duration: 8000 });
+    } else {
+      this.snackBar.open(t('settings.messages.accessRemoved'), t('common.actions.close'), { duration: 3000 });
+    }
+  }
+
   async removeUserFromCompany(userId: string, companyId: string) {
     if (!confirm(t('settings.messages.removeAccessConfirm'))) return;
 
@@ -427,8 +465,8 @@ export class SettingsComponent implements OnInit {
       return;
     }
 
-    if (this.isDowngrade(plan)) {
-      this.snackBar.open(this.downgradeBlockedMessage(plan), t('common.actions.close'), { duration: 6000 });
+    if (this.isDowngrade(plan, targetCycle)) {
+      this.snackBar.open(this.downgradeBlockedMessage(plan, targetCycle), t('common.actions.close'), { duration: 6000 });
       return;
     }
 
@@ -547,9 +585,9 @@ export class SettingsComponent implements OnInit {
     return this.preferences.formatDate(date);
   }
 
-  /** Mudar para este plano seria um downgrade bloqueado? */
-  isDowngrade(plan: SubscriptionPlan): boolean {
-    return this.subscriptionService.isDowngrade(plan);
+  /** Mudar para este plano (no ciclo seleccionado) seria um downgrade bloqueado? */
+  isDowngrade(plan: SubscriptionPlan, cycle: BillingCycle = this.selectedCycle()): boolean {
+    return this.subscriptionService.isDowngrade(plan, cycle);
   }
 
   /** Subscrição actual activa (não expirada): só é possível fazer upgrade. */
@@ -566,10 +604,18 @@ export class SettingsComponent implements OnInit {
     return newTier > curTier;
   }
 
-  downgradeBlockedMessage(plan: SubscriptionPlan): string {
+  downgradeBlockedMessage(plan: SubscriptionPlan, cycle: BillingCycle = this.selectedCycle()): string {
     if (plan.monthly_price === 0) {
       return t('settings.messages.downgradeToTrial');
     }
-    return t('settings.messages.downgradeActive');
+    if (this.subscriptionService.isDowngrade(plan)) {
+      return t('settings.messages.downgradeActive');
+    }
+    return t('settings.messages.shorterCycleBlocked');
+  }
+
+  /** O bloqueio deste plano é só pelo ciclo mais curto (deixa de valer quando a subscrição expirar). */
+  isCycleOnlyDowngrade(plan: SubscriptionPlan): boolean {
+    return this.isDowngrade(plan) && !this.subscriptionService.isDowngrade(plan);
   }
 }

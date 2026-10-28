@@ -89,8 +89,6 @@
     },
     "reference": "Reference",
     "referencePlaceholder": "Payment reference number",
-    "receiptUrl": "Proof of Payment URL",
-    "receiptUrlHint": "Link to the proof of payment",
     "notes": "Notes",
     "notesPlaceholder": "Additional notes"
   },
@@ -102,5 +100,24 @@
     "generatingPdf": "Generating PDF...",
     "downloadPdf": "Download PDF",
     "pdfError": "The PDF could not be generated. Please try again."
+  },
+  "proof": {
+    "label": "Proof of payment",
+    "choose": "Attach proof (PDF or image)",
+    "replace": "Replace",
+    "hint": "PDF, JPG, PNG or WEBP, up to 5 MB. You can also attach it later.",
+    "invalidType": "Unsupported format. Use PDF, JPG, PNG or WEBP.",
+    "tooLarge": "The file exceeds {size} MB.",
+    "uploadFailed": "Could not upload the proof. Please try again.",
+    "attachFailed": "Could not attach the proof to this payment.",
+    "openFailed": "Could not open the proof.",
+    "dialogTitle": "Proofs of Payment",
+    "noPayments": "No payments recorded yet.",
+    "attached": "Proof attached",
+    "missing": "No proof",
+    "view": "View",
+    "attach": "Attach proof",
+    "attachTooltip": "Attach proof of payment",
+    "viewTooltip": "Proofs of payment"
   }
 }

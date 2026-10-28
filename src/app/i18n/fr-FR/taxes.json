@@ -89,8 +89,6 @@
     },
     "reference": "Référence",
     "referencePlaceholder": "Numéro de référence du paiement",
-    "receiptUrl": "URL du justificatif",
-    "receiptUrlHint": "Lien vers le justificatif de paiement",
     "notes": "Notes",
     "notesPlaceholder": "Observations supplémentaires"
   },
@@ -102,5 +100,24 @@
     "generatingPdf": "Génération du PDF...",
     "downloadPdf": "Télécharger le PDF",
     "pdfError": "Impossible de générer le PDF. Veuillez réessayer."
+  },
+  "proof": {
+    "label": "Justificatif de paiement",
+    "choose": "Joindre un justificatif (PDF ou image)",
+    "replace": "Remplacer",
+    "hint": "PDF, JPG, PNG ou WEBP, jusqu'à 5 Mo. Vous pouvez aussi le joindre plus tard.",
+    "invalidType": "Format non pris en charge. Utilisez PDF, JPG, PNG ou WEBP.",
+    "tooLarge": "Le fichier dépasse {size} Mo.",
+    "uploadFailed": "Impossible d'envoyer le justificatif. Veuillez réessayer.",
+    "attachFailed": "Impossible de joindre le justificatif à ce paiement.",
+    "openFailed": "Impossible d'ouvrir le justificatif.",
+    "dialogTitle": "Justificatifs de Paiement",
+    "noPayments": "Aucun paiement enregistré pour le moment.",
+    "attached": "Justificatif joint",
+    "missing": "Sans justificatif",
+    "view": "Voir",
+    "attach": "Joindre un justificatif",
+    "attachTooltip": "Joindre un justificatif de paiement",
+    "viewTooltip": "Justificatifs de paiement"
   }
 }

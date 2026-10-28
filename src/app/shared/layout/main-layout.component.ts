@@ -10,6 +10,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { AuthService } from '../../core/services/auth.service';
 import { CompanyService } from '../../core/services/company.service';
 import { AccountService } from '../../core/services/account.service';
@@ -19,6 +20,7 @@ import { AiSearchComponent } from '../components/ai-search/ai-search.component';
 import { AiAlertsComponent } from '../components/ai-alerts/ai-alerts.component';
 import { AiAssistantWidgetComponent } from '../components/ai-chat/ai-assistant-widget.component';
 import { LanguageSwitcherComponent } from '../components/language-switcher/language-switcher.component';
+import { SupportContactDialogComponent } from '../components/support-contact-dialog.component';
 import { effect } from '@angular/core';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { t } from '../../core/i18n/i18n';
@@ -46,6 +48,7 @@ interface MenuItem {
     LanguageSwitcherComponent,
     MatSelectModule,
     MatCardModule,
+    MatDialogModule,
     AiSearchComponent,
     AiAlertsComponent,
     AiAssistantWidgetComponent,
@@ -98,7 +101,8 @@ export class MainLayoutComponent {
     public subscriptionService: SubscriptionService,
     public accountService: AccountService,
     private tenant: TenantService,
-    private router: Router
+    private router: Router,
+    private dialog: MatDialog
   ) {
     effect(() => {
       const company = this.companyService.activeCompany();
@@ -121,6 +125,23 @@ export class MainLayoutComponent {
 
   async logout() {
     await this.authService.signOut();
+  }
+
+  /** Contribuinte suspenso: abre os canais de apoio com o pedido já preenchido. */
+  contactSupport() {
+    const company = this.companyService.activeCompany();
+    const params = {
+      company: company?.name || '—',
+      nuit: company?.nuit || '—',
+      email: this.authService.currentUser()?.email || '—'
+    };
+    this.dialog.open(SupportContactDialogComponent, {
+      maxWidth: '95vw',
+      data: {
+        subject: t('layout.suspended.supportSubject', params),
+        message: t('layout.suspended.supportMessage', params)
+      }
+    });
   }
 
   onCompanyChange(companyId: string) {

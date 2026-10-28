@@ -415,9 +415,9 @@ export class PaymentDialogComponent implements OnInit, OnDestroy {
     this.voucherMessage = '';
   }
 
-  /** Bloqueia downgrade enquanto a subscrição actual estiver activa. */
+  /** Bloqueia downgrade (plano inferior, ou ciclo mais curto com a subscrição activa). */
   private blockIfDowngrade(): boolean {
-    if (!this.subscriptionService.isDowngrade(this.data.plan)) return false;
+    if (!this.subscriptionService.isDowngrade(this.data.plan, this.data.billingCycle)) return false;
     this.snackBar.open(
       this.data.plan.monthly_price === 0
         ? t('payments.subscription.messages.noTrialBack')

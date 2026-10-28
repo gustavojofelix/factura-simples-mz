@@ -329,6 +329,15 @@
                             <mat-icon>payment</mat-icon>
                           </button>
                         }
+
+                        @if (declaration.payments?.length) {
+                          <button
+                            mat-icon-button
+                            [matTooltip]="(countMissingProofs(declaration) ? 'taxes.proof.attachTooltip' : 'taxes.proof.viewTooltip') | t"
+                            (click)="openPaymentProofs(declaration)">
+                            <mat-icon [class.text-amber-600]="countMissingProofs(declaration) > 0">attach_file</mat-icon>
+                          </button>
+                        }
                       </div>
                     </td>
                   </ng-container>

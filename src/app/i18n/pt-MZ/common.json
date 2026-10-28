@@ -83,5 +83,14 @@
   "errors": {
     "generic": "Ocorreu um erro. Tente novamente.",
     "network": "Erro de ligação. Verifique a sua internet."
+  },
+  "support": {
+    "title": "Contactar Apoio ao Cliente",
+    "subtitle": "Escolha um canal. A mensagem abaixo já tem os dados da sua empresa.",
+    "call": "Ligar",
+    "email": "Enviar email",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "messageLabel": "Mensagem"
   }
 }

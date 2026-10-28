@@ -78,7 +78,9 @@
   },
   "errors": {
     "unreachable": "Could not reach the assistant.",
-    "network": "A connection error occurred. Check your internet connection and try again."
+    "network": "A connection error occurred. Check your internet connection and try again.",
+    "timeout": "The assistant took too long to reply. Please try again.",
+    "session": "Your session has expired. Sign in again to use the assistant."
   },
   "documents": {
     "bucketMissing": "The \"company-documents\" storage bucket does not exist in Supabase. Please create it in the Dashboard.",

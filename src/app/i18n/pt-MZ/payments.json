@@ -85,7 +85,7 @@
       "confirmed": "Pagamento confirmado! Plano {plan} activado.",
       "voucherError": "Erro ao validar voucher.",
       "noTrialBack": "Não é possível voltar ao período de teste depois de subscrever um plano pago.",
-      "noDowngrade": "Não é possível fazer downgrade enquanto a subscrição estiver activa.",
+      "noDowngrade": "Não é possível fazer downgrade do plano.",
       "activatedVoucher": "Subscrição ativada com sucesso via Voucher!",
       "activateError": "Erro ao ativar subscrição.",
       "activateUnexpected": "Erro inesperado ao ativar subscrição.",

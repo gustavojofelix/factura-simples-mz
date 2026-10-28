@@ -12,7 +12,7 @@
       <p class="text-gray-600 mt-2">{{ 'settings.page.subtitle' | t }}</p>
     </div>
 
-    <mat-tab-group [(selectedIndex)]="selectedTab" class="settings-tabs bg-white rounded-2xl shadow-sm">
+    <mat-tab-group [(selectedIndex)]="selectedTab" (selectedIndexChange)="onTabChange($event)" class="settings-tabs bg-white rounded-2xl shadow-sm">
       <mat-tab [label]="'settings.tabs.system' | t" [disabled]="locked()">
         <div class="p-6">
           <h2 class="text-xl font-semibold mb-4">{{ 'settings.system.title' | t }}</h2>
@@ -186,7 +186,7 @@
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <div>
                 <h3 class="text-lg font-semibold">{{ 'settings.subscription.availablePlans' | t }}</h3>
-                @if (subscription() && hasActivePeriod()) {
+                @if (subscription()) {
                   <p class="text-xs text-slate-500 mt-1 flex items-center gap-1">
                     <mat-icon class="!w-4 !h-4 !text-base !leading-4 text-slate-400">info</mat-icon>
                     <span>{{ 'settings.subscription.upgradeInfo' | t }}</span>
@@ -279,6 +279,16 @@
                         <div class="text-center py-2.5 bg-slate-100 rounded-xl border border-slate-200">
                           <span class="text-slate-500 font-medium text-sm">{{ 'settings.subscription.notAvailable' | t }}</span>
                         </div>
+                      } @else if (isDowngrade(plan)) {
+                        <!-- Ciclo mais curto com a subscrição activa -->
+                        <div class="text-center py-2.5 px-3 bg-slate-100 rounded-xl border border-slate-200"
+                          [matTooltip]="downgradeBlockedMessage(plan)">
+                          <span class="block text-slate-600 font-semibold text-sm">{{ 'settings.subscription.downgradeNotAllowed' | t }}</span>
+                          <span class="block text-slate-500 text-xs mt-0.5">{{ 'settings.subscription.shorterCycleBlockedShort' | t }}</span>
+                          @if (subscription()?.end_date) {
+                            <span class="block text-slate-400 text-[11px] mt-0.5">{{ 'settings.subscription.availableAfter' | t: { date: formatDate(subscription()!.end_date!) } }}</span>
+                          }
+                        </div>
                       } @else {
                         <button mat-raised-button color="accent" class="!py-2.5 !rounded-xl !font-bold w-full" (click)="changePlan(plan)">
                           {{ 'settings.subscription.switchTo' | t: { cycle: getCycleLabel(selectedCycle()) } }}
@@ -287,17 +297,20 @@
                     } @else {
                       <!-- Plano diferente do atual -->
                       @if (isDowngrade(plan)) {
-                        <!-- Bloquear downgrade (plano inferior com subscrição activa, ou pago -> Trial) -->
+                        <!-- Bloquear downgrade (plano inferior, pago -> Trial, ou ciclo mais curto com subscrição activa) -->
                         <div class="text-center py-2.5 px-3 bg-slate-100 rounded-xl border border-slate-200"
                           [matTooltip]="downgradeBlockedMessage(plan)">
                           @if (plan.monthly_price === 0) {
                             <span class="text-slate-500 font-medium text-sm">{{ 'settings.subscription.notAvailable' | t }}</span>
-                          } @else {
+                          } @else if (isCycleOnlyDowngrade(plan)) {
                             <span class="block text-slate-600 font-semibold text-sm">{{ 'settings.subscription.downgradeNotAllowed' | t }}</span>
-                            <span class="block text-slate-500 text-xs mt-0.5">{{ 'settings.subscription.downgradeBlockedShort' | t }}</span>
+                            <span class="block text-slate-500 text-xs mt-0.5">{{ 'settings.subscription.shorterCycleBlockedShort' | t }}</span>
                             @if (subscription()?.end_date) {
                               <span class="block text-slate-400 text-[11px] mt-0.5">{{ 'settings.subscription.availableAfter' | t: { date: formatDate(subscription()!.end_date!) } }}</span>
                             }
+                          } @else {
+                            <span class="block text-slate-600 font-semibold text-sm">{{ 'settings.subscription.downgradeNotAllowed' | t }}</span>
+                            <span class="block text-slate-500 text-xs mt-0.5">{{ 'settings.subscription.downgradeBlockedShort' | t }}</span>
                           }
                         </div>
                       } @else {
@@ -485,6 +498,9 @@
                         @if (canManageUser(user)) {
                           <button mat-icon-button [matTooltip]="'settings.users.manageAccess' | t" (click)="openUserDialog(user)">
                             <mat-icon>manage_accounts</mat-icon>
+                          </button>
+                          <button mat-icon-button color="warn" [matTooltip]="'settings.users.removeAccess' | t" (click)="revokeUserAccess(user)">
+                            <mat-icon>person_remove</mat-icon>
                           </button>
                         } @else if (user.user_id === currentUserId()) {
                           <span class="text-xs text-gray-500">{{ 'settings.users.you' | t }}</span>

@@ -50,7 +50,9 @@
     "switchTo": "Switch to another active taxpayer:",
     "access": "Open",
     "contactSupport": "Contact customer support",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "supportSubject": "Suspended taxpayer: {company} (NUIT {nuit})",
+    "supportMessage": "Hello, access to the company {company} (NUIT {nuit}) has been suspended on ISPC Fácil. I would like to know why and how to reactivate the account.\n\nUser: {email}"
   },
   "subscription": {
     "trialTitle": {
