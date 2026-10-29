@@ -153,6 +153,11 @@ function resolve(dict: Dictionary, key: string, params?: TranslateParams): strin
   return undefined;
 }
 
+/** Tradução na língua actual, ou undefined se não existir (sem aviso nem recurso ao português). */
+export function tOptional(key: string): string | undefined {
+  return resolve(dictionary, key);
+}
+
 /** Traduz uma chave. Chave em falta → texto em português → a própria chave. */
 export function t(key: string, params?: TranslateParams): string {
   let text = resolve(dictionary, key, params) ?? resolve(fallback, key, params);
