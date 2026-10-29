@@ -23,6 +23,7 @@ import { CompanyDocument } from '../../core/services/document-processing.service
 import { ActivityService, ActivityType } from '../../core/services/activity.service';
 import { CompanyService } from '../../core/services/company.service';
 import { AccountService } from '../../core/services/account.service';
+import { AuditLogService } from '../../core/services/audit-log.service';
 import { ErrorDialogService } from '../../core/services/error-dialog.service';
 import { t } from '../../core/i18n/i18n';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
@@ -132,7 +133,8 @@ export class CompanySetupComponent {
     private documentService: DocumentProcessingService,
     private activityService: ActivityService,
     private companyService: CompanyService,
-    private accountService: AccountService
+    private accountService: AccountService,
+    private auditLogService: AuditLogService
   ) {
     this.companyInfoForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
@@ -507,6 +509,18 @@ export class CompanySetupComponent {
         .single();
 
       if (error) throw error;
+
+      // A empresa é criada aqui directamente, sem passar pelo CompanyService,
+      // por isso o registo de auditoria também tem de ser feito aqui. O vínculo
+      // do titular em company_users é criado pelo trigger da própria inserção.
+      await this.auditLogService.log(
+        'Criou Empresa',
+        'settings',
+        { company_name: data.name, nuit: data.nuit },
+        data.id,
+        data.name,
+        data.id
+      );
 
       const category1 = this.companyInfoForm.value.category1;
       const category2 = this.companyInfoForm.value.category2;

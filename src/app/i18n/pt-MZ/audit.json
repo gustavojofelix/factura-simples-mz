@@ -4,7 +4,10 @@
     "subtitle": "Historial de atividades críticas do sistema para as suas empresas",
     "exportCsv": "Exportar CSV",
     "loading": "A CARREGAR REGISTOS...",
-    "empty": "Nenhum registo de auditoria encontrado."
+    "empty": "Nenhum registo de auditoria encontrado.",
+    "loadError": "Não foi possível carregar o histórico de auditoria.",
+    "retry": "Tentar novamente",
+    "retryHint": "Tente novamente."
   },
   "filters": {
     "company": "Empresa",
@@ -52,7 +55,15 @@
     "settings": "Configurações",
     "users": "Utilizadores",
     "subscriptions": "Subscrições",
-    "system": "Sistema"
+    "system": "Sistema",
+    "security": "Segurança e Acessos",
+    "admin_companies": "Contribuintes (Back Office)",
+    "admin_subscribers": "Subscritores (Back Office)",
+    "admin_activities": "Actividades (Back Office)",
+    "subscription_plans": "Planos",
+    "subscription_payments": "Pagamentos de Subscrição",
+    "vouchers": "Vouchers",
+    "landing_content": "Conteúdo do Site"
   },
   "formatter": {
     "details": "Detalhes",
@@ -132,7 +143,16 @@
     "amount_paid": "Total Pago",
     "amount_pending": "Valor Pendente",
     "ispc_amount": "Valor do Imposto (ISPC)",
-    "user_name": "Nome do Utilizador"
+    "user_name": "Nome do Utilizador",
+    "phone_number": "Telefone",
+    "previous_status": "Estado Anterior",
+    "print_count": "Nº de Impressões",
+    "old_name": "Nome Anterior",
+    "new_name": "Novo Nome",
+    "slug": "Endereço da Conta",
+    "rule_type": "Tipo de Regra",
+    "activity_type_id": "Tipo de Actividade",
+    "old_status": "Estado Anterior"
   },
   "values": {
     "deactivated": "Desactivado",
@@ -146,8 +166,8 @@
     "produto": "Produto",
     "monthly": "Mensal",
     "yearly": "Anual",
-    "quarterly": "Trimestral",
-    "semiannual": "Semestral",
+    "quarterly": "3 meses",
+    "semiannual": "6 meses",
     "admin": "Administrador",
     "manager": "Gestor",
     "user": "Utilizador",
@@ -172,6 +192,9 @@
     "transferencia": "Transferência Bancária",
     "cheque": "Cheque",
     "carteira_movel": "Carteira Móvel",
-    "outro": "Outro"
+    "outro": "Outro",
+    "completed": "Concluído",
+    "failed": "Falhado",
+    "pending": "Pendente"
   }
 }

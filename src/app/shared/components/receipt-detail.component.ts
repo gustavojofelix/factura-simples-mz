@@ -10,6 +10,7 @@ import { PaymentService, Payment } from '../../core/services/payment.service';
 import { InvoiceService, Invoice } from '../../core/services/invoice.service';
 import { CompanyService, Company } from '../../core/services/company.service';
 import { SupabaseService } from '../../core/services/supabase.service';
+import { AuditLogService } from '../../core/services/audit-log.service';
 import { PdfService } from '../../core/services/pdf.service';
 import {
   DocumentSettingsService,
@@ -119,6 +120,7 @@ export class ReceiptDetailComponent implements OnInit {
   private pdfService = inject(PdfService);
   private supabase = inject(SupabaseService);
   private snackBar = inject(MatSnackBar);
+  private auditLogService = inject(AuditLogService);
 
   payment = signal<Payment | null>(null);
   invoice = signal<Invoice | null>(null);
@@ -289,6 +291,16 @@ export class ReceiptDetailComponent implements OnInit {
 
       if (error) throw new Error(await this.extrairMensagemDeErro(error));
       if (data && data.success === false) throw new Error(data.error || t('invoices.detail.messages.sendRejected'));
+
+      const receiptNumber = this.paymentService.getReceiptNumber(payment);
+      await this.auditLogService.log(
+        'Enviou Recibo por E-mail',
+        'payments',
+        { receipt_number: receiptNumber, invoice_number: invoice.invoice_number, email: invoice.client.email },
+        payment.id,
+        receiptNumber,
+        invoice.company_id
+      );
 
       this.snackBar.open(
         t('payments.receipt.emailSent', { email: invoice.client.email }),

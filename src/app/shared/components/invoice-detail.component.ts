@@ -27,6 +27,7 @@ import { InvoiceDialogComponent } from './invoice-dialog.component';
 import { PdfService } from '../../core/services/pdf.service';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { SupabaseService } from '../../core/services/supabase.service';
+import { AuditLogService } from '../../core/services/audit-log.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { t } from '../../core/i18n/i18n';
 
@@ -314,6 +315,7 @@ export class InvoiceDetailComponent {
   private supabase = inject(SupabaseService);
   private documentSettings = inject(DocumentSettingsService);
   private bankAccountService = inject(CompanyBankAccountService);
+  private auditLogService = inject(AuditLogService);
 
   invoice = signal<Invoice | null>(null);
   payments = signal<Payment[]>([]);
@@ -494,6 +496,15 @@ export class InvoiceDetailComponent {
     if (!currentInvoice) return;
     const newCount = await this.invoiceService.incrementPrintCount(currentInvoice.id);
     this.invoice.update(inv => inv ? { ...inv, print_count: newCount } : null);
+
+    await this.auditLogService.log(
+      'Imprimiu Factura',
+      'invoices',
+      { invoice_number: currentInvoice.invoice_number, print_count: newCount },
+      currentInvoice.id,
+      currentInvoice.invoice_number,
+      currentInvoice.company_id
+    );
   }
 
   /**
@@ -641,6 +652,15 @@ export class InvoiceDetailComponent {
       if (data && data.success === false) {
         throw new Error(data.error || t('invoices.detail.messages.sendRejected'));
       }
+
+      await this.auditLogService.log(
+        'Enviou Factura por E-mail',
+        'invoices',
+        { invoice_number: invoice.invoice_number, email: invoice.client.email },
+        invoice.id,
+        invoice.invoice_number,
+        invoice.company_id
+      );
 
       this.snackBar.open(t('invoices.detail.messages.emailSent', { number: invoice.invoice_number, email: invoice.client.email }), t('common.actions.close'), { duration: 5000 });
     } catch (error) {

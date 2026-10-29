@@ -1,4 +1,4 @@
-import { currentLocale, t } from '../i18n/i18n';
+import { currentLocale, t, tOptional } from '../i18n/i18n';
 
 export interface FormattedAuditItem {
   label: string;
@@ -78,7 +78,16 @@ const KNOWN_FIELDS = new Set([
   'amount_paid',
   'amount_pending',
   'ispc_amount',
-  'user_name'
+  'user_name',
+  'phone_number',
+  'previous_status',
+  'old_status',
+  'print_count',
+  'old_name',
+  'new_name',
+  'slug',
+  'rule_type',
+  'activity_type_id'
 ]);
 
 /** Valores com tradução em audit.values.<valor> (os valores em si vêm da base de dados). */
@@ -119,7 +128,10 @@ const KNOWN_VALUES = new Set([
   'transferencia',
   'cheque',
   'carteira_movel',
-  'outro'
+  'outro',
+  'completed',
+  'failed',
+  'pending'
 ]);
 
 const CURRENCY_KEYS = [
@@ -278,15 +290,37 @@ export const AUDIT_CATEGORY_IDS = [
   'payments', 'settings', 'users', 'subscriptions', 'system'
 ] as const;
 
+/** Categorias que não aparecem no filtro da empresa, mas cujas entradas podem lá surgir. */
+const EXTRA_CATEGORY_IDS = [
+  'security', 'admin_companies', 'admin_subscribers', 'admin_activities',
+  'subscription_plans', 'subscription_payments', 'vouchers', 'landing_content'
+];
+
 /** Categorias com o rótulo na língua da interface (chamar em tempo de execução). */
 export function getAuditCategories(): AuditCategory[] {
   return AUDIT_CATEGORY_IDS.map(id => ({ id, label: t(`audit.categories.${id}`) }));
 }
 
 export function getAuditCategoryLabel(category: string): string {
-  return (AUDIT_CATEGORY_IDS as readonly string[]).includes(category)
+  return (AUDIT_CATEGORY_IDS as readonly string[]).includes(category) || EXTRA_CATEGORY_IDS.includes(category)
     ? t(`audit.categories.${category}`)
     : category;
+}
+
+/**
+ * As acções ficam gravadas em português (texto livre). Para as outras línguas,
+ * a tradução está em audit.actions.<acção normalizada>; sem tradução mostra-se
+ * o texto original.
+ */
+export function getAuditActionLabel(action: string | null | undefined): string {
+  if (!action) return '';
+  const key = action
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_|_$/g, '');
+  return tOptional(`audit.actions.${key}`) ?? action;
 }
 
 export function getAuditCategoryBadge(category: string): string {

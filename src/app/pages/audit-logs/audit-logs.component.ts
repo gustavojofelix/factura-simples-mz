@@ -12,7 +12,8 @@ import {
   FormattedAuditItem,
   getAuditCategories,
   getAuditCategoryLabel,
-  getAuditCategoryBadge
+  getAuditCategoryBadge,
+  getAuditActionLabel
 } from '../../core/utils/audit-formatter.util';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { t } from '../../core/i18n/i18n';
@@ -42,7 +43,7 @@ import { t } from '../../core/i18n/i18n';
           <!-- Company Selector -->
           <div class="flex flex-col space-y-1">
             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ 'audit.filters.company' | t }}</label>
-            <select [(ngModel)]="selectedCompanyId" (change)="loadLogs()"
+            <select [(ngModel)]="selectedCompanyId" (change)="applyFilters()"
               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-orange-500 outline-none">
               <option value="all">{{ 'audit.filters.allCompanies' | t }}</option>
               <option *ngFor="let comp of companyService.companies()" [value]="comp.id">{{ comp.name }}</option>
@@ -62,14 +63,14 @@ import { t } from '../../core/i18n/i18n';
           <!-- Start Date -->
           <div class="flex flex-col space-y-1">
             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ 'audit.filters.startDate' | t }}</label>
-            <input type="date" [(ngModel)]="startDate" (change)="loadLogs()"
+            <input type="date" [(ngModel)]="startDate" (change)="applyFilters()"
               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-orange-500 outline-none">
           </div>
 
           <!-- End Date -->
           <div class="flex flex-col space-y-1">
             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ 'audit.filters.endDate' | t }}</label>
-            <input type="date" [(ngModel)]="endDate" (change)="loadLogs()"
+            <input type="date" [(ngModel)]="endDate" (change)="applyFilters()"
               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-orange-500 outline-none">
           </div>
         </div>
@@ -84,6 +85,11 @@ import { t } from '../../core/i18n/i18n';
             {{ 'audit.filters.clear' | t }}
           </button>
         </div>
+      </div>
+
+      <div *ngIf="loadError()" class="bg-red-50 border border-red-200 text-red-700 rounded-2xl p-4 text-sm flex items-center justify-between gap-4">
+        <span><strong>{{ 'audit.page.loadError' | t }}</strong> {{ loadError() }}</span>
+        <button (click)="loadLogs()" class="text-xs font-bold uppercase tracking-wider hover:underline">{{ 'audit.page.retry' | t }}</button>
       </div>
 
       <!-- Loading Spinner -->
@@ -115,7 +121,7 @@ import { t } from '../../core/i18n/i18n';
                   {{ getUserName(log) }}
                 </td>
                 <td class="px-6 py-4 font-semibold text-slate-800">
-                  {{ log.action }}
+                  {{ actionLabel(log.action) }}
                 </td>
                 <td class="px-6 py-4">
                   <span class="px-2 py-0.5 text-[10px] font-bold rounded-full border whitespace-nowrap" [ngClass]="getCategoryBadge(log.category)">
@@ -131,7 +137,7 @@ import { t } from '../../core/i18n/i18n';
                   </button>
                 </td>
               </tr>
-              <tr *ngIf="filteredLogs().length === 0">
+              <tr *ngIf="paginatedLogs().length === 0 && !loadError()">
                 <td colspan="6" class="px-6 py-12 text-center text-slate-400">
                   {{ 'audit.page.empty' | t }}
                 </td>
@@ -143,7 +149,7 @@ import { t } from '../../core/i18n/i18n';
         <!-- Pagination -->
         <div class="border-t border-slate-100">
           <app-pagination
-            [totalItems]="filteredLogs().length"
+            [totalItems]="totalLogsCount()"
             [pageSizeOptions]="[10, 20, 50]"
             [defaultPageSize]="10"
             (pageChange)="onPageChange($event)">
@@ -191,7 +197,7 @@ import { t } from '../../core/i18n/i18n';
             </div>
             <div>
               <span class="text-[10px] font-bold text-slate-400 uppercase">{{ 'audit.detail.actionPerformed' | t }}</span>
-              <p class="font-semibold text-slate-800 mt-0.5">{{ selectedLog.action }}</p>
+              <p class="font-semibold text-slate-800 mt-0.5">{{ actionLabel(selectedLog.action) }}</p>
             </div>
             <div *ngIf="selectedLog.entity_name">
               <span class="text-[10px] font-bold text-slate-400 uppercase">{{ 'audit.columns.details' | t }}</span>
@@ -243,19 +249,20 @@ import { t } from '../../core/i18n/i18n';
 })
 export class AuditLogsComponent implements OnInit {
   logs = signal<any[]>([]);
+  totalLogsCount = signal(0);
   isLoading = signal(false);
+  loadError = signal('');
 
   // Map of user_id -> profile (full_name, email) for the users present in the loaded logs
   userProfiles = signal<Record<string, { full_name?: string; email?: string }>>({});
 
-  // Filters state (server-side)
+  // Filtros, pesquisa e paginação são todos aplicados no servidor.
   selectedCompanyId = 'all';
   startDate = '';
   endDate = '';
-
-  // Filters state (client-side, signals so the computed list reacts to them)
   selectedCategory = signal('all');
   searchTerm = signal('');
+  private searchTimer: ReturnType<typeof setTimeout> | undefined;
 
   // Pagination state
   currentPage = signal(1);
@@ -266,35 +273,7 @@ export class AuditLogsComponent implements OnInit {
 
   categories = getAuditCategories();
 
-  filteredLogs = computed(() => {
-    let list = this.logs();
-    const category = this.selectedCategory();
-    const term = this.searchTerm().trim().toLowerCase();
-    const profiles = this.userProfiles();
-
-    if (category !== 'all') {
-      list = list.filter(l => l.category === category);
-    }
-
-    if (term) {
-      list = list.filter(l =>
-        (l.action || '').toLowerCase().includes(term) ||
-        (l.user_email || '').toLowerCase().includes(term) ||
-        (profiles[l.user_id]?.full_name || '').toLowerCase().includes(term) ||
-        (l.entity_name || '').toLowerCase().includes(term) ||
-        (l.ip_address || '').toLowerCase().includes(term) ||
-        JSON.stringify(l.details || {}).toLowerCase().includes(term)
-      );
-    }
-
-    return list;
-  });
-
-  paginatedLogs = computed(() => {
-    const list = this.filteredLogs();
-    const start = (this.currentPage() - 1) * this.pageSize();
-    return list.slice(start, start + this.pageSize());
-  });
+  paginatedLogs = computed(() => this.logs());
 
   /** Formato de data e fuso horário de Configurações > Sistema. */
   private preferences = inject(PreferencesService);
@@ -315,52 +294,81 @@ export class AuditLogsComponent implements OnInit {
     await this.loadLogs();
   }
 
+  applyFilters() {
+    this.currentPage.set(1);
+    this.loadLogs();
+  }
+
+  /**
+   * Consulta com os filtros activos. Inclui, além das entradas das empresas,
+   * os logins/logouts dos utilizadores dessas empresas — esses eventos não têm
+   * empresa associada (acontecem antes de se escolher uma).
+   */
+  private async fetchPage(from: number, to: number) {
+    const compIds = this.selectedCompanyId !== 'all'
+      ? [this.selectedCompanyId]
+      : this.companyService.companies().map(c => c.id);
+    if (compIds.length === 0) return null;
+
+    const { data: members } = await this.supabase.db
+      .from('company_users')
+      .select('user_id')
+      .in('company_id', compIds);
+    const memberIds = [...new Set((members || []).map((m: any) => m.user_id).filter(Boolean))];
+
+    let query = this.supabase.db
+      .from('audit_logs')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    const scope = [`company_id.in.(${compIds.join(',')})`];
+    if (memberIds.length) {
+      scope.push(`and(category.eq.auth,company_id.is.null,user_id.in.(${memberIds.join(',')}))`);
+    }
+    query = query.or(scope.join(','));
+
+    if (this.selectedCategory() !== 'all') query = query.eq('category', this.selectedCategory());
+
+    // As datas do filtro são do dia local (Maputo), não de UTC.
+    if (this.startDate) query = query.gte('created_at', new Date(`${this.startDate}T00:00:00`).toISOString());
+    if (this.endDate) query = query.lte('created_at', new Date(`${this.endDate}T23:59:59.999`).toISOString());
+
+    // Vírgulas, parênteses e curingas têm significado na sintaxe or() do PostgREST.
+    const term = this.searchTerm().replace(/[,()*%]/g, ' ').trim();
+    if (term) {
+      const like = `%${term}%`;
+      query = query.or(
+        `action.ilike.${like},user_email.ilike.${like},entity_name.ilike.${like},ip_address.ilike.${like}`
+      );
+    }
+    return await query;
+  }
+
   async loadLogs() {
     this.isLoading.set(true);
+    this.loadError.set('');
 
     try {
-      let compIds: string[];
-      if (this.selectedCompanyId !== 'all') {
-        compIds = [this.selectedCompanyId];
-      } else {
-        // Limit to only companies the user is authorized to manage
-        compIds = this.companyService.companies().map(c => c.id);
-        if (compIds.length === 0) {
-          this.logs.set([]);
-          this.isLoading.set(false);
-          return;
-        }
+      const from = (this.currentPage() - 1) * this.pageSize();
+      const result = await this.fetchPage(from, from + this.pageSize() - 1);
+      if (!result) {
+        this.logs.set([]);
+        this.totalLogsCount.set(0);
+        return;
       }
 
-      // As datas do filtro são do dia local (Maputo), não de UTC.
-      const from = this.startDate ? new Date(`${this.startDate}T00:00:00`).toISOString() : null;
-      const to = this.endDate ? new Date(`${this.endDate}T23:59:59.999`).toISOString() : null;
-
-      // O PostgREST devolve no máximo 1000 linhas por pedido: ler por páginas.
-      const PAGE = 1000;
-      const MAX_ROWS = 20000;
-      const data: any[] = [];
-      for (let offset = 0; offset < MAX_ROWS; offset += PAGE) {
-        let query = this.supabase.db
-          .from('audit_logs')
-          .select('*')
-          .in('company_id', compIds)
-          .order('created_at', { ascending: false })
-          .range(offset, offset + PAGE - 1);
-        if (from) query = query.gte('created_at', from);
-        if (to) query = query.lte('created_at', to);
-
-        const { data: page, error } = await query;
-        if (error) throw error;
-        data.push(...(page || []));
-        if (!page || page.length < PAGE) break;
-      }
+      const { data, error, count } = result;
+      if (error) throw error;
 
       this.logs.set(data || []);
-      this.currentPage.set(1); // Reset to first page when data loads/filters
+      this.totalLogsCount.set(count || 0);
       await this.loadUserProfiles(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao carregar registos de auditoria:', error);
+      this.logs.set([]);
+      this.totalLogsCount.set(0);
+      this.loadError.set(error?.message || t('audit.page.retryHint'));
     } finally {
       this.isLoading.set(false);
     }
@@ -404,17 +412,19 @@ export class AuditLogsComponent implements OnInit {
 
   onCategoryChange(category: string) {
     this.selectedCategory.set(category);
-    this.currentPage.set(1);
+    this.applyFilters();
   }
 
   onSearchInput(term: string) {
     this.searchTerm.set(term ?? '');
-    this.currentPage.set(1);
+    clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => this.applyFilters(), 350);
   }
 
   onPageChange(event: PageChangeEvent) {
     this.currentPage.set(event.page);
     this.pageSize.set(event.pageSize);
+    this.loadLogs();
   }
 
   clearFilters() {
@@ -423,7 +433,7 @@ export class AuditLogsComponent implements OnInit {
     this.startDate = '';
     this.endDate = '';
     this.searchTerm.set('');
-    this.loadLogs();
+    this.applyFilters();
   }
 
   viewDetails(log: any) {
@@ -434,6 +444,10 @@ export class AuditLogsComponent implements OnInit {
     this.selectedLog = null;
   }
 
+  actionLabel(action: string): string {
+    return getAuditActionLabel(action);
+  }
+
   getCategoryLabel(category: string): string {
     return getAuditCategoryLabel(category);
   }
@@ -442,8 +456,8 @@ export class AuditLogsComponent implements OnInit {
     return getAuditCategoryBadge(category);
   }
 
-  exportToCSV() {
-    const data = this.filteredLogs();
+  async exportToCSV() {
+    const data = await this.fetchAllForExport();
     if (data.length === 0) return;
 
     const headers = [
@@ -462,7 +476,7 @@ export class AuditLogsComponent implements OnInit {
       `"${this.preferences.formatDateTime(l.created_at, true)}"`,
       `"${this.getUserName(l).replace(/"/g, '""')}"`,
       `"${l.user_email || ''}"`,
-      `"${l.action.replace(/"/g, '""')}"`,
+      `"${this.actionLabel(l.action).replace(/"/g, '""')}"`,
       `"${this.getCategoryLabel(l.category)}"`,
       `"${(l.entity_name || '').replace(/"/g, '""')}"`,
       `"${l.entity_id || ''}"`,
@@ -486,6 +500,27 @@ export class AuditLogsComponent implements OnInit {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  }
+
+  /** Exporta todos os registos que respeitam os filtros, não apenas a página visível. */
+  private async fetchAllForExport(): Promise<any[]> {
+    const all: any[] = [];
+    const batch = 1000;
+    try {
+      for (let from = 0; from < 50000; from += batch) {
+        const result = await this.fetchPage(from, from + batch - 1);
+        if (!result) break;
+        const { data, error } = result;
+        if (error) throw error;
+        all.push(...(data || []));
+        if (!data || data.length < batch) break;
+      }
+      await this.loadUserProfiles(all);
+    } catch (error: any) {
+      console.error('Erro ao exportar auditoria:', error);
+      this.loadError.set(error?.message || t('audit.page.retryHint'));
+    }
+    return all;
   }
 
   getFormattedDetails(details: any): FormattedAuditItem[] {

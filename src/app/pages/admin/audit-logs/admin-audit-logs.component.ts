@@ -26,11 +26,11 @@ import { formatAuditDetails, FormattedAuditItem } from '../../../core/utils/audi
 
       <!-- Advanced Filters -->
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <!-- Filter by Subscriber -->
           <div class="flex flex-col space-y-1">
             <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Subscritor</label>
-            <select [(ngModel)]="selectedUserEmail" (change)="loadLogs()"
+            <select [(ngModel)]="selectedUserEmail" (change)="applyFilters()"
               class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none">
               <option value="all">Todos os Subscritores</option>
               <option *ngFor="let p of profiles" [value]="p.email">{{ p.full_name || p.email }} ({{ p.email }})</option>
@@ -40,7 +40,7 @@ import { formatAuditDetails, FormattedAuditItem } from '../../../core/utils/audi
           <!-- Filter by Company -->
           <div class="flex flex-col space-y-1">
             <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Empresa / Contribuinte</label>
-            <select [(ngModel)]="selectedCompanyId" (change)="loadLogs()"
+            <select [(ngModel)]="selectedCompanyId" (change)="applyFilters()"
               class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none">
               <option value="all">Todas as Empresas</option>
               <option *ngFor="let c of companies" [value]="c.id">{{ c.name }} (NUIT: {{ c.nuit }})</option>
@@ -50,7 +50,7 @@ import { formatAuditDetails, FormattedAuditItem } from '../../../core/utils/audi
           <!-- Filter by Category -->
           <div class="flex flex-col space-y-1">
             <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Categoria</label>
-            <select [(ngModel)]="selectedCategory" (change)="loadLogs()"
+            <select [(ngModel)]="selectedCategory" (change)="applyFilters()"
               class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none">
               <option value="all">Todas as Categorias</option>
               <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.label }}</option>
@@ -59,8 +59,14 @@ import { formatAuditDetails, FormattedAuditItem } from '../../../core/utils/audi
 
           <!-- Filter by Date -->
           <div class="flex flex-col space-y-1">
-            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Data Mínima</label>
-            <input type="date" [(ngModel)]="startDate" (change)="loadLogs()"
+            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">De</label>
+            <input type="date" [(ngModel)]="startDate" (change)="applyFilters()"
+              class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none">
+          </div>
+
+          <div class="flex flex-col space-y-1">
+            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Até</label>
+            <input type="date" [(ngModel)]="endDate" (change)="applyFilters()"
               class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none">
           </div>
         </div>
@@ -68,13 +74,18 @@ import { formatAuditDetails, FormattedAuditItem } from '../../../core/utils/audi
         <div class="flex items-center gap-4">
           <!-- Text Search -->
           <div class="flex-1">
-            <input type="text" [ngModel]="searchTerm()" (ngModelChange)="onSearchInput($event)" placeholder="Pesquise por acção, utilizador ou detalhes específicos..."
+            <input type="text" [ngModel]="searchTerm()" (ngModelChange)="onSearchInput($event)" placeholder="Pesquise por acção, e-mail, entidade ou IP..."
               class="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
           </div>
           <button (click)="clearFilters()" class="text-xs font-semibold text-gray-500 hover:text-blue-600 transition-colors uppercase tracking-wider">
             Limpar Filtros
           </button>
         </div>
+      </div>
+
+      <div *ngIf="loadError()" class="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm flex items-center justify-between gap-4">
+        <span><strong>Não foi possível carregar o histórico de auditoria.</strong> {{ loadError() }}</span>
+        <button (click)="loadLogs()" class="text-xs font-bold uppercase tracking-wider hover:underline">Tentar novamente</button>
       </div>
 
       <!-- Loading State -->
@@ -122,7 +133,7 @@ import { formatAuditDetails, FormattedAuditItem } from '../../../core/utils/audi
                   </button>
                 </td>
               </tr>
-              <tr *ngIf="filteredLogs().length === 0">
+              <tr *ngIf="filteredLogs().length === 0 && !loadError()">
                 <td colspan="6" class="px-6 py-12 text-center text-gray-400">
                   Nenhum registo de auditoria encontrado.
                 </td>
@@ -134,7 +145,7 @@ import { formatAuditDetails, FormattedAuditItem } from '../../../core/utils/audi
         <!-- Pagination -->
         <div class="border-t border-gray-100">
           <app-pagination
-            [totalItems]="filteredLogs().length"
+            [totalItems]="totalLogsCount()"
             [pageSizeOptions]="[10, 20, 50]"
             [defaultPageSize]="10"
             (pageChange)="onPageChange($event)">
@@ -238,6 +249,7 @@ export class AdminAuditLogsComponent implements OnInit {
   profiles: any[] = [];
   companies: any[] = [];
   isLoading = signal(false);
+  loadError = signal('');
 
   // Map of user_id -> profile (full_name, email) built from the loaded profiles
   userProfiles = signal<Record<string, { full_name?: string; email?: string }>>({});
@@ -247,9 +259,11 @@ export class AdminAuditLogsComponent implements OnInit {
   selectedCompanyId = 'all';
   selectedCategory = 'all';
   startDate = '';
+  endDate = '';
 
-  // Client-side text search (signal so the computed list reacts to it)
+  // Pesquisa feita no servidor (sobre todos os registos, não só a página actual)
   searchTerm = signal('');
+  private searchTimer: ReturnType<typeof setTimeout> | undefined;
 
   // Pagination state
   currentPage = signal(1);
@@ -258,43 +272,33 @@ export class AdminAuditLogsComponent implements OnInit {
   // Dialog state
   selectedLog: any = null;
 
+  // Todas as categorias efectivamente escritas no registo (cliente e triggers).
   categories = [
     { id: 'auth', label: 'Login e Logout' },
+    { id: 'security', label: 'Segurança e Acessos' },
     { id: 'admin_subscribers', label: 'Subscritores (Back Office)' },
     { id: 'admin_companies', label: 'Contribuintes (Back Office)' },
-    { id: 'admin_plans', label: 'Planos' },
+    { id: 'admin_activities', label: 'Actividades (Back Office)' },
+    { id: 'subscription_plans', label: 'Planos' },
     { id: 'subscriptions', label: 'Subscrições' },
-    { id: 'security', label: 'Segurança e Acessos' },
+    { id: 'subscription_payments', label: 'Pagamentos de Subscrição' },
+    { id: 'vouchers', label: 'Vouchers' },
+    { id: 'landing_content', label: 'Conteúdo do Site' },
+    { id: 'clients', label: 'Clientes' },
+    { id: 'products', label: 'Produtos' },
     { id: 'invoices', label: 'Faturas' },
+    { id: 'payments', label: 'Pagamentos' },
+    { id: 'declarations', label: 'Declarações' },
+    { id: 'reports', label: 'Relatórios' },
+    { id: 'settings', label: 'Configurações' },
     { id: 'users', label: 'Utilizadores' }
   ];
 
   totalLogsCount = signal(0);
 
-  filteredLogs = computed(() => {
-    // Only client-side text search remains — category/user/company/date are server-side
-    let list = this.logs();
-    const term = this.searchTerm().trim().toLowerCase();
-    const profiles = this.userProfiles();
-
-    if (term) {
-      list = list.filter(l =>
-        (l.action || '').toLowerCase().includes(term) ||
-        (l.user_email || '').toLowerCase().includes(term) ||
-        (profiles[l.user_id]?.full_name || '').toLowerCase().includes(term) ||
-        (l.ip_address || '').toLowerCase().includes(term) ||
-        (l.company?.name || '').toLowerCase().includes(term) ||
-        JSON.stringify(l.details || {}).toLowerCase().includes(term)
-      );
-    }
-
-    return list;
-  });
-
-  paginatedLogs = computed(() => {
-    // Pagination is now server-side, this just returns all loaded logs
-    return this.filteredLogs();
-  });
+  // Filtros, pesquisa e paginação são todos feitos no servidor.
+  filteredLogs = computed(() => this.logs());
+  paginatedLogs = this.filteredLogs;
 
   constructor(private supabase: SupabaseService) {}
 
@@ -329,45 +333,61 @@ export class AdminAuditLogsComponent implements OnInit {
     }
   }
 
+  applyFilters() {
+    this.currentPage.set(1);
+    this.loadLogs();
+  }
+
+  /** Consulta com todos os filtros activos, para o intervalo [from, to]. */
+  private buildQuery(from: number, to: number) {
+    let query = this.supabase.db
+      .from('audit_logs')
+      .select(`*, company:companies(id, name, nuit)`, { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (this.selectedCategory !== 'all') {
+      query = query.eq('category', this.selectedCategory);
+    }
+    if (this.selectedUserEmail !== 'all') {
+      query = query.eq('user_email', this.selectedUserEmail);
+    }
+    if (this.selectedCompanyId !== 'all') {
+      query = query.eq('company_id', this.selectedCompanyId);
+    }
+    if (this.startDate) {
+      query = query.gte('created_at', new Date(`${this.startDate}T00:00:00`).toISOString());
+    }
+    if (this.endDate) {
+      query = query.lte('created_at', new Date(`${this.endDate}T23:59:59.999`).toISOString());
+    }
+
+    // Vírgulas, parênteses e curingas têm significado na sintaxe or() do PostgREST.
+    const term = this.searchTerm().replace(/[,()*%]/g, ' ').trim();
+    if (term) {
+      const like = `%${term}%`;
+      query = query.or(
+        `action.ilike.${like},user_email.ilike.${like},entity_name.ilike.${like},ip_address.ilike.${like}`
+      );
+    }
+    return query;
+  }
+
   async loadLogs() {
     this.isLoading.set(true);
+    this.loadError.set('');
     try {
-      const pageSize = this.pageSize();
-      const page = this.currentPage();
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
-
-      let query = this.supabase.db
-        .from('audit_logs')
-        .select(`*, company:companies(id, name, nuit)`, { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .range(from, to);
-
-      // Apply category filter SERVER-SIDE
-      if (this.selectedCategory !== 'all') {
-        query = query.eq('category', this.selectedCategory);
-      } else {
-        // Default: show admin + auth categories
-        query = query.or('category.ilike.admin_%,category.eq.auth,category.eq.security,category.eq.subscriptions');
-      }
-
-      if (this.selectedUserEmail !== 'all') {
-        query = query.eq('user_email', this.selectedUserEmail);
-      }
-      if (this.selectedCompanyId !== 'all') {
-        query = query.eq('company_id', this.selectedCompanyId);
-      }
-      if (this.startDate) {
-        query = query.gte('created_at', new Date(`${this.startDate}T00:00:00`).toISOString());
-      }
-
-      const { data, error, count } = await query;
+      const from = (this.currentPage() - 1) * this.pageSize();
+      const { data, error, count } = await this.buildQuery(from, from + this.pageSize() - 1);
       if (error) throw error;
 
       this.logs.set(data || []);
       this.totalLogsCount.set(count || 0);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao carregar histórico global de auditoria:', error);
+      this.logs.set([]);
+      this.totalLogsCount.set(0);
+      this.loadError.set(error?.message || 'Tente novamente.');
     } finally {
       this.isLoading.set(false);
     }
@@ -375,7 +395,8 @@ export class AdminAuditLogsComponent implements OnInit {
 
   onSearchInput(term: string) {
     this.searchTerm.set(term ?? '');
-    this.currentPage.set(1);
+    clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => this.applyFilters(), 350);
   }
 
   getUserName(log: any): string {
@@ -395,8 +416,9 @@ export class AdminAuditLogsComponent implements OnInit {
     this.selectedCompanyId = 'all';
     this.selectedCategory = 'all';
     this.startDate = '';
+    this.endDate = '';
     this.searchTerm.set('');
-    this.loadLogs();
+    this.applyFilters();
   }
 
   viewDetails(log: any) {
@@ -429,8 +451,8 @@ export class AdminAuditLogsComponent implements OnInit {
     }
   }
 
-  exportCSV() {
-    const data = this.filteredLogs();
+  async exportCSV() {
+    const data = await this.fetchAllForExport();
     if (data.length === 0) return;
 
     const headers = ['Data/Hora', 'Utilizador', 'E-mail', 'Empresa', 'NUIT', 'Acção', 'Categoria', 'IP', 'Detalhes'];
@@ -463,6 +485,24 @@ export class AdminAuditLogsComponent implements OnInit {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  }
+
+  /** Exporta todos os registos que respeitam os filtros, não apenas a página visível. */
+  private async fetchAllForExport(): Promise<any[]> {
+    const all: any[] = [];
+    const batch = 1000;
+    try {
+      for (let from = 0; from < 50000; from += batch) {
+        const { data, error } = await this.buildQuery(from, from + batch - 1);
+        if (error) throw error;
+        all.push(...(data || []));
+        if (!data || data.length < batch) break;
+      }
+    } catch (error: any) {
+      console.error('Erro ao exportar auditoria:', error);
+      this.loadError.set(error?.message || 'Não foi possível exportar o histórico.');
+    }
+    return all;
   }
 
   getFormattedDetails(details: any): FormattedAuditItem[] {

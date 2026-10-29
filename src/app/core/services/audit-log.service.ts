@@ -20,33 +20,7 @@ export interface AuditLogEntry {
   providedIn: 'root'
 })
 export class AuditLogService {
-  private userIp = '';
-  private ipResolved = false;
-
-  constructor(private supabase: SupabaseService) {
-    this.resolveIpAddress();
-  }
-
-  /**
-   * Resolves the public IP address of the client using a free/secure service.
-   * Caches in memory to avoid repeated requests.
-   */
-  async resolveIpAddress(): Promise<string> {
-    if (this.ipResolved) return this.userIp;
-
-    try {
-      const response = await fetch('https://api.ipify.org?format=json');
-      const data = await response.json();
-      if (data && data.ip) {
-        this.userIp = data.ip;
-        this.ipResolved = true;
-      }
-    } catch (error) {
-      console.warn('Failed to resolve IP address, falling back to localhost/desconhecido:', error);
-      this.userIp = 'IP Desconhecido';
-    }
-    return this.userIp;
-  }
+  constructor(private supabase: SupabaseService) {}
 
   /**
    * Logs an action to the database.
@@ -56,7 +30,10 @@ export class AuditLogService {
    * @param details Optional JSON payload or differences (JSON-serializable object)
    * @param entityId ID of the affected entity
    * @param entityName Display name or reference code of the affected entity
-   * @param companyId Associated company ID (optional, defaults to active company if applicable)
+   * @param companyId Associated company ID (required for the entry to appear in that company's audit page)
+   *
+   * user_id, user_email, ip_address and created_at are stamped server-side by the
+   * audit_logs_stamp trigger; the values sent here are only a fallback.
    */
   async log(
     action: string,
@@ -69,15 +46,12 @@ export class AuditLogService {
     try {
       const userRes = await this.supabase.auth.getUser();
       const user = userRes.data?.user;
-      
-      const ip = await this.resolveIpAddress();
 
       const logData: any = {
         action,
         category,
         user_id: user?.id || null,
         user_email: user?.email || null,
-        ip_address: ip,
         details: details || null,
         entity_id: entityId || null,
         entity_name: entityName || null,
@@ -93,6 +67,22 @@ export class AuditLogService {
     } catch (error) {
       console.error('Failed to write audit log:', error);
       return false;
+    }
+  }
+
+  /**
+   * Records a failed sign-in. Runs without a session, so it goes through a
+   * rate-limited RPC instead of a direct insert. Never throws.
+   */
+  async logFailedLogin(email: string, reason?: string): Promise<void> {
+    try {
+      const { error } = await this.supabase.db.rpc('log_failed_login', {
+        p_email: email,
+        p_reason: reason ?? null
+      });
+      if (error) throw error;
+    } catch (error) {
+      console.warn('Failed to write failed-login audit entry:', error);
     }
   }
 

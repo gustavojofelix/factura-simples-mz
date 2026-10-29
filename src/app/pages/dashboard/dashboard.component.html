@@ -273,7 +273,7 @@
                           <mat-icon class="!text-base !w-4 !h-4 !leading-4">{{ categoryIcon(log.category) }}</mat-icon>
                         </div>
                         <div class="min-w-0">
-                          <span class="font-semibold text-slate-800 block truncate max-w-[220px]">{{ log.action }}</span>
+                          <span class="font-semibold text-slate-800 block truncate max-w-[220px]">{{ actionLabel(log.action) }}</span>
                           <span class="text-xs font-mono text-slate-400 truncate block max-w-[220px]">{{ log.entity_name || categoryLabel(log.category) }}</span>
                         </div>
                       </div>

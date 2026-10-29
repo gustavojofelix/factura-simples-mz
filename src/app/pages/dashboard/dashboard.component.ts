@@ -17,7 +17,7 @@ import { TaxService } from '../../core/services/tax.service';
 import { AuthService } from '../../core/services/auth.service';
 import { AuditLogService, AuditLogEntry } from '../../core/services/audit-log.service';
 import { PreferencesService } from '../../core/services/preferences.service';
-import { getAuditCategoryLabel, getAuditCategoryBadge, getAuditCategoryIcon } from '../../core/utils/audit-formatter.util';
+import { getAuditCategoryLabel, getAuditCategoryBadge, getAuditCategoryIcon, getAuditActionLabel } from '../../core/utils/audit-formatter.util';
 import { t, currentLocale } from '../../core/i18n/i18n';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
@@ -339,6 +339,10 @@ export class DashboardComponent implements OnInit {
 
   categoryLabel(category: string): string {
     return getAuditCategoryLabel(category);
+  }
+
+  actionLabel(action: string): string {
+    return getAuditActionLabel(action);
   }
 
   categoryBadge(category: string): string {

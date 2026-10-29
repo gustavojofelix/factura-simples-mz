@@ -965,7 +965,8 @@ export class AdminCompaniesComponent implements OnInit {
       'admin_companies',
       { company_id: company.id, new_status: newStatus },
       company.id,
-      company.name
+      company.name,
+      company.id
     );
 
     this.loadCompanies();
@@ -1106,7 +1107,8 @@ export class AdminCompaniesComponent implements OnInit {
       'admin_companies',
       { company_id: this.editingCompany.id, changes: this.editingCompany },
       this.editingCompany.id,
-      this.editingCompany.name
+      this.editingCompany.name,
+      this.editingCompany.id
     );
 
     this.closeEditModal();
@@ -1285,7 +1287,8 @@ export class AdminCompaniesComponent implements OnInit {
         'admin_companies',
         { company_id: data.id, name: this.newCompany.name, nuit: this.newCompany.nuit },
         data.id,
-        this.newCompany.name
+        this.newCompany.name,
+        data.id
       );
 
       this.closeCreateModal();

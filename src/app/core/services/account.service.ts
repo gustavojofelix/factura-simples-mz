@@ -2,6 +2,7 @@ import { Injectable, computed, effect, signal } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { AuthService } from './auth.service';
 import { TenantService } from './tenant.service';
+import { AuditLogService } from './audit-log.service';
 import { ACCOUNT_SLUG_PATTERN } from '../utils/tenant.util';
 import { t } from '../i18n/i18n';
 
@@ -49,7 +50,8 @@ export class AccountService {
   constructor(
     private supabase: SupabaseService,
     private authService: AuthService,
-    private tenant: TenantService
+    private tenant: TenantService,
+    private auditLogService: AuditLogService
   ) {
     effect(() => {
       const user = this.authService.currentUser();
@@ -198,6 +200,16 @@ export class AccountService {
     await this.loadAccounts();
     const account = this.accounts().find(a => a.id === (data as any).id);
     if (!account) throw new Error(t('account.errors.createdNotFound'));
+
+    // A conta está acima das empresas, por isso o registo não leva company_id.
+    await this.auditLogService.log(
+      'Criou Conta',
+      'settings',
+      { name: account.name, slug },
+      account.id,
+      account.name ?? slug
+    );
+
     if (!this.tenant.usesSubdomains) this.setActive(account);
     return account;
   }
@@ -210,6 +222,15 @@ export class AccountService {
       .update({ name })
       .eq('id', account.id);
     if (error) throw error;
+
+    await this.auditLogService.log(
+      'Renomeou Conta',
+      'settings',
+      { old_name: account.name, new_name: name },
+      account.id,
+      name
+    );
+
     const updated = { ...account, name };
     this.accounts.update(list => list.map(a => (a.id === account.id ? updated : a)));
     this.activeAccount.set(updated);

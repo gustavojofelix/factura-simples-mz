@@ -110,6 +110,8 @@ export class AuthService {
       });
 
       if (error) {
+        // Sem await: o registo não deve atrasar a mensagem de erro.
+        this.auditLogService.logFailedLogin(email, error.message);
         return { success: false, error: this.translateError(error) };
       }
 
@@ -232,13 +234,14 @@ export class AuthService {
       .maybeSingle();
 
     if (profile?.status === 'suspended') {
-      await this.supabase.auth.signOut();
-      this.currentUser.set(null);
+      // Regista antes de terminar a sessão: sem sessão o INSERT seria recusado.
       await this.auditLogService.log(
         'Tentativa de Login em Conta Suspensa',
         'auth',
         { email: user.email, method }
       );
+      await this.supabase.auth.signOut();
+      this.currentUser.set(null);
       return {
         success: false,
         error: t('auth.messages.accountSuspendedLong')
