@@ -1,0 +1,113 @@
+{
+  "title": "Point of Sale",
+  "subtitle": "Quick counter sales · {company}",
+  "demo": {
+    "badge": "Demo",
+    "body": "Sample data for presentation. Sales recorded here are kept in this browser only.",
+    "reset": "Reset data",
+    "resetTitle": "Reset demo data",
+    "resetMessage": "Sales recorded in this session and stock changes will be erased.",
+    "resetDone": "Demo data reset"
+  },
+  "fullscreen": {
+    "enter": "Full screen",
+    "exit": "Exit full screen"
+  },
+  "tabs": {
+    "terminal": "Till",
+    "history": "Sales"
+  },
+  "terminal": {
+    "seller": "Salesperson",
+    "client": "Customer",
+    "searchPlaceholder": "Search by name, code or barcode",
+    "allCategories": "All",
+    "noProducts": "No products found",
+    "outOfStock": "Out of stock",
+    "lowStock": "{count} left",
+    "inStock": "Stock: {count}",
+    "service": "Service",
+    "stockLimit": "Not enough stock for {name}"
+  },
+  "cart": {
+    "title": "Current sale",
+    "items": {
+      "zero": "No items",
+      "one": "{count} item",
+      "other": "{count} items"
+    },
+    "empty": "Basket is empty",
+    "emptyHint": "Tap a product to add it.",
+    "clear": "Clear",
+    "subtotal": "Subtotal (excl. VAT)",
+    "tax": "VAT included",
+    "total": "Total due",
+    "decrease": "Decrease quantity",
+    "increase": "Increase quantity",
+    "remove": "Remove item",
+    "resize": "Drag to adjust the width (double-click resets)"
+  },
+  "payment": {
+    "title": "Payment method",
+    "received": "Amount received",
+    "exact": "Exact",
+    "change": "Change",
+    "short": "Short",
+    "missing": "{amount} short",
+    "checkout": "Complete sale",
+    "completed": "Sale {number} recorded",
+    "methods": {
+      "cash": "Cash",
+      "mpesa": "M-Pesa",
+      "emola": "e-Mola",
+      "card": "Card",
+      "transfer": "Bank transfer"
+    }
+  },
+  "history": {
+    "todayTotal": "Sold today",
+    "todayCount": {
+      "one": "{count} sale",
+      "other": "{count} sales"
+    },
+    "averageTicket": "Average ticket (today)",
+    "topSeller": "Top salesperson (today)",
+    "noSalesToday": "No sales today",
+    "byMethod": "Today by payment method",
+    "searchPlaceholder": "Sale no. or customer",
+    "allSellers": "All salespeople",
+    "allMethods": "All methods",
+    "period": "Period",
+    "periods": {
+      "today": "Today",
+      "week": "Last 7 days",
+      "all": "All"
+    },
+    "number": "No.",
+    "date": "Date",
+    "client": "Customer",
+    "seller": "Salesperson",
+    "method": "Payment",
+    "total": "Total",
+    "status": "Status",
+    "empty": "No sales found",
+    "periodTotal": "Period total: {amount}",
+    "statuses": {
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "cancel": "Cancel sale",
+    "cancelTitle": "Cancel sale {number}",
+    "cancelMessage": "The sale will be marked as cancelled and the quantities returned to stock.",
+    "cancelled": "Sale {number} cancelled"
+  },
+  "receipt": {
+    "title": "Sale completed",
+    "titleView": "Sale {number}",
+    "newSale": "New sale",
+    "qty": "Qty",
+    "unitPrice": "Unit price",
+    "received": "Received",
+    "change": "Change"
+  }
+}

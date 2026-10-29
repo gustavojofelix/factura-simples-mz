@@ -1,0 +1,446 @@
+.pos-tabs {
+  display: inline-flex;
+  padding: 4px;
+  gap: 4px;
+  background: #f1f5f9;
+  border-radius: 14px;
+  align-self: flex-start;
+}
+
+.pos-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  transition: all 0.15s ease;
+}
+
+.pos-tabs button.pos-tab-active {
+  background: #fff;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 0.1);
+}
+
+.pos-tab-badge {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #f16c39;
+  color: #fff;
+  font-size: 11px;
+  line-height: 20px;
+  text-align: center;
+}
+
+.pos-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.pos-chip:hover {
+  border-color: #f16c39;
+}
+
+.pos-chip-active {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #fff;
+}
+
+.pos-product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.pos-product {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 150px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  text-align: left;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+
+.pos-product:hover:not(:disabled) {
+  border-color: #f16c39;
+  box-shadow: 0 6px 18px -8px rgb(241 108 57 / 0.45);
+  transform: translateY(-1px);
+}
+
+.pos-product:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.pos-product-selected {
+  border-color: #f16c39;
+  background: #fff7f3;
+}
+
+.pos-product-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.pos-product-icon {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 8px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.pos-product-name {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: #1e293b;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.pos-product-qty {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #f16c39;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 24px;
+  text-align: center;
+}
+
+/* Venda actual: coluna com a altura do ecrã; só a lista de linhas faz scroll. */
+.pos-cart {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  /* Telemóvel/tablet: folha que sobe de baixo, aberta pela barra fixa. */
+  position: fixed;
+  z-index: 40;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: calc(100dvh - 4rem);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -16px 40px -12px rgb(15 23 42 / 0.35);
+  transform: translateY(105%);
+  transition: transform 0.2s ease;
+}
+
+.pos-cart-open {
+  transform: translateY(0);
+}
+
+@media (min-width: 1024px) {
+  .pos-cart {
+    position: static;
+    width: var(--pos-cart-width, 400px);
+    flex-shrink: 0;
+    max-height: none;
+    height: 100%;
+    border-radius: 0;
+    border-left: 1px solid #e2e8f0;
+    box-shadow: none;
+    transform: none;
+    transition: none;
+  }
+}
+
+.pos-resizer {
+  width: 6px;
+  margin-right: -6px;
+  position: relative;
+  z-index: 5;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.pos-resizer::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 1px;
+  width: 4px;
+  height: 40px;
+  border-radius: 4px;
+  background: #cbd5e1;
+  transform: translateY(-50%);
+  transition: background 0.15s ease;
+}
+
+.pos-resizer:hover::after {
+  background: #f16c39;
+}
+
+.pos-inline-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.pos-cash-input {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.pos-cash-input:focus-within {
+  border-color: #f16c39;
+  box-shadow: 0 0 0 3px rgb(241 108 57 / 0.15);
+}
+
+.pos-cash-input span,
+.pos-change span {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+}
+
+.pos-cash-input input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  padding: 0;
+  background: transparent;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.pos-change {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 10px;
+  background: #ecfdf5;
+}
+
+.pos-change strong {
+  font-size: 16px;
+  color: #047857;
+  white-space: nowrap;
+}
+
+.pos-change-missing {
+  background: #fff1f2;
+}
+
+.pos-change-missing strong {
+  color: #be123c;
+}
+
+.pos-mobile-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  background: #fff;
+  border-top: 1px solid #e2e8f0;
+  box-shadow: 0 -8px 24px -12px rgb(15 23 42 / 0.3);
+}
+
+/* O display acima sobrepõe-se ao lg:hidden do Tailwind. */
+@media (min-width: 1024px) {
+  .pos-mobile-bar {
+    display: none;
+  }
+}
+
+.pos-stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.pos-stepper button {
+  width: 30px;
+  height: 30px;
+  font-size: 11px;
+  color: #475569;
+}
+
+.pos-stepper button:hover {
+  background: #f1f5f9;
+}
+
+.pos-stepper span {
+  min-width: 28px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.pos-method {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 7px 2px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #475569;
+  transition: all 0.15s ease;
+}
+
+.pos-method span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pos-method i {
+  font-size: 15px;
+}
+
+.pos-method:hover {
+  border-color: #f16c39;
+}
+
+.pos-method-active {
+  border-color: #f16c39;
+  background: #fff4ee;
+  color: #c2410c;
+}
+
+.pos-quick {
+  padding: 4px 10px;
+  background: #fff;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.pos-quick:hover {
+  border-color: #f16c39;
+  color: #c2410c;
+}
+
+.pos-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pos-kpi {
+  position: relative;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+}
+
+.pos-kpi-icon {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pos-kpi-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.pos-kpi-value {
+  margin-top: 4px;
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+::ng-deep .hide-subscript .mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}
+
+/* Campos Material mais baixos na barra do catálogo. */
+::ng-deep .pos-dense {
+  --mat-form-field-container-height: 44px;
+  --mat-form-field-container-vertical-padding: 10px;
+  --mat-form-field-filled-with-label-container-padding-top: 10px;
+}
+
+::ng-deep .pos-dense.mat-mdc-form-field .mat-mdc-floating-label.mdc-floating-label:not(.mdc-floating-label--float-above) {
+  top: 22px;
+}
+
+.pos-inline-select ::ng-deep .mat-mdc-select {
+  flex: 1;
+  min-width: 0;
+}

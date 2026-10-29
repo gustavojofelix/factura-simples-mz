@@ -60,7 +60,7 @@
   } @else {
 
     <!-- Mensagens -->
-    <div class="ai-chat__scroll custom-scrollbar" #scroller>
+    <div class="ai-chat__scroll custom-scrollbar" #scroller (scroll)="aoFazerScroll()">
 
       @if (conversaVazia()) {
         <div class="ai-chat__welcome">

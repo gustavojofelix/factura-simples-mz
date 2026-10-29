@@ -112,12 +112,29 @@ export class AiChatComponent {
       this.ai.loadConversations();
     });
 
-    // Mantém a vista colada ao fim enquanto a resposta vai crescendo.
+    // Mantém a vista colada ao fim enquanto a resposta vai crescendo — mas só
+    // se o utilizador lá estiver. Forçar o scroll a cada fragmento recebido
+    // impedia-o de subir para reler as primeiras mensagens: o chat parecia
+    // congelado.
     effect(() => {
-      this.ai.messages();
+      const total = this.ai.messages().length;
       this.ai.currentTool();
-      queueMicrotask(() => this.scrollParaBaixo());
+      if (total !== this.totalMensagens) {
+        // Pergunta nova ou conversa aberta: volta a seguir o fim.
+        this.totalMensagens = total;
+        this.coladoAoFim = true;
+      }
+      if (this.coladoAoFim) queueMicrotask(() => this.scrollParaBaixo());
     });
+  }
+
+  private totalMensagens = 0;
+  private coladoAoFim = true;
+
+  aoFazerScroll(): void {
+    const el = this.scroller?.nativeElement;
+    if (!el) return;
+    this.coladoAoFim = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
   }
 
   private scrollParaBaixo(): void {

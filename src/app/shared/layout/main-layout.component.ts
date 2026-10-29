@@ -63,6 +63,7 @@ export class MainLayoutComponent {
   menuItems: MenuItem[] = [
     { icon: 'fa-house', label: t('layout.nav.dashboard'), route: '/painel' },
     { icon: 'fa-headset', label: t('layout.nav.assistant'), route: '/assistente' },
+    { icon: 'fa-cash-register', label: t('layout.nav.pos'), route: '/pos' },
     { icon: 'fa-file-invoice-dollar', label: t('layout.nav.invoices'), route: '/facturas' },
     { icon: 'fa-address-book', label: t('layout.nav.clients'), route: '/clientes' },
     { icon: 'fa-boxes-stacked', label: t('layout.nav.products'), route: '/produtos' },
@@ -76,9 +77,9 @@ export class MainLayoutComponent {
     const role = this.companyService.activeRole();
     
     return this.menuItems.filter(item => {
-      // Vendedor (user) only gets Invoices, Clients, Products and the assistant
+      // Vendedor (user) only gets the POS, Invoices, Clients, Products and the assistant
       if (role === 'user') {
-        return ['/facturas', '/clientes', '/produtos', '/assistente'].includes(item.route);
+        return ['/pos', '/facturas', '/clientes', '/produtos', '/assistente'].includes(item.route);
       }
       
       // Gestor (manager) gets everything except Settings and Auditoria
@@ -186,7 +187,7 @@ export class MainLayoutComponent {
     const system = t('layout.navGroups.system');
     const groupNames: Record<string, string> = {
       '/painel': overview, '/assistente': overview,
-      '/facturas': operations, '/clientes': operations,
+      '/pos': operations, '/facturas': operations, '/clientes': operations,
       '/produtos': operations, '/impostos': tax, '/relatorios': tax,
       '/configuracoes': system, '/auditoria': system
     };

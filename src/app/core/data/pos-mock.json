@@ -1,0 +1,69 @@
+{
+  "categories": [
+    { "id": "mercearia", "name": "Mercearia", "icon": "fa-wheat-awn", "color": "#f59e0b" },
+    { "id": "bebidas", "name": "Bebidas", "icon": "fa-bottle-water", "color": "#0ea5e9" },
+    { "id": "frescos", "name": "Frescos", "icon": "fa-drumstick-bite", "color": "#ef4444" },
+    { "id": "padaria", "name": "Padaria", "icon": "fa-bread-slice", "color": "#a16207" },
+    { "id": "higiene", "name": "Higiene e Limpeza", "icon": "fa-pump-soap", "color": "#8b5cf6" },
+    { "id": "servicos", "name": "Recargas e Serviços", "icon": "fa-mobile-screen", "color": "#10b981" }
+  ],
+  "products": [
+    { "id": "p01", "code": "MER-001", "barcode": "6001234500017", "name": "Arroz Tio Lucas 5kg", "category_id": "mercearia", "price": 495, "tax_rate": 0, "unit": "un", "stock": 42 },
+    { "id": "p02", "code": "MER-002", "barcode": "6001234500024", "name": "Óleo Fula 2L", "category_id": "mercearia", "price": 385, "tax_rate": 16, "unit": "un", "stock": 30 },
+    { "id": "p03", "code": "MER-003", "barcode": "6001234500031", "name": "Açúcar Maragra 2kg", "category_id": "mercearia", "price": 210, "tax_rate": 0, "unit": "un", "stock": 55 },
+    { "id": "p04", "code": "MER-004", "barcode": "6001234500048", "name": "Farinha de Milho 10kg", "category_id": "mercearia", "price": 620, "tax_rate": 0, "unit": "un", "stock": 18 },
+    { "id": "p05", "code": "MER-005", "barcode": "6001234500055", "name": "Feijão Manteiga 1kg", "category_id": "mercearia", "price": 165, "tax_rate": 0, "unit": "un", "stock": 4 },
+    { "id": "p06", "code": "MER-006", "barcode": "6001234500062", "name": "Massa Esparguete 500g", "category_id": "mercearia", "price": 75, "tax_rate": 16, "unit": "un", "stock": 80 },
+    { "id": "p07", "code": "BEB-001", "barcode": "5449000000996", "name": "Coca-Cola 2L", "category_id": "bebidas", "price": 140, "tax_rate": 16, "unit": "un", "stock": 60 },
+    { "id": "p08", "code": "BEB-002", "barcode": "6009801234567", "name": "Cerveja 2M 550ml", "category_id": "bebidas", "price": 85, "tax_rate": 16, "unit": "un", "stock": 120 },
+    { "id": "p09", "code": "BEB-003", "barcode": "6009801234574", "name": "Laurentina Preta 550ml", "category_id": "bebidas", "price": 95, "tax_rate": 16, "unit": "un", "stock": 72 },
+    { "id": "p10", "code": "BEB-004", "barcode": "6009801234581", "name": "Água Namaacha 1.5L", "category_id": "bebidas", "price": 55, "tax_rate": 16, "unit": "un", "stock": 96 },
+    { "id": "p11", "code": "BEB-005", "barcode": "6009801234598", "name": "Sumo Compal 1L", "category_id": "bebidas", "price": 120, "tax_rate": 16, "unit": "un", "stock": 3 },
+    { "id": "p12", "code": "FRE-001", "barcode": "2000000000011", "name": "Frango Inteiro (kg)", "category_id": "frescos", "price": 320, "tax_rate": 0, "unit": "kg", "stock": 25 },
+    { "id": "p13", "code": "FRE-002", "barcode": "2000000000028", "name": "Ovos (dúzia)", "category_id": "frescos", "price": 180, "tax_rate": 0, "unit": "dz", "stock": 40 },
+    { "id": "p14", "code": "FRE-003", "barcode": "2000000000035", "name": "Tomate (kg)", "category_id": "frescos", "price": 90, "tax_rate": 0, "unit": "kg", "stock": 35 },
+    { "id": "p15", "code": "FRE-004", "barcode": "2000000000042", "name": "Cebola (kg)", "category_id": "frescos", "price": 70, "tax_rate": 0, "unit": "kg", "stock": 50 },
+    { "id": "p16", "code": "PAD-001", "barcode": "2000000000059", "name": "Pão (unidade)", "category_id": "padaria", "price": 10, "tax_rate": 0, "unit": "un", "stock": 300 },
+    { "id": "p17", "code": "PAD-002", "barcode": "2000000000066", "name": "Bolo de Arroz", "category_id": "padaria", "price": 35, "tax_rate": 16, "unit": "un", "stock": 45 },
+    { "id": "p18", "code": "HIG-001", "barcode": "6001087340014", "name": "Sabão Maq 400g", "category_id": "higiene", "price": 60, "tax_rate": 16, "unit": "un", "stock": 70 },
+    { "id": "p19", "code": "HIG-002", "barcode": "6001087340021", "name": "Pasta Dentífrica Colgate", "category_id": "higiene", "price": 110, "tax_rate": 16, "unit": "un", "stock": 28 },
+    { "id": "p20", "code": "HIG-003", "barcode": "6001087340038", "name": "Papel Higiénico (4 rolos)", "category_id": "higiene", "price": 150, "tax_rate": 16, "unit": "un", "stock": 33 },
+    { "id": "p21", "code": "HIG-004", "barcode": "6001087340045", "name": "Lixívia 1L", "category_id": "higiene", "price": 95, "tax_rate": 16, "unit": "un", "stock": 0 },
+    { "id": "p22", "code": "SRV-001", "name": "Recarga Vodacom 100 MT", "category_id": "servicos", "price": 100, "tax_rate": 0, "unit": "un", "stock": null },
+    { "id": "p23", "code": "SRV-002", "name": "Recarga Movitel 50 MT", "category_id": "servicos", "price": 50, "tax_rate": 0, "unit": "un", "stock": null },
+    { "id": "p24", "code": "SRV-003", "name": "Credelec 500 MT", "category_id": "servicos", "price": 500, "tax_rate": 0, "unit": "un", "stock": null }
+  ],
+  "sellers": [
+    { "id": "s01", "name": "Ana Macuácua", "code": "V01", "color": "#f16c39" },
+    { "id": "s02", "name": "João Cossa", "code": "V02", "color": "#0ea5e9" },
+    { "id": "s03", "name": "Fátima Nhantumbo", "code": "V03", "color": "#8b5cf6" },
+    { "id": "s04", "name": "Carlos Mondlane", "code": "V04", "color": "#10b981" }
+  ],
+  "clients": [
+    { "id": "c00", "name": "Consumidor Final" },
+    { "id": "c01", "name": "Restaurante Costa do Sol", "nuit": "400123456", "phone": "+258 84 123 4567" },
+    { "id": "c02", "name": "Escola Primária da Polana", "nuit": "500234567", "phone": "+258 82 234 5678" },
+    { "id": "c03", "name": "Hélder Sitoe", "phone": "+258 86 345 6789" },
+    { "id": "c04", "name": "Lodge Ponta do Ouro", "nuit": "400987654", "phone": "+258 87 456 7890" }
+  ],
+  "sales": [
+    { "id": "v018", "days_ago": 0, "time": "10:42", "seller_id": "s01", "client_id": "c00", "payment_method": "cash", "amount_received": 1000, "items": [{ "product_id": "p01", "quantity": 1 }, { "product_id": "p07", "quantity": 2 }, { "product_id": "p16", "quantity": 10 }] },
+    { "id": "v017", "days_ago": 0, "time": "10:15", "seller_id": "s02", "client_id": "c01", "payment_method": "mpesa", "items": [{ "product_id": "p12", "quantity": 6 }, { "product_id": "p14", "quantity": 4 }, { "product_id": "p15", "quantity": 3 }, { "product_id": "p02", "quantity": 2 }] },
+    { "id": "v016", "days_ago": 0, "time": "09:58", "seller_id": "s01", "client_id": "c00", "payment_method": "emola", "items": [{ "product_id": "p22", "quantity": 2 }, { "product_id": "p10", "quantity": 1 }] },
+    { "id": "v015", "days_ago": 0, "time": "09:31", "seller_id": "s03", "client_id": "c00", "payment_method": "cash", "amount_received": 500, "items": [{ "product_id": "p08", "quantity": 4 }, { "product_id": "p17", "quantity": 3 }] },
+    { "id": "v014", "days_ago": 0, "time": "08:47", "seller_id": "s04", "client_id": "c02", "payment_method": "transfer", "items": [{ "product_id": "p04", "quantity": 3 }, { "product_id": "p03", "quantity": 4 }, { "product_id": "p05", "quantity": 2 }, { "product_id": "p02", "quantity": 1 }] },
+    { "id": "v013", "days_ago": 0, "time": "08:12", "seller_id": "s02", "client_id": "c00", "payment_method": "card", "items": [{ "product_id": "p19", "quantity": 1 }, { "product_id": "p18", "quantity": 2 }, { "product_id": "p20", "quantity": 1 }] },
+    { "id": "v012", "days_ago": 1, "time": "17:50", "seller_id": "s01", "client_id": "c04", "payment_method": "mpesa", "items": [{ "product_id": "p09", "quantity": 24 }, { "product_id": "p10", "quantity": 12 }, { "product_id": "p07", "quantity": 6 }] },
+    { "id": "v011", "days_ago": 1, "time": "16:20", "seller_id": "s03", "client_id": "c00", "payment_method": "cash", "amount_received": 300, "items": [{ "product_id": "p13", "quantity": 1 }, { "product_id": "p16", "quantity": 6 }, { "product_id": "p06", "quantity": 1 }] },
+    { "id": "v010", "days_ago": 1, "time": "13:05", "seller_id": "s04", "client_id": "c03", "payment_method": "emola", "items": [{ "product_id": "p24", "quantity": 1 }, { "product_id": "p23", "quantity": 1 }] },
+    { "id": "v009", "days_ago": 1, "time": "11:40", "seller_id": "s02", "client_id": "c00", "payment_method": "cash", "amount_received": 1500, "items": [{ "product_id": "p01", "quantity": 2 }, { "product_id": "p02", "quantity": 1 }] },
+    { "id": "v008", "days_ago": 2, "time": "18:10", "seller_id": "s01", "client_id": "c00", "payment_method": "mpesa", "items": [{ "product_id": "p08", "quantity": 12 }, { "product_id": "p11", "quantity": 2 }] },
+    { "id": "v007", "days_ago": 2, "time": "15:25", "seller_id": "s03", "client_id": "c01", "payment_method": "transfer", "items": [{ "product_id": "p12", "quantity": 10 }, { "product_id": "p13", "quantity": 3 }, { "product_id": "p14", "quantity": 5 }] },
+    { "id": "v006", "days_ago": 2, "time": "10:02", "seller_id": "s04", "client_id": "c00", "payment_method": "cash", "amount_received": 200, "items": [{ "product_id": "p21", "quantity": 1 }, { "product_id": "p18", "quantity": 1 }] },
+    { "id": "v005", "days_ago": 3, "time": "16:45", "seller_id": "s02", "client_id": "c00", "payment_method": "card", "items": [{ "product_id": "p20", "quantity": 2 }, { "product_id": "p19", "quantity": 2 }, { "product_id": "p06", "quantity": 4 }] },
+    { "id": "v004", "days_ago": 4, "time": "12:30", "seller_id": "s01", "client_id": "c02", "payment_method": "mpesa", "items": [{ "product_id": "p16", "quantity": 120 }, { "product_id": "p17", "quantity": 40 }] },
+    { "id": "v003", "days_ago": 5, "time": "09:15", "seller_id": "s03", "client_id": "c00", "payment_method": "cash", "amount_received": 1000, "items": [{ "product_id": "p04", "quantity": 1 }, { "product_id": "p03", "quantity": 1 }] },
+    { "id": "v002", "days_ago": 6, "time": "14:55", "seller_id": "s04", "client_id": "c04", "payment_method": "transfer", "items": [{ "product_id": "p09", "quantity": 48 }, { "product_id": "p08", "quantity": 48 }] },
+    { "id": "v001", "days_ago": 6, "time": "08:20", "seller_id": "s02", "client_id": "c00", "payment_method": "emola", "items": [{ "product_id": "p22", "quantity": 3 }] }
+  ]
+}

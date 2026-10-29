@@ -1,0 +1,450 @@
+<div class="flex flex-col h-screen w-screen overflow-hidden bg-slate-50">
+  <!-- Barra superior (ecrã inteiro, sem menu lateral) -->
+  <header class="shrink-0 flex items-center gap-3 h-16 px-3 sm:px-5 bg-white border-b border-slate-200/80 shadow-sm z-20">
+    <button mat-stroked-button class="!h-10 !rounded-xl shrink-0" (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+      <span class="hidden sm:inline">{{ 'common.actions.back' | t }}</span>
+    </button>
+
+    <div class="min-w-0 flex-1 flex items-center gap-3">
+      <span class="hidden sm:flex w-10 h-10 rounded-xl bg-ispc-orange text-white items-center justify-center shrink-0">
+        <i class="fa-solid fa-cash-register" aria-hidden="true"></i>
+      </span>
+      <div class="min-w-0">
+        <h1 class="!m-0 text-base sm:text-lg font-bold text-slate-900 leading-tight truncate">{{ 'pos.title' | t }}</h1>
+        @if (companyService.activeCompany()?.name; as companyName) {
+          <p class="text-xs text-slate-500 truncate">{{ companyName }}</p>
+        }
+      </div>
+    </div>
+
+    <div class="pos-tabs !self-center" role="tablist">
+      <button type="button" role="tab" [attr.aria-selected]="tab() === 'terminal'" [class.pos-tab-active]="tab() === 'terminal'" (click)="tab.set('terminal')">
+        <i class="fa-solid fa-cash-register" aria-hidden="true"></i>
+        <span class="hidden md:inline">{{ 'pos.tabs.terminal' | t }}</span>
+        @if (pos.cartCount() > 0) {
+          <span class="pos-tab-badge">{{ pos.cartCount() }}</span>
+        }
+      </button>
+      <button type="button" role="tab" [attr.aria-selected]="tab() === 'history'" [class.pos-tab-active]="tab() === 'history'" (click)="tab.set('history')">
+        <i class="fa-solid fa-receipt" aria-hidden="true"></i>
+        <span class="hidden md:inline">{{ 'pos.tabs.history' | t }}</span>
+      </button>
+    </div>
+
+    <span class="hidden md:inline-flex items-center gap-1 shrink-0 pl-2.5 pr-1 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[11px] font-bold uppercase tracking-wide"
+      [matTooltip]="'pos.demo.body' | t">
+      {{ 'pos.demo.badge' | t }}
+      <button type="button" class="w-6 h-6 rounded-full hover:bg-amber-200 flex items-center justify-center" (click)="resetDemo()"
+        [matTooltip]="'pos.demo.reset' | t" [attr.aria-label]="'pos.demo.reset' | t">
+        <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+      </button>
+    </span>
+
+    @if (fullscreenSupported) {
+      <button mat-icon-button class="shrink-0" (click)="toggleFullscreen()"
+        [matTooltip]="(isFullscreen() ? 'pos.fullscreen.exit' : 'pos.fullscreen.enter') | t"
+        [attr.aria-label]="(isFullscreen() ? 'pos.fullscreen.exit' : 'pos.fullscreen.enter') | t">
+        <mat-icon>{{ isFullscreen() ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+      </button>
+    }
+  </header>
+
+  @if (tab() === 'terminal') {
+    <div class="flex-1 min-h-0 flex">
+      <!-- ================= Catálogo (só esta coluna faz scroll) ================= -->
+      <section class="flex-1 min-w-0 flex flex-col">
+        <div class="shrink-0 flex flex-col sm:flex-row gap-3 px-4 sm:px-5 pt-4">
+          <mat-form-field appearance="outline" class="sm:w-60 hide-subscript pos-dense">
+            <mat-label>{{ 'pos.terminal.seller' | t }}</mat-label>
+            <mat-select [value]="pos.activeSellerId()" (selectionChange)="pos.activeSellerId.set($event.value)">
+              <mat-select-trigger>
+                <span class="flex items-center gap-2">
+                  <span class="pos-avatar !w-6 !h-6 !text-[10px]" [style.background]="pos.seller(pos.activeSellerId())?.color">{{ initials(pos.seller(pos.activeSellerId())?.name) }}</span>
+                  {{ pos.seller(pos.activeSellerId())?.name }}
+                </span>
+              </mat-select-trigger>
+              @for (seller of pos.sellers(); track seller.id) {
+                <mat-option [value]="seller.id">
+                  <span class="flex items-center gap-2">
+                    <span class="pos-avatar !w-7 !h-7 !text-[11px]" [style.background]="seller.color">{{ initials(seller.name) }}</span>
+                    <span>{{ seller.name }} <small class="text-slate-400">· {{ seller.code }}</small></span>
+                  </span>
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="flex-1 hide-subscript pos-dense">
+            <mat-icon matPrefix class="text-gray-400 mr-2">search</mat-icon>
+            <input matInput [value]="search()" (input)="onSearch($event)" (keydown.enter)="onSearchEnter()"
+              [placeholder]="'pos.terminal.searchPlaceholder' | t" autocomplete="off">
+            @if (search()) {
+              <button matSuffix mat-icon-button (click)="search.set('')" [attr.aria-label]="'common.actions.clearFilters' | t">
+                <mat-icon>clear</mat-icon>
+              </button>
+            }
+          </mat-form-field>
+        </div>
+
+        <!-- Categorias -->
+        <div class="shrink-0 flex gap-2 overflow-x-auto px-4 sm:px-5 py-3 custom-scrollbar">
+          <button type="button" class="pos-chip" [class.pos-chip-active]="category() === 'all'" (click)="category.set('all')">
+            <i class="fa-solid fa-border-all" aria-hidden="true"></i>
+            {{ 'pos.terminal.allCategories' | t }}
+          </button>
+          @for (cat of pos.categories(); track cat.id) {
+            <button type="button" class="pos-chip" [class.pos-chip-active]="category() === cat.id" (click)="category.set(cat.id)">
+              <i class="fa-solid {{ cat.icon }}" [style.color]="category() === cat.id ? null : cat.color" aria-hidden="true"></i>
+              {{ cat.name }}
+            </button>
+          }
+        </div>
+
+        <!-- Produtos -->
+        <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-4 sm:px-5 pb-24 lg:pb-5">
+          @if (filteredProducts().length === 0) {
+            <div class="text-center py-16 text-slate-400">
+              <i class="fa-solid fa-box-open text-4xl mb-3" aria-hidden="true"></i>
+              <p>{{ 'pos.terminal.noProducts' | t }}</p>
+            </div>
+          } @else {
+            <div class="pos-product-grid">
+              @for (product of filteredProducts(); track product.id) {
+                @let cat = pos.category(product.category_id);
+                @let soldOut = product.stock !== null && product.stock <= 0;
+                @let inCart = cartQuantities().get(product.id) ?? 0;
+                <button type="button" class="pos-product" [class.pos-product-disabled]="soldOut" [class.pos-product-selected]="inCart > 0"
+                  [disabled]="soldOut" (click)="add(product)">
+                  @if (inCart > 0) {
+                    <span class="pos-product-qty">{{ inCart }}</span>
+                  }
+                  <span class="pos-product-icon" [style.background]="cat?.color + '1a'" [style.color]="cat?.color">
+                    <i class="fa-solid {{ cat?.icon }}" aria-hidden="true"></i>
+                  </span>
+                  <span class="pos-product-name">{{ product.name }}</span>
+                  <span class="text-[11px] text-slate-400 font-mono">{{ product.code }}</span>
+                  <span class="mt-auto pt-2 font-bold text-slate-900">{{ money(product.price) }}</span>
+                  <span class="text-[11px] font-semibold"
+                    [class.text-rose-600]="soldOut"
+                    [class.text-amber-600]="!soldOut && product.stock !== null && product.stock <= lowStock"
+                    [class.text-slate-400]="product.stock === null || product.stock > lowStock">
+                    @if (product.stock === null) {
+                      {{ 'pos.terminal.service' | t }}
+                    } @else if (soldOut) {
+                      {{ 'pos.terminal.outOfStock' | t }}
+                    } @else if (product.stock <= lowStock) {
+                      {{ 'pos.terminal.lowStock' | t: { count: product.stock } }}
+                    } @else {
+                      {{ 'pos.terminal.inStock' | t: { count: product.stock } }}
+                    }
+                  </span>
+                </button>
+              }
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- Pega para redimensionar o carrinho (desktop) -->
+      <div class="pos-resizer hidden lg:block" role="separator" aria-orientation="vertical"
+        [matTooltip]="'pos.cart.resize' | t" matTooltipPosition="left"
+        (pointerdown)="startResize($event)" (dblclick)="resetCartWidth()"></div>
+
+      <!-- ================= Venda actual: sempre visível, altura do ecrã ================= -->
+      @if (cartOpen()) {
+        <div class="lg:hidden fixed inset-0 top-16 z-30 bg-slate-900/40" (click)="cartOpen.set(false)"></div>
+      }
+      <aside class="pos-cart" [class.pos-cart-open]="cartOpen()" [style.--pos-cart-width.px]="cartWidth()">
+        <!-- Cabeçalho -->
+        <div class="shrink-0 flex items-center gap-2 px-4 pt-3 pb-2">
+          <div class="flex-1 min-w-0">
+            <h2 class="text-base font-bold text-slate-900 leading-tight">{{ 'pos.cart.title' | t }}</h2>
+            <p class="text-xs text-slate-500">{{ 'pos.cart.items' | t: { count: pos.cartCount() } }}</p>
+          </div>
+          @if (pos.cart().length > 0) {
+            <button mat-icon-button (click)="pos.clearCart()" [matTooltip]="'pos.cart.clear' | t" [attr.aria-label]="'pos.cart.clear' | t">
+              <mat-icon class="text-slate-400">delete_sweep</mat-icon>
+            </button>
+          }
+          <button mat-icon-button class="lg:!hidden" (click)="cartOpen.set(false)" [attr.aria-label]="'common.actions.close' | t">
+            <mat-icon>expand_more</mat-icon>
+          </button>
+        </div>
+
+        <!-- Cliente -->
+        <div class="shrink-0 px-4 pb-2">
+          <div class="pos-inline-select">
+            <mat-icon class="!w-5 !h-5 !text-[20px] text-slate-400">person</mat-icon>
+            <mat-select [value]="clientId()" (selectionChange)="clientId.set($event.value)" [aria-label]="'pos.terminal.client' | t">
+              @for (client of pos.clients(); track client.id) {
+                <mat-option [value]="client.id">
+                  {{ client.name }}
+                  @if (client.nuit) { <small class="text-slate-400">· NUIT {{ client.nuit }}</small> }
+                </mat-option>
+              }
+            </mat-select>
+          </div>
+        </div>
+
+        <!-- Linhas: única parte do carrinho que faz scroll -->
+        <div class="flex-1 min-h-[72px] overflow-y-auto custom-scrollbar px-4 border-t border-slate-100">
+          @if (pos.cart().length === 0) {
+            <div class="h-full flex flex-col items-center justify-center py-4 text-slate-400">
+              <i class="fa-solid fa-basket-shopping text-2xl mb-1" aria-hidden="true"></i>
+              <p class="text-sm font-medium text-slate-500">{{ 'pos.cart.empty' | t }}</p>
+              <p class="text-xs">{{ 'pos.cart.emptyHint' | t }}</p>
+            </div>
+          } @else {
+            <ul class="divide-y divide-slate-100">
+              @for (line of pos.cart(); track line.product.id) {
+                <li class="py-2 flex items-center gap-2">
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-slate-800 truncate">{{ line.product.name }}</p>
+                    <p class="text-[11px] text-slate-400">{{ money(line.product.price) }}</p>
+                  </div>
+                  <div class="pos-stepper">
+                    <button type="button" (click)="decrease(line.product.id, line.quantity)" [attr.aria-label]="'pos.cart.decrease' | t">
+                      <i class="fa-solid fa-minus" aria-hidden="true"></i>
+                    </button>
+                    <span>{{ line.quantity }}</span>
+                    <button type="button" (click)="increase(line.product)" [attr.aria-label]="'pos.cart.increase' | t">
+                      <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                    </button>
+                  </div>
+                  <span class="w-[5.5rem] text-right text-sm font-semibold text-slate-900 whitespace-nowrap">{{ money(line.product.price * line.quantity) }}</span>
+                  <button type="button" class="w-5 text-slate-300 hover:text-rose-500 transition-colors" (click)="pos.removeFromCart(line.product.id)"
+                    [attr.aria-label]="'pos.cart.remove' | t">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+
+        <!-- Rodapé fixo: totais, pagamento e Finalizar -->
+        <div class="shrink-0 border-t border-slate-200 bg-slate-50/80 px-4 pt-3 pb-4 space-y-3">
+          <div>
+            <div class="flex justify-between gap-2 text-[11px] text-slate-500">
+              <span>{{ 'pos.cart.subtotal' | t }} · {{ money(pos.cartTotals().subtotal) }}</span>
+              <span>{{ 'pos.cart.tax' | t }} · {{ money(pos.cartTotals().tax_total) }}</span>
+            </div>
+            <div class="flex justify-between items-baseline">
+              <span class="text-sm font-semibold text-slate-700">{{ 'pos.cart.total' | t }}</span>
+              <span class="text-2xl font-extrabold text-slate-900">{{ money(pos.cartTotals().total) }}</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-5 gap-1.5" role="radiogroup" [attr.aria-label]="'pos.payment.title' | t">
+            @for (method of paymentMethods; track method.id) {
+              <button type="button" role="radio" class="pos-method" [attr.aria-checked]="paymentMethod() === method.id"
+                [class.pos-method-active]="paymentMethod() === method.id" (click)="selectPayment(method.id)">
+                <i class="fa-solid {{ method.icon }}" aria-hidden="true"></i>
+                <span>{{ 'pos.payment.methods.' + method.id | t }}</span>
+              </button>
+            }
+          </div>
+
+          @if (paymentMethod() === 'cash' && pos.cart().length > 0) {
+            <div class="flex items-stretch gap-2">
+              <label class="pos-cash-input">
+                <span>{{ 'pos.payment.received' | t }}</span>
+                <input type="number" min="0" step="0.01" inputmode="decimal" [value]="amountReceived() ?? ''" (input)="onReceived($event)"
+                  [placeholder]="pos.cartTotals().total.toFixed(2)">
+              </label>
+              <div class="pos-change" [class.pos-change-missing]="missing() > 0">
+                <span>{{ (missing() > 0 ? 'pos.payment.short' : 'pos.payment.change') | t }}</span>
+                <strong>{{ money(missing() > 0 ? missing() : change()) }}</strong>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+              <button type="button" class="pos-quick" (click)="amountReceived.set(null)">{{ 'pos.payment.exact' | t }}</button>
+              @for (amount of quickAmounts(); track amount) {
+                <button type="button" class="pos-quick" (click)="amountReceived.set(amount)">{{ money(amount) }}</button>
+              }
+            </div>
+          }
+
+          <button mat-raised-button class="w-full !h-14 !rounded-xl !text-base !font-bold !bg-ispc-orange !text-white disabled:!opacity-50"
+            [disabled]="!canCheckout()" (click)="checkout()">
+            <mat-icon>point_of_sale</mat-icon>
+            <span>{{ 'pos.payment.checkout' | t }} · {{ money(pos.cartTotals().total) }}</span>
+          </button>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Telemóvel/tablet: barra fixa com Finalizar sempre disponível -->
+    @if (!cartOpen()) {
+      <div class="pos-mobile-bar lg:hidden">
+        <button type="button" class="flex-1 min-w-0 flex items-center gap-3 text-left" (click)="cartOpen.set(true)">
+          <span class="relative w-11 h-11 rounded-xl bg-slate-900 text-white flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-basket-shopping" aria-hidden="true"></i>
+            @if (pos.cartCount() > 0) { <span class="pos-tab-badge absolute -top-1.5 -right-1.5">{{ pos.cartCount() }}</span> }
+          </span>
+          <span class="min-w-0">
+            <span class="block text-[11px] text-slate-500">{{ 'pos.payment.methods.' + paymentMethod() | t }}</span>
+            <span class="block font-extrabold text-slate-900 truncate">{{ money(pos.cartTotals().total) }}</span>
+          </span>
+        </button>
+        <button mat-raised-button class="!h-12 !rounded-xl !font-bold !bg-ispc-orange !text-white disabled:!opacity-50 shrink-0"
+          [disabled]="!canCheckout()" (click)="checkout()">
+          <mat-icon>point_of_sale</mat-icon>
+          <span>{{ 'pos.payment.checkout' | t }}</span>
+        </button>
+      </div>
+    }
+  } @else {
+  <main class="flex-1 overflow-y-auto custom-scrollbar">
+  <div class="p-4 sm:p-6">
+    <!-- ================= Vendas ================= -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+      <div class="pos-kpi">
+        <span class="pos-kpi-icon bg-orange-100 text-orange-600"><i class="fa-solid fa-sack-dollar" aria-hidden="true"></i></span>
+        <p class="pos-kpi-label">{{ 'pos.history.todayTotal' | t }}</p>
+        <p class="pos-kpi-value">{{ money(kpis().total) }}</p>
+        <p class="text-xs text-slate-500">{{ 'pos.history.todayCount' | t: { count: kpis().count } }}</p>
+      </div>
+      <div class="pos-kpi">
+        <span class="pos-kpi-icon bg-sky-100 text-sky-600"><i class="fa-solid fa-receipt" aria-hidden="true"></i></span>
+        <p class="pos-kpi-label">{{ 'pos.history.averageTicket' | t }}</p>
+        <p class="pos-kpi-value">{{ money(kpis().average) }}</p>
+      </div>
+      <div class="pos-kpi">
+        <span class="pos-kpi-icon bg-violet-100 text-violet-600"><i class="fa-solid fa-trophy" aria-hidden="true"></i></span>
+        <p class="pos-kpi-label">{{ 'pos.history.topSeller' | t }}</p>
+        @if (kpis().topSeller; as top) {
+          <div class="flex items-center gap-2 mt-1">
+            <span class="pos-avatar" [style.background]="top.seller?.color">{{ initials(top.seller?.name) }}</span>
+            <div class="min-w-0">
+              <p class="font-bold text-slate-900 truncate">{{ top.seller?.name }}</p>
+              <p class="text-xs text-slate-500">{{ money(top.total) }}</p>
+            </div>
+          </div>
+        } @else {
+          <p class="text-sm text-slate-400 mt-2">{{ 'pos.history.noSalesToday' | t }}</p>
+        }
+      </div>
+      <div class="pos-kpi">
+        <p class="pos-kpi-label mb-2">{{ 'pos.history.byMethod' | t }}</p>
+        @if (byMethod().length === 0) {
+          <p class="text-sm text-slate-400">{{ 'pos.history.noSalesToday' | t }}</p>
+        }
+        <div class="space-y-1.5">
+          @for (m of byMethod(); track m.id) {
+            <div>
+              <div class="flex justify-between text-xs">
+                <span class="text-slate-600"><i class="fa-solid {{ m.icon }} w-4 text-slate-400" aria-hidden="true"></i> {{ 'pos.payment.methods.' + m.id | t }}</span>
+                <span class="font-semibold text-slate-800">{{ money(m.amount) }}</span>
+              </div>
+              <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden mt-0.5">
+                <div class="h-full rounded-full bg-ispc-orange" [style.width.%]="m.share"></div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm">
+      <div class="flex flex-col lg:flex-row gap-3 p-4 border-b border-slate-100">
+        <mat-form-field appearance="outline" class="flex-1 hide-subscript">
+          <mat-icon matPrefix class="text-gray-400 mr-2">search</mat-icon>
+          <input matInput [value]="historySearch()" (input)="historySearch.set($any($event.target).value)" [placeholder]="'pos.history.searchPlaceholder' | t">
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="lg:w-48 hide-subscript">
+          <mat-label>{{ 'pos.history.period' | t }}</mat-label>
+          <mat-select [value]="period()" (selectionChange)="period.set($event.value)">
+            <mat-option value="today">{{ 'pos.history.periods.today' | t }}</mat-option>
+            <mat-option value="week">{{ 'pos.history.periods.week' | t }}</mat-option>
+            <mat-option value="all">{{ 'pos.history.periods.all' | t }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="lg:w-56 hide-subscript">
+          <mat-label>{{ 'pos.history.seller' | t }}</mat-label>
+          <mat-select [value]="sellerFilter()" (selectionChange)="sellerFilter.set($event.value)">
+            <mat-option value="all">{{ 'pos.history.allSellers' | t }}</mat-option>
+            @for (seller of pos.sellers(); track seller.id) {
+              <mat-option [value]="seller.id">{{ seller.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="lg:w-48 hide-subscript">
+          <mat-label>{{ 'pos.history.method' | t }}</mat-label>
+          <mat-select [value]="methodFilter()" (selectionChange)="methodFilter.set($event.value)">
+            <mat-option value="all">{{ 'pos.history.allMethods' | t }}</mat-option>
+            @for (method of paymentMethods; track method.id) {
+              <mat-option [value]="method.id">{{ 'pos.payment.methods.' + method.id | t }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      @if (filteredSales().length === 0) {
+        <div class="text-center py-16 text-slate-400">
+          <i class="fa-solid fa-receipt text-4xl mb-3" aria-hidden="true"></i>
+          <p>{{ 'pos.history.empty' | t }}</p>
+        </div>
+      } @else {
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-xs uppercase tracking-wider text-slate-500 bg-slate-50">
+                <th class="px-4 py-3 font-semibold">{{ 'pos.history.number' | t }}</th>
+                <th class="px-4 py-3 font-semibold">{{ 'pos.history.date' | t }}</th>
+                <th class="px-4 py-3 font-semibold hidden md:table-cell">{{ 'pos.history.client' | t }}</th>
+                <th class="px-4 py-3 font-semibold">{{ 'pos.history.seller' | t }}</th>
+                <th class="px-4 py-3 font-semibold hidden sm:table-cell">{{ 'pos.history.method' | t }}</th>
+                <th class="px-4 py-3 font-semibold text-right">{{ 'pos.history.total' | t }}</th>
+                <th class="px-4 py-3 font-semibold hidden sm:table-cell">{{ 'pos.history.status' | t }}</th>
+                <th class="px-2 py-3"></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              @for (sale of filteredSales(); track sale.id) {
+                @let seller = pos.seller(sale.seller_id);
+                <tr class="hover:bg-orange-50/40 cursor-pointer transition-colors" [class.opacity-60]="sale.status === 'cancelled'" (click)="openSale(sale)">
+                  <td class="px-4 py-3 font-mono font-semibold text-slate-800 whitespace-nowrap">{{ sale.number }}</td>
+                  <td class="px-4 py-3 text-slate-600 whitespace-nowrap">{{ period() === 'today' ? time(sale.created_at) : date(sale.created_at) }}</td>
+                  <td class="px-4 py-3 text-slate-700 hidden md:table-cell">{{ pos.client(sale.client_id)?.name }}</td>
+                  <td class="px-4 py-3">
+                    <span class="flex items-center gap-2 whitespace-nowrap">
+                      <span class="pos-avatar !w-6 !h-6 !text-[10px]" [style.background]="seller?.color">{{ initials(seller?.name) }}</span>
+                      <span class="text-slate-700">{{ seller?.name }}</span>
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-slate-600 hidden sm:table-cell whitespace-nowrap">{{ 'pos.payment.methods.' + sale.payment_method | t }}</td>
+                  <td class="px-4 py-3 text-right font-bold text-slate-900 whitespace-nowrap" [class.line-through]="sale.status === 'cancelled'">{{ money(sale.total) }}</td>
+                  <td class="px-4 py-3 hidden sm:table-cell">
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold"
+                      [class.bg-emerald-100]="sale.status === 'completed'" [class.text-emerald-700]="sale.status === 'completed'"
+                      [class.bg-rose-100]="sale.status === 'cancelled'" [class.text-rose-700]="sale.status === 'cancelled'">
+                      {{ 'pos.history.statuses.' + sale.status | t }}
+                    </span>
+                  </td>
+                  <td class="px-2 py-3 text-right">
+                    @if (sale.status === 'completed' && companyService.activeRole() !== 'user') {
+                      <button mat-icon-button (click)="$event.stopPropagation(); cancelSale(sale)" [matTooltip]="'pos.history.cancel' | t" [attr.aria-label]="'pos.history.cancel' | t">
+                        <mat-icon class="text-slate-400">block</mat-icon>
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="px-4 py-3 border-t border-slate-100 text-right text-sm font-semibold text-slate-700">
+          {{ 'pos.history.periodTotal' | t: { amount: money(periodTotal()) } }}
+        </div>
+      }
+    </div>
+  </div>
+  </main>
+  }
+
+  <!-- Fora do MainLayoutComponent: avisos e confirmações montados aqui -->
+  <app-toast></app-toast>
+  <app-confirm-dialog></app-confirm-dialog>
+</div>

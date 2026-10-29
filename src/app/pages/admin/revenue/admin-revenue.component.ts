@@ -34,8 +34,6 @@ interface PaymentTransaction {
   updated_at: string;
 }
 
-interface Subscription { status: string; amount: number; billing_cycle: string; }
-
 interface EmailLogEntry {
   id: string;
   created_at: string;
@@ -87,16 +85,6 @@ interface NotifyPart { ok: boolean; status: string; recipients?: string[]; error
             <div class="metric-top"><span class="metric-icon">◷</span><span>Por receber</span></div>
             <strong>{{ paymentStats().pendingAmount | currency:'MZN':'symbol':'1.2-2':'pt-MZ' }}</strong>
             <p>{{ paymentStats().pendingCount }} transação(ões) aguardam confirmação.</p>
-          </article>
-          <article class="metric-card failed">
-            <div class="metric-top"><span class="metric-icon">!</span><span>Por recuperar</span></div>
-            <strong>{{ paymentStats().failedAmount | currency:'MZN':'symbol':'1.2-2':'pt-MZ' }}</strong>
-            <p>{{ paymentStats().failedCount }} pagamento(s) falhado(s).</p>
-          </article>
-          <article class="metric-card mrr">
-            <div class="metric-top"><span class="metric-icon">↗</span><span>MRR estimado</span></div>
-            <strong>{{ mrr() | currency:'MZN':'symbol':'1.2-2':'pt-MZ' }}</strong>
-            <p>Previsão mensal · {{ activeSubscriptions() }} subscrição(ões) ativa(s).</p>
           </article>
         </section>
 
@@ -263,7 +251,7 @@ interface NotifyPart { ok: boolean; status: string; recipients?: string[]; error
                     <td>
                       <div class="plan-cell">
                         <strong>{{ payment.plan_name }}</strong>
-                        <span>{{ payment.billing_cycle }}</span>
+                        <span>{{ billingCycleLabel(payment.billing_cycle) }}</span>
                       </div>
                     </td>
                     <td>
@@ -345,7 +333,7 @@ interface NotifyPart { ok: boolean; status: string; recipients?: string[]; error
               <!-- Dados principais -->
               <dl class="drawer-dl">
                 <dt>Plano</dt>
-                <dd>{{ selectedPayment()!.plan_name }} · {{ selectedPayment()!.billing_cycle }}</dd>
+                <dd>{{ selectedPayment()!.plan_name }} · {{ billingCycleLabel(selectedPayment()!.billing_cycle) }}</dd>
 
                 <dt>Método de pagamento</dt>
                 <dd>{{ paymentMethodLabel(selectedPayment()!.payment_method) }}</dd>
@@ -513,7 +501,7 @@ interface NotifyPart { ok: boolean; status: string; recipients?: string[]; error
     .eyebrow i{width:7px;height:7px;border-radius:50%;background:#6ee7b7;box-shadow:0 0 0 4px rgba(110,231,183,.15)}
 
     /* ── KPI Cards ── */
-    .metrics-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-top:22px}
+    .metrics-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:22px}
     .metric-card{min-height:148px;padding:18px;border:1px solid #e8edf5;border-radius:16px;background:#fff;box-shadow:0 5px 18px rgba(30,41,59,.04);overflow:hidden;position:relative}
     .metric-card:after{position:absolute;right:-23px;bottom:-31px;width:99px;height:99px;border-radius:50%;content:'';opacity:.7}
     .metric-top{display:flex;align-items:center;gap:9px;color:#728097;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase}
@@ -522,8 +510,6 @@ interface NotifyPart { ok: boolean; status: string; recipients?: string[]; error
     .metric-card p{position:relative;margin:9px 0 0;color:#77859a;font-size:11px;line-height:1.35}
     .received .metric-icon{color:#159264;background:#eafaf3}.received:after{background:#e5f8ef}
     .pending .metric-icon{color:#c88613;background:#fff7df}.pending:after{background:#fff3d4}
-    .failed .metric-icon{color:#db5050;background:#fff0f0}.failed:after{background:#ffe6e6}
-    .mrr .metric-icon{color:#3d6fd1;background:#edf3ff}.mrr:after{background:#e7efff}
 
     /* ── Chart ── */
     .chart-panel{margin-top:22px;overflow:hidden;border:1px solid #e8edf5;border-radius:16px;background:#fff;box-shadow:0 5px 18px rgba(30,41,59,.04)}
@@ -683,7 +669,6 @@ interface NotifyPart { ok: boolean; status: string; recipients?: string[]; error
 
     /* ── Responsive ── */
     @media(max-width:1100px){
-      .metrics-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
       .filter-toolbar{align-items:flex-start;flex-direction:column}
       .filter-form{grid-template-columns:repeat(3,1fr)}
       .filter-form .clear-button{grid-column:span 3}
@@ -713,7 +698,6 @@ export class AdminRevenueComponent implements OnInit {
 
   // ── Data signals ──
   private allPayments = signal<PaymentTransaction[]>([]);
-  private subscriptions = signal<Subscription[]>([]);
 
   // ── UI state ──
   isLoading = signal(false);
@@ -811,24 +795,8 @@ export class AdminRevenueComponent implements OnInit {
       const amount = Number(p.amount) || 0;
       if (p.status === 'completed') s.received += amount;
       if (p.status === 'pending') { s.pendingCount++; s.pendingAmount += amount; }
-      if (p.status === 'failed') { s.failedCount++; s.failedAmount += amount; }
       return s;
-    }, { received: 0, pendingAmount: 0, pendingCount: 0, failedAmount: 0, failedCount: 0 })
-  );
-
-  activeSubscriptions = computed(() =>
-    this.subscriptions().filter(s => s.status === 'active').length
-  );
-
-  mrr = computed(() =>
-    this.subscriptions()
-      .filter(s => s.status === 'active')
-      .reduce((total, s) => {
-        const divisor = s.billing_cycle === 'yearly' ? 12
-          : s.billing_cycle === 'semiannual' ? 6
-          : s.billing_cycle === 'quarterly' ? 3 : 1;
-        return total + (Number(s.amount) || 0) / divisor;
-      }, 0)
+    }, { received: 0, pendingAmount: 0, pendingCount: 0 })
   );
 
   // ── Fase 2: Chart data (last 12 months, completed payments) ──
@@ -862,17 +830,11 @@ export class AdminRevenueComponent implements OnInit {
     this.isLoading.set(true);
     this.loadError.set('');
     try {
-      const [payments, subs] = await Promise.all([
-        this.supabase.db
-          .from('subscription_payments')
-          .select('*, companies(name)')
-          .order('created_at', { ascending: false }),
-        this.supabase.db
-          .from('subscriptions')
-          .select('status, amount, billing_cycle')
-      ]);
+      const payments = await this.supabase.db
+        .from('subscription_payments')
+        .select('*, companies(name)')
+        .order('created_at', { ascending: false });
       if (payments.error) throw payments.error;
-      if (subs.error) throw subs.error;
 
       this.allPayments.set(
         (payments.data ?? []).map((p: any) => ({
@@ -886,9 +848,6 @@ export class AdminRevenueComponent implements OnInit {
           officegest_synced_at: p.officegest_synced_at ?? null,
           updated_at: p.updated_at ?? p.created_at
         }))
-      );
-      this.subscriptions.set(
-        (subs.data ?? []).map((s: any) => ({ ...s, amount: Number(s.amount) || 0 }))
       );
     } catch (error: any) {
       console.error('Erro ao carregar dados financeiros:', error);
@@ -923,6 +882,10 @@ export class AdminRevenueComponent implements OnInit {
   paymentMethodLabel(method: string) {
     return ({ mpesa: 'M-Pesa', emola: 'e-Mola' } as Record<string, string>)[method] ?? method ?? 'Não definido';
   }
+  // Mesma linguagem do front office (página de preços).
+  billingCycleLabel(cycle: string) {
+    return ({ monthly: 'Mensal', quarterly: '3 meses', semiannual: '6 meses', yearly: 'Anual' } as Record<string, string>)[cycle] ?? cycle ?? '—';
+  }
   statusLabel(status: PaymentStatus) {
     return ({ completed: 'Concluído', pending: 'Pendente', failed: 'Falhado', cancelled: 'Cancelado' } as Record<PaymentStatus, string>)[status] ?? status;
   }
@@ -945,7 +908,7 @@ export class AdminRevenueComponent implements OnInit {
       + '\n'
       + rows.map(p => [
           new Date(p.created_at).toLocaleString('pt-MZ'),
-          p.company_name, p.plan_name, p.billing_cycle,
+          p.company_name, p.plan_name, this.billingCycleLabel(p.billing_cycle),
           this.statusLabel(p.status),
           p.officegest_document_number || 'Não emitida',
           this.paymentMethodLabel(p.payment_method),

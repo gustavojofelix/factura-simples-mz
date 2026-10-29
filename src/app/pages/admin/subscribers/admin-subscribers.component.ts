@@ -94,12 +94,16 @@ import { PaginationComponent, PageChangeEvent } from '../../../shared/components
                 </div>
                 <div class="space-y-1">
                   <label class="text-[10px] font-bold text-gray-500 uppercase">Estado Geral</label>
-                  <select [(ngModel)]="editingSub.status" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                  <select [(ngModel)]="editingSub.status" [disabled]="editingSub.id === currentUserId"
+                    class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50">
                     <option value="active">Activo</option>
                     <option value="suspended">Suspenso</option>
                   </select>
                 </div>
               </div>
+              <p *ngIf="editingSub.id === currentUserId" class="text-[10px] text-amber-600 font-medium">
+                ⚠️ Não pode suspender nem remover o seu próprio acesso.
+              </p>
             </div>
 
             <p *ngIf="editError" class="text-xs text-red-600 font-medium px-6 pb-2">{{ editError }}</p>
@@ -277,6 +281,7 @@ import { PaginationComponent, PageChangeEvent } from '../../../shared/components
                         {{ sub.full_name?.charAt(0) || 'U' }}
                       </div>
                       <span class="font-medium text-gray-900 leading-tight">{{ sub.full_name }}</span>
+                      <span *ngIf="sub.id === currentUserId" class="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-extrabold rounded-md uppercase">Você</span>
                     </div>
                   </td>
                   <td class="px-6 py-4 text-sm text-gray-700">
@@ -297,7 +302,7 @@ import { PaginationComponent, PageChangeEvent } from '../../../shared/components
                   </td>
                   <td class="px-6 py-4 text-center">
                     <div class="flex justify-center space-x-3">
-                      <button *ngIf="sub.status !== 'suspended'" (click)="toggleSuspend(sub)"
+                      <button *ngIf="sub.status !== 'suspended' && sub.id !== currentUserId" (click)="toggleSuspend(sub)"
                               title="Suspender" class="text-red-600 hover:text-red-800">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
@@ -364,6 +369,7 @@ export class AdminSubscribersComponent implements OnInit {
   isDetailsOpen = false;
   editingSub: any = {};
   selectedSub = signal<any>({});
+  currentUserId: string | null = null;
 
   // Sorting
   sortColumn = signal<string>('subscriber_code');
@@ -416,7 +422,9 @@ export class AdminSubscribersComponent implements OnInit {
 
   constructor(private supabase: SupabaseService, private auditLogService: AuditLogService, private confirmDialog: ConfirmDialogService) { }
 
-  ngOnInit() {
+  async ngOnInit() {
+    const { data } = await this.supabase.auth.getUser();
+    this.currentUserId = data?.user?.id ?? null;
     this.loadSubscribers();
   }
 
@@ -471,6 +479,8 @@ export class AdminSubscribersComponent implements OnInit {
   }
 
   async toggleSuspend(subscriber: any) {
+    // O administrador não pode bloquear o próprio acesso ao back office.
+    if (subscriber.id === this.currentUserId) return;
     const isSuspending = subscriber.status !== 'suspended';
     const confirmed = await this.confirmDialog.confirm({
       title: isSuspending ? 'Suspender Subscritor?' : 'Ativar Subscritor?',
@@ -525,6 +535,10 @@ export class AdminSubscribersComponent implements OnInit {
   }
 
   async saveSubscriber() {
+    if (this.editingSub.id === this.currentUserId && this.editingSub.status === 'suspended') {
+      this.editError = 'Não pode suspender o seu próprio acesso.';
+      return;
+    }
     const { error } = await this.supabase.db
       .from('profiles')
       .update({

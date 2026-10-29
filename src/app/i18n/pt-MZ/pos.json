@@ -1,0 +1,113 @@
+{
+  "title": "Ponto de Venda",
+  "subtitle": "Vendas rápidas ao balcão · {company}",
+  "demo": {
+    "badge": "Demonstração",
+    "body": "Dados fictícios para apresentação. As vendas registadas ficam apenas neste navegador.",
+    "reset": "Repor dados",
+    "resetTitle": "Repor dados de demonstração",
+    "resetMessage": "As vendas registadas nesta sessão e as alterações de stock serão apagadas.",
+    "resetDone": "Dados de demonstração repostos"
+  },
+  "fullscreen": {
+    "enter": "Ecrã inteiro",
+    "exit": "Sair do ecrã inteiro"
+  },
+  "tabs": {
+    "terminal": "Caixa",
+    "history": "Vendas"
+  },
+  "terminal": {
+    "seller": "Vendedor",
+    "client": "Cliente",
+    "searchPlaceholder": "Pesquisar por nome, código ou código de barras",
+    "allCategories": "Todas",
+    "noProducts": "Nenhum produto encontrado",
+    "outOfStock": "Esgotado",
+    "lowStock": "Restam {count}",
+    "inStock": "Stock: {count}",
+    "service": "Serviço",
+    "stockLimit": "Sem stock suficiente para {name}"
+  },
+  "cart": {
+    "title": "Venda actual",
+    "items": {
+      "zero": "Sem artigos",
+      "one": "{count} artigo",
+      "other": "{count} artigos"
+    },
+    "empty": "Carrinho vazio",
+    "emptyHint": "Toque num produto para o adicionar.",
+    "clear": "Limpar",
+    "subtotal": "Subtotal (sem IVA)",
+    "tax": "IVA incluído",
+    "total": "Total a pagar",
+    "decrease": "Diminuir quantidade",
+    "increase": "Aumentar quantidade",
+    "remove": "Remover artigo",
+    "resize": "Arraste para ajustar a largura (duplo clique repõe)"
+  },
+  "payment": {
+    "title": "Forma de pagamento",
+    "received": "Valor recebido",
+    "exact": "Exacto",
+    "change": "Troco",
+    "short": "Em falta",
+    "missing": "Faltam {amount}",
+    "checkout": "Finalizar venda",
+    "completed": "Venda {number} registada",
+    "methods": {
+      "cash": "Numerário",
+      "mpesa": "M-Pesa",
+      "emola": "e-Mola",
+      "card": "Cartão",
+      "transfer": "Transferência"
+    }
+  },
+  "history": {
+    "todayTotal": "Vendido hoje",
+    "todayCount": {
+      "one": "{count} venda",
+      "other": "{count} vendas"
+    },
+    "averageTicket": "Ticket médio (hoje)",
+    "topSeller": "Melhor vendedor (hoje)",
+    "noSalesToday": "Sem vendas hoje",
+    "byMethod": "Hoje por forma de pagamento",
+    "searchPlaceholder": "Nº da venda ou cliente",
+    "allSellers": "Todos os vendedores",
+    "allMethods": "Todas as formas",
+    "period": "Período",
+    "periods": {
+      "today": "Hoje",
+      "week": "Últimos 7 dias",
+      "all": "Tudo"
+    },
+    "number": "Nº",
+    "date": "Data",
+    "client": "Cliente",
+    "seller": "Vendedor",
+    "method": "Pagamento",
+    "total": "Total",
+    "status": "Estado",
+    "empty": "Nenhuma venda encontrada",
+    "periodTotal": "Total do período: {amount}",
+    "statuses": {
+      "completed": "Concluída",
+      "cancelled": "Anulada"
+    },
+    "cancel": "Anular venda",
+    "cancelTitle": "Anular venda {number}",
+    "cancelMessage": "A venda fica marcada como anulada e as quantidades voltam ao stock.",
+    "cancelled": "Venda {number} anulada"
+  },
+  "receipt": {
+    "title": "Venda concluída",
+    "titleView": "Venda {number}",
+    "newSale": "Nova venda",
+    "qty": "Qtd",
+    "unitPrice": "P. unit.",
+    "received": "Recebido",
+    "change": "Troco"
+  }
+}
