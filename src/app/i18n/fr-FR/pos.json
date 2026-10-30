@@ -1,32 +1,73 @@
 {
   "title": "Point de vente",
-  "subtitle": "Ventes rapides au comptoir · {company}",
   "demo": {
     "badge": "Démonstration",
-    "body": "Données fictives pour la présentation. Les ventes enregistrées restent uniquement dans ce navigateur.",
-    "reset": "Réinitialiser",
+    "body": "Données fictives pour la présentation. Tout ce que vous enregistrez reste uniquement sur cet appareil.",
+    "reset": "Réinitialiser la démonstration",
     "resetTitle": "Réinitialiser les données de démonstration",
-    "resetMessage": "Les ventes enregistrées pendant cette session et les modifications de stock seront effacées.",
+    "resetMessage": "Les ventes, sessions de caisse, tables ouvertes et modifications de stock de cet appareil seront effacées.",
     "resetDone": "Données de démonstration réinitialisées"
   },
   "fullscreen": {
     "enter": "Plein écran",
     "exit": "Quitter le plein écran"
   },
+  "app": {
+    "install": "Installer l'application",
+    "installIosTitle": "Installer sur iPhone/iPad",
+    "installIosBody": "Touchez Partager, puis « Sur l'écran d'accueil »."
+  },
+  "menu": {
+    "open": "Menu du POS",
+    "cashIn": "Entrée d'espèces",
+    "cashOut": "Sortie d'espèces",
+    "xReport": "Rapport X (lecture partielle)",
+    "closeSession": "Clôturer la caisse",
+    "lock": "Verrouiller / changer d'opérateur",
+    "settings": "Paramètres du terminal",
+    "backOffice": "Ouvrir le back-office"
+  },
+  "session": {
+    "label": "Caisse n° {number}"
+  },
+  "roles": {
+    "cashier": "Caissier",
+    "waiter": "Serveur",
+    "manager": "Responsable"
+  },
+  "pin": {
+    "clear": "Effacer",
+    "back": "Supprimer"
+  },
+  "access": {
+    "openTitle": "Ouverture de caisse",
+    "unlockTitle": "Terminal verrouillé",
+    "sessionOpenSince": "Caisse n° {number} ouverte depuis {date}",
+    "chooseOperator": "Qui utilise la caisse ?",
+    "enterPin": "Saisissez votre PIN",
+    "openingFloat": "Fonds de caisse",
+    "openingFloatHint": "Espèces laissées dans le tiroir pour rendre la monnaie en début de service.",
+    "openSession": "Ouvrir la caisse",
+    "demoPins": "Démonstration — PIN : {pins}"
+  },
+  "authorize": {
+    "title": "Autorisation du responsable",
+    "settings": "Modifier les paramètres du terminal exige le PIN d'un responsable.",
+    "cancel": "Annuler la vente {number} exige le PIN d'un responsable."
+  },
   "tabs": {
-    "terminal": "Caisse",
+    "tables": "Tables",
+    "terminal": "Vente",
     "history": "Ventes"
   },
   "terminal": {
-    "seller": "Vendeur",
     "client": "Client",
-    "searchPlaceholder": "Rechercher par nom, code ou code-barres",
+    "searchPlaceholder": "Rechercher ou scanner un code-barres",
     "allCategories": "Toutes",
     "noProducts": "Aucun produit trouvé",
     "outOfStock": "Épuisé",
     "lowStock": "Plus que {count}",
     "inStock": "Stock : {count}",
-    "service": "Service",
     "stockLimit": "Stock insuffisant pour {name}"
   },
   "cart": {
@@ -47,14 +88,20 @@
     "remove": "Retirer l'article",
     "resize": "Faites glisser pour ajuster la largeur (double-clic pour réinitialiser)"
   },
+  "documents": {
+    "label": "Document à émettre",
+    "VD": "Ticket (VD)",
+    "FR": "Facture-reçu",
+    "clientName": "Nom du client"
+  },
   "payment": {
     "title": "Mode de paiement",
     "received": "Montant reçu",
     "exact": "Exact",
     "change": "Monnaie",
     "short": "Manquant",
-    "missing": "Il manque {amount}",
     "checkout": "Valider la vente",
+    "checkoutShort": "Encaisser",
     "completed": "Vente {number} enregistrée",
     "methods": {
       "cash": "Espèces",
@@ -64,6 +111,31 @@
       "transfer": "Virement"
     }
   },
+  "tables": {
+    "allZones": "Toutes",
+    "free": "Libre",
+    "busy": "Occupées",
+    "counter": "Comptoir / À emporter",
+    "counterHint": "Vente sans table",
+    "table": "Table",
+    "covers": {
+      "one": "{count} couvert",
+      "other": "{count} couverts"
+    },
+    "coversLabel": "Nombre de couverts",
+    "unsent": {
+      "one": "{count} à envoyer",
+      "other": "{count} à envoyer"
+    },
+    "send": "Envoyer",
+    "bill": "Addition",
+    "transfer": "Déplacer",
+    "newItems": "{count} nouveau(x)",
+    "sentShort": "envoyé",
+    "sent": "Commande de la table {table} envoyée en cuisine/au bar",
+    "transferred": "La table {from} est passée à la table {to}",
+    "perPerson": "{amount} par personne ({count})"
+  },
   "history": {
     "todayTotal": "Vendu aujourd'hui",
     "todayCount": {
@@ -71,43 +143,88 @@
       "other": "{count} ventes"
     },
     "averageTicket": "Panier moyen (aujourd'hui)",
-    "topSeller": "Meilleur vendeur (aujourd'hui)",
+    "topSeller": "Meilleur opérateur (aujourd'hui)",
     "noSalesToday": "Aucune vente aujourd'hui",
     "byMethod": "Aujourd'hui par mode de paiement",
-    "searchPlaceholder": "N° de vente ou client",
-    "allSellers": "Tous les vendeurs",
+    "searchPlaceholder": "N° de document ou client",
+    "allSellers": "Tous les opérateurs",
     "allMethods": "Tous les modes",
     "period": "Période",
     "periods": {
+      "session": "Cette caisse",
       "today": "Aujourd'hui",
       "week": "7 derniers jours",
       "all": "Tout"
     },
-    "number": "N°",
-    "date": "Date",
-    "client": "Client",
-    "seller": "Vendeur",
-    "method": "Paiement",
-    "total": "Total",
-    "status": "Statut",
+    "seller": "Opérateur",
     "empty": "Aucune vente trouvée",
-    "periodTotal": "Total de la période : {amount}",
+    "periodTotal": "Total : {amount}",
     "statuses": {
       "completed": "Terminée",
       "cancelled": "Annulée"
     },
     "cancel": "Annuler la vente",
-    "cancelTitle": "Annuler la vente {number}",
-    "cancelMessage": "La vente sera marquée comme annulée et les quantités remises en stock.",
-    "cancelled": "Vente {number} annulée"
+    "cancelTitle": "Annuler {number}",
+    "cancelMessage": "Le document sera annulé et les quantités remises en stock.",
+    "cancelled": "{number} annulée"
   },
   "receipt": {
     "title": "Vente terminée",
-    "titleView": "Vente {number}",
     "newSale": "Nouvelle vente",
-    "qty": "Qté",
-    "unitPrice": "P.U.",
-    "received": "Reçu",
     "change": "Monnaie"
+  },
+  "movement": {
+    "inTitle": "Entrée d'espèces",
+    "outTitle": "Sortie d'espèces",
+    "hint": "Elle est enregistrée dans la session de caisse et prise en compte à la clôture.",
+    "amount": "Montant",
+    "reason": "Motif",
+    "notePlaceholder": "Remarque (facultatif)",
+    "reasons": {
+      "change": "Complément de monnaie",
+      "supplier": "Paiement fournisseur",
+      "deposit": "Dépôt en banque",
+      "expense": "Dépense du magasin",
+      "other": "Autre"
+    },
+    "inDone": "Entrée enregistrée",
+    "outDone": "Sortie enregistrée"
+  },
+  "close": {
+    "title": "Clôturer la caisse n° {number}",
+    "openedAt": "Ouverte le {date} par {name}",
+    "sales": "Ventes",
+    "cancelled": "Annulées",
+    "float": "Fonds de caisse",
+    "ins": "Entrées",
+    "outs": "Sorties",
+    "expected": "Espèces attendues dans le tiroir",
+    "count": "Comptage du tiroir",
+    "countNotes": "Saisir uniquement le total",
+    "enterTotal": "Compter billets et pièces",
+    "counted": "Compté",
+    "balanced": "Caisse juste",
+    "over": "Excédent",
+    "short": "Manque",
+    "notesPlaceholder": "Remarques de clôture (facultatif)",
+    "confirm": "Clôturer et imprimer le rapport Z",
+    "tablesOpen": {
+      "one": "Il reste {count} table ouverte. Encaissez-la ou déplacez-la avant de clôturer.",
+      "other": "Il reste {count} tables ouvertes. Encaissez-les avant de clôturer."
+    },
+    "done": "Caisse n° {number} clôturée"
+  },
+  "settings": {
+    "title": "Paramètres du terminal",
+    "hint": "Ils s'appliquent uniquement à cet appareil.",
+    "mode": "Type d'activité",
+    "modes": {
+      "retail": "Magasin / Commerce",
+      "restaurant": "Restaurant"
+    },
+    "document": "Document par défaut",
+    "paper": "Largeur du papier de l'imprimante",
+    "terminalName": "Nom du terminal",
+    "saved": "Paramètres enregistrés"
   }
 }

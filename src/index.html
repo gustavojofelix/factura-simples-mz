@@ -5,6 +5,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <base href="/">
+    <script>
+      // <conta>.ispcfacil.com/pos abre o POS como aplicação à parte (o router usa #/).
+      (function () {
+        var path = location.pathname.replace(/\/+$/, '');
+        if (path === '/pos') history.replaceState(null, '', '/' + (location.hash.indexOf('#/pos') === 0 ? location.hash : '#/pos'));
+        if (location.hash.indexOf('#/pos') === 0) {
+          var link = document.createElement('link');
+          link.rel = 'manifest';
+          link.href = 'assets/pos/pos.webmanifest';
+          document.head.appendChild(link);
+        }
+      })();
+    </script>
     <meta name="description" content="Sistema de facturação inteligente para pequenos e médios negócios em Moçambique. Emita facturas, calcule o ISPC automaticamente e cresça o seu negócio com confiança." />
     <meta name="keywords" content="facturação, ISPC, Moçambique, sistema de facturação, gestão de negócios, facturas" />
     <meta property="og:title" content="ISPC Fácil — Facturação Simplificada para Moçambique" />

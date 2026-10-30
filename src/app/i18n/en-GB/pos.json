@@ -1,32 +1,73 @@
 {
   "title": "Point of Sale",
-  "subtitle": "Quick counter sales · {company}",
   "demo": {
     "badge": "Demo",
-    "body": "Sample data for presentation. Sales recorded here are kept in this browser only.",
-    "reset": "Reset data",
+    "body": "Sample data for presentation. Everything you record stays on this device only.",
+    "reset": "Reset demo data",
     "resetTitle": "Reset demo data",
-    "resetMessage": "Sales recorded in this session and stock changes will be erased.",
+    "resetMessage": "Sales, till sessions, open tables and stock changes on this device will be erased.",
     "resetDone": "Demo data reset"
   },
   "fullscreen": {
     "enter": "Full screen",
     "exit": "Exit full screen"
   },
+  "app": {
+    "install": "Install app",
+    "installIosTitle": "Install on iPhone/iPad",
+    "installIosBody": "Tap Share, then \"Add to Home Screen\"."
+  },
+  "menu": {
+    "open": "POS menu",
+    "cashIn": "Cash in",
+    "cashOut": "Cash out",
+    "xReport": "X report (partial reading)",
+    "closeSession": "Close till",
+    "lock": "Lock / switch operator",
+    "settings": "Terminal settings",
+    "backOffice": "Open back office"
+  },
+  "session": {
+    "label": "Till no. {number}"
+  },
+  "roles": {
+    "cashier": "Cashier",
+    "waiter": "Waiter",
+    "manager": "Manager"
+  },
+  "pin": {
+    "clear": "Clear",
+    "back": "Delete"
+  },
+  "access": {
+    "openTitle": "Open till",
+    "unlockTitle": "Terminal locked",
+    "sessionOpenSince": "Till no. {number} open since {date}",
+    "chooseOperator": "Who is operating?",
+    "enterPin": "Enter your PIN",
+    "openingFloat": "Opening float",
+    "openingFloatHint": "Cash left in the drawer for change at the start of the shift.",
+    "openSession": "Open till",
+    "demoPins": "Demo — PINs: {pins}"
+  },
+  "authorize": {
+    "title": "Manager authorisation",
+    "settings": "Changing the terminal settings requires a manager's PIN.",
+    "cancel": "Cancelling sale {number} requires a manager's PIN."
+  },
   "tabs": {
-    "terminal": "Till",
+    "tables": "Tables",
+    "terminal": "Sale",
     "history": "Sales"
   },
   "terminal": {
-    "seller": "Salesperson",
     "client": "Customer",
-    "searchPlaceholder": "Search by name, code or barcode",
+    "searchPlaceholder": "Search or scan a barcode",
     "allCategories": "All",
     "noProducts": "No products found",
     "outOfStock": "Out of stock",
     "lowStock": "{count} left",
     "inStock": "Stock: {count}",
-    "service": "Service",
     "stockLimit": "Not enough stock for {name}"
   },
   "cart": {
@@ -47,14 +88,20 @@
     "remove": "Remove item",
     "resize": "Drag to adjust the width (double-click resets)"
   },
+  "documents": {
+    "label": "Document to issue",
+    "VD": "Receipt (VD)",
+    "FR": "Invoice-Receipt",
+    "clientName": "Customer name"
+  },
   "payment": {
     "title": "Payment method",
     "received": "Amount received",
     "exact": "Exact",
     "change": "Change",
     "short": "Short",
-    "missing": "{amount} short",
     "checkout": "Complete sale",
+    "checkoutShort": "Charge",
     "completed": "Sale {number} recorded",
     "methods": {
       "cash": "Cash",
@@ -64,6 +111,31 @@
       "transfer": "Bank transfer"
     }
   },
+  "tables": {
+    "allZones": "All",
+    "free": "Free",
+    "busy": "Occupied",
+    "counter": "Counter / Take-away",
+    "counterHint": "Sale without a table",
+    "table": "Table",
+    "covers": {
+      "one": "{count} guest",
+      "other": "{count} guests"
+    },
+    "coversLabel": "Number of guests",
+    "unsent": {
+      "one": "{count} to send",
+      "other": "{count} to send"
+    },
+    "send": "Send",
+    "bill": "Bill",
+    "transfer": "Move",
+    "newItems": "{count} new",
+    "sentShort": "sent",
+    "sent": "Table {table} order sent to the kitchen/bar",
+    "transferred": "Table {from} moved to table {to}",
+    "perPerson": "{amount} per guest ({count})"
+  },
   "history": {
     "todayTotal": "Sold today",
     "todayCount": {
@@ -71,43 +143,88 @@
       "other": "{count} sales"
     },
     "averageTicket": "Average ticket (today)",
-    "topSeller": "Top salesperson (today)",
+    "topSeller": "Top operator (today)",
     "noSalesToday": "No sales today",
     "byMethod": "Today by payment method",
-    "searchPlaceholder": "Sale no. or customer",
-    "allSellers": "All salespeople",
+    "searchPlaceholder": "Document no. or customer",
+    "allSellers": "All operators",
     "allMethods": "All methods",
     "period": "Period",
     "periods": {
+      "session": "This till",
       "today": "Today",
       "week": "Last 7 days",
       "all": "All"
     },
-    "number": "No.",
-    "date": "Date",
-    "client": "Customer",
-    "seller": "Salesperson",
-    "method": "Payment",
-    "total": "Total",
-    "status": "Status",
+    "seller": "Operator",
     "empty": "No sales found",
-    "periodTotal": "Period total: {amount}",
+    "periodTotal": "Total: {amount}",
     "statuses": {
       "completed": "Completed",
       "cancelled": "Cancelled"
     },
     "cancel": "Cancel sale",
-    "cancelTitle": "Cancel sale {number}",
-    "cancelMessage": "The sale will be marked as cancelled and the quantities returned to stock.",
-    "cancelled": "Sale {number} cancelled"
+    "cancelTitle": "Cancel {number}",
+    "cancelMessage": "The document will be cancelled and the quantities returned to stock.",
+    "cancelled": "{number} cancelled"
   },
   "receipt": {
     "title": "Sale completed",
-    "titleView": "Sale {number}",
     "newSale": "New sale",
-    "qty": "Qty",
-    "unitPrice": "Unit price",
-    "received": "Received",
     "change": "Change"
+  },
+  "movement": {
+    "inTitle": "Cash in",
+    "outTitle": "Cash out",
+    "hint": "It is recorded in the till session and counted at closing.",
+    "amount": "Amount",
+    "reason": "Reason",
+    "notePlaceholder": "Note (optional)",
+    "reasons": {
+      "change": "Extra change",
+      "supplier": "Supplier payment",
+      "deposit": "Bank deposit",
+      "expense": "Shop expense",
+      "other": "Other"
+    },
+    "inDone": "Cash in recorded",
+    "outDone": "Cash out recorded"
+  },
+  "close": {
+    "title": "Close till no. {number}",
+    "openedAt": "Opened on {date} by {name}",
+    "sales": "Sales",
+    "cancelled": "Cancelled",
+    "float": "Opening float",
+    "ins": "Cash in",
+    "outs": "Cash out",
+    "expected": "Expected cash in drawer",
+    "count": "Drawer count",
+    "countNotes": "Enter the total only",
+    "enterTotal": "Count notes and coins",
+    "counted": "Counted",
+    "balanced": "Till balanced",
+    "over": "Over",
+    "short": "Short",
+    "notesPlaceholder": "Closing notes (optional)",
+    "confirm": "Close and print Z report",
+    "tablesOpen": {
+      "one": "There is {count} open table. Charge or move it before closing the till.",
+      "other": "There are {count} open tables. Charge them before closing the till."
+    },
+    "done": "Till no. {number} closed"
+  },
+  "settings": {
+    "title": "Terminal settings",
+    "hint": "These apply to this device only.",
+    "mode": "Type of business",
+    "modes": {
+      "retail": "Shop / Retail",
+      "restaurant": "Restaurant"
+    },
+    "document": "Default document",
+    "paper": "Printer paper width",
+    "terminalName": "Terminal name",
+    "saved": "Settings saved"
   }
 }

@@ -70,11 +70,20 @@
           <div class="pt-3 first:pt-0">
             <p class="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">{{ group.label }}</p>
             @for (item of group.items; track item.route) {
+          @if (item.newTab) {
+          <a [href]="item.route" target="_blank" rel="noopener"
+          class="nav-item group flex items-center px-3 py-2.5 text-slate-600 rounded-xl hover:bg-slate-50 hover:text-slate-900 transition-all duration-200">
+          <i class="nav-fa-icon fa-solid {{ item.icon }} mr-3 text-slate-400 group-hover:text-orange-500 transition-colors" aria-hidden="true"></i>
+          <span class="text-sm font-medium flex-1">{{ item.label }}</span>
+          <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-300" aria-hidden="true"></i>
+        </a>
+          } @else {
           <a [routerLink]="item.route" routerLinkActive="nav-item-active" [routerLinkActiveOptions]="{ exact: true }"
           class="nav-item group flex items-center px-3 py-2.5 text-slate-600 rounded-xl hover:bg-slate-50 hover:text-slate-900 transition-all duration-200">
           <i class="nav-fa-icon fa-solid {{ item.icon }} mr-3 text-slate-400 group-hover:text-orange-500 transition-colors" aria-hidden="true"></i>
           <span class="text-sm font-medium">{{ item.label }}</span>
         </a>
+          }
             }
           </div>
         }
@@ -201,6 +210,14 @@
 
         <nav class="flex-1 px-1 py-2 space-y-1 overflow-y-auto custom-scrollbar">
           @for (item of filteredMenuItems(); track item.route) {
+          @if (item.newTab) {
+          <a [href]="item.route" target="_blank" rel="noopener" (click)="toggleMobileMenu()"
+            class="flex items-center px-4 py-3 text-slate-700 rounded-lg hover:bg-slate-100/50 transition-all duration-150">
+            <i class="nav-fa-icon fa-solid {{ item.icon }} mr-3 text-slate-500" aria-hidden="true"></i>
+            <span class="text-sm font-medium flex-1">{{ item.label }}</span>
+            <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-300" aria-hidden="true"></i>
+          </a>
+          } @else {
           <a [routerLink]="item.route" (click)="toggleMobileMenu()"
             routerLinkActive="nav-item-active"
             [routerLinkActiveOptions]="{ exact: true }"
@@ -208,6 +225,7 @@
             <i class="nav-fa-icon fa-solid {{ item.icon }} mr-3 text-slate-500" aria-hidden="true"></i>
             <span class="text-sm font-medium">{{ item.label }}</span>
           </a>
+          }
           }
         </nav>
       </div>

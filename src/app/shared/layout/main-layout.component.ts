@@ -24,11 +24,14 @@ import { SupportContactDialogComponent } from '../components/support-contact-dia
 import { effect } from '@angular/core';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { t } from '../../core/i18n/i18n';
+import { Capacitor } from '@capacitor/core';
 
 interface MenuItem {
   icon: string;
   label: string;
   route: string;
+  /** Abre como aplicação à parte num separador novo (na web). */
+  newTab?: boolean;
 }
 
 @Component({
@@ -63,7 +66,7 @@ export class MainLayoutComponent {
   menuItems: MenuItem[] = [
     { icon: 'fa-house', label: t('layout.nav.dashboard'), route: '/painel' },
     { icon: 'fa-headset', label: t('layout.nav.assistant'), route: '/assistente' },
-    { icon: 'fa-cash-register', label: t('layout.nav.pos'), route: '/pos' },
+    { icon: 'fa-cash-register', label: t('layout.nav.pos'), route: '/pos', newTab: !Capacitor.isNativePlatform() },
     { icon: 'fa-file-invoice-dollar', label: t('layout.nav.invoices'), route: '/facturas' },
     { icon: 'fa-address-book', label: t('layout.nav.clients'), route: '/clientes' },
     { icon: 'fa-boxes-stacked', label: t('layout.nav.products'), route: '/produtos' },

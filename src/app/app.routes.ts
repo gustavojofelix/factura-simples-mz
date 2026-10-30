@@ -3,7 +3,6 @@ import { authGuard, guestGuard } from './core/guards/auth.guard';
 import { adminGuard, adminGuestGuard } from './core/guards/admin.guard';
 import { roleGuard, REPORT_ROLES } from './core/guards/role.guard';
 import { subscriptionGuard } from './core/guards/subscription.guard';
-import { activeCompanyGuard } from './core/guards/active-company.guard';
 import {
   accountGuard,
   accountLandingGuard,
@@ -57,18 +56,11 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () => import('./pages/account/account-denied.component').then(m => m.AccountDeniedComponent)
   },
-  // Ponto de Venda: ecrã inteiro, fora do layout principal (sem menu lateral).
+  // Ponto de Venda: aplicação à parte em /pos (o index.html reencaminha /pos para #/pos).
+  // Demonstração com dados JSON: sem login, a entrada é feita com o PIN do operador.
   {
     path: 'pos',
-    canActivate: [authGuard, accountGuard],
-    canActivateChild: [subscriptionGuard],
-    children: [
-      {
-        path: '',
-        canActivate: [activeCompanyGuard],
-        loadComponent: () => import('./pages/pos/pos.component').then(m => m.PosComponent)
-      }
-    ]
+    loadComponent: () => import('./pages/pos/pos.component').then(m => m.PosComponent)
   },
   {
     path: '',

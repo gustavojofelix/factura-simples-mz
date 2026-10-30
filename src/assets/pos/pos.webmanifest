@@ -1,0 +1,17 @@
+{
+  "name": "ISPC Fácil POS",
+  "short_name": "ISPC POS",
+  "description": "Ponto de Venda do ISPC Fácil",
+  "id": "/pos",
+  "start_url": "/pos",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f172a",
+  "lang": "pt-MZ",
+  "icons": [
+    { "src": "/assets/pos/pos-icon.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" }
+  ]
+}

@@ -1,32 +1,73 @@
 {
   "title": "Ponto de Venda",
-  "subtitle": "Vendas rápidas ao balcão · {company}",
   "demo": {
     "badge": "Demonstração",
-    "body": "Dados fictícios para apresentação. As vendas registadas ficam apenas neste navegador.",
-    "reset": "Repor dados",
+    "body": "Dados fictícios para apresentação. Tudo o que registar fica apenas neste dispositivo.",
+    "reset": "Repor dados de demonstração",
     "resetTitle": "Repor dados de demonstração",
-    "resetMessage": "As vendas registadas nesta sessão e as alterações de stock serão apagadas.",
+    "resetMessage": "Vendas, sessões de caixa, mesas abertas e alterações de stock deste dispositivo serão apagadas.",
     "resetDone": "Dados de demonstração repostos"
   },
   "fullscreen": {
     "enter": "Ecrã inteiro",
     "exit": "Sair do ecrã inteiro"
   },
+  "app": {
+    "install": "Instalar aplicação",
+    "installIosTitle": "Instalar no iPhone/iPad",
+    "installIosBody": "Toque em Partilhar e depois em \"Adicionar ao ecrã principal\"."
+  },
+  "menu": {
+    "open": "Menu do POS",
+    "cashIn": "Entrada de dinheiro",
+    "cashOut": "Saída de dinheiro",
+    "xReport": "Relatório X (leitura parcial)",
+    "closeSession": "Fechar caixa",
+    "lock": "Bloquear / trocar operador",
+    "settings": "Definições do terminal",
+    "backOffice": "Abrir back-office"
+  },
+  "session": {
+    "label": "Caixa nº {number}"
+  },
+  "roles": {
+    "cashier": "Caixa",
+    "waiter": "Empregado de mesa",
+    "manager": "Gestor"
+  },
+  "pin": {
+    "clear": "Limpar",
+    "back": "Apagar"
+  },
+  "access": {
+    "openTitle": "Abertura de caixa",
+    "unlockTitle": "Terminal bloqueado",
+    "sessionOpenSince": "Caixa nº {number} aberta desde {date}",
+    "chooseOperator": "Quem está a operar?",
+    "enterPin": "Introduza o seu PIN",
+    "openingFloat": "Fundo de caixa",
+    "openingFloatHint": "Dinheiro que fica na gaveta para trocos no início do turno.",
+    "openSession": "Abrir caixa",
+    "demoPins": "Demonstração — PINs: {pins}"
+  },
+  "authorize": {
+    "title": "Autorização do gestor",
+    "settings": "Alterar as definições do terminal exige o PIN de um gestor.",
+    "cancel": "Anular a venda {number} exige o PIN de um gestor."
+  },
   "tabs": {
-    "terminal": "Caixa",
+    "tables": "Mesas",
+    "terminal": "Venda",
     "history": "Vendas"
   },
   "terminal": {
-    "seller": "Vendedor",
     "client": "Cliente",
-    "searchPlaceholder": "Pesquisar por nome, código ou código de barras",
+    "searchPlaceholder": "Pesquisar ou ler código de barras",
     "allCategories": "Todas",
     "noProducts": "Nenhum produto encontrado",
     "outOfStock": "Esgotado",
     "lowStock": "Restam {count}",
     "inStock": "Stock: {count}",
-    "service": "Serviço",
     "stockLimit": "Sem stock suficiente para {name}"
   },
   "cart": {
@@ -47,14 +88,20 @@
     "remove": "Remover artigo",
     "resize": "Arraste para ajustar a largura (duplo clique repõe)"
   },
+  "documents": {
+    "label": "Documento a emitir",
+    "VD": "Talão (VD)",
+    "FR": "Factura-Recibo",
+    "clientName": "Nome do cliente"
+  },
   "payment": {
     "title": "Forma de pagamento",
     "received": "Valor recebido",
     "exact": "Exacto",
     "change": "Troco",
     "short": "Em falta",
-    "missing": "Faltam {amount}",
     "checkout": "Finalizar venda",
+    "checkoutShort": "Cobrar",
     "completed": "Venda {number} registada",
     "methods": {
       "cash": "Numerário",
@@ -64,6 +111,31 @@
       "transfer": "Transferência"
     }
   },
+  "tables": {
+    "allZones": "Todas",
+    "free": "Livre",
+    "busy": "Ocupadas",
+    "counter": "Balcão / Take-away",
+    "counterHint": "Venda sem mesa",
+    "table": "Mesa",
+    "covers": {
+      "one": "{count} pessoa",
+      "other": "{count} pessoas"
+    },
+    "coversLabel": "Número de pessoas",
+    "unsent": {
+      "one": "{count} por enviar",
+      "other": "{count} por enviar"
+    },
+    "send": "Enviar",
+    "bill": "Conta",
+    "transfer": "Mudar",
+    "newItems": "{count} novo(s)",
+    "sentShort": "enviado",
+    "sent": "Pedido da mesa {table} enviado para a cozinha/bar",
+    "transferred": "Mesa {from} passou para a mesa {to}",
+    "perPerson": "{amount} por pessoa ({count})"
+  },
   "history": {
     "todayTotal": "Vendido hoje",
     "todayCount": {
@@ -71,43 +143,88 @@
       "other": "{count} vendas"
     },
     "averageTicket": "Ticket médio (hoje)",
-    "topSeller": "Melhor vendedor (hoje)",
+    "topSeller": "Melhor operador (hoje)",
     "noSalesToday": "Sem vendas hoje",
     "byMethod": "Hoje por forma de pagamento",
-    "searchPlaceholder": "Nº da venda ou cliente",
-    "allSellers": "Todos os vendedores",
+    "searchPlaceholder": "Nº do documento ou cliente",
+    "allSellers": "Todos os operadores",
     "allMethods": "Todas as formas",
     "period": "Período",
     "periods": {
+      "session": "Esta caixa",
       "today": "Hoje",
       "week": "Últimos 7 dias",
       "all": "Tudo"
     },
-    "number": "Nº",
-    "date": "Data",
-    "client": "Cliente",
-    "seller": "Vendedor",
-    "method": "Pagamento",
-    "total": "Total",
-    "status": "Estado",
+    "seller": "Operador",
     "empty": "Nenhuma venda encontrada",
-    "periodTotal": "Total do período: {amount}",
+    "periodTotal": "Total: {amount}",
     "statuses": {
       "completed": "Concluída",
       "cancelled": "Anulada"
     },
     "cancel": "Anular venda",
-    "cancelTitle": "Anular venda {number}",
-    "cancelMessage": "A venda fica marcada como anulada e as quantidades voltam ao stock.",
-    "cancelled": "Venda {number} anulada"
+    "cancelTitle": "Anular {number}",
+    "cancelMessage": "O documento fica anulado e as quantidades voltam ao stock.",
+    "cancelled": "{number} anulada"
   },
   "receipt": {
     "title": "Venda concluída",
-    "titleView": "Venda {number}",
     "newSale": "Nova venda",
-    "qty": "Qtd",
-    "unitPrice": "P. unit.",
-    "received": "Recebido",
     "change": "Troco"
+  },
+  "movement": {
+    "inTitle": "Entrada de dinheiro",
+    "outTitle": "Saída de dinheiro",
+    "hint": "Fica registada na sessão de caixa e entra nas contas do fecho.",
+    "amount": "Valor",
+    "reason": "Motivo",
+    "notePlaceholder": "Observação (opcional)",
+    "reasons": {
+      "change": "Reforço de trocos",
+      "supplier": "Pagamento a fornecedor",
+      "deposit": "Depósito no banco",
+      "expense": "Despesa da loja",
+      "other": "Outro"
+    },
+    "inDone": "Entrada registada",
+    "outDone": "Saída registada"
+  },
+  "close": {
+    "title": "Fechar caixa nº {number}",
+    "openedAt": "Aberta em {date} por {name}",
+    "sales": "Vendas",
+    "cancelled": "Anuladas",
+    "float": "Fundo de caixa",
+    "ins": "Entradas",
+    "outs": "Saídas",
+    "expected": "Numerário esperado na gaveta",
+    "count": "Contagem da gaveta",
+    "countNotes": "Introduzir só o total",
+    "enterTotal": "Contar por notas e moedas",
+    "counted": "Contado",
+    "balanced": "Caixa certa",
+    "over": "Sobra",
+    "short": "Falta",
+    "notesPlaceholder": "Observações do fecho (opcional)",
+    "confirm": "Fechar e imprimir relatório Z",
+    "tablesOpen": {
+      "one": "Há {count} mesa aberta. Cobre-a ou transfira-a antes de fechar a caixa.",
+      "other": "Há {count} mesas abertas. Cobre-as antes de fechar a caixa."
+    },
+    "done": "Caixa nº {number} fechada"
+  },
+  "settings": {
+    "title": "Definições do terminal",
+    "hint": "Aplicam-se só a este dispositivo.",
+    "mode": "Tipo de negócio",
+    "modes": {
+      "retail": "Loja / Retalho",
+      "restaurant": "Restaurante"
+    },
+    "document": "Documento por omissão",
+    "paper": "Largura do papel da impressora",
+    "terminalName": "Nome do terminal",
+    "saved": "Definições guardadas"
   }
 }
