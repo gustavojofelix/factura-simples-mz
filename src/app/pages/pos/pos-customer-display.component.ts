@@ -72,11 +72,11 @@ type DisplayState = PosDisplayState;
     .center { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4vh 4vw; }
     .logo { width: min(28vh, 260px); border-radius: 32px; background: #fff; margin-bottom: 4vh; }
     h1 { font-family: Inter, system-ui, sans-serif; font-size: clamp(32px, 7vh, 72px); font-weight: 800; line-height: 1.15; margin: 0 0 1.5vh; }
-    .muted { color: #94a3b8; font-size: clamp(16px, 2.6vh, 24px); margin: 6px 0; }
-    .store { margin-top: 4vh; color: #f16c39; font-weight: 700; font-size: clamp(16px, 3vh, 28px); }
+    .muted { color: #94a3b8; font-size: clamp(14px, 2.6vh, 24px); line-height: 1.3; margin: 6px 0; }
+    .store { margin-top: 4vh; line-height: 1.3; color: #f16c39; font-weight: 700; font-size: clamp(14px, 3vh, 28px); }
     .check { width: 14vh; height: 14vh; border-radius: 50%; background: #22c55e; display: flex; align-items: center; justify-content: center; font-size: 7vh; margin-bottom: 3vh; }
-    .change-label { margin-top: 4vh; color: #86efac; font-size: clamp(18px, 3vh, 28px); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; }
-    .change { font-size: clamp(48px, 13vh, 140px); font-weight: 900; color: #4ade80; margin: 0; }
+    .change-label { margin: 4vh 0 0; line-height: 1.3; color: #86efac; font-size: clamp(14px, 3vh, 28px); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; }
+    .change { font-size: clamp(32px, 13vh, 140px); font-weight: 900; line-height: 1.1; color: #4ade80; margin: .5vh 0 0; }
     .grid { height: 100%; display: grid; grid-template-columns: 1.4fr 1fr; }
     @media (max-aspect-ratio: 1/1) { .grid { grid-template-columns: 1fr; grid-template-rows: 1fr auto; } }
     .lines { display: flex; flex-direction: column; min-height: 0; padding: 4vh 3vw; }
