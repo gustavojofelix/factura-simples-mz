@@ -10,7 +10,7 @@ import {
   POS_COUNTER_CART,
   POS_PAYMENT_METHODS,
   POS_WALK_IN_CLIENT_ID,
-  PosDocumentType,
+  PosPayment,
   PosPaymentMethod,
   PosProduct,
   PosSale,
@@ -19,6 +19,7 @@ import {
   isValidNuit,
   toSaleItem
 } from '../../core/services/pos.service';
+import { POS_DISPLAY_CHANNEL, PosDisplayMessage, PosDisplayState } from './pos-display';
 import { ToastService } from '../../core/services/toast.service';
 import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
@@ -31,10 +32,14 @@ import { PosTablesComponent } from './pos-tables.component';
 import {
   PosAuthorizeDialogComponent,
   PosCloseDialogComponent,
+  PosDiscountDialogComponent,
+  PosDiscountResult,
   PosMovementDialogComponent,
+  PosRefundDialogComponent,
+  PosRefundResult,
   PosSettingsDialogComponent
 } from './pos-dialogs.component';
-import { printBill, printKitchenOrder, printZReport } from './pos-print';
+import { printBill, printKitchenOrder, printSale, printZReport } from './pos-print';
 import { formatPosDate, formatPosMoney, formatPosTime } from './pos-format';
 
 type PosTab = 'tables' | 'terminal' | 'history';
@@ -100,7 +105,7 @@ const POS_HEAD: { tag: string; attrs: Record<string, string> }[] = [
 })
 export class PosComponent implements OnInit, OnDestroy {
   readonly paymentMethods = POS_PAYMENT_METHODS;
-  readonly documentTypes: PosDocumentType[] = ['VD', 'FR'];
+  readonly documentTypes: ('VD' | 'FR')[] = ['VD', 'FR'];
   readonly counterCart = POS_COUNTER_CART;
   readonly lowStock = LOW_STOCK;
   readonly isNative = Capacitor.isNativePlatform();
@@ -128,7 +133,7 @@ export class PosComponent implements OnInit, OnDestroy {
   clientId = signal<string>(POS_WALK_IN_CLIENT_ID);
   paymentMethod = signal<PosPaymentMethod>('cash');
   amountReceived = signal<number | null>(null);
-  documentType = signal<PosDocumentType>(this.pos.settings().default_document);
+  documentType = signal<'VD' | 'FR'>(this.pos.settings().default_document);
   /** FR para cliente sem ficha: nome e NUIT escritos na hora. */
   fiscalName = signal('');
   fiscalNuit = signal('');
@@ -152,11 +157,19 @@ export class PosComponent implements OnInit, OnDestroy {
   needsFiscalData = computed(() => this.documentType() === 'FR' && !this.selectedClient()?.nuit);
   fiscalValid = computed(() => !this.needsFiscalData() || (this.fiscalName().trim().length > 1 && isValidNuit(this.fiscalNuit())));
 
-  received = computed(() => this.paymentMethod() === 'cash'
-    ? (this.amountReceived() ?? this.pos.cartTotals().total)
-    : this.pos.cartTotals().total);
-  change = computed(() => Math.max(0, this.received() - this.pos.cartTotals().total));
-  missing = computed(() => Math.max(0, this.pos.cartTotals().total - this.received()));
+  /** Pagamento dividido: várias formas na mesma venda (ex.: parte em numerário, parte M-Pesa). */
+  splitMode = signal(false);
+  splitPayments = signal<PosPayment[]>([]);
+  splitAmount = signal<number | null>(null);
+  paidSoFar = computed(() => Math.round(this.splitPayments().reduce((acc, p) => acc + p.amount, 0) * 100) / 100);
+
+  received = computed(() => {
+    const total = this.pos.cartTotals().total;
+    if (this.splitMode()) return this.paidSoFar();
+    return this.paymentMethod() === 'cash' ? (this.amountReceived() ?? total) : total;
+  });
+  change = computed(() => Math.max(0, Math.round((this.received() - this.pos.cartTotals().total) * 100) / 100));
+  missing = computed(() => Math.max(0, Math.round((this.pos.cartTotals().total - this.received()) * 100) / 100));
   canCheckout = computed(() => this.pos.cart().length > 0 && this.missing() === 0 && this.fiscalValid());
 
   quickAmounts = computed(() => {
@@ -184,29 +197,31 @@ export class PosComponent implements OnInit, OnDestroy {
     return this.pos.sales().filter(s => s.status === 'completed' && isSameDay(s.created_at, today));
   });
 
+  /** Totais líquidos: as notas de crédito (negativas) abatem às vendas. */
   kpis = computed(() => {
     const sales = this.todaySales();
     const total = sales.reduce((sum, s) => sum + s.total, 0);
+    const count = sales.filter(s => s.document_type !== 'NC').length;
     const bySeller = new Map<string, number>();
     for (const sale of sales) bySeller.set(sale.seller_id, (bySeller.get(sale.seller_id) ?? 0) + sale.total);
     const top = [...bySeller.entries()].sort((a, b) => b[1] - a[1])[0];
     return {
       total,
-      count: sales.length,
-      average: sales.length ? total / sales.length : 0,
+      count,
+      average: count ? total / count : 0,
       topSeller: top ? { seller: this.pos.seller(top[0]), total: top[1] } : null
     };
   });
 
   byMethod = computed(() => {
-    const sales = this.todaySales();
-    const total = sales.reduce((sum, s) => sum + s.total, 0) || 1;
+    const payments = this.todaySales().flatMap(s => s.payments);
+    const total = payments.reduce((sum, p) => sum + p.amount, 0) || 1;
     return this.paymentMethods
       .map(method => {
-        const amount = sales.filter(s => s.payment_method === method.id).reduce((sum, s) => sum + s.total, 0);
-        return { ...method, amount, share: (amount / total) * 100 };
+        const amount = payments.filter(p => p.method === method.id).reduce((sum, p) => sum + p.amount, 0);
+        return { ...method, amount, share: Math.max(0, (amount / total) * 100) };
       })
-      .filter(m => m.amount > 0);
+      .filter(m => m.amount !== 0);
   });
 
   filteredSales = computed(() => {
@@ -222,7 +237,7 @@ export class PosComponent implements OnInit, OnDestroy {
 
     return this.pos.sales().filter(s => {
       if (seller !== 'all' && s.seller_id !== seller) return false;
-      if (method !== 'all' && s.payment_method !== method) return false;
+      if (method !== 'all' && !s.payments.some(p => p.method === method)) return false;
       if (period === 'session' && s.session_id !== sessionId) return false;
       if (period === 'today' && !isSameDay(s.created_at, now)) return false;
       if (period === 'week' && new Date(s.created_at) < weekAgo) return false;
@@ -241,18 +256,49 @@ export class PosComponent implements OnInit, OnDestroy {
     private confirmDialog: ConfirmDialogService,
     private dialog: MatDialog
   ) {
-    // Mudou o modo (retalho/restaurante) ou o documento por omissão nas definições.
+    // Mudou a empresa (loja/restaurante) ou o documento por omissão nas definições.
+    let lastMode = this.pos.settings().mode;
     effect(() => {
       const settings = this.pos.settings();
       untracked(() => {
-        this.documentType.set(settings.default_document);
+        this.resetPayment();
         this.category.set('all');
-        if (settings.mode === 'retail' && this.tab() === 'tables') this.tab.set('terminal');
+        if (settings.mode !== lastMode) this.tab.set(settings.mode === 'restaurant' ? 'tables' : 'terminal');
+        lastMode = settings.mode;
       });
+    });
+
+    // Ecrã do cliente: publica a venda actual sempre que muda.
+    effect(() => {
+      const message = this.displayState();
+      untracked(() => { if (!this.paidOnDisplay) this.display?.postMessage(message); });
     });
   }
 
+  /** Estado mostrado no ecrã do cliente (2º monitor). */
+  private displayState = computed<PosDisplayState>(() => ({
+    kind: 'state',
+    store: this.pos.store().name,
+    table: this.pos.activeTable()?.name,
+    lines: this.pos.cart().map(l => ({ name: l.product.name, quantity: l.quantity, total: l.product.price * l.quantity })),
+    totals: this.pos.cartTotals()
+  }));
+  private display = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel(POS_DISPLAY_CHANNEL) : null;
+  private paidOnDisplay = false;
+  private paidTimer?: ReturnType<typeof setTimeout>;
+
+  online = signal(typeof navigator === 'undefined' ? true : navigator.onLine);
+  private readonly onOnline = () => this.online.set(true);
+  private readonly onOffline = () => this.online.set(false);
+
   ngOnInit() {
+    if (this.display) {
+      this.display.onmessage = (event: MessageEvent<PosDisplayMessage>) => {
+        if (event.data.kind === 'hello') this.display?.postMessage(this.displayState());
+      };
+    }
+    window.addEventListener('online', this.onOnline);
+    window.addEventListener('offline', this.onOffline);
     this.previousTitle = document.title;
     document.title = 'ISPC Fácil POS';
     for (const { tag, attrs } of POS_HEAD) {
@@ -274,6 +320,16 @@ export class PosComponent implements OnInit, OnDestroy {
     document.documentElement.classList.remove('pos-app');
     document.removeEventListener('fullscreenchange', this.onFullscreenChange);
     window.removeEventListener('beforeinstallprompt', this.onInstallPrompt);
+    window.removeEventListener('online', this.onOnline);
+    window.removeEventListener('offline', this.onOffline);
+    clearTimeout(this.paidTimer);
+    this.display?.close();
+  }
+
+  /** Abre o ecrã do cliente numa janela própria, para arrastar para o 2º monitor. */
+  openCustomerDisplay() {
+    window.open('/#/pos-cliente', 'ispc-pos-cliente', 'popup,width=1024,height=640');
+    this.toast.info(t('pos.display.openedTitle'), t('pos.display.openedBody'));
   }
 
   /** F2 pesquisa · F9 finaliza · Esc fecha o carrinho no telemóvel. */
@@ -429,11 +485,30 @@ export class PosComponent implements OnInit, OnDestroy {
       this.pos.cart().map(toSaleItem), this.pos.cartTotals());
   }
 
+  /**
+   * Restaurante: a mesa é o "cliente" da venda. Do balcão leva o pedido para a
+   * mesa escolhida; de uma mesa, muda-o para outra livre.
+   */
   transferTo(tableId: string) {
     const from = this.pos.activeTable();
-    if (!from) return;
-    this.pos.transferTable(from.id, tableId);
-    this.toast.info(t('pos.tables.transferred', { from: from.name, to: this.pos.table(tableId)?.name ?? '' }));
+    const to = this.pos.table(tableId)?.name ?? '';
+    this.pos.moveToTable(tableId);
+    this.toast.info(from
+      ? t('pos.tables.transferred', { from: from.name, to })
+      : t('pos.tables.assigned', { table: to }));
+  }
+
+  onTableSelect(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    const value = select.value;
+    if (value === POS_COUNTER_CART) {
+      this.backToTables();
+      this.openTable(POS_COUNTER_CART);
+    } else if (this.pos.tableOrders()[value]) {
+      this.openTable(value);
+    } else {
+      this.transferTo(value);
+    }
   }
 
   // ---------- Venda ----------
@@ -468,9 +543,41 @@ export class PosComponent implements OnInit, OnDestroy {
     this.amountReceived.set(value === '' ? null : Number(value));
   }
 
+  /** Toque numa forma de pagamento: escolhe-a, ou no modo dividido junta um pagamento. */
   selectPayment(method: PosPaymentMethod) {
+    if (this.splitMode()) {
+      this.addSplitPayment(method);
+      return;
+    }
     this.paymentMethod.set(method);
     this.amountReceived.set(null);
+  }
+
+  toggleSplit() {
+    this.splitMode.update(v => !v);
+    this.splitPayments.set([]);
+    this.splitAmount.set(null);
+    this.amountReceived.set(null);
+  }
+
+  /** Só o numerário pode passar do que falta (o excesso é troco). */
+  private addSplitPayment(method: PosPaymentMethod) {
+    const remaining = this.missing();
+    let amount = this.splitAmount() ?? remaining;
+    if (method !== 'cash') amount = Math.min(amount, remaining);
+    amount = Math.round(amount * 100) / 100;
+    if (amount <= 0) return;
+    this.splitPayments.update(list => [...list, { method, amount }]);
+    this.splitAmount.set(null);
+  }
+
+  removeSplitPayment(index: number) {
+    this.splitPayments.update(list => list.filter((_, i) => i !== index));
+  }
+
+  onSplitAmount(event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    this.splitAmount.set(value === '' ? null : Number(value));
   }
 
   private resetPayment() {
@@ -480,25 +587,64 @@ export class PosComponent implements OnInit, OnDestroy {
     this.documentType.set(this.pos.settings().default_document);
     this.fiscalName.set('');
     this.fiscalNuit.set('');
+    this.splitMode.set(false);
+    this.splitPayments.set([]);
+    this.splitAmount.set(null);
   }
 
   checkout() {
     if (!this.canCheckout()) return;
     const wasTable = !!this.pos.activeOrder();
+    const payments: PosPayment[] = this.splitMode()
+      ? this.splitPayments()
+      : [{ method: this.paymentMethod(), amount: this.received() }];
     const sale = this.pos.checkout({
       seller_id: this.pos.activeSellerId(),
       client_id: this.clientId(),
       client_name: this.needsFiscalData() ? this.fiscalName() : undefined,
       client_nuit: this.needsFiscalData() ? this.fiscalNuit() : undefined,
-      payment_method: this.paymentMethod(),
-      amount_received: this.amountReceived(),
+      payments,
       document_type: this.documentType()
     });
+    this.showPaidOnDisplay(sale);
     this.resetPayment();
     this.cartOpen.set(false);
     this.toast.success(t('pos.payment.completed', { number: sale.number }));
     this.openSale(sale, true);
     if (wasTable) this.tab.set('tables');
+  }
+
+  /** Ecrã do cliente: "Obrigado" e troco durante alguns segundos. */
+  private showPaidOnDisplay(sale: PosSale) {
+    clearTimeout(this.paidTimer);
+    this.paidOnDisplay = true;
+    this.display?.postMessage({ ...this.displayState(), lines: [], paid: { number: sale.number, total: sale.total, change: sale.change } } satisfies PosDisplayMessage);
+    this.paidTimer = setTimeout(() => {
+      this.paidOnDisplay = false;
+      this.display?.postMessage(this.displayState());
+    }, 8000);
+  }
+
+  /** Desconto na venda: precisa sempre do PIN de um gestor. */
+  async openDiscount() {
+    if (this.pos.cart().length === 0) return;
+    const current = this.pos.cartDiscount();
+    const result = await new Promise<PosDiscountResult | undefined>(resolve => this.dialog
+      .open<PosDiscountDialogComponent, unknown, PosDiscountResult>(PosDiscountDialogComponent, {
+        data: { gross: this.pos.cartTotals().gross, current: current ? { type: current.type, value: current.value } : null },
+        maxWidth: '95vw', autoFocus: false
+      })
+      .afterClosed().subscribe(resolve));
+    if (!result) return;
+    if (result.value <= 0) {
+      this.pos.setDiscount(null);
+      return;
+    }
+    const manager = await this.authorize(t('pos.authorize.discount'));
+    if (!manager) return;
+    this.pos.setDiscount({ ...result, authorized_by: manager });
+    this.splitPayments.set([]);
+    this.toast.success(t('pos.discount.applied', { amount: this.money(this.pos.cartTotals().discount) }));
   }
 
   startResize(event: PointerEvent) {
@@ -528,12 +674,29 @@ export class PosComponent implements OnInit, OnDestroy {
   // ---------- Histórico ----------
 
   openSale(sale: PosSale, justCompleted = false) {
-    this.dialog.open<PosReceiptDialogComponent, PosReceiptDialogData>(PosReceiptDialogComponent, {
+    this.dialog.open<PosReceiptDialogComponent, PosReceiptDialogData, 'refund' | undefined>(PosReceiptDialogComponent, {
       data: { sale, justCompleted },
       maxWidth: '95vw',
       width: '440px',
       autoFocus: false
+    }).afterClosed().subscribe(action => {
+      if (action === 'refund') this.refundSale(sale);
     });
+  }
+
+  /** Devolução total ou parcial: nota de crédito com autorização do gestor. */
+  async refundSale(sale: PosSale) {
+    const current = this.pos.sale(sale.id) ?? sale;
+    const result = await new Promise<PosRefundResult | undefined>(resolve => this.dialog
+      .open<PosRefundDialogComponent, unknown, PosRefundResult>(PosRefundDialogComponent, { data: { sale: current }, maxWidth: '95vw', autoFocus: false })
+      .afterClosed().subscribe(resolve));
+    if (!result) return;
+    const manager = await this.authorize(t('pos.authorize.refund', { number: current.number }));
+    if (!manager) return;
+    const credit = this.pos.refund(current.id, result.lines, result.method, result.reason, manager);
+    if (!credit) return;
+    printSale(credit, posPrintContext(this.pos));
+    this.toast.success(t('pos.refund.done', { number: credit.number, amount: this.money(Math.abs(credit.total)) }));
   }
 
   async cancelSale(sale: PosSale) {

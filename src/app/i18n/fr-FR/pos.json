@@ -25,7 +25,8 @@
     "closeSession": "Clôturer la caisse",
     "lock": "Verrouiller / changer d'opérateur",
     "settings": "Paramètres du terminal",
-    "backOffice": "Ouvrir le back-office"
+    "backOffice": "Ouvrir le back-office",
+    "customerDisplay": "Ouvrir l'écran client"
   },
   "session": {
     "label": "Caisse n° {number}"
@@ -48,12 +49,15 @@
     "openingFloat": "Fonds de caisse",
     "openingFloatHint": "Espèces laissées dans le tiroir pour rendre la monnaie en début de service.",
     "openSession": "Ouvrir la caisse",
-    "demoPins": "Démonstration — PIN : {pins}"
+    "demoPins": "Démonstration — PIN : {pins}",
+    "demoBusiness": "Démonstration — choisissez l'entreprise"
   },
   "authorize": {
     "title": "Autorisation du responsable",
     "settings": "Modifier les paramètres du terminal exige le PIN d'un responsable.",
-    "cancel": "Annuler la vente {number} exige le PIN d'un responsable."
+    "cancel": "Annuler la vente {number} exige le PIN d'un responsable.",
+    "discount": "Appliquer une remise exige le PIN d'un responsable.",
+    "refund": "Retourner des articles de la vente {number} exige le PIN d'un responsable."
   },
   "tabs": {
     "tables": "Tables",
@@ -92,7 +96,8 @@
     "label": "Document à émettre",
     "VD": "Ticket (VD)",
     "FR": "Facture-reçu",
-    "clientName": "Nom du client"
+    "clientName": "Nom du client",
+    "NC": "Avoir"
   },
   "payment": {
     "title": "Mode de paiement",
@@ -108,7 +113,8 @@
       "mpesa": "M-Pesa",
       "emola": "e-Mola",
       "card": "Carte",
-      "transfer": "Virement"
+      "transfer": "Virement",
+      "mixed": "Fractionné"
     }
   },
   "tables": {
@@ -134,7 +140,11 @@
     "sentShort": "envoyé",
     "sent": "Commande de la table {table} envoyée en cuisine/au bar",
     "transferred": "La table {from} est passée à la table {to}",
-    "perPerson": "{amount} par personne ({count})"
+    "perPerson": "{amount} par personne ({count})",
+    "chooseTable": "Table de la vente",
+    "noTable": "Sans table",
+    "busyOne": "occupée",
+    "assigned": "Commande attribuée à la table {table}"
   },
   "history": {
     "todayTotal": "Vendu aujourd'hui",
@@ -166,7 +176,8 @@
     "cancel": "Annuler la vente",
     "cancelTitle": "Annuler {number}",
     "cancelMessage": "Le document sera annulé et les quantités remises en stock.",
-    "cancelled": "{number} annulée"
+    "cancelled": "{number} annulée",
+    "method": "Mode de paiement"
   },
   "receipt": {
     "title": "Vente terminée",
@@ -212,7 +223,9 @@
       "one": "Il reste {count} table ouverte. Encaissez-la ou déplacez-la avant de clôturer.",
       "other": "Il reste {count} tables ouvertes. Encaissez-les avant de clôturer."
     },
-    "done": "Caisse n° {number} clôturée"
+    "done": "Caisse n° {number} clôturée",
+    "refunds": "Retours",
+    "discounts": "Remises"
   },
   "settings": {
     "title": "Paramètres du terminal",
@@ -226,5 +239,53 @@
     "paper": "Largeur du papier de l'imprimante",
     "terminalName": "Nom du terminal",
     "saved": "Paramètres enregistrés"
+  },
+  "display": {
+    "thanks": "Merci de votre visite !",
+    "welcome": "Bienvenue !",
+    "waiting": "En attente de la caisse…",
+    "openedTitle": "Écran client ouvert",
+    "openedBody": "Faites glisser la fenêtre sur le 2e écran et double-cliquez pour le plein écran."
+  },
+  "offline": {
+    "badge": "Hors ligne",
+    "body": "Vous pouvez continuer à vendre : les ventes sont enregistrées sur cet appareil."
+  },
+  "discount": {
+    "title": "Remise",
+    "edit": "Modifier la remise",
+    "hint": "S'applique au total de la vente et exige le PIN d'un responsable.",
+    "value": "Valeur",
+    "before": "Avant remise",
+    "label": "Remise",
+    "after": "À payer",
+    "remove": "Retirer",
+    "apply": "Appliquer",
+    "applied": "Remise de {amount} appliquée"
+  },
+  "split": {
+    "toggle": "Paiement fractionné",
+    "amount": "Montant de cette part",
+    "hint": "Saisissez le montant (ou laissez le reste) puis touchez le mode de paiement."
+  },
+  "refund": {
+    "action": "Rembourser",
+    "title": "Retour",
+    "subtitle": "Choisissez ce que le client rapporte de la vente {number}.",
+    "all": "Tout retourner",
+    "max": "jusqu'à {count}",
+    "method": "Rembourser en",
+    "reason": "Motif",
+    "reasons": {
+      "defect": "Produit défectueux",
+      "mistake": "Erreur de vente",
+      "changedMind": "Le client a changé d'avis",
+      "other": "Autre"
+    },
+    "total": "À rembourser",
+    "confirm": "Émettre un avoir",
+    "done": "Avoir {number} émis ({amount})",
+    "ref": "Se rapporte à {number}",
+    "partiallyReturned": "Cette vente a déjà des retours."
   }
 }

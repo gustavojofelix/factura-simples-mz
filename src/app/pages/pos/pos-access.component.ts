@@ -2,7 +2,7 @@ import { Component, computed, input, signal, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { PosSeller, PosService } from '../../core/services/pos.service';
+import { PosMode, PosSeller, PosService } from '../../core/services/pos.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { PosPinPadComponent } from './pos-pin-pad.component';
 import { formatPosDate, formatPosMoney } from './pos-format';
@@ -27,11 +27,26 @@ type Step = 'operator' | 'pin' | 'float';
           <h2 class="!m-0 !mt-4 text-2xl font-extrabold text-slate-900">
             {{ (mode() === 'open' ? 'pos.access.openTitle' : 'pos.access.unlockTitle') | t }}
           </h2>
-          <p class="text-slate-500 mt-1">{{ pos.store.name }} · {{ pos.settings().terminal_name }}</p>
+          <p class="text-slate-500 mt-1">{{ pos.store().name }} · {{ pos.settings().terminal_name }}</p>
           @if (mode() === 'unlock' && pos.currentSession(); as s) {
             <p class="text-xs text-slate-400 mt-1">{{ 'pos.access.sessionOpenSince' | t: { number: s.number, date: date(s.opened_at) } }}</p>
           }
         </div>
+
+        @if (mode() === 'open') {
+          <!-- Demonstração: escolher o tipo de empresa (cada uma tem os seus dados) -->
+          <div class="mb-4">
+            <p class="text-center text-[11px] font-bold uppercase tracking-widest text-amber-700 mb-2">{{ 'pos.access.demoBusiness' | t }}</p>
+            <div class="grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-white border border-slate-200">
+              @for (b of businesses; track b.mode) {
+                <button type="button" class="biz" [class.on]="pos.settings().mode === b.mode" (click)="pos.updateSettings({ mode: b.mode })">
+                  <i class="fa-solid {{ b.icon }}" aria-hidden="true"></i>
+                  <span>{{ 'pos.settings.modes.' + b.mode | t }}</span>
+                </button>
+              }
+            </div>
+          </div>
+        }
 
         <div class="bg-white rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/60 p-5 sm:p-7">
           @switch (step()) {
@@ -93,6 +108,9 @@ type Step = 'operator' | 'pin' | 'float';
       transition: border-color .15s ease, transform .08s ease;
     }
     .op-card:hover { border-color: #f16c39; }
+    .biz { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; border-radius: 12px;
+      font-size: 14px; font-weight: 700; color: #64748b; touch-action: manipulation; }
+    .biz.on { background: #0f172a; color: #fff; }
     .op-card:active { transform: scale(.97); }
   `]
 })
@@ -100,6 +118,10 @@ export class PosAccessComponent {
   mode = input<'open' | 'unlock'>('open');
 
   readonly floatPresets = [0, 500, 1000, 2000, 5000];
+  readonly businesses: { mode: PosMode; icon: string }[] = [
+    { mode: 'retail', icon: 'fa-basket-shopping' },
+    { mode: 'restaurant', icon: 'fa-utensils' }
+  ];
   step = signal<Step>('operator');
   seller = signal<PosSeller | undefined>(undefined);
   float = signal(1000);

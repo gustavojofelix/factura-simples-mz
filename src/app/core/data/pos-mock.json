@@ -1,9 +1,17 @@
 {
-  "store": {
-    "name": "Alvor Software — Loja Demo",
-    "nuit": "400999888",
-    "address": "Av. Julius Nyerere, 1234, Maputo",
-    "phone": "+258 84 000 0000"
+  "stores": {
+    "retail": {
+      "name": "Mercearia Alvor (Demo)",
+      "nuit": "400999888",
+      "address": "Av. Julius Nyerere, 1234, Maputo",
+      "phone": "+258 84 000 0000"
+    },
+    "restaurant": {
+      "name": "Restaurante Sabor da Costa (Demo)",
+      "nuit": "400777555",
+      "address": "Av. Marginal, 4120, Maputo",
+      "phone": "+258 84 111 2233"
+    }
   },
   "categories": [
     {
@@ -1226,6 +1234,236 @@
             "product_id": "r12",
             "quantity": 4,
             "sent": 4
+          }
+        ]
+      }
+    ],
+    "sales": [
+      {
+        "id": "rv10",
+        "days_ago": 0,
+        "time": "13:05",
+        "seller_id": "s02",
+        "table_id": "S3",
+        "covers": 4,
+        "payment_method": "card",
+        "items": [
+          {
+            "product_id": "r02",
+            "quantity": 2
+          },
+          {
+            "product_id": "r03",
+            "quantity": 1
+          },
+          {
+            "product_id": "r12",
+            "quantity": 4
+          },
+          {
+            "product_id": "r16",
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "id": "rv09",
+        "days_ago": 0,
+        "time": "12:40",
+        "seller_id": "s03",
+        "table_id": "E2",
+        "covers": 2,
+        "payment_method": "mpesa",
+        "items": [
+          {
+            "product_id": "r01",
+            "quantity": 2
+          },
+          {
+            "product_id": "r14",
+            "quantity": 2
+          },
+          {
+            "product_id": "r17",
+            "quantity": 2
+          }
+        ]
+      },
+      {
+        "id": "rv08",
+        "days_ago": 0,
+        "time": "12:10",
+        "seller_id": "s02",
+        "table_id": "B1",
+        "covers": 1,
+        "payment_method": "cash",
+        "amount_received": 500,
+        "items": [
+          {
+            "product_id": "r08",
+            "quantity": 1
+          },
+          {
+            "product_id": "r12",
+            "quantity": 2
+          }
+        ]
+      },
+      {
+        "id": "rv07",
+        "days_ago": 0,
+        "time": "10:30",
+        "seller_id": "s01",
+        "payment_method": "cash",
+        "amount_received": 200,
+        "items": [
+          {
+            "product_id": "r17",
+            "quantity": 2
+          },
+          {
+            "product_id": "r09",
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "id": "rv06",
+        "days_ago": 1,
+        "time": "21:15",
+        "seller_id": "s02",
+        "table_id": "S7",
+        "covers": 8,
+        "payment_method": "transfer",
+        "items": [
+          {
+            "product_id": "r06",
+            "quantity": 3
+          },
+          {
+            "product_id": "r05",
+            "quantity": 2
+          },
+          {
+            "product_id": "r12",
+            "quantity": 12
+          },
+          {
+            "product_id": "r19",
+            "quantity": 4
+          }
+        ]
+      },
+      {
+        "id": "rv05",
+        "days_ago": 1,
+        "time": "20:05",
+        "seller_id": "s03",
+        "table_id": "S2",
+        "covers": 4,
+        "payment_method": "emola",
+        "items": [
+          {
+            "product_id": "r07",
+            "quantity": 4
+          },
+          {
+            "product_id": "r11",
+            "quantity": 2
+          },
+          {
+            "product_id": "r13",
+            "quantity": 4
+          }
+        ]
+      },
+      {
+        "id": "rv04",
+        "days_ago": 1,
+        "time": "13:20",
+        "seller_id": "s02",
+        "table_id": "E1",
+        "covers": 3,
+        "payment_method": "cash",
+        "amount_received": 2500,
+        "items": [
+          {
+            "product_id": "r04",
+            "quantity": 3
+          },
+          {
+            "product_id": "r15",
+            "quantity": 3
+          }
+        ]
+      },
+      {
+        "id": "rv03",
+        "days_ago": 2,
+        "time": "19:45",
+        "seller_id": "s03",
+        "table_id": "S5",
+        "covers": 2,
+        "payment_method": "card",
+        "items": [
+          {
+            "product_id": "r06",
+            "quantity": 1
+          },
+          {
+            "product_id": "r01",
+            "quantity": 1
+          },
+          {
+            "product_id": "r20",
+            "quantity": 2
+          }
+        ]
+      },
+      {
+        "id": "rv02",
+        "days_ago": 3,
+        "time": "12:55",
+        "seller_id": "s02",
+        "table_id": "S1",
+        "covers": 2,
+        "payment_method": "mpesa",
+        "items": [
+          {
+            "product_id": "r02",
+            "quantity": 2
+          },
+          {
+            "product_id": "r12",
+            "quantity": 2
+          }
+        ]
+      },
+      {
+        "id": "rv01",
+        "days_ago": 5,
+        "time": "20:30",
+        "seller_id": "s03",
+        "table_id": "E4",
+        "covers": 6,
+        "payment_method": "cash",
+        "amount_received": 6000,
+        "items": [
+          {
+            "product_id": "r05",
+            "quantity": 3
+          },
+          {
+            "product_id": "r07",
+            "quantity": 2
+          },
+          {
+            "product_id": "r12",
+            "quantity": 6
+          },
+          {
+            "product_id": "r18",
+            "quantity": 2
           }
         ]
       }

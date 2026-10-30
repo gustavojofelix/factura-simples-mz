@@ -5,15 +5,16 @@ import mock from '../data/pos-mock.json';
  * Ponto de Venda (POS).
  *
  * Fase de demonstração: os dados vêm de core/data/pos-mock.json e tudo o que
- * se regista (vendas, sessões de caixa, mesas abertas) fica só neste navegador
- * (localStorage). Toda a leitura/escrita passa por load()/persist(), que serão
- * substituídos por chamadas ao Supabase sem mudar a interface pública.
+ * se regista (vendas, sessões de caixa, mesas abertas) fica só neste dispositivo
+ * (localStorage), separado por empresa de demonstração (loja / restaurante).
+ * Toda a leitura/escrita passa por load()/persist(), que serão substituídos
+ * por chamadas ao Supabase sem mudar a interface pública.
  */
 
 export type PosMode = 'retail' | 'restaurant';
 export type PosPaymentMethod = 'cash' | 'mpesa' | 'emola' | 'card' | 'transfer';
-/** VD = venda a dinheiro (talão); FR = factura-recibo (com NUIT do cliente). */
-export type PosDocumentType = 'VD' | 'FR';
+/** VD = venda a dinheiro (talão); FR = factura-recibo (com NUIT); NC = nota de crédito (devolução). */
+export type PosDocumentType = 'VD' | 'FR' | 'NC';
 export type PosPaperWidth = 58 | 80;
 export type PosSellerRole = 'cashier' | 'waiter' | 'manager';
 export type PosStation = 'kitchen' | 'bar';
@@ -43,7 +44,7 @@ export interface PosStore {
 export interface PosSettings {
   mode: PosMode;
   paper_width: PosPaperWidth;
-  default_document: PosDocumentType;
+  default_document: 'VD' | 'FR';
   terminal_name: string;
 }
 
@@ -113,6 +114,18 @@ export interface PosTableOrder {
   covers: number;
 }
 
+/** Desconto na venda (sempre autorizado por um gestor). */
+export interface PosDiscount {
+  type: 'pct' | 'amount';
+  value: number;
+  authorized_by: string;
+}
+
+export interface PosPayment {
+  method: PosPaymentMethod;
+  amount: number;
+}
+
 export interface PosSaleItem {
   product_id: string;
   name: string;
@@ -122,7 +135,16 @@ export interface PosSaleItem {
   total: number;
 }
 
-export interface PosSale {
+export interface PosTotals {
+  /** Soma dos artigos antes do desconto. */
+  gross: number;
+  discount: number;
+  subtotal: number;
+  tax_total: number;
+  total: number;
+}
+
+export interface PosSale extends PosTotals {
   id: string;
   number: string;
   document_type: PosDocumentType;
@@ -134,15 +156,21 @@ export interface PosSale {
   session_id?: string;
   table_id?: string;
   covers?: number;
-  payment_method: PosPaymentMethod;
+  /** 'mixed' quando o pagamento foi dividido. */
+  payment_method: PosPaymentMethod | 'mixed';
+  /** Valores líquidos por forma (o numerário já sem o troco). NC: negativos. */
+  payments: PosPayment[];
   items: PosSaleItem[];
-  subtotal: number;
-  tax_total: number;
-  total: number;
   amount_received: number;
   change: number;
   status: 'completed' | 'cancelled';
   cancelled_by?: string;
+  discount_by?: string;
+  /** NC: venda de origem e motivo. */
+  refund_of?: string;
+  refund_reason?: string;
+  /** Venda de origem: quantidades já devolvidas por artigo. */
+  returned?: Record<string, number>;
 }
 
 export interface PosCashMovement {
@@ -178,6 +206,8 @@ export interface PosSessionSummary {
   byDocument: Record<PosDocumentType, number>;
   bySeller: { seller_id: string; amount: number; count: number }[];
   cancelled: { count: number; total: number };
+  refunds: { count: number; total: number };
+  discounts: number;
   cashSales: number;
   ins: number;
   outs: number;
@@ -189,12 +219,11 @@ export interface PosCheckout {
   client_id: string;
   client_name?: string;
   client_nuit?: string;
-  payment_method: PosPaymentMethod;
-  amount_received?: number | null;
-  document_type: PosDocumentType;
+  payments: PosPayment[];
+  document_type: 'VD' | 'FR';
 }
 
-const STATE_KEY = 'pos.demo.v2';
+const STATE_KEY = 'pos.demo.v3';
 const SETTINGS_KEY = 'pos.settings';
 
 const DEFAULT_SETTINGS: PosSettings = {
@@ -210,20 +239,31 @@ interface StoredState {
   sessions: PosSession[];
   carts: Record<string, PosCartLine[]>;
   tableOrders: Record<string, PosTableOrder>;
+  discounts: Record<string, PosDiscount>;
 }
 
 const round2 = (value: number) => Math.round(value * 100) / 100;
 const uid = (prefix: string) => `${prefix}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+const sum = (values: number[]) => round2(values.reduce((a, b) => a + b, 0));
 
 /** IVA contido num valor com IVA incluído. */
 function taxIncluded(total: number, rate: number): number {
   return rate > 0 ? round2(total - total / (1 + rate / 100)) : 0;
 }
 
-export function summarizeItems(items: PosSaleItem[]) {
-  const total = round2(items.reduce((sum, item) => sum + item.total, 0));
-  const tax_total = round2(items.reduce((sum, item) => sum + taxIncluded(item.total, item.tax_rate), 0));
-  return { total, tax_total, subtotal: round2(total - tax_total) };
+/** Totais com IVA incluído; o desconto reparte-se proporcionalmente pelo IVA. */
+export function computeTotals(items: PosSaleItem[], discount?: PosDiscount | null): PosTotals {
+  const gross = sum(items.map(i => i.total));
+  const grossTax = sum(items.map(i => taxIncluded(i.total, i.tax_rate)));
+  let off = 0;
+  if (discount && gross > 0) {
+    off = discount.type === 'pct'
+      ? round2(gross * Math.min(100, Math.max(0, discount.value)) / 100)
+      : Math.min(gross, round2(Math.max(0, discount.value)));
+  }
+  const total = round2(gross - off);
+  const tax_total = gross ? round2(grossTax * total / gross) : 0;
+  return { gross, discount: off, total, tax_total, subtotal: round2(total - tax_total) };
 }
 
 export function toSaleItem(line: PosCartLine): PosSaleItem {
@@ -244,13 +284,14 @@ export function isValidNuit(value: string | undefined | null): boolean {
 
 @Injectable({ providedIn: 'root' })
 export class PosService {
-  readonly store: PosStore = mock.store;
   readonly sellers = signal<PosSeller[]>(mock.sellers as PosSeller[]);
   readonly clients = signal<PosClient[]>(mock.clients);
   readonly zones = signal<PosZone[]>(mock.restaurant.zones);
   readonly tables = signal<PosTable[]>(mock.restaurant.tables);
 
   readonly settings = signal<PosSettings>(this.readSettings());
+  /** Cada modo é uma empresa de demonstração diferente (Loja / Restaurante). */
+  readonly store = computed<PosStore>(() => mock.stores[this.settings().mode]);
 
   /** Todos os artigos (retalho + restaurante), com o stock actual. */
   private readonly allProducts = signal<PosProduct[]>([]);
@@ -258,6 +299,7 @@ export class PosService {
   readonly sessions = signal<PosSession[]>([]);
   readonly carts = signal<Record<string, PosCartLine[]>>({});
   readonly tableOrders = signal<Record<string, PosTableOrder>>({});
+  readonly discounts = signal<Record<string, PosDiscount>>({});
 
   /** Operador com sessão iniciada neste terminal (PIN). */
   readonly activeSellerId = signal<string>(mock.sellers[0].id);
@@ -276,12 +318,13 @@ export class PosService {
   readonly isManager = computed(() => this.activeSeller()?.role === 'manager');
 
   readonly cart = computed(() => this.carts()[this.activeCartKey()] ?? []);
-  readonly cartCount = computed(() => this.cart().reduce((sum, line) => sum + line.quantity, 0));
-  readonly cartTotals = computed(() => summarizeItems(this.cart().map(toSaleItem)));
+  readonly cartDiscount = computed<PosDiscount | null>(() => this.discounts()[this.activeCartKey()] ?? null);
+  readonly cartCount = computed(() => this.cart().reduce((total, line) => total + line.quantity, 0));
+  readonly cartTotals = computed(() => computeTotals(this.cart().map(toSaleItem), this.cartDiscount()));
   readonly activeTable = computed(() => this.tables().find(t => t.id === this.activeCartKey()) ?? null);
   readonly activeOrder = computed<PosTableOrder | null>(() => this.tableOrders()[this.activeCartKey()] ?? null);
   /** Linhas ainda não enviadas para a cozinha/bar. */
-  readonly unsentCount = computed(() => this.cart().reduce((sum, l) => sum + Math.max(0, l.quantity - (l.sent ?? 0)), 0));
+  readonly unsentCount = computed(() => this.cart().reduce((total, l) => total + Math.max(0, l.quantity - (l.sent ?? 0)), 0));
 
   constructor() {
     this.load();
@@ -309,8 +352,12 @@ export class PosService {
     return this.tables().find(t => t.id === id);
   }
 
+  sale(id: string | undefined): PosSale | undefined {
+    return this.sales().find(s => s.id === id);
+  }
+
   tableTotal(tableId: string): number {
-    return summarizeItems((this.carts()[tableId] ?? []).map(toSaleItem)).total;
+    return computeTotals((this.carts()[tableId] ?? []).map(toSaleItem), this.discounts()[tableId]).total;
   }
 
   /** Quantidade ainda disponível, descontando o que está em todos os carrinhos/mesas. */
@@ -319,8 +366,15 @@ export class PosService {
     const reserved = Object.values(this.carts())
       .flat()
       .filter(line => line.product.id === product.id)
-      .reduce((sum, line) => sum + line.quantity, 0);
+      .reduce((total, line) => total + line.quantity, 0);
     return product.stock - reserved;
+  }
+
+  /** Quanto ainda se pode devolver de cada artigo da venda. */
+  returnable(sale: PosSale): { item: PosSaleItem; max: number }[] {
+    return sale.items
+      .map(item => ({ item, max: item.quantity - (sale.returned?.[item.product_id] ?? 0) }))
+      .filter(r => r.max > 0);
   }
 
   // ---------- Operadores e PIN ----------
@@ -376,30 +430,37 @@ export class PosService {
   summarize(session: PosSession): PosSessionSummary {
     const sales = this.sales().filter(s => s.session_id === session.id);
     const done = sales.filter(s => s.status === 'completed');
+    const salesOnly = done.filter(s => s.document_type !== 'NC');
+    const refunds = done.filter(s => s.document_type === 'NC');
     const cancelled = sales.filter(s => s.status === 'cancelled');
-    const sum = (list: { total: number }[]) => round2(list.reduce((acc, s) => acc + s.total, 0));
 
     const byMethod = POS_PAYMENT_METHODS.map(m => {
-      const list = done.filter(s => s.payment_method === m.id);
-      return { id: m.id, amount: sum(list), count: list.length };
+      const payments = done.flatMap(s => s.payments.filter(p => p.method === m.id));
+      return { id: m.id, amount: sum(payments.map(p => p.amount)), count: payments.length };
     });
     const sellerIds = [...new Set(done.map(s => s.seller_id))];
     const bySeller = sellerIds
-      .map(id => { const list = done.filter(s => s.seller_id === id); return { seller_id: id, amount: sum(list), count: list.length }; })
+      .map(id => { const list = done.filter(s => s.seller_id === id); return { seller_id: id, amount: sum(list.map(s => s.total)), count: list.length }; })
       .sort((a, b) => b.amount - a.amount);
 
     const cashSales = byMethod.find(m => m.id === 'cash')!.amount;
-    const ins = round2(session.movements.filter(m => m.type === 'in').reduce((a, m) => a + m.amount, 0));
-    const outs = round2(session.movements.filter(m => m.type === 'out').reduce((a, m) => a + m.amount, 0));
+    const ins = sum(session.movements.filter(m => m.type === 'in').map(m => m.amount));
+    const outs = sum(session.movements.filter(m => m.type === 'out').map(m => m.amount));
 
     return {
-      count: done.length,
-      total: sum(done),
-      tax_total: round2(done.reduce((acc, s) => acc + s.tax_total, 0)),
+      count: salesOnly.length,
+      total: sum(done.map(s => s.total)),
+      tax_total: sum(done.map(s => s.tax_total)),
       byMethod,
-      byDocument: { VD: done.filter(s => s.document_type === 'VD').length, FR: done.filter(s => s.document_type === 'FR').length },
+      byDocument: {
+        VD: salesOnly.filter(s => s.document_type === 'VD').length,
+        FR: salesOnly.filter(s => s.document_type === 'FR').length,
+        NC: refunds.length
+      },
       bySeller,
-      cancelled: { count: cancelled.length, total: sum(cancelled) },
+      cancelled: { count: cancelled.length, total: sum(cancelled.map(s => s.total)) },
+      refunds: { count: refunds.length, total: Math.abs(sum(refunds.map(s => s.total))) },
+      discounts: sum(salesOnly.map(s => s.discount)),
       cashSales,
       ins,
       outs,
@@ -461,6 +522,15 @@ export class PosService {
     this.updateCart(() => []);
   }
 
+  setDiscount(discount: PosDiscount | null) {
+    const key = this.activeCartKey();
+    this.discounts.update(map => {
+      const { [key]: _, ...rest } = map;
+      return discount && discount.value > 0 ? { ...rest, [key]: discount } : rest;
+    });
+    this.persist();
+  }
+
   // ---------- Restaurante ----------
 
   /** Abre (ou retoma) a mesa e torna-a no carrinho activo. */
@@ -502,13 +572,23 @@ export class PosService {
     return result;
   }
 
-  transferTable(from: string, to: string) {
+  /**
+   * Leva o pedido actual para outra mesa: do balcão para uma mesa (a mesa passa a
+   * ser o "cliente" da venda) ou de uma mesa para outra livre.
+   */
+  moveToTable(to: string) {
+    const from = this.activeCartKey();
     if (from === to || this.tableOrders()[to]) return;
     const order = this.tableOrders()[from];
-    if (!order) return;
-    this.carts.update(carts => { const { [from]: lines, ...rest } = carts; return { ...rest, [to]: lines ?? [] }; });
-    this.tableOrders.update(orders => { const { [from]: _, ...rest } = orders; return { ...rest, [to]: { ...order, table_id: to } }; });
-    if (this.activeCartKey() === from) this.activeCartKey.set(to);
+    const table = this.table(to);
+    if (!table) return;
+    const moved: PosTableOrder = order
+      ? { ...order, table_id: to }
+      : { table_id: to, opened_at: new Date().toISOString(), waiter_id: this.activeSellerId(), covers: Math.min(2, table.seats) };
+    this.carts.update(carts => { const { [from]: lines, ...rest } = carts; return lines ? { ...rest, [to]: lines } : rest; });
+    this.discounts.update(map => { const { [from]: d, ...rest } = map; return d ? { ...rest, [to]: d } : rest; });
+    this.tableOrders.update(orders => { const { [from]: _, ...rest } = orders; return { ...rest, [to]: moved }; });
+    this.activeCartKey.set(to);
     this.persist();
   }
 
@@ -517,11 +597,14 @@ export class PosService {
   checkout(input: PosCheckout): PosSale {
     const key = this.activeCartKey();
     const order = this.tableOrders()[key];
+    const discount = this.cartDiscount();
     const items = this.cart().map(toSaleItem);
-    const totals = summarizeItems(items);
-    const received = input.payment_method === 'cash'
-      ? Math.max(totals.total, input.amount_received ?? totals.total)
-      : totals.total;
+    const totals = computeTotals(items, discount);
+
+    // O troco sai sempre do numerário entregue.
+    const paid = sum(input.payments.map(p => p.amount));
+    const change = Math.max(0, round2(paid - totals.total));
+    const payments = this.mergePayments(input.payments, change);
     const client = this.client(input.client_id);
 
     const now = new Date();
@@ -537,17 +620,20 @@ export class PosService {
       session_id: this.currentSession()?.id,
       table_id: order ? key : undefined,
       covers: order?.covers,
-      payment_method: input.payment_method,
+      payment_method: payments.length === 1 ? payments[0].method : 'mixed',
+      payments,
       items,
       ...totals,
-      amount_received: round2(received),
-      change: round2(received - totals.total),
-      status: 'completed'
+      amount_received: round2(paid),
+      change,
+      status: 'completed',
+      discount_by: discount?.authorized_by
     };
 
     this.adjustStock(items, -1);
     this.sales.update(list => [sale, ...list]);
     this.carts.update(carts => { const { [key]: _, ...rest } = carts; return rest; });
+    this.discounts.update(map => { const { [key]: _, ...rest } = map; return rest; });
     if (order) {
       this.tableOrders.update(orders => { const { [key]: _, ...rest } = orders; return rest; });
       this.activeCartKey.set(POS_COUNTER_CART);
@@ -556,11 +642,63 @@ export class PosService {
     return sale;
   }
 
+  /** Devolução: emite uma nota de crédito (valores negativos) e repõe o stock. */
+  refund(saleId: string, lines: { product_id: string; quantity: number }[], method: PosPaymentMethod, reason: string, authorizedBy: string): PosSale | null {
+    const original = this.sale(saleId);
+    const valid = lines.filter(l => l.quantity > 0);
+    if (!original || original.status !== 'completed' || original.document_type === 'NC' || valid.length === 0) return null;
+
+    // O desconto da venda original aplica-se também ao que se devolve.
+    const factor = original.gross ? original.total / original.gross : 1;
+    const items: PosSaleItem[] = valid.map(l => {
+      const it = original.items.find(i => i.product_id === l.product_id)!;
+      return { ...it, quantity: -l.quantity, total: round2(-it.unit_price * l.quantity) };
+    });
+    const gross = sum(items.map(i => i.total));
+    const total = round2(gross * factor);
+    const tax_total = round2(sum(items.map(i => -taxIncluded(-i.total, i.tax_rate))) * factor);
+
+    const now = new Date();
+    const credit: PosSale = {
+      id: uid('nc'),
+      number: this.nextNumber('NC', now.getFullYear()),
+      document_type: 'NC',
+      created_at: now.toISOString(),
+      seller_id: this.activeSellerId(),
+      client_id: original.client_id,
+      client_name: original.client_name,
+      client_nuit: original.client_nuit,
+      session_id: this.currentSession()?.id,
+      table_id: original.table_id,
+      payment_method: method,
+      payments: [{ method, amount: total }],
+      items,
+      gross,
+      discount: round2(gross - total),
+      total,
+      tax_total,
+      subtotal: round2(total - tax_total),
+      amount_received: total,
+      change: 0,
+      status: 'completed',
+      discount_by: authorizedBy,
+      refund_of: original.id,
+      refund_reason: reason.trim() || undefined
+    };
+
+    const returned = { ...(original.returned ?? {}) };
+    valid.forEach(l => returned[l.product_id] = (returned[l.product_id] ?? 0) + l.quantity);
+    this.adjustStock(valid.map(l => ({ product_id: l.product_id, quantity: l.quantity })), 1);
+    this.sales.update(list => [credit, ...list.map(s => s.id === original.id ? { ...s, returned } : s)]);
+    this.persist();
+    return credit;
+  }
+
   /** Anula a venda (com autorização de um gestor) e devolve as quantidades ao stock. */
   cancelSale(saleId: string, authorizedBy: string) {
-    const sale = this.sales().find(s => s.id === saleId);
+    const sale = this.sale(saleId);
     if (!sale || sale.status === 'cancelled') return;
-    this.adjustStock(sale.items, 1);
+    this.adjustStock(sale.items.map(i => ({ product_id: i.product_id, quantity: i.quantity })), 1);
     this.sales.update(list => list.map(s => s.id === saleId ? { ...s, status: 'cancelled', cancelled_by: authorizedBy } : s));
     this.persist();
   }
@@ -568,20 +706,31 @@ export class PosService {
   // ---------- Definições do terminal ----------
 
   updateSettings(patch: Partial<PosSettings>) {
+    const modeChanged = !!patch.mode && patch.mode !== this.settings().mode;
+    if (modeChanged) this.persist();
     this.settings.update(s => ({ ...s, ...patch }));
-    if (patch.mode) this.activeCartKey.set(POS_COUNTER_CART);
     try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(this.settings())); } catch { /* armazenamento indisponível */ }
+    if (modeChanged) {
+      // Outra empresa: outras vendas, outra caixa, outras mesas.
+      this.activeCartKey.set(POS_COUNTER_CART);
+      this.locked.set(false);
+      this.load();
+    }
   }
 
-  /** Repõe os dados de demonstração (mantém as definições do terminal). */
+  /** Repõe os dados de demonstração da empresa actual (mantém as definições). */
   resetDemo() {
-    try { localStorage.removeItem(STATE_KEY); } catch { /* armazenamento indisponível */ }
+    try { localStorage.removeItem(this.stateKey()); } catch { /* armazenamento indisponível */ }
     this.activeCartKey.set(POS_COUNTER_CART);
     this.locked.set(false);
     this.load();
   }
 
   // ---------- Fonte de dados (a substituir pelo Supabase) ----------
+
+  private stateKey() {
+    return `${STATE_KEY}.${this.settings().mode}`;
+  }
 
   private load() {
     const stored = this.readStored();
@@ -592,11 +741,15 @@ export class PosService {
     this.allProducts.set(products);
     this.sales.set(stored?.sales ?? this.seedSales(products));
     this.sessions.set(stored?.sessions ?? []);
+    this.discounts.set(stored?.discounts ?? {});
     if (stored) {
       this.carts.set(stored.carts);
       this.tableOrders.set(stored.tableOrders);
-    } else {
+    } else if (this.settings().mode === 'restaurant') {
       this.seedTables(products);
+    } else {
+      this.carts.set({});
+      this.tableOrders.set({});
     }
   }
 
@@ -606,14 +759,15 @@ export class PosService {
       stock: Object.fromEntries(this.allProducts().map(p => [p.id, p.stock])),
       sessions: this.sessions(),
       carts: this.carts(),
-      tableOrders: this.tableOrders()
+      tableOrders: this.tableOrders(),
+      discounts: this.discounts()
     };
-    try { localStorage.setItem(STATE_KEY, JSON.stringify(state)); } catch { /* armazenamento indisponível */ }
+    try { localStorage.setItem(this.stateKey(), JSON.stringify(state)); } catch { /* armazenamento indisponível */ }
   }
 
   private readStored(): StoredState | null {
     try {
-      const raw = localStorage.getItem(STATE_KEY);
+      const raw = localStorage.getItem(this.stateKey());
       return raw ? JSON.parse(raw) as StoredState : null;
     } catch {
       return null;
@@ -635,10 +789,19 @@ export class PosService {
       if (next.length === 0) { const { [key]: _, ...rest } = carts; return rest; }
       return { ...carts, [key]: next };
     });
+    if (!this.carts()[key]) this.discounts.update(map => { const { [key]: _, ...rest } = map; return rest; });
     this.persist();
   }
 
-  /** Mesas já ocupadas no arranque da demonstração. */
+  /** Junta pagamentos da mesma forma e tira o troco ao numerário. */
+  private mergePayments(payments: PosPayment[], change: number): PosPayment[] {
+    const merged = new Map<PosPaymentMethod, number>();
+    payments.filter(p => p.amount > 0).forEach(p => merged.set(p.method, (merged.get(p.method) ?? 0) + p.amount));
+    if (change > 0 && merged.has('cash')) merged.set('cash', merged.get('cash')! - change);
+    return [...merged.entries()].map(([method, amount]) => ({ method, amount: round2(amount) })).filter(p => p.amount > 0);
+  }
+
+  /** Mesas já ocupadas no arranque da demonstração do restaurante. */
   private seedTables(products: PosProduct[]) {
     const now = Date.now();
     const carts: Record<string, PosCartLine[]> = {};
@@ -656,8 +819,13 @@ export class PosService {
 
   /** As vendas de exemplo são relativas a hoje, para o painel ter sempre "vendas de hoje". */
   private seedSales(products: PosProduct[]): PosSale[] {
+    type RawSale = {
+      id: string; days_ago: number; time: string; seller_id: string; client_id?: string; table_id?: string; covers?: number;
+      payment_method: string; amount_received?: number; items: { product_id: string; quantity: number }[];
+    };
+    const raws: RawSale[] = this.settings().mode === 'restaurant' ? mock.restaurant.sales : mock.sales;
     const now = new Date();
-    const seeded = mock.sales.map((raw, index) => {
+    const seeded = raws.map((raw, index): PosSale => {
       const [hours, minutes] = raw.time.split(':').map(Number);
       const date = new Date(now);
       date.setDate(date.getDate() - raw.days_ago);
@@ -666,27 +834,29 @@ export class PosService {
       if (date > now) date.setTime(now.getTime() - (index + 1) * 7 * 60_000);
 
       const items = raw.items.map(entry => toSaleItem({ product: products.find(p => p.id === entry.product_id)!, quantity: entry.quantity }));
-      const totals = summarizeItems(items);
-      const received = raw.payment_method === 'cash'
-        ? Math.max(totals.total, (raw as { amount_received?: number }).amount_received ?? totals.total)
-        : totals.total;
-      const client = this.client(raw.client_id);
+      const totals = computeTotals(items);
+      const method = raw.payment_method as PosPaymentMethod;
+      const received = method === 'cash' ? Math.max(totals.total, raw.amount_received ?? totals.total) : totals.total;
+      const client = this.client(raw.client_id ?? POS_WALK_IN_CLIENT_ID);
 
       return {
         id: raw.id,
         number: '',
-        document_type: 'VD' as const,
+        document_type: 'VD',
         created_at: date.toISOString(),
         seller_id: raw.seller_id,
-        client_id: raw.client_id,
+        client_id: client?.id ?? POS_WALK_IN_CLIENT_ID,
         client_name: client?.name ?? '',
         client_nuit: client?.nuit,
-        payment_method: raw.payment_method as PosPaymentMethod,
+        table_id: raw.table_id,
+        covers: raw.covers,
+        payment_method: method,
+        payments: [{ method, amount: totals.total }],
         items,
         ...totals,
         amount_received: received,
         change: round2(received - totals.total),
-        status: 'completed' as const
+        status: 'completed'
       };
     });
 
@@ -706,11 +876,11 @@ export class PosService {
     return `${prefix}${String(last + 1).padStart(4, '0')}`;
   }
 
-  private adjustStock(items: PosSaleItem[], direction: 1 | -1) {
+  private adjustStock(lines: { product_id: string; quantity: number }[], direction: 1 | -1) {
     this.allProducts.update(list => list.map(product => {
-      const item = items.find(i => i.product_id === product.id);
-      if (!item || product.stock === null) return product;
-      return { ...product, stock: Math.max(0, product.stock + direction * item.quantity) };
+      const line = lines.find(l => l.product_id === product.id);
+      if (!line || product.stock === null) return product;
+      return { ...product, stock: Math.max(0, product.stock + direction * line.quantity) };
     }));
   }
 }

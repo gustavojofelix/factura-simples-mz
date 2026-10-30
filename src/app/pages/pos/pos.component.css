@@ -327,6 +327,7 @@ kbd {
 .pos-inline-select {
   display: flex;
   align-items: center;
+  min-width: 0;
   gap: 10px;
   height: 44px;
   padding: 0 12px;

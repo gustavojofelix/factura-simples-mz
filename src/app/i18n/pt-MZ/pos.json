@@ -25,7 +25,8 @@
     "closeSession": "Fechar caixa",
     "lock": "Bloquear / trocar operador",
     "settings": "Definições do terminal",
-    "backOffice": "Abrir back-office"
+    "backOffice": "Abrir back-office",
+    "customerDisplay": "Abrir ecrã do cliente"
   },
   "session": {
     "label": "Caixa nº {number}"
@@ -48,12 +49,15 @@
     "openingFloat": "Fundo de caixa",
     "openingFloatHint": "Dinheiro que fica na gaveta para trocos no início do turno.",
     "openSession": "Abrir caixa",
-    "demoPins": "Demonstração — PINs: {pins}"
+    "demoPins": "Demonstração — PINs: {pins}",
+    "demoBusiness": "Demonstração — escolha a empresa"
   },
   "authorize": {
     "title": "Autorização do gestor",
     "settings": "Alterar as definições do terminal exige o PIN de um gestor.",
-    "cancel": "Anular a venda {number} exige o PIN de um gestor."
+    "cancel": "Anular a venda {number} exige o PIN de um gestor.",
+    "discount": "Aplicar um desconto exige o PIN de um gestor.",
+    "refund": "Devolver artigos da venda {number} exige o PIN de um gestor."
   },
   "tabs": {
     "tables": "Mesas",
@@ -92,7 +96,8 @@
     "label": "Documento a emitir",
     "VD": "Talão (VD)",
     "FR": "Factura-Recibo",
-    "clientName": "Nome do cliente"
+    "clientName": "Nome do cliente",
+    "NC": "Nota de crédito"
   },
   "payment": {
     "title": "Forma de pagamento",
@@ -108,7 +113,8 @@
       "mpesa": "M-Pesa",
       "emola": "e-Mola",
       "card": "Cartão",
-      "transfer": "Transferência"
+      "transfer": "Transferência",
+      "mixed": "Dividido"
     }
   },
   "tables": {
@@ -134,7 +140,11 @@
     "sentShort": "enviado",
     "sent": "Pedido da mesa {table} enviado para a cozinha/bar",
     "transferred": "Mesa {from} passou para a mesa {to}",
-    "perPerson": "{amount} por pessoa ({count})"
+    "perPerson": "{amount} por pessoa ({count})",
+    "chooseTable": "Mesa da venda",
+    "noTable": "Sem mesa",
+    "busyOne": "ocupada",
+    "assigned": "Pedido atribuído à mesa {table}"
   },
   "history": {
     "todayTotal": "Vendido hoje",
@@ -166,7 +176,8 @@
     "cancel": "Anular venda",
     "cancelTitle": "Anular {number}",
     "cancelMessage": "O documento fica anulado e as quantidades voltam ao stock.",
-    "cancelled": "{number} anulada"
+    "cancelled": "{number} anulada",
+    "method": "Forma de pagamento"
   },
   "receipt": {
     "title": "Venda concluída",
@@ -212,7 +223,9 @@
       "one": "Há {count} mesa aberta. Cobre-a ou transfira-a antes de fechar a caixa.",
       "other": "Há {count} mesas abertas. Cobre-as antes de fechar a caixa."
     },
-    "done": "Caixa nº {number} fechada"
+    "done": "Caixa nº {number} fechada",
+    "refunds": "Devoluções",
+    "discounts": "Descontos"
   },
   "settings": {
     "title": "Definições do terminal",
@@ -226,5 +239,53 @@
     "paper": "Largura do papel da impressora",
     "terminalName": "Nome do terminal",
     "saved": "Definições guardadas"
+  },
+  "display": {
+    "thanks": "Obrigado pela preferência!",
+    "welcome": "Bem-vindo!",
+    "waiting": "À espera do terminal de caixa…",
+    "openedTitle": "Ecrã do cliente aberto",
+    "openedBody": "Arraste a janela para o 2.º monitor e faça duplo clique para ecrã inteiro."
+  },
+  "offline": {
+    "badge": "Sem internet",
+    "body": "Pode continuar a vender: as vendas ficam guardadas neste dispositivo."
+  },
+  "discount": {
+    "title": "Desconto",
+    "edit": "Alterar desconto",
+    "hint": "Aplica-se ao total da venda e exige o PIN de um gestor.",
+    "value": "Valor",
+    "before": "Antes do desconto",
+    "label": "Desconto",
+    "after": "A pagar",
+    "remove": "Remover",
+    "apply": "Aplicar",
+    "applied": "Desconto de {amount} aplicado"
+  },
+  "split": {
+    "toggle": "Dividir pagamento",
+    "amount": "Valor desta parte",
+    "hint": "Escreva o valor (ou deixe o que falta) e toque na forma de pagamento."
+  },
+  "refund": {
+    "action": "Devolver",
+    "title": "Devolução",
+    "subtitle": "Escolha o que o cliente devolve da venda {number}.",
+    "all": "Devolver tudo",
+    "max": "até {count}",
+    "method": "Reembolsar em",
+    "reason": "Motivo",
+    "reasons": {
+      "defect": "Produto com defeito",
+      "mistake": "Erro na venda",
+      "changedMind": "Cliente desistiu",
+      "other": "Outro"
+    },
+    "total": "A devolver",
+    "confirm": "Emitir nota de crédito",
+    "done": "Nota de crédito {number} emitida ({amount})",
+    "ref": "Referente a {number}",
+    "partiallyReturned": "Esta venda já tem devoluções."
   }
 }

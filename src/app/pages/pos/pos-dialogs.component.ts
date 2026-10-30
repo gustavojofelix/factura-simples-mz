@@ -5,8 +5,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import {
   MZN_DENOMINATIONS,
-  PosDocumentType,
+  POS_PAYMENT_METHODS,
   PosMode,
+  PosPaymentMethod,
+  PosSale,
+  PosSaleItem,
   PosPaperWidth,
   PosService,
   PosSession,
@@ -117,6 +120,12 @@ export class PosMovementDialogComponent {
             @if (m.count > 0) {
               <div class="flex justify-between px-4 py-2"><span class="text-slate-600">{{ 'pos.payment.methods.' + m.id | t }} ({{ m.count }})</span><span class="font-semibold">{{ money(m.amount) }}</span></div>
             }
+          }
+          @if (summary.refunds.count > 0) {
+            <div class="flex justify-between px-4 py-2"><span class="text-slate-600">{{ 'pos.close.refunds' | t }} ({{ summary.refunds.count }})</span><span class="text-rose-700">−{{ money(summary.refunds.total) }}</span></div>
+          }
+          @if (summary.discounts > 0) {
+            <div class="flex justify-between px-4 py-2"><span class="text-slate-600">{{ 'pos.close.discounts' | t }}</span><span class="text-rose-700">−{{ money(summary.discounts) }}</span></div>
           }
           <div class="flex justify-between px-4 py-2"><span class="text-slate-600">{{ 'pos.close.float' | t }}</span><span>{{ money(session.opening_float) }}</span></div>
           <div class="flex justify-between px-4 py-2"><span class="text-slate-600">{{ 'pos.close.ins' | t }}</span><span class="text-emerald-700">+{{ money(summary.ins) }}</span></div>
@@ -303,7 +312,7 @@ export class PosAuthorizeDialogComponent {
 })
 export class PosSettingsDialogComponent {
   readonly modes: { id: PosMode; icon: string }[] = [{ id: 'retail', icon: 'fa-basket-shopping' }, { id: 'restaurant', icon: 'fa-utensils' }];
-  readonly documents: PosDocumentType[] = ['VD', 'FR'];
+  readonly documents: ('VD' | 'FR')[] = ['VD', 'FR'];
   readonly widths: PosPaperWidth[] = [58, 80];
   draft = signal<PosSettings>(this.pos.settings());
 
@@ -317,5 +326,205 @@ export class PosSettingsDialogComponent {
     const draft = this.draft();
     this.pos.updateSettings({ ...draft, terminal_name: draft.terminal_name.trim() || this.pos.settings().terminal_name });
     this.ref.close(true);
+  }
+}
+
+// =====================================================================
+// Desconto na venda
+// =====================================================================
+
+export interface PosDiscountResult {
+  type: 'pct' | 'amount';
+  value: number;
+}
+
+@Component({
+  selector: 'app-pos-discount-dialog',
+  standalone: true,
+  imports: [CommonModule, MatDialogModule, MatButtonModule, TranslatePipe],
+  template: `
+    <div class="p-6 w-full max-w-[420px]">
+      <h2 class="!m-0 text-xl font-bold text-slate-900">{{ 'pos.discount.title' | t }}</h2>
+      <p class="text-sm text-slate-500 mt-1">{{ 'pos.discount.hint' | t }}</p>
+
+      <div class="grid grid-cols-2 gap-1 p-1 mt-5 rounded-xl bg-slate-100">
+        <button type="button" class="h-10 rounded-lg text-sm font-bold" [class.bg-white]="type() === 'pct'" [class.shadow-sm]="type() === 'pct'" (click)="type.set('pct')">%</button>
+        <button type="button" class="h-10 rounded-lg text-sm font-bold" [class.bg-white]="type() === 'amount'" [class.shadow-sm]="type() === 'amount'" (click)="type.set('amount')">MZN</button>
+      </div>
+
+      <label class="block mt-3 rounded-2xl border border-slate-200 focus-within:border-ispc-orange px-4 py-3">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">{{ 'pos.discount.value' | t }} ({{ type() === 'pct' ? '%' : 'MZN' }})</span>
+        <input type="number" inputmode="decimal" min="0" step="0.01" class="w-full text-3xl font-extrabold outline-none bg-transparent"
+          [value]="value() || ''" (input)="value.set(+$any($event.target).value || 0)" placeholder="0">
+      </label>
+      @if (type() === 'pct') {
+        <div class="flex flex-wrap gap-2 mt-3">
+          @for (p of presets; track p) {
+            <button type="button" class="px-3 py-2 rounded-full border text-sm font-semibold"
+              [class.border-ispc-orange]="value() === p" [class.text-orange-700]="value() === p" [class.border-slate-200]="value() !== p"
+              (click)="value.set(p)">{{ p }}%</button>
+          }
+        </div>
+      }
+
+      <div class="mt-5 rounded-2xl bg-slate-50 p-4 text-sm space-y-1">
+        <div class="flex justify-between text-slate-500"><span>{{ 'pos.discount.before' | t }}</span><span>{{ money(data.gross) }}</span></div>
+        <div class="flex justify-between text-rose-600"><span>{{ 'pos.discount.label' | t }}</span><span>−{{ money(off()) }}</span></div>
+        <div class="flex justify-between font-bold text-slate-900 text-base"><span>{{ 'pos.discount.after' | t }}</span><span>{{ money(data.gross - off()) }}</span></div>
+      </div>
+
+      <div class="flex gap-2 mt-6">
+        @if (data.current) {
+          <button mat-stroked-button class="!h-12 !rounded-xl !text-rose-600" (click)="ref.close({ type: 'pct', value: 0 })">{{ 'pos.discount.remove' | t }}</button>
+        }
+        <button mat-stroked-button class="flex-1 !h-12 !rounded-xl" mat-dialog-close>{{ 'common.actions.cancel' | t }}</button>
+        <button mat-raised-button class="flex-1 !h-12 !rounded-xl !bg-ispc-orange !text-white disabled:!opacity-50"
+          [disabled]="off() <= 0" (click)="ref.close({ type: type(), value: value() })">{{ 'pos.discount.apply' | t }}</button>
+      </div>
+    </div>
+  `
+})
+export class PosDiscountDialogComponent {
+  readonly presets = [5, 10, 15, 20];
+  type = signal<'pct' | 'amount'>('pct');
+  value = signal(0);
+  off = computed(() => {
+    const v = Math.max(0, this.value());
+    return this.type() === 'pct'
+      ? Math.round(this.data.gross * Math.min(100, v)) / 100
+      : Math.min(this.data.gross, v);
+  });
+
+  constructor(
+    @Inject(MAT_DIALOG_DATA) public data: { gross: number; current: PosDiscountResult | null },
+    public ref: MatDialogRef<PosDiscountDialogComponent, PosDiscountResult>
+  ) {
+    if (data.current) { this.type.set(data.current.type); this.value.set(data.current.value); }
+  }
+
+  money(v: number) { return formatPosMoney(v); }
+}
+
+// =====================================================================
+// Devolução (nota de crédito)
+// =====================================================================
+
+export interface PosRefundResult {
+  lines: { product_id: string; quantity: number }[];
+  method: PosPaymentMethod;
+  reason: string;
+}
+
+const REFUND_REASONS = ['pos.refund.reasons.defect', 'pos.refund.reasons.mistake', 'pos.refund.reasons.changedMind', 'pos.refund.reasons.other'];
+
+@Component({
+  selector: 'app-pos-refund-dialog',
+  standalone: true,
+  imports: [CommonModule, MatDialogModule, MatButtonModule, TranslatePipe],
+  template: `
+    <div class="flex flex-col max-h-[90dvh] w-full max-w-[520px]">
+      <div class="px-6 pt-6 pb-3 shrink-0">
+        <h2 class="!m-0 text-xl font-bold text-slate-900">{{ 'pos.refund.title' | t }}</h2>
+        <p class="text-sm text-slate-500">{{ 'pos.refund.subtitle' | t: { number: sale.number } }}</p>
+      </div>
+
+      <div class="px-6 pb-4 overflow-y-auto">
+        <div class="flex justify-end mb-1">
+          <button type="button" class="text-xs font-semibold text-orange-700" (click)="all()">{{ 'pos.refund.all' | t }}</button>
+        </div>
+        <ul class="divide-y divide-slate-100 rounded-2xl border border-slate-200">
+          @for (r of rows; track r.item.product_id; let i = $index) {
+            <li class="flex items-center gap-3 px-3 py-2.5">
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-slate-800 truncate">{{ r.item.name }}</p>
+                <p class="text-[11px] text-slate-400">{{ money(r.item.unit_price) }} · {{ 'pos.refund.max' | t: { count: r.max } }}</p>
+              </div>
+              <div class="flex items-center border border-slate-200 rounded-xl overflow-hidden">
+                <button type="button" class="w-9 h-9 text-slate-500" (click)="setQty(i, qty()[i] - 1)" aria-label="−">−</button>
+                <span class="w-8 text-center font-bold">{{ qty()[i] }}</span>
+                <button type="button" class="w-9 h-9 text-slate-500" (click)="setQty(i, qty()[i] + 1)" aria-label="+">+</button>
+              </div>
+            </li>
+          }
+        </ul>
+
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mt-5 mb-2">{{ 'pos.refund.method' | t }}</p>
+        <div class="grid grid-cols-5 gap-1.5">
+          @for (m of methods; track m.id) {
+            <button type="button" class="flex flex-col items-center gap-1 py-2 rounded-xl border text-[11px] font-semibold min-w-0"
+              [class.border-ispc-orange]="method() === m.id" [class.bg-orange-50]="method() === m.id" [class.border-slate-200]="method() !== m.id"
+              (click)="method.set(m.id)">
+              <i class="fa-solid {{ m.icon }}" aria-hidden="true"></i>
+              <span class="truncate max-w-full">{{ 'pos.payment.methods.' + m.id | t }}</span>
+            </button>
+          }
+        </div>
+
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mt-5 mb-2">{{ 'pos.refund.reason' | t }}</p>
+        <div class="flex flex-wrap gap-2">
+          @for (key of reasons; track key) {
+            <button type="button" class="px-3 py-2 rounded-full border text-sm font-semibold"
+              [class.border-ispc-orange]="reason() === key" [class.text-orange-700]="reason() === key" [class.border-slate-200]="reason() !== key"
+              (click)="reason.set(key)">{{ key | t }}</button>
+          }
+        </div>
+      </div>
+
+      <div class="shrink-0 px-6 pb-6 pt-3 border-t border-slate-100">
+        <div class="flex justify-between items-baseline mb-3">
+          <span class="text-sm font-semibold text-slate-600">{{ 'pos.refund.total' | t }}</span>
+          <span class="text-2xl font-extrabold text-rose-600">{{ money(total()) }}</span>
+        </div>
+        <div class="flex gap-2">
+          <button mat-stroked-button class="flex-1 !h-12 !rounded-xl" mat-dialog-close>{{ 'common.actions.cancel' | t }}</button>
+          <button mat-raised-button class="flex-[2] !h-12 !rounded-xl !bg-rose-600 !text-white disabled:!opacity-50" [disabled]="total() <= 0" (click)="confirm()">
+            {{ 'pos.refund.confirm' | t }}
+          </button>
+        </div>
+      </div>
+    </div>
+  `
+})
+export class PosRefundDialogComponent {
+  readonly sale: PosSale;
+  readonly rows: { item: PosSaleItem; max: number }[];
+  readonly methods = POS_PAYMENT_METHODS;
+  readonly reasons = REFUND_REASONS;
+  qty = signal<number[]>([]);
+  method = signal<PosPaymentMethod>('cash');
+  reason = signal(REFUND_REASONS[0]);
+  total = computed(() => {
+    const factor = this.sale.gross ? this.sale.total / this.sale.gross : 1;
+    const gross = this.rows.reduce((acc, r, i) => acc + r.item.unit_price * (this.qty()[i] ?? 0), 0);
+    return Math.round(gross * factor * 100) / 100;
+  });
+
+  constructor(
+    @Inject(MAT_DIALOG_DATA) data: { sale: PosSale },
+    private ref: MatDialogRef<PosRefundDialogComponent, PosRefundResult>,
+    pos: PosService
+  ) {
+    this.sale = data.sale;
+    this.rows = pos.returnable(data.sale);
+    this.qty.set(this.rows.map(() => 0));
+    this.method.set(data.sale.payments[0]?.method ?? 'cash');
+  }
+
+  money(v: number) { return formatPosMoney(v); }
+
+  setQty(i: number, value: number) {
+    this.qty.update(list => list.map((q, j) => j === i ? Math.max(0, Math.min(this.rows[i].max, value)) : q));
+  }
+
+  all() {
+    this.qty.set(this.rows.map(r => r.max));
+  }
+
+  confirm() {
+    this.ref.close({
+      lines: this.rows.map((r, i) => ({ product_id: r.item.product_id, quantity: this.qty()[i] })).filter(l => l.quantity > 0),
+      method: this.method(),
+      reason: t(this.reason())
+    });
   }
 }

@@ -20,7 +20,8 @@ const METHOD_LABELS: Record<string, string> = {
 
 const DOCUMENT_TITLES: Record<string, string> = {
   VD: 'VENDA A DINHEIRO',
-  FR: 'FACTURA-RECIBO'
+  FR: 'FACTURA-RECIBO',
+  NC: 'NOTA DE CRÉDITO'
 };
 
 const esc = (s: string | number | undefined | null) =>
@@ -73,6 +74,7 @@ export interface PrintContext {
   width: PosPaperWidth;
   sellerName: (id: string | undefined) => string;
   tableName: (id: string | undefined) => string;
+  saleNumber: (id: string | undefined) => string;
 }
 
 export function printSale(sale: PosSale, ctx: PrintContext) {
@@ -86,13 +88,16 @@ export function printSale(sale: PosSale, ctx: PrintContext) {
     ${sale.client_nuit ? `<p class="l">NUIT cliente: ${esc(sale.client_nuit)}</p>` : ''}
     ${sale.table_id ? `<p class="l">Mesa: ${esc(ctx.tableName(sale.table_id))}${sale.covers ? ` · ${sale.covers} pessoa(s)` : ''}</p>` : ''}
     <p class="l">Operador: ${esc(ctx.sellerName(sale.seller_id))}</p>
+    ${sale.refund_of ? `<p class="l">Ref.: ${esc(ctx.saleNumber(sale.refund_of))}</p>` : ''}
+    ${sale.refund_reason ? `<p class="l">Motivo: ${esc(sale.refund_reason)}</p>` : ''}
     <hr>${itemsTable(sale.items)}<hr>
     <table>
+      ${sale.discount && sale.document_type !== 'NC' ? row('Soma', mzn(sale.gross)) + row('Desconto', '-' + mzn(sale.discount)) : ''}
       ${row('Subtotal (sem IVA)', mzn(sale.subtotal))}
       ${row('IVA incluído', mzn(sale.tax_total))}
-      ${row('TOTAL', mzn(sale.total), 'big')}
-      ${row(METHOD_LABELS[sale.payment_method], mzn(sale.amount_received))}
-      ${sale.change > 0 ? row('Troco', mzn(sale.change)) : ''}
+      ${row(sale.document_type === 'NC' ? 'TOTAL A DEVOLVER' : 'TOTAL', mzn(sale.total), 'big')}
+      ${sale.payments.map(p => row(METHOD_LABELS[p.method], mzn(p.amount))).join('')}
+      ${sale.change > 0 ? row('Valor entregue', mzn(sale.amount_received)) + row('Troco', mzn(sale.change)) : ''}
     </table>
     <hr>
     ${sale.document_type === 'FR' ? '<p>Documento processado por computador</p>' : ''}
@@ -162,7 +167,9 @@ export function printZReport(session: PosSession, summary: PosSessionSummary, ct
       ${row('Vendas', String(summary.count))}
       ${row('  Talões (VD)', String(summary.byDocument.VD))}
       ${row('  Facturas-recibo (FR)', String(summary.byDocument.FR))}
-      ${row('Total vendido', mzn(summary.total), 'b')}
+      ${row(`Descontos`, '-' + mzn(summary.discounts))}
+      ${row(`Devoluções NC (${summary.refunds.count})`, '-' + mzn(summary.refunds.total))}
+      ${row('Total líquido', mzn(summary.total), 'b')}
       ${row('IVA incluído', mzn(summary.tax_total))}
       ${row(`Anuladas (${summary.cancelled.count})`, mzn(summary.cancelled.total))}
     </table>

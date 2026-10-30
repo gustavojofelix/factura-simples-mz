@@ -7,7 +7,7 @@
       </span>
       <div class="min-w-0 hidden sm:block">
         <h1 class="!m-0 text-base font-extrabold text-slate-900 leading-tight truncate">ISPC Fácil <span class="text-ispc-orange">POS</span></h1>
-        <p class="text-[11px] text-slate-500 truncate">{{ pos.store.name }} · {{ pos.settings().terminal_name }}</p>
+        <p class="text-[11px] text-slate-500 truncate">{{ pos.store().name }} · {{ pos.settings().terminal_name }}</p>
       </div>
     </div>
 
@@ -36,6 +36,11 @@
     }
 
     <div class="flex items-center gap-1.5 shrink-0">
+      @if (!online()) {
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 text-[11px] font-bold" [matTooltip]="'pos.offline.body' | t">
+          <i class="fa-solid fa-wifi" aria-hidden="true"></i><span class="hidden sm:inline">{{ 'pos.offline.badge' | t }}</span>
+        </span>
+      }
       <span class="hidden lg:inline-flex px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wide" [matTooltip]="'pos.demo.body' | t">
         {{ 'pos.demo.badge' | t }}
       </span>
@@ -61,6 +66,9 @@
           <button mat-menu-item (click)="printPartialReport()"><mat-icon>summarize</mat-icon><span>{{ 'pos.menu.xReport' | t }}</span></button>
           <button mat-menu-item (click)="closeSession()"><mat-icon>point_of_sale</mat-icon><span>{{ 'pos.menu.closeSession' | t }}</span></button>
           <button mat-menu-item (click)="lock()"><mat-icon>lock</mat-icon><span>{{ 'pos.menu.lock' | t }}</span></button>
+        }
+        @if (!isNative) {
+          <button mat-menu-item class="!hidden lg:!flex" (click)="openCustomerDisplay()"><mat-icon>connected_tv</mat-icon><span>{{ 'pos.menu.customerDisplay' | t }}</span></button>
         }
         <button mat-menu-item (click)="openSettings()"><mat-icon>tune</mat-icon><span>{{ 'pos.menu.settings' | t }}</span></button>
         @if (fullscreenSupported) {
@@ -226,8 +234,27 @@
           }
         </div>
 
-        <!-- Cliente -->
-        <div class="shrink-0 px-4 pb-2">
+        <!-- Cliente (no restaurante, a mesa é o cliente da venda) -->
+        <div [class]="isRestaurant() ? 'shrink-0 px-4 pb-2 grid grid-cols-[8.5rem_1fr] gap-2' : 'shrink-0 px-4 pb-2'">
+          @if (isRestaurant()) {
+            <label class="pos-inline-select !border-ispc-orange/50 !bg-orange-50/60">
+              <i class="fa-solid fa-chair text-orange-500" aria-hidden="true"></i>
+              <select (change)="onTableSelect($event)" [attr.aria-label]="'pos.tables.chooseTable' | t">
+                <option [value]="counterCart" [selected]="!pos.activeTable()">{{ 'pos.tables.noTable' | t }}</option>
+                @for (zone of pos.zones(); track zone.id) {
+                  <optgroup [label]="zone.name">
+                    @for (tb of pos.tables(); track tb.id) {
+                      @if (tb.zone_id === zone.id) {
+                        <option [value]="tb.id" [selected]="pos.activeTable()?.id === tb.id">
+                          {{ 'pos.tables.table' | t }} {{ tb.name }}{{ pos.tableOrders()[tb.id] && pos.activeTable()?.id !== tb.id ? ' • ' + ('pos.tables.busyOne' | t) : '' }}
+                        </option>
+                      }
+                    }
+                  </optgroup>
+                }
+              </select>
+            </label>
+          }
           <label class="pos-inline-select">
             <i class="fa-solid fa-user text-slate-400" aria-hidden="true"></i>
             <select [value]="clientId()" (change)="clientId.set($any($event.target).value)" [attr.aria-label]="'pos.terminal.client' | t">
@@ -257,7 +284,7 @@
                       {{ money(line.product.price) }}
                       @if (pos.activeTable()) {
                         @if (pending > 0) {
-                          <span class="px-1.5 rounded bg-rose-100 text-rose-700 font-bold">{{ 'pos.tables.newItems' | t: { count: pending } }}</span>
+                          <span class="px-1.5 rounded bg-rose-100 text-rose-700 font-bold whitespace-nowrap">{{ 'pos.tables.newItems' | t: { count: pending } }}</span>
                         } @else {
                           <span class="text-emerald-600"><i class="fa-solid fa-check" aria-hidden="true"></i> {{ 'pos.tables.sentShort' | t }}</span>
                         }
@@ -309,6 +336,12 @@
               <span>{{ 'pos.cart.subtotal' | t }} · {{ money(pos.cartTotals().subtotal) }}</span>
               <span>{{ 'pos.cart.tax' | t }} · {{ money(pos.cartTotals().tax_total) }}</span>
             </div>
+            @if (pos.cartTotals().discount > 0) {
+              <div class="flex justify-between text-[12px] font-semibold text-rose-600">
+                <span>{{ 'pos.discount.label' | t }}{{ pos.cartDiscount()?.type === 'pct' ? ' ' + pos.cartDiscount()?.value + '%' : '' }}</span>
+                <span>−{{ money(pos.cartTotals().discount) }}</span>
+              </div>
+            }
             <div class="flex justify-between items-baseline">
               <span class="text-sm font-semibold text-slate-700">
                 {{ 'pos.cart.total' | t }}
@@ -320,17 +353,56 @@
             </div>
           </div>
 
+          <div class="flex gap-1.5">
+            <button type="button" class="pos-action flex-1" [disabled]="pos.cart().length === 0" (click)="openDiscount()">
+              <i class="fa-solid fa-percent" aria-hidden="true"></i>
+              <span>{{ (pos.cartDiscount() ? 'pos.discount.edit' : 'pos.discount.title') | t }}</span>
+            </button>
+            <button type="button" class="pos-action flex-1" [class.pos-action-dark]="splitMode()" [disabled]="pos.cart().length === 0" (click)="toggleSplit()">
+              <i class="fa-solid fa-code-branch" aria-hidden="true"></i>
+              <span>{{ 'pos.split.toggle' | t }}</span>
+            </button>
+          </div>
+
+          @if (splitMode()) {
+            <!-- Pagamento dividido: valor + forma, repetir até cobrir o total -->
+            <div class="rounded-xl border border-slate-200 bg-white p-2.5 space-y-2">
+              @for (p of splitPayments(); track $index) {
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-slate-600"><i class="fa-solid fa-check text-emerald-600" aria-hidden="true"></i> {{ 'pos.payment.methods.' + p.method | t }}</span>
+                  <span class="flex items-center gap-2 font-semibold">{{ money(p.amount) }}
+                    <button type="button" class="w-7 h-7 text-slate-300 hover:text-rose-500" (click)="removeSplitPayment($index)" [attr.aria-label]="'pos.cart.remove' | t">
+                      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                    </button>
+                  </span>
+                </div>
+              }
+              <div class="flex items-stretch gap-2">
+                <label class="pos-cash-input">
+                  <span>{{ 'pos.split.amount' | t }}</span>
+                  <input type="number" min="0" step="0.01" inputmode="decimal" [value]="splitAmount() ?? ''" (input)="onSplitAmount($event)"
+                    [placeholder]="missing().toFixed(2)">
+                </label>
+                <div class="pos-change" [class.pos-change-missing]="missing() > 0">
+                  <span>{{ (missing() > 0 ? 'pos.payment.short' : 'pos.payment.change') | t }}</span>
+                  <strong>{{ money(missing() > 0 ? missing() : change()) }}</strong>
+                </div>
+              </div>
+              <p class="text-[11px] text-slate-400">{{ 'pos.split.hint' | t }}</p>
+            </div>
+          }
+
           <div class="grid grid-cols-5 gap-1.5" role="radiogroup" [attr.aria-label]="'pos.payment.title' | t">
             @for (method of paymentMethods; track method.id) {
-              <button type="button" role="radio" class="pos-method" [attr.aria-checked]="paymentMethod() === method.id"
-                [class.pos-method-active]="paymentMethod() === method.id" (click)="selectPayment(method.id)">
+              <button type="button" role="radio" class="pos-method" [attr.aria-checked]="!splitMode() && paymentMethod() === method.id"
+                [class.pos-method-active]="!splitMode() && paymentMethod() === method.id" [disabled]="splitMode() && missing() === 0" (click)="selectPayment(method.id)">
                 <i class="fa-solid {{ method.icon }}" aria-hidden="true"></i>
                 <span>{{ 'pos.payment.methods.' + method.id | t }}</span>
               </button>
             }
           </div>
 
-          @if (paymentMethod() === 'cash' && pos.cart().length > 0) {
+          @if (!splitMode() && paymentMethod() === 'cash' && pos.cart().length > 0) {
             <div class="flex items-stretch gap-2">
               <label class="pos-cash-input">
                 <span>{{ 'pos.payment.received' | t }}</span>
@@ -485,12 +557,13 @@
                       <span class="font-mono">{{ sale.number }}</span>
                       @if (sale.table_id) { <span class="ml-1 px-1.5 py-0.5 rounded bg-orange-50 text-orange-700 text-[10px] font-bold">{{ 'pos.tables.table' | t }} {{ pos.table(sale.table_id)?.name }}</span> }
                       @if (sale.status === 'cancelled') { <span class="ml-1 px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 text-[10px] font-bold">{{ 'pos.history.statuses.cancelled' | t }}</span> }
+                      @if (sale.discount > 0 && sale.document_type !== 'NC') { <span class="ml-1 px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 text-[10px] font-bold"><i class="fa-solid fa-percent" aria-hidden="true"></i></span> }
                     </p>
                     <p class="text-xs text-slate-500 truncate">
                       {{ period() === 'session' || period() === 'today' ? time(sale.created_at) : date(sale.created_at) }} · {{ sale.client_name }} · {{ 'pos.payment.methods.' + sale.payment_method | t }}
                     </p>
                   </div>
-                  <span class="text-sm font-bold text-slate-900 whitespace-nowrap" [class.line-through]="sale.status === 'cancelled'">{{ money(sale.total) }}</span>
+                  <span class="text-sm font-bold text-slate-900 whitespace-nowrap" [class.!text-rose-600]="sale.total < 0" [class.line-through]="sale.status === 'cancelled'">{{ money(sale.total) }}</span>
                   @if (sale.status === 'completed') {
                     <button mat-icon-button (click)="$event.stopPropagation(); cancelSale(sale)" [matTooltip]="'pos.history.cancel' | t" [attr.aria-label]="'pos.history.cancel' | t">
                       <mat-icon class="text-slate-300">block</mat-icon>

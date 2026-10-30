@@ -16,10 +16,11 @@ export interface PosReceiptDialogData {
 
 export function posPrintContext(pos: PosService): PrintContext {
   return {
-    store: pos.store,
+    store: pos.store(),
     width: pos.settings().paper_width,
     sellerName: id => pos.seller(id)?.name ?? '',
-    tableName: id => pos.table(id)?.name ?? ''
+    tableName: id => pos.table(id)?.name ?? '',
+    saleNumber: id => pos.sale(id)?.number ?? ''
   };
 }
 
@@ -63,13 +64,26 @@ export function posPrintContext(pos: PosService): PrintContext {
           </div>
         }
         <div class="border-t border-slate-200 my-2"></div>
+        @if (sale.discount > 0 && sale.document_type !== 'NC') {
+          <div class="flex justify-between text-rose-600"><span>{{ 'pos.discount.label' | t }}</span><span>−{{ money(sale.discount) }}</span></div>
+        }
         <div class="flex justify-between text-slate-500"><span>{{ 'pos.cart.subtotal' | t }}</span><span>{{ money(sale.subtotal) }}</span></div>
         <div class="flex justify-between text-slate-500"><span>{{ 'pos.cart.tax' | t }}</span><span>{{ money(sale.tax_total) }}</span></div>
-        <div class="flex justify-between text-base font-bold text-slate-900 mt-1"><span>{{ 'common.fields.total' | t }}</span><span>{{ money(sale.total) }}</span></div>
+        <div class="flex justify-between text-base font-bold mt-1" [class.text-slate-900]="sale.total >= 0" [class.text-rose-600]="sale.total < 0">
+          <span>{{ 'common.fields.total' | t }}</span><span>{{ money(sale.total) }}</span>
+        </div>
         <div class="border-t border-slate-200 my-2"></div>
-        <div class="flex justify-between text-slate-500"><span>{{ 'pos.payment.methods.' + sale.payment_method | t }}</span><span>{{ money(sale.amount_received) }}</span></div>
+        @for (p of sale.payments; track p.method) {
+          <div class="flex justify-between text-slate-500"><span>{{ 'pos.payment.methods.' + p.method | t }}</span><span>{{ money(p.amount) }}</span></div>
+        }
         @if (sale.change > 0) {
           <div class="flex justify-between font-semibold text-emerald-700"><span>{{ 'pos.receipt.change' | t }}</span><span>{{ money(sale.change) }}</span></div>
+        }
+        @if (sale.refund_of) {
+          <div class="text-xs text-slate-500 mt-2">{{ 'pos.refund.ref' | t: { number: pos.sale(sale.refund_of)?.number ?? '' } }}@if (sale.refund_reason) { · {{ sale.refund_reason }}}</div>
+        }
+        @if (refunded()) {
+          <div class="text-xs font-semibold text-amber-700 mt-2">{{ 'pos.refund.partiallyReturned' | t }}</div>
         }
       </div>
 
@@ -78,6 +92,12 @@ export function posPrintContext(pos: PosService): PrintContext {
           <mat-icon>print</mat-icon>
           <span>{{ 'common.actions.print' | t }}</span>
         </button>
+        @if (canRefund()) {
+          <button mat-stroked-button class="flex-1 !h-12 !rounded-xl !text-rose-600" (click)="ref.close('refund')">
+            <mat-icon>undo</mat-icon>
+            <span>{{ 'pos.refund.action' | t }}</span>
+          </button>
+        }
         <button mat-raised-button class="flex-1 !h-12 !rounded-xl !bg-ispc-orange !text-white" (click)="ref.close()">
           @if (data.justCompleted) {
             <mat-icon>add_shopping_cart</mat-icon>
@@ -93,10 +113,21 @@ export class PosReceiptDialogComponent {
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: PosReceiptDialogData,
-    public ref: MatDialogRef<PosReceiptDialogComponent>,
+    public ref: MatDialogRef<PosReceiptDialogComponent, 'refund' | undefined>,
     public pos: PosService
   ) {
     this.sale = data.sale;
+  }
+
+  /** Só vendas concluídas (não NC) com artigos ainda por devolver. */
+  canRefund() {
+    const current = this.pos.sale(this.sale.id) ?? this.sale;
+    return !this.data.justCompleted && current.status === 'completed' && current.document_type !== 'NC' && this.pos.returnable(current).length > 0;
+  }
+
+  refunded() {
+    const current = this.pos.sale(this.sale.id) ?? this.sale;
+    return Object.keys(current.returned ?? {}).length > 0;
   }
 
   money(value: number) { return formatPosMoney(value); }

@@ -62,6 +62,11 @@ export const routes: Routes = [
     path: 'pos',
     loadComponent: () => import('./pages/pos/pos.component').then(m => m.PosComponent)
   },
+  // Ecrã do cliente (2.º monitor do terminal), alimentado pelo POS no mesmo dispositivo.
+  {
+    path: 'pos-cliente',
+    loadComponent: () => import('./pages/pos/pos-customer-display.component').then(m => m.PosCustomerDisplayComponent)
+  },
   {
     path: '',
     canActivate: [authGuard, accountGuard],
