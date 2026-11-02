@@ -110,7 +110,14 @@ export class AiMarkdownPipe implements PipeTransform {
       }
 
       // Parágrafo: junta linhas consecutivas até à próxima linha em branco.
-      const paragrafo: string[] = [];
+      //
+      // A primeira linha entra sempre. Uma linha que começa por '|' sem a linha
+      // de separadores a seguir (o cabeçalho de uma tabela que ainda está a
+      // chegar em streaming, ou um '|' solto) não é tabela, lista nem título;
+      // se o ciclo abaixo a pudesse recusar, `i` não avançava e o render
+      // entrava num ciclo infinito que bloqueava a página.
+      const paragrafo: string[] = [linhas[i]];
+      i++;
       while (
         i < linhas.length &&
         linhas[i].trim() !== '' &&
