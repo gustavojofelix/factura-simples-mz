@@ -9,6 +9,9 @@ import { AuditLogService } from '../../../core/services/audit-log.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { AiMarkdownPipe } from '../../../shared/components/ai-chat/markdown.pipe';
+import { KnowledgeRichEditorComponent } from './knowledge-rich-editor.component';
+
+const EDITOR_MODE_KEY = 'admin.knowledge.editorMode';
 
 interface ArticleForm {
   title: string;
@@ -24,7 +27,7 @@ interface ArticleForm {
 @Component({
   selector: 'app-admin-knowledge',
   standalone: true,
-  imports: [CommonModule, FormsModule, AiMarkdownPipe],
+  imports: [CommonModule, FormsModule, AiMarkdownPipe, KnowledgeRichEditorComponent],
   template: `
     <div class="space-y-6 max-w-7xl mx-auto pb-12">
       <div class="flex flex-wrap justify-between items-center gap-3">
@@ -182,17 +185,37 @@ interface ArticleForm {
 
               <!-- Corpo -->
               <div>
-                <div class="flex items-center justify-between mb-1">
-                  <label class="label mb-0">Conteúdo (Markdown) *</label>
-                  <div class="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-semibold">
-                    <button type="button" (click)="bodyView.set('editar')" class="px-3 py-1"
-                            [class.bg-gray-800]="bodyView() === 'editar'" [class.text-white]="bodyView() === 'editar'">Editar</button>
-                    <button type="button" (click)="bodyView.set('lado')" class="px-3 py-1 hidden lg:block"
-                            [class.bg-gray-800]="bodyView() === 'lado'" [class.text-white]="bodyView() === 'lado'">Lado a lado</button>
-                    <button type="button" (click)="bodyView.set('ver')" class="px-3 py-1"
-                            [class.bg-gray-800]="bodyView() === 'ver'" [class.text-white]="bodyView() === 'ver'">Pré-visualizar</button>
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                  <label class="label mb-0">Conteúdo *</label>
+                  <div class="flex flex-wrap gap-2">
+                    <div class="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-semibold" role="group" aria-label="Modo de edição">
+                      <button type="button" (click)="setEditorMode('rico')" class="px-3 py-1"
+                              [class.bg-blue-600]="editorMode() === 'rico'" [class.text-white]="editorMode() === 'rico'">Texto formatado</button>
+                      <button type="button" (click)="setEditorMode('markdown')" class="px-3 py-1"
+                              [class.bg-blue-600]="editorMode() === 'markdown'" [class.text-white]="editorMode() === 'markdown'">Markdown</button>
+                    </div>
+                    @if (editorMode() === 'markdown') {
+                      <div class="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-semibold">
+                        <button type="button" (click)="bodyView.set('editar')" class="px-3 py-1"
+                                [class.bg-gray-800]="bodyView() === 'editar'" [class.text-white]="bodyView() === 'editar'">Editar</button>
+                        <button type="button" (click)="bodyView.set('lado')" class="px-3 py-1 hidden lg:block"
+                                [class.bg-gray-800]="bodyView() === 'lado'" [class.text-white]="bodyView() === 'lado'">Lado a lado</button>
+                        <button type="button" (click)="bodyView.set('ver')" class="px-3 py-1"
+                                [class.bg-gray-800]="bodyView() === 'ver'" [class.text-white]="bodyView() === 'ver'">Pré-visualizar</button>
+                      </div>
+                    }
                   </div>
                 </div>
+                @if (editorMode() === 'rico') {
+                  <p class="text-xs text-gray-400 mb-2">
+                    Formate como num processador de texto. O texto é mostrado ao cliente tal como aparece aqui;
+                    só estão disponíveis os formatos que o chat sabe mostrar.
+                  </p>
+                  <app-knowledge-rich-editor [(ngModel)]="form.body"></app-knowledge-rich-editor>
+                  @if (form.legal_reference.trim()) {
+                    <p class="mt-2 text-xs text-gray-500 italic">Referência: {{ form.legal_reference }}</p>
+                  }
+                } @else {
                 <p class="text-xs text-gray-400 mb-2">
                   Suporta **negrito**, *itálico*, listas com "- ", títulos com "## " e tabelas com "|". A pré-visualização é igual ao que o cliente vê no chat.
                 </p>
@@ -213,6 +236,7 @@ interface ArticleForm {
                     </div>
                   }
                 </div>
+                }
               </div>
 
               <!-- Acções -->
@@ -420,6 +444,8 @@ export class AdminKnowledgeComponent implements OnInit {
   slugTouched = false;
   variantDraft = '';
   bodyView = signal<'editar' | 'lado' | 'ver'>('lado');
+  /** Preferência de cada admin, lembrada neste browser. O valor guardado é sempre Markdown. */
+  editorMode = signal<'rico' | 'markdown'>(this.readEditorMode());
 
   testQuery = '';
   testCompanyId: string | null = null;
@@ -518,6 +544,19 @@ export class AdminKnowledgeComponent implements OnInit {
     this.slugTouched = false;
     this.variantDraft = '';
     this.gapLink.set(null);
+  }
+
+  setEditorMode(mode: 'rico' | 'markdown') {
+    this.editorMode.set(mode);
+    try { localStorage.setItem(EDITOR_MODE_KEY, mode); } catch { /* armazenamento indisponível */ }
+  }
+
+  private readEditorMode(): 'rico' | 'markdown' {
+    try {
+      return localStorage.getItem(EDITOR_MODE_KEY) === 'markdown' ? 'markdown' : 'rico';
+    } catch {
+      return 'rico';
+    }
   }
 
   onTitleChange() {
