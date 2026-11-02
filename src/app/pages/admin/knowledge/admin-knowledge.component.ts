@@ -273,15 +273,22 @@ interface ArticleForm {
                 <h3 class="font-bold text-gray-800">Testar pergunta</h3>
                 <p class="text-xs text-gray-500 mt-1">
                   Escreva a pergunta como um cliente a faria e veja que artigos o assistente receberia, por ordem de relevância.
-                  Só os artigos guardados entram no teste.
+                  Se não aparecer nenhum, a IA diria ao cliente que não tem informação. Só os artigos já guardados entram no teste.
+                  "Perguntar como" só interessa para artigos exclusivos de uma empresa.
                 </p>
               </div>
-              <div class="flex flex-col md:flex-row gap-2">
-                <input class="input flex-1" [(ngModel)]="testQuery" (keydown.enter)="runTest()" placeholder="Ex.: até quando tenho de pagar o imposto?">
-                <select class="input md:w-56" [(ngModel)]="testCompanyId">
-                  <option [ngValue]="null">Empresa sem FAQ próprio</option>
-                  @for (c of companies(); track c.id) { <option [ngValue]="c.id">Como {{ c.name }}</option> }
-                </select>
+              <div class="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_15rem_auto] gap-2 items-end">
+                <div>
+                  <label class="label">Pergunta do cliente</label>
+                  <input class="input" [(ngModel)]="testQuery" (keydown.enter)="runTest()" placeholder="Ex.: até quando tenho de pagar o imposto?">
+                </div>
+                <div>
+                  <label class="label">Perguntar como</label>
+                  <select class="input" [(ngModel)]="testCompanyId" title="Só muda o resultado se houver artigos próprios dessa empresa">
+                    <option [ngValue]="null">Qualquer empresa</option>
+                    @for (c of companies(); track c.id) { <option [ngValue]="c.id">{{ c.name }}</option> }
+                  </select>
+                </div>
                 <button type="button" (click)="runTest()" [disabled]="testing()" class="btn-primary whitespace-nowrap">
                   {{ testing() ? 'A pesquisar…' : 'Testar' }}
                 </button>
@@ -332,7 +339,7 @@ interface ArticleForm {
               Perguntas que os clientes fizeram ao assistente e para as quais nenhum artigo publicado foi encontrado.
               Perguntas iguais (ignorando acentos e maiúsculas) aparecem agrupadas.
             </p>
-            <select class="input w-48" [ngModel]="gapStatus()" (ngModelChange)="gapStatus.set($event); loadGaps()">
+            <select class="input" style="width: 12rem" [ngModel]="gapStatus()" (ngModelChange)="gapStatus.set($event); loadGaps()">
               <option value="aberta">Por responder</option>
               <option value="resolvida">Resolvidas</option>
               <option value="ignorada">Ignoradas</option>
@@ -364,7 +371,7 @@ interface ArticleForm {
                   <div class="flex flex-wrap gap-2 shrink-0">
                     <button type="button" (click)="testGap(g)" class="btn-secondary">Testar</button>
                     @if (gapStatus() === 'aberta') {
-                      <select class="input w-56 text-xs" [ngModel]="''" (ngModelChange)="addGapToArticle(g, $event)">
+                      <select class="input text-xs" style="width: 14rem" [ngModel]="''" (ngModelChange)="addGapToArticle(g, $event)">
                         <option value="" disabled>Acrescentar a artigo…</option>
                         @for (a of articles(); track a.id) {
                           @if (a.status !== 'arquivado') { <option [value]="a.id">{{ a.title }}</option> }
