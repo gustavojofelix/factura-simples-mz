@@ -284,6 +284,7 @@ export class AdminAuditLogsComponent implements OnInit {
     { id: 'subscription_payments', label: 'Pagamentos de Subscrição' },
     { id: 'vouchers', label: 'Vouchers' },
     { id: 'landing_content', label: 'Conteúdo do Site' },
+    { id: 'ai_knowledge', label: 'Base Fiscal da IA' },
     { id: 'clients', label: 'Clientes' },
     { id: 'products', label: 'Produtos' },
     { id: 'invoices', label: 'Faturas' },

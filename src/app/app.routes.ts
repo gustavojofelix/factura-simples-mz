@@ -182,6 +182,10 @@ export const routes: Routes = [
             loadComponent: () => import('./pages/admin/cms/admin-landing-cms.component').then(m => m.AdminLandingCmsComponent)
           },
           {
+            path: 'base-fiscal',
+            loadComponent: () => import('./pages/admin/knowledge/admin-knowledge.component').then(m => m.AdminKnowledgeComponent)
+          },
+          {
             path: 'acessos',
             loadComponent: () => import('./pages/admin/access/admin-access.component').then(m => m.AdminAccessComponent)
           },

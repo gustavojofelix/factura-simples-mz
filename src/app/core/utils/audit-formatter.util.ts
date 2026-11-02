@@ -293,7 +293,7 @@ export const AUDIT_CATEGORY_IDS = [
 /** Categorias que não aparecem no filtro da empresa, mas cujas entradas podem lá surgir. */
 const EXTRA_CATEGORY_IDS = [
   'security', 'admin_companies', 'admin_subscribers', 'admin_activities',
-  'subscription_plans', 'subscription_payments', 'vouchers', 'landing_content'
+  'subscription_plans', 'subscription_payments', 'vouchers', 'landing_content', 'ai_knowledge'
 ];
 
 /** Categorias com o rótulo na língua da interface (chamar em tempo de execução). */
