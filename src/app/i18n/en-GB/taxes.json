@@ -19,7 +19,9 @@
     "emailed": "Sent by email",
     "notEmailed": "Not sent by email",
     "testSent": "Test reminder sent to your email.",
-    "testError": "The test reminder could not be sent."
+    "testError": "The test reminder could not be sent.",
+    "dismiss": "Dismiss reminder",
+    "dismissError": "Could not dismiss the reminder."
   },
   "tabs": {
     "calculator": "Calculator",
@@ -64,7 +66,8 @@
     "exportExcel": "Export Form 30 (Excel)",
     "markSubmitted": "Mark as Submitted",
     "recordPayment": "Record Payment",
-    "excelError": "The Excel file could not be generated. Please try again."
+    "excelError": "The Excel file could not be generated. Please try again.",
+    "submittedAt": "Submitted on {date}"
   },
   "status": {
     "rascunho": "Draft",

@@ -694,10 +694,10 @@ export class InvoiceService {
         .eq('id', item.product_id)
         .single();
 
-      if (error || !product || product.type !== 'produto') continue;
+      // Stock null = produto sem controlo de stock: nada a actualizar.
+      if (error || !product || product.type !== 'produto' || product.stock === null) continue;
 
-      // If stock is null, we assume it's not being tracked or is 0
-      const currentStock = product.stock || 0;
+      const currentStock = Number(product.stock);
       if (type === 'decrement' && currentStock < item.quantity) {
         console.error(`Stock insuficiente para o produto ${item.product_id}. Operação de stock ignorada.`);
         continue;

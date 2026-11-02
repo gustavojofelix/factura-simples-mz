@@ -55,6 +55,7 @@
     "clientes_inactivos": "A procurar clientes sem compras recentes",
     "contas_a_receber": "A calcular o valor por receber",
     "posicao_fiscal": "A consultar as declarações de ISPC",
+    "simular_ispc": "A simular o ISPC",
     "listar_facturas": "A listar as facturas",
     "pesquisar": "A pesquisar nos seus registos",
     "consultar_base_fiscal": "A consultar a base de conhecimento fiscal",

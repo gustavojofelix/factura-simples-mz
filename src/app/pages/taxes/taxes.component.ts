@@ -38,6 +38,7 @@ export interface TaxReminder {
   created_at: string;
   emailed_at: string | null;
   cancelled_at: string | null;
+  dismissed_at: string | null;
 }
 
 @Component({
@@ -137,12 +138,32 @@ export class TaxesComponent implements OnInit {
 
     const { data } = await this.supabase.db
       .from('tax_reminders')
-      .select('id, year, quarter, kind, due_date, title, body, created_at, emailed_at, cancelled_at')
+      .select('id, year, quarter, kind, due_date, title, body, created_at, emailed_at, cancelled_at, dismissed_at')
       .eq('company_id', company.id)
+      .is('dismissed_at', null)
       .order('created_at', { ascending: false })
-      .limit(5);
+      .limit(10);
 
-    this.reminders.set((data ?? []) as TaxReminder[]);
+    // Trimestres já submetidos/pagos: os lembretes deixaram de ser relevantes.
+    const done = new Set(
+      this.taxService.declarations()
+        .filter(d => d.status === 'submetida' || d.status === 'paga')
+        .map(d => `${d.year}:${d.period}`)
+    );
+    this.reminders.set(
+      ((data ?? []) as TaxReminder[]).filter(r => !done.has(`${r.year}:${r.quarter}`)).slice(0, 5)
+    );
+  }
+
+  /** Dispensa um lembrete: deixa de aparecer, não segue por email e sai do sino. */
+  async dismissReminder(reminder: TaxReminder) {
+    const { error } = await this.supabase.db.rpc('dismiss_tax_reminder', { p_reminder_id: reminder.id });
+    if (error) {
+      console.error('Erro ao dispensar lembrete:', error);
+      window.alert(t('taxes.reminders.dismissError'));
+      return;
+    }
+    this.reminders.update(list => list.filter(r => r.id !== reminder.id));
   }
 
   getReminderStyle(kind: TaxReminder['kind']): { icon: string; classes: string } {
@@ -227,6 +248,7 @@ export class TaxesComponent implements OnInit {
       submission_date: today
     });
     await this.updateSummary();
+    await this.loadReminders();
   }
 
   openPaymentDialog(declaration: TaxDeclaration) {
@@ -314,6 +336,11 @@ export class TaxesComponent implements OnInit {
   formatDate(dateString?: string): string {
     if (!dateString) return '-';
     return this.preferences.formatDate(dateString) || '-';
+  }
+
+  formatDateTime(value?: string): string {
+    if (!value) return '-';
+    return this.preferences.formatDateTime(value) || '-';
   }
 
   getPeriodLabel(period: number): string {

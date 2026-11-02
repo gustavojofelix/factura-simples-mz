@@ -82,7 +82,7 @@
           @for (r of reminders(); track r.id) {
             <div class="flex items-start gap-3 p-3 rounded-md border {{ getReminderStyle(r.kind).classes }}">
               <mat-icon class="shrink-0">{{ getReminderStyle(r.kind).icon }}</mat-icon>
-              <div class="min-w-0">
+              <div class="min-w-0 flex-1">
                 <p class="text-sm font-semibold text-gray-900">{{ r.title }}</p>
                 <p class="text-sm text-gray-700 mt-1">{{ r.body }}</p>
                 <p class="text-xs text-gray-500 mt-1">
@@ -94,6 +94,14 @@
                   }
                 </p>
               </div>
+              <button
+                mat-icon-button
+                class="shrink-0 !text-gray-500"
+                [matTooltip]="'taxes.reminders.dismiss' | t"
+                [attr.aria-label]="'taxes.reminders.dismiss' | t"
+                (click)="dismissReminder(r)">
+                <mat-icon>close</mat-icon>
+              </button>
             </div>
           }
         </div>
@@ -273,6 +281,15 @@
                       <mat-chip [color]="getStatusColor(declaration.status)">
                         {{ getStatusLabel(declaration.status) }}
                       </mat-chip>
+                      @if (declaration.submitted_at) {
+                        <p class="text-xs text-gray-500 mt-1">
+                          {{ 'taxes.declarations.submittedAt' | t: { date: formatDateTime(declaration.submitted_at) } }}
+                        </p>
+                      } @else if (declaration.submission_date && declaration.status !== 'pendente') {
+                        <p class="text-xs text-gray-500 mt-1">
+                          {{ 'taxes.declarations.submittedAt' | t: { date: formatDate(declaration.submission_date) } }}
+                        </p>
+                      }
                       @if (isOverdue(declaration)) {
                         <mat-chip color="error" class="ml-2">
                           <mat-icon class="text-sm">warning</mat-icon>

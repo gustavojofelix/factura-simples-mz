@@ -18,6 +18,8 @@ export interface TaxDeclaration {
   ispc_amount: number;
   status: 'pendente' | 'submetida' | 'paga' | 'atrasada';
   submission_date?: string;
+  /** Data/hora (servidor) em que passou a submetida; definida por trigger. */
+  submitted_at?: string;
   due_date?: string;
   payment_date?: string;
   model_30_data?: Model30Data;
@@ -186,7 +188,7 @@ export class TaxService {
         .select(`
           id, company_id, period, year, start_date, end_date,
           total_sales, ispc_base, ispc_rate, ispc_amount, status,
-          submission_date, due_date, payment_date, model_30_data,
+          submission_date, submitted_at, due_date, payment_date, model_30_data,
           notes, created_at, updated_at,
           payments:tax_payments(
             id, tax_declaration_id, amount, payment_date,

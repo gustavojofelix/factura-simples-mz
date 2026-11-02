@@ -70,6 +70,7 @@ const TOOL_LABELS: Record<string, string> = {
   clientes_inactivos: 'ai.tools.clientes_inactivos',
   contas_a_receber: 'ai.tools.contas_a_receber',
   posicao_fiscal: 'ai.tools.posicao_fiscal',
+  simular_ispc: 'ai.tools.simular_ispc',
   listar_facturas: 'ai.tools.listar_facturas',
   pesquisar: 'ai.tools.pesquisar',
   consultar_base_fiscal: 'ai.tools.consultar_base_fiscal'

@@ -33,6 +33,21 @@ const HISTORY_LIMIT = 20;
 /** Intervalo dos comentários SSE que mantêm a ligação viva. */
 const KEEPALIVE_MS = 15_000;
 
+/**
+ * Tempo máximo de uma resposta. Abaixo do limite de execução das Edge Functions
+ * (150 s), para que a resposta termine de forma controlada — com a mensagem
+ * gravada e um aviso ao utilizador — em vez de a função ser morta a meio e o
+ * chat ficar "encravado" à espera.
+ */
+const DEADLINE_MS = 100_000;
+
+/**
+ * Ferramentas cujo resultado não é uma lista de registos para mostrar ao
+ * utilizador: os artigos da base fiscal e a simulação já seguem resumidos na
+ * resposta, e desenhá-los como tabela só pesava no chat.
+ */
+const SEM_ANEXO = new Set(["consultar_base_fiscal", "simular_ispc"]);
+
 // Preços do Claude Opus 5, por milhão de tokens. Usados apenas para registar
 // custo estimado por empresa no backoffice.
 const PRICE_INPUT = 5.0;
@@ -134,6 +149,11 @@ const MSG = {
     "en-GB": "I can't answer this request. Please rephrase your question or contact customer support.",
     "fr-FR": "Je ne peux pas répondre à cette demande. Veuillez reformuler votre question ou contacter le service client.",
   },
+  deadline: {
+    "pt-MZ": "A resposta está a demorar mais do que o esperado e foi interrompida. Tente uma pergunta mais específica, por exemplo indicando um período concreto.",
+    "en-GB": "The answer was taking longer than expected and was stopped. Try a more specific question, for example by giving a specific period.",
+    "fr-FR": "La réponse prenait plus de temps que prévu et a été interrompue. Essayez une question plus précise, par exemple en indiquant une période donnée.",
+  },
   maxTurns: {
     "pt-MZ": "A consulta ficou demasiado longa. Tente uma pergunta mais específica, por exemplo indicando um período concreto.",
     "en-GB": "The query became too long. Try a more specific question, for example by giving a specific period.",
@@ -200,6 +220,7 @@ function buildAttachments(
   const anexos: unknown[] = [];
 
   for (const { nome, payload } of results) {
+    if (SEM_ANEXO.has(nome)) continue;
     if (!payload || typeof payload !== "object") continue;
 
     for (const [chave, valor] of Object.entries(payload as Record<string, unknown>)) {
@@ -391,6 +412,8 @@ Deno.serve(async (req) => {
       const toolPayloads: { nome: string; payload: unknown }[] = [];
       let finalBlocks: Anthropic.ContentBlock[] = [];
       let textoFinal = "";
+      /** Texto já enviado ao cliente, para gravar o que ele viu se a resposta for interrompida. */
+      let textoParcial = "";
       let inputTokens = 0;
       let outputTokens = 0;
       let cacheReadTokens = 0;
@@ -418,6 +441,22 @@ Deno.serve(async (req) => {
       }, KEEPALIVE_MS);
 
       enviar("meta", { conversation_id: conversationId });
+
+      // Prazo global: interrompe o pedido ao modelo em curso; entre turnos, o
+      // ciclo verifica a flag antes de pedir mais.
+      let streamActual: { abort(): void } | null = null;
+      let excedeuPrazo = false;
+      const prazo = setTimeout(() => {
+        excedeuPrazo = true;
+        streamActual?.abort();
+      }, DEADLINE_MS);
+      const terminarPorPrazo = () => {
+        erro = "DEADLINE";
+        const aviso = pick(MSG.deadline, lang);
+        const parcial = textoFinal || textoParcial;
+        textoFinal = parcial ? `${parcial}\n\n${aviso}` : aviso;
+        enviar("delta", { text: `\n\n${aviso}` });
+      };
 
       // Não é async de propósito: `.stream()` devolve o objecto de stream de
       // forma síncrona. Os erros do pedido só aparecem ao aguardar
@@ -455,11 +494,20 @@ Deno.serve(async (req) => {
 
       try {
         for (let turno = 0; turno < MAX_TURNS; turno++) {
+          if (excedeuPrazo) {
+            terminarPorPrazo();
+            break;
+          }
+
           let resposta: Anthropic.Message;
 
           try {
             const s = pedirAoModelo(fallbacksSupported);
-            s.on("text", (delta: string) => enviar("delta", { text: delta }));
+            streamActual = s;
+            s.on("text", (delta: string) => {
+              textoParcial += delta;
+              enviar("delta", { text: delta });
+            });
             resposta = (await s.finalMessage()) as Anthropic.Message;
           } catch (err) {
             const badRequest = err instanceof Anthropic.BadRequestError;
@@ -470,7 +518,11 @@ Deno.serve(async (req) => {
               // alheio desligaria os fallbacks até a instância reiniciar.
               console.warn("pedido com fallbacks recusado, a repetir sem:", err.message);
               const s = pedirAoModelo(false);
-              s.on("text", (delta: string) => enviar("delta", { text: delta }));
+              streamActual = s;
+              s.on("text", (delta: string) => {
+                textoParcial += delta;
+                enviar("delta", { text: delta });
+              });
               resposta = (await s.finalMessage()) as Anthropic.Message;
               fallbacksSupported = false;
             } else {
@@ -550,14 +602,20 @@ Deno.serve(async (req) => {
           }
         }
       } catch (err) {
-        const mensagem = err instanceof Error ? err.message : String(err);
-        console.error("ai-assistant:", mensagem);
-        erro = mensagem;
+        if (excedeuPrazo) {
+          terminarPorPrazo();
+        } else {
+          const mensagem = err instanceof Error ? err.message : String(err);
+          console.error("ai-assistant:", mensagem);
+          erro = mensagem;
 
-        const amigavel = mensagemDeErro(err, lang);
+          const amigavel = mensagemDeErro(err, lang);
 
-        enviar("error", { message: amigavel, code: "AI_ERROR" });
-        textoFinal = textoFinal || amigavel;
+          enviar("error", { message: amigavel, code: "AI_ERROR" });
+          textoFinal = textoFinal || amigavel;
+        }
+      } finally {
+        clearTimeout(prazo);
       }
 
       const anexos = buildAttachments(toolPayloads);

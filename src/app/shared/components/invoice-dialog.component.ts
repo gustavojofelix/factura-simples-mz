@@ -321,8 +321,9 @@ export class InvoiceDialogComponent implements OnInit {
     }
 
     // Req #5 & #6: Stock validation for products
-    if (product.type === 'produto') {
-      const availableStock = product.stock ?? 0;
+    // Produtos sem controlo de stock (stock null) não são validados.
+    if (product.type === 'produto' && product.stock != null) {
+      const availableStock = product.stock;
       if (availableStock <= 0) {
         this.snackBar.open(
           t('invoices.dialog.messages.noStock', { name: product.name }),
@@ -381,8 +382,8 @@ export class InvoiceDialogComponent implements OnInit {
 
     if (change > 0) {
       const product = this.productService.getProductById(currentItem.product_id);
-      if (product && product.type === 'produto') {
-        const availableStock = product.stock ?? 0;
+      if (product && product.type === 'produto' && product.stock != null) {
+        const availableStock = product.stock;
         if (newQty > availableStock) {
           this.snackBar.open(
             t('invoices.dialog.messages.qtyIncreaseExceedsStock', { qty: newQty, stock: availableStock, name: currentItem.product_name }),
@@ -427,8 +428,8 @@ export class InvoiceDialogComponent implements OnInit {
     if (status !== 'rascunho') {
       for (const item of this.invoiceItems()) {
         const prod = this.productService.getProductById(item.product_id);
-        if (prod && prod.type === 'produto') {
-          const availableStock = prod.stock ?? 0;
+        if (prod && prod.type === 'produto' && prod.stock != null) {
+          const availableStock = prod.stock;
           if (availableStock <= 0) {
             this.snackBar.open(
               t('invoices.dialog.messages.issueNoStock', { name: item.product_name }),

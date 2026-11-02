@@ -19,7 +19,9 @@
     "emailed": "Enviado por email",
     "notEmailed": "Sem envio por email",
     "testSent": "Lembrete de teste enviado para o seu email.",
-    "testError": "Não foi possível enviar o lembrete de teste."
+    "testError": "Não foi possível enviar o lembrete de teste.",
+    "dismiss": "Dispensar lembrete",
+    "dismissError": "Não foi possível dispensar o lembrete."
   },
   "tabs": {
     "calculator": "Calculadora",
@@ -64,7 +66,8 @@
     "exportExcel": "Exportar Modelo 30 (Excel)",
     "markSubmitted": "Marcar como Submetida",
     "recordPayment": "Registar Pagamento",
-    "excelError": "Não foi possível gerar o Excel. Por favor, tente novamente."
+    "excelError": "Não foi possível gerar o Excel. Por favor, tente novamente.",
+    "submittedAt": "Submetida em {date}"
   },
   "status": {
     "rascunho": "Rascunho",

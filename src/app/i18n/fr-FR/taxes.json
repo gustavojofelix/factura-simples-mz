@@ -19,7 +19,9 @@
     "emailed": "Envoyé par e-mail",
     "notEmailed": "Non envoyé par e-mail",
     "testSent": "Rappel de test envoyé à votre adresse e-mail.",
-    "testError": "Impossible d'envoyer le rappel de test."
+    "testError": "Impossible d'envoyer le rappel de test.",
+    "dismiss": "Ignorer le rappel",
+    "dismissError": "Impossible d'ignorer le rappel."
   },
   "tabs": {
     "calculator": "Calculatrice",
@@ -64,7 +66,8 @@
     "exportExcel": "Exporter le Formulaire 30 (Excel)",
     "markSubmitted": "Marquer comme soumise",
     "recordPayment": "Enregistrer un paiement",
-    "excelError": "Impossible de générer le fichier Excel. Veuillez réessayer."
+    "excelError": "Impossible de générer le fichier Excel. Veuillez réessayer.",
+    "submittedAt": "Soumise le {date}"
   },
   "status": {
     "rascunho": "Brouillon",

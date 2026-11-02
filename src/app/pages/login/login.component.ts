@@ -1,7 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LoginFormComponent } from '../../shared/components/login-form/login-form.component';
-import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { AccountService, PublicAccountInfo } from '../../core/services/account.service';
 import { TenantService } from '../../core/services/tenant.service';
@@ -14,7 +13,6 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
   imports: [
     CommonModule,
     LoginFormComponent,
-    RouterLink,
     MatIconModule,
     TranslatePipe,
     LanguageSwitcherComponent

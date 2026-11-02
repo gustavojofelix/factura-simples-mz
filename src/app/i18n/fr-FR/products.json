@@ -52,7 +52,7 @@
     "unitPlaceholder": "un, kg, m, h, etc.",
     "stock": "Stock",
     "stockPlaceholder": "Quantité en stock",
-    "stockHint": "Uniquement pour les produits physiques"
+    "stockHint": "Facultatif. Laissez vide si vous ne souhaitez pas suivre le stock de ce produit"
   },
   "messages": {
     "stockInvalid": "Le stock doit être égal à zéro ou positif.",

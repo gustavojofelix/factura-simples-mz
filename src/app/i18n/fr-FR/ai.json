@@ -55,6 +55,7 @@
     "clientes_inactivos": "Recherche des clients sans achats récents",
     "contas_a_receber": "Calcul du montant à encaisser",
     "posicao_fiscal": "Consultation des déclarations d'ISPC",
+    "simular_ispc": "Simulation de l'ISPC",
     "listar_facturas": "Liste des factures",
     "pesquisar": "Recherche dans vos données",
     "consultar_base_fiscal": "Consultation de la base de connaissances fiscales",

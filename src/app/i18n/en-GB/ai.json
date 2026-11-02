@@ -55,6 +55,7 @@
     "clientes_inactivos": "Looking for clients with no recent purchases",
     "contas_a_receber": "Calculating the amount receivable",
     "posicao_fiscal": "Checking ISPC returns",
+    "simular_ispc": "Simulating ISPC",
     "listar_facturas": "Listing invoices",
     "pesquisar": "Searching your records",
     "consultar_base_fiscal": "Checking the tax knowledge base",

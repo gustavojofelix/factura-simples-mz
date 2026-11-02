@@ -14,7 +14,8 @@ export interface Product {
   description?: string;
   price: number;
   type: 'produto' | 'servico';
-  stock?: number;
+  /** null = sem controlo de stock. */
+  stock?: number | null;
   unit?: string;
   is_active: boolean;
   created_at: string;
@@ -248,7 +249,7 @@ export class ProductService {
         .from('products')
         .insert(products.map(product => ({
           ...product,
-          stock: product.type === 'produto' ? product.stock ?? 0 : null,
+          stock: product.type === 'produto' ? product.stock ?? null : null,
           is_active: product.is_active ?? true,
           company_id: company.id
         })))

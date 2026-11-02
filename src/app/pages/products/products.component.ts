@@ -161,9 +161,10 @@ export class ProductDialogComponent implements OnInit {
         barcode: this.form.value.barcode?.trim() || null
       };
 
-      if (formData.type === 'servico') {
+      // Stock vazio = produto sem controlo de stock (ex.: café a granel).
+      if (formData.type === 'servico' || formData.stock === null || formData.stock === '') {
         formData.stock = null;
-      } else if (formData.stock === null || formData.stock === '' || Number(formData.stock) < 0) {
+      } else if (Number(formData.stock) < 0) {
         this.snackBar.open(t('products.messages.stockInvalid'), t('common.actions.close'), { duration: 3000 });
         return;
       }
@@ -516,7 +517,7 @@ export class ProductsComponent implements OnInit {
         const priceText = get('preco', 'price', 'preco unitario', 'prix', 'unit price', 'prix unitaire');
         const price = this.parseImportNumber(priceText);
         const stockText = get('stock', 'quantidade', 'quantity', 'quantite');
-        const stock = stockText === '' ? 0 : this.parseImportNumber(stockText);
+        const stock = stockText === '' ? undefined : this.parseImportNumber(stockText);
 
         const errors: string[] = [];
         if (!name) errors.push(t('products.import.nameMissing'));
@@ -524,7 +525,7 @@ export class ProductsComponent implements OnInit {
         else if (!type) errors.push(t('products.import.typeInvalid', { value: typeRaw }));
         if (!priceText) errors.push(t('products.import.priceMissing'));
         else if (price === null || price < 0) errors.push(t('products.import.priceInvalid', { value: priceText }));
-        if (type === 'produto' && (stock === null || stock < 0)) errors.push(t('products.import.stockInvalid', { value: stockText }));
+        if (type === 'produto' && (stock === null || (stock !== undefined && stock < 0))) errors.push(t('products.import.stockInvalid', { value: stockText }));
 
         const key = type ? `${type}:${name.toLowerCase()}` : '';
         if (name && type) {
@@ -552,7 +553,7 @@ export class ProductsComponent implements OnInit {
         const inactiveLabel = this.normalizeImportText(t('common.status.inactive'));
         products.push({
           name, type, code: code || undefined, barcode: barcode || undefined, price,
-          stock: type === 'produto' ? (stock ?? 0) : undefined,
+          stock: type === 'produto' ? stock ?? undefined : undefined,
           description: get('descricao', 'description') || undefined,
           unit: get('unidade', 'unit', 'unite') || undefined,
           is_active: !['inactivo', 'inativo', 'inactive', 'inactif', 'false', '0', 'nao', 'no', 'non', inactiveLabel].includes(status)

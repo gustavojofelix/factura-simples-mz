@@ -42,8 +42,10 @@
     }
 
     <!-- Back to Landing -->
+    <!-- No subdomínio de uma conta "/" reencaminha para /entrar: a landing está no domínio raiz. -->
     <div class="text-center">
-      <a routerLink="/" class="inline-flex items-center text-xs font-semibold text-slate-400 hover:text-white transition-all bg-white/5 hover:bg-white/10 py-2.5 px-4 rounded-xl border border-white/10 backdrop-blur-sm shadow-sm">
+      <a [href]="tenant.currentSlug() ? tenant.rootUrl('/') : '#/'"
+         class="inline-flex items-center text-xs font-semibold text-slate-400 hover:text-white transition-all bg-white/5 hover:bg-white/10 py-2.5 px-4 rounded-xl border border-white/10 backdrop-blur-sm shadow-sm">
         <mat-icon class="!text-sm mr-1.5">arrow_back</mat-icon>
         {{ 'auth.loginPage.backToHome' | t }}
       </a>

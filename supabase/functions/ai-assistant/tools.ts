@@ -182,6 +182,25 @@ export const TOOLS: ToolSpec[] = [
     },
   },
   {
+    name: "simular_ispc",
+    description:
+      "Simula o ISPC de um período até hoje com as facturas já emitidas, aplicando a taxa da actividade da empresa e os escalões anuais acumulados (as mesmas regras do Modelo 30). Devolve vendas do período, ISPC, taxa efectiva, taxa do escalão actual e base por taxa. Use para perguntas hipotéticas como 'se o trimestre terminasse hoje, quanto pagaria?', 'que taxa de ISPC estou a pagar?' ou 'em que escalão estou?'. Para um semestre ou outro intervalo, passe as datas; o período tem de estar dentro do mesmo ano civil.",
+    rpc: "ai_simulate_ispc",
+    buildArgs: (i) => ({ p_from: i.de ?? null, p_to: i.ate ?? null }),
+    input_schema: {
+      type: "object",
+      properties: {
+        de: optionalString(
+          "Data inicial do período, no formato AAAA-MM-DD. Se omitida, usa o início do trimestre corrente.",
+        ),
+        ate: optionalString(
+          "Data final do período, no formato AAAA-MM-DD. Se omitida, usa hoje (nunca depois de hoje).",
+        ),
+      },
+      additionalProperties: false,
+    },
+  },
+  {
     name: "listar_facturas",
     description:
       "Lista facturas individuais com filtros de data, estado e nome de cliente. Use quando o utilizador quer ver as facturas concretas por trás de um número, e não apenas o total.",
