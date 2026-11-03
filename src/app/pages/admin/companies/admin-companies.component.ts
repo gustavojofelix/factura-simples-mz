@@ -5,6 +5,7 @@ import { SupabaseService } from '../../../core/services/supabase.service';
 import { AuditLogService } from '../../../core/services/audit-log.service';
 import { ActivityService, ActivityType } from '../../../core/services/activity.service';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { friendlyFunctionError } from '../../../core/utils/error-message';
 
 @Component({
@@ -340,6 +341,35 @@ import { friendlyFunctionError } from '../../../core/utils/error-message';
                       <p class="text-sm font-bold text-gray-800 leading-tight">{{ user.profiles?.full_name }}</p>
                       <p class="text-[10px] text-gray-500">{{ user.profiles?.email || 'Sem email' }}</p>
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Ponto de Venda -->
+              <div class="space-y-3 border-t border-gray-100 pt-6">
+                <h4 class="text-xs font-bold text-gray-500 uppercase tracking-widest">Ponto de Venda (POS)</h4>
+                <div *ngIf="posInfo() as pos" class="space-y-3">
+                  <div class="flex flex-wrap gap-2 text-[11px] font-bold">
+                    <span class="px-2 py-1 rounded-full" [class]="pos.access?.enabled ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'">
+                      {{ pos.access?.enabled ? 'POS activo' : 'POS não incluído' }}
+                    </span>
+                    <span *ngIf="pos.access?.in_grace" class="px-2 py-1 rounded-full bg-amber-100 text-amber-700">Tolerância até {{ pos.access?.grace_until }}</span>
+                    <span class="px-2 py-1 rounded-full bg-blue-50 text-blue-700">{{ pos.terminals }} terminal(is) activo(s)</span>
+                    <span class="px-2 py-1 rounded-full bg-gray-100 text-gray-600">{{ pos.businessType === 'restaurant' ? 'Restaurante' : 'Loja' }}</span>
+                  </div>
+                  <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" class="mt-1 w-4 h-4 accent-blue-600" [checked]="pos.override === true" [disabled]="posBusy()"
+                      (change)="setPosOverride($any($event.target).checked ? true : null)">
+                    <span class="text-sm">
+                      <span class="block font-bold text-gray-800">Activar o POS nesta empresa fora do plano</span>
+                      <span class="block text-xs text-gray-500">Excepção para pilotos e testes. Sem a excepção vale o plano da subscrição.</span>
+                    </span>
+                  </label>
+                  <div class="flex items-center gap-2 text-sm">
+                    <span class="text-xs text-gray-500">Tolerância após expirar (todas as empresas):</span>
+                    <input type="number" min="0" max="60" class="w-16 px-2 py-1 border border-gray-200 rounded-lg text-sm" [value]="pos.graceDays"
+                      (change)="setGraceDays(+$any($event.target).value)" [disabled]="posBusy()">
+                    <span class="text-xs text-gray-500">dias</span>
                   </div>
                 </div>
               </div>
@@ -758,6 +788,8 @@ export class AdminCompaniesComponent implements OnInit {
   saveError = '';
   isDetailsOpen = false;
   selectedCompany = signal<any>({});
+  posInfo = signal<{ access: any; override: boolean | null; terminals: number; businessType: string; graceDays: number } | null>(null);
+  posBusy = signal(false);
   taxTestDate = signal<string>(new Date().toISOString().slice(0, 10));
   taxTestEmail = signal<string>('');
   taxTestResult = signal<any>(null);
@@ -847,7 +879,8 @@ export class AdminCompaniesComponent implements OnInit {
     private supabase: SupabaseService,
     private auditLogService: AuditLogService,
     private activityService: ActivityService,
-    private confirmDialog: ConfirmDialogService
+    private confirmDialog: ConfirmDialogService,
+    private toast: ToastService
   ) { }
 
   ngOnInit() {
@@ -1129,6 +1162,60 @@ export class AdminCompaniesComponent implements OnInit {
       ...company,
       users: usersData || []
     });
+    await this.loadPosInfo(company.id);
+  }
+
+  // --- Ponto de Venda: estado, excepção por empresa e tolerância global -------
+
+  async loadPosInfo(companyId: string) {
+    this.posInfo.set(null);
+    const [access, override, terminals, company, grace] = await Promise.all([
+      this.supabase.db.rpc('company_pos_access', { p_company_id: companyId }),
+      this.supabase.db.from('company_feature_overrides').select('enabled').eq('company_id', companyId).eq('feature_code', 'pos').maybeSingle(),
+      this.supabase.db.from('pos_terminals').select('id', { count: 'exact', head: true }).eq('company_id', companyId).is('revoked_at', null),
+      this.supabase.db.from('companies').select('pos_business_type').eq('id', companyId).single(),
+      this.supabase.db.from('platform_settings').select('value').eq('key', 'pos_grace_days').maybeSingle()
+    ]);
+    if (this.selectedCompany()?.id !== companyId) return;
+    this.posInfo.set({
+      access: access.data,
+      override: override.data ? override.data.enabled : null,
+      terminals: terminals.count ?? 0,
+      businessType: company.data?.pos_business_type ?? 'retail',
+      graceDays: Number(grace.data?.value ?? 5)
+    });
+  }
+
+  async setPosOverride(enabled: true | null) {
+    const companyId = this.selectedCompany()?.id;
+    if (!companyId) return;
+    this.posBusy.set(true);
+    const { error } = enabled
+      ? await this.supabase.db.from('company_feature_overrides')
+          .upsert({ company_id: companyId, feature_code: 'pos', enabled: true, notes: 'Activado no backoffice' })
+      : await this.supabase.db.from('company_feature_overrides').delete().eq('company_id', companyId).eq('feature_code', 'pos');
+    this.posBusy.set(false);
+    if (error) {
+      this.toast.error('Não foi possível alterar o POS desta empresa: ' + error.message);
+      return;
+    }
+    this.toast.success(enabled ? 'POS activado nesta empresa' : 'Excepção removida: vale o plano');
+    await this.loadPosInfo(companyId);
+  }
+
+  async setGraceDays(days: number) {
+    const companyId = this.selectedCompany()?.id;
+    if (!Number.isFinite(days) || days < 0 || days > 60) return;
+    this.posBusy.set(true);
+    const { error } = await this.supabase.db.from('platform_settings')
+      .upsert({ key: 'pos_grace_days', value: Math.round(days), updated_at: new Date().toISOString() });
+    this.posBusy.set(false);
+    if (error) {
+      this.toast.error('Não foi possível guardar a tolerância: ' + error.message);
+      return;
+    }
+    this.toast.success(`Tolerância do POS: ${Math.round(days)} dias`);
+    if (companyId) await this.loadPosInfo(companyId);
   }
 
   closeDetails() {

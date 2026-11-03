@@ -1,23 +1,26 @@
-import { Injectable, computed, signal } from '@angular/core';
-import mock from '../data/pos-mock.json';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { RealtimeChannel } from '@supabase/supabase-js';
+import { PosApiError, PosApiService, PosOperatorToken } from './pos-api.service';
 
 /**
- * Ponto de Venda (POS).
+ * Ponto de Venda (POS): estado do terminal.
  *
- * Fase de demonstração: os dados vêm de core/data/pos-mock.json e tudo o que
- * se regista (vendas, sessões de caixa, mesas abertas) fica só neste dispositivo
- * (localStorage), separado por empresa de demonstração (loja / restaurante).
- * Toda a leitura/escrita passa por load()/persist(), que serão substituídos
- * por chamadas ao Supabase sem mudar a interface pública.
+ * Os dados vêm do servidor (funções pos_*). Aqui ficam só o carrinho do balcão
+ * (até ser cobrado) e o estado do ecrã. Os pedidos de mesa vivem no servidor e
+ * são partilhados em tempo real entre terminais. Preços, totais, descontos e
+ * trocos são recalculados no servidor ao emitir; os valores daqui servem para
+ * mostrar.
+ *
+ * Documento: sempre FR (factura-recibo), para o Consumidor final ou para o
+ * cliente com NUIT. Empresas ISPC: sem IVA.
  */
 
 export type PosMode = 'retail' | 'restaurant';
 export type PosPaymentMethod = 'cash' | 'mpesa' | 'emola' | 'card' | 'transfer';
-/** VD = venda a dinheiro (talão); FR = factura-recibo (com NUIT); NC = nota de crédito (devolução). */
-export type PosDocumentType = 'VD' | 'FR' | 'NC';
 export type PosPaperWidth = 58 | 80;
-export type PosSellerRole = 'cashier' | 'waiter' | 'manager';
+export type PosStaffRole = 'cashier' | 'waiter' | 'manager';
 export type PosStation = 'kitchen' | 'bar';
+export type PosPhase = 'loading' | 'unpaired' | 'login' | 'ready' | 'error';
 
 export const POS_PAYMENT_METHODS: { id: PosPaymentMethod; icon: string }[] = [
   { id: 'cash', icon: 'fa-money-bill-wave' },
@@ -30,857 +33,811 @@ export const POS_PAYMENT_METHODS: { id: PosPaymentMethod; icon: string }[] = [
 /** Notas e moedas do metical, para a contagem no fecho de caixa. */
 export const MZN_DENOMINATIONS = [1000, 500, 200, 100, 50, 20, 10, 5, 2, 1, 0.5];
 
-export const POS_WALK_IN_CLIENT_ID = 'c00';
-/** Carrinho da venda directa ao balcão (as mesas usam o id da mesa). */
-export const POS_COUNTER_CART = 'counter';
-
-export interface PosStore {
-  name: string;
-  nuit: string;
-  address: string;
-  phone: string;
+export interface PosCompanySettings {
+  paper_width?: PosPaperWidth;
+  receipt_header?: string;
+  receipt_footer?: string;
+  payment_methods?: PosPaymentMethod[];
+  mobile_timeout?: number;
+  cash?: { default_float?: number; tolerance?: number; blind_close?: boolean };
 }
 
-export interface PosSettings {
-  mode: PosMode;
-  paper_width: PosPaperWidth;
-  default_document: 'VD' | 'FR';
-  terminal_name: string;
+export interface PosCompany {
+  id: string;
+  name: string;
+  nuit: string;
+  address?: string;
+  province?: string;
+  phone?: string;
+  email?: string;
+  logo_url?: string;
+  business_type: PosMode;
+  settings: PosCompanySettings;
+  mpesa_number?: string;
+  emola_number?: string;
+}
+
+export interface PosAccess {
+  enabled: boolean;
+  active: boolean;
+  in_grace: boolean;
+  grace_until: string | null;
+  end_date: string | null;
+  allowed: boolean;
+}
+
+export interface PosStaffSummary {
+  id: string;
+  name: string;
+  role: PosStaffRole;
+  color: string;
+  has_pin: boolean;
+  locked: boolean;
+}
+
+export interface PosTerminalInfo {
+  terminal: { id: string; name: string };
+  company: { id: string; name: string; nuit: string; logo_url?: string; business_type: PosMode };
+  access: PosAccess;
+  staff: PosStaffSummary[];
+  open_session: { id: string; number: number; opened_at: string; opened_by: string } | null;
 }
 
 export interface PosCategory {
   id: string;
   name: string;
-  icon: string;
   color: string;
+  icon?: string | null;
 }
 
 export interface PosProduct {
   id: string;
   code: string;
-  barcode?: string;
+  barcode?: string | null;
   name: string;
-  category_id: string;
-  /** Preço de venda ao público, com IVA incluído. */
   price: number;
-  tax_rate: number;
+  type: 'produto' | 'servico';
   unit: string;
-  /** null = sem controlo de stock (serviços, pratos). */
+  /** null = sem controlo de stock. */
   stock: number | null;
-  /** Restaurante: onde o pedido é preparado. */
-  station?: PosStation;
-}
-
-export interface PosSeller {
-  id: string;
-  name: string;
-  code: string;
-  color: string;
-  pin: string;
-  role: PosSellerRole;
-}
-
-export interface PosClient {
-  id: string;
-  name: string;
-  nuit?: string;
-  phone?: string;
+  category_id: string | null;
+  station: PosStation | null;
+  image_url?: string | null;
+  sold_by_weight: boolean;
+  available: boolean;
 }
 
 export interface PosZone {
   id: string;
   name: string;
-  icon: string;
+  icon?: string | null;
 }
 
 export interface PosTable {
   id: string;
   name: string;
-  zone_id: string;
+  zone_id: string | null;
   seats: number;
+}
+
+export interface PosSessionInfo {
+  id: string;
+  number: number;
+  opened_at: string;
+  opening_float: number;
+  opened_by: string;
 }
 
 export interface PosCartLine {
   product: PosProduct;
   quantity: number;
-  /** Restaurante: quantidade já enviada para a cozinha/bar. */
-  sent?: number;
-}
-
-export interface PosTableOrder {
-  table_id: string;
-  opened_at: string;
-  waiter_id: string;
-  covers: number;
-}
-
-/** Desconto na venda (sempre autorizado por um gestor). */
-export interface PosDiscount {
-  type: 'pct' | 'amount';
-  value: number;
-  authorized_by: string;
-}
-
-export interface PosPayment {
-  method: PosPaymentMethod;
-  amount: number;
-}
-
-export interface PosSaleItem {
-  product_id: string;
-  name: string;
-  unit_price: number;
-  tax_rate: number;
-  quantity: number;
-  total: number;
-}
-
-export interface PosTotals {
-  /** Soma dos artigos antes do desconto. */
-  gross: number;
-  discount: number;
-  subtotal: number;
-  tax_total: number;
-  total: number;
-}
-
-export interface PosSale extends PosTotals {
-  id: string;
-  number: string;
-  document_type: PosDocumentType;
-  created_at: string;
-  seller_id: string;
-  client_id: string;
-  client_name: string;
-  client_nuit?: string;
-  session_id?: string;
-  table_id?: string;
-  covers?: number;
-  /** 'mixed' quando o pagamento foi dividido. */
-  payment_method: PosPaymentMethod | 'mixed';
-  /** Valores líquidos por forma (o numerário já sem o troco). NC: negativos. */
-  payments: PosPayment[];
-  items: PosSaleItem[];
-  amount_received: number;
-  change: number;
-  status: 'completed' | 'cancelled';
-  cancelled_by?: string;
-  discount_by?: string;
-  /** NC: venda de origem e motivo. */
-  refund_of?: string;
-  refund_reason?: string;
-  /** Venda de origem: quantidades já devolvidas por artigo. */
-  returned?: Record<string, number>;
-}
-
-export interface PosCashMovement {
-  id: string;
-  type: 'in' | 'out';
-  amount: number;
-  reason: string;
-  created_at: string;
-  seller_id: string;
-}
-
-export interface PosSession {
-  id: string;
-  number: number;
-  terminal_name: string;
-  opened_at: string;
-  opened_by: string;
-  opening_float: number;
-  movements: PosCashMovement[];
-  status: 'open' | 'closed';
-  closed_at?: string;
-  closed_by?: string;
-  expected_cash?: number;
-  counted_cash?: number;
   notes?: string;
 }
 
-export interface PosSessionSummary {
-  count: number;
+export interface PosOrderLine {
+  id: string;
+  product_id: string | null;
+  name: string;
+  unit_price: number;
+  quantity: number;
+  paid_quantity: number;
+  station: PosStation | null;
+  notes: string | null;
+  status: 'pending' | 'sent' | 'voided';
+  sent_at: string | null;
+  void_reason: string | null;
+}
+
+export interface PosOrder {
+  id: string;
+  table_id: string | null;
+  table_name: string | null;
+  status: 'open' | 'closed' | 'cancelled';
+  covers: number;
+  opened_at: string;
+  updated_at: string;
+  waiter_id: string | null;
+  waiter: string | null;
+  waiter_color: string | null;
+  lines: PosOrderLine[];
   total: number;
-  tax_total: number;
-  byMethod: { id: PosPaymentMethod; amount: number; count: number }[];
-  byDocument: Record<PosDocumentType, number>;
-  bySeller: { seller_id: string; amount: number; count: number }[];
-  cancelled: { count: number; total: number };
-  refunds: { count: number; total: number };
+  due: number;
+  unsent: number;
+}
+
+export interface PosDiscount {
+  type: 'pct' | 'amount';
+  value: number;
+}
+
+export interface PosTotals {
+  gross: number;
+  discount: number;
+  total: number;
+}
+
+export interface PosDocumentItem {
+  id: string;
+  product_id: string | null;
+  name: string;
+  quantity: number;
+  unit_price: number;
+  discount: number;
+  total: number;
+  notes: string | null;
+  returned: number;
+}
+
+export interface PosDocumentPayment {
+  method: PosPaymentMethod;
+  amount: number;
+  tendered: number | null;
+  change: number;
+  reference: string | null;
+  phone: string | null;
+  simulated: boolean;
+}
+
+/** FR ou NC tal como o servidor a devolve. */
+export interface PosDocument {
+  id: string;
+  number: string;
+  document_type: 'FR' | 'NC';
+  status: 'paga' | 'anulada';
+  date: string;
+  issued_at: string;
+  subtotal: number;
+  discount_total: number;
+  total: number;
+  client: { id: string; name: string; nuit: string | null; walk_in: boolean };
+  staff: string | null;
+  terminal: string | null;
+  session_id: string | null;
+  table_label: string | null;
+  covers: number | null;
+  notes: string | null;
+  related: { id: string; number: string } | null;
+  credit_reason: string | null;
+  annulment_reason: string | null;
+  annulled_at: string | null;
+  print_count: number;
+  items: PosDocumentItem[];
+  payments: PosDocumentPayment[];
+  credit_notes: { id: string; number: string; total: number }[];
+}
+
+export interface PosDocumentRow {
+  id: string;
+  number: string;
+  document_type: 'FR' | 'NC';
+  status: 'paga' | 'anulada';
+  date: string;
+  issued_at: string;
+  total: number;
+  discount_total: number;
+  client: string;
+  client_nuit: string | null;
+  walk_in: boolean;
+  staff: string | null;
+  table_label: string | null;
+  methods: PosPaymentMethod[] | null;
+  related: string | null;
+  has_credit_notes: boolean;
+  session_id: string | null;
+}
+
+/** Resumo X/Z da caixa (pos_session_report / pos_close_session). */
+export interface PosSessionReport {
+  session: {
+    id: string; number: number; status: 'open' | 'closed'; opened_at: string; closed_at: string | null;
+    opened_by: string; closed_by: string | null; terminal: string; opening_float: number;
+  };
+  documents: Partial<Record<'FR' | 'NC', { count: number; total: number }>>;
+  voided: { count: number; total: number };
   discounts: number;
-  cashSales: number;
-  ins: number;
-  outs: number;
-  expectedCash: number;
+  net_sales: number;
+  payments: Partial<Record<PosPaymentMethod, { count: number; total: number }>>;
+  simulated_payments: number;
+  by_staff: { name: string | null; count: number; total: number }[];
+  movements: { type: 'in' | 'out'; amount: number; reason: string; notes: string | null; created_at: string; staff: string }[];
+  cash: { opening_float: number; sales: number; in: number; out: number; expected: number };
+  authorizations: number;
+  close?: { counted: number; expected: number; difference: number; denominations: Record<string, number> | null; notes: string | null; approved_by: string | null };
 }
 
-export interface PosCheckout {
-  seller_id: string;
-  client_id: string;
-  client_name?: string;
-  client_nuit?: string;
-  payments: PosPayment[];
-  document_type: 'VD' | 'FR';
+export interface PosPaymentRequest {
+  id: string;
+  method: 'mpesa' | 'emola';
+  amount: number;
+  phone: string;
+  status: 'pending' | 'confirmed' | 'failed' | 'expired' | 'cancelled';
+  reference: string;
+  failure_reason: string | null;
+  transaction_id?: string | null;
+  expires_at: string;
+  provider: 'simulator' | 'sislog';
 }
 
-const STATE_KEY = 'pos.demo.v3';
-const SETTINGS_KEY = 'pos.settings';
+export interface PosClientRef {
+  id: string;
+  name: string;
+  nuit: string | null;
+  phone?: string | null;
+}
 
-const DEFAULT_SETTINGS: PosSettings = {
-  mode: 'retail',
-  paper_width: 80,
-  default_document: 'VD',
-  terminal_name: 'Caixa 1'
-};
+/** Pagamento escolhido no ecrã, antes de emitir. */
+export type PosPaymentInput =
+  | { method: 'cash'; tendered: number }
+  | { method: 'mpesa' | 'emola'; request_id: string; amount: number }
+  | { method: 'card' | 'transfer'; amount: number; reference?: string };
 
-interface StoredState {
-  sales: PosSale[];
-  stock: Record<string, number | null>;
-  sessions: PosSession[];
-  carts: Record<string, PosCartLine[]>;
-  tableOrders: Record<string, PosTableOrder>;
-  discounts: Record<string, PosDiscount>;
+export interface PosKitchenTicket {
+  station: PosStation;
+  lines: { name: string; quantity: number; notes: string | null }[];
+}
+
+export interface PosVoidTicket {
+  station: PosStation | null;
+  table_name: string | null;
+  waiter: string;
+  product: string;
+  quantity: number;
+  reason: string;
+  authorized_by: string | null;
+  at: string;
+}
+
+interface Bootstrap {
+  company: PosCompany;
+  access: PosAccess;
+  terminal: { id: string; name: string };
+  staff: { id: string; name: string; role: PosStaffRole; permissions: Record<string, unknown> };
+  walk_in_client_id: string;
+  categories: PosCategory[];
+  products: PosProduct[];
+  zones: PosZone[];
+  tables: PosTable[];
+  session: PosSessionInfo | null;
 }
 
 const round2 = (value: number) => Math.round(value * 100) / 100;
-const uid = (prefix: string) => `${prefix}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-const sum = (values: number[]) => round2(values.reduce((a, b) => a + b, 0));
 
-/** IVA contido num valor com IVA incluído. */
-function taxIncluded(total: number, rate: number): number {
-  return rate > 0 ? round2(total - total / (1 + rate / 100)) : 0;
-}
-
-/** Totais com IVA incluído; o desconto reparte-se proporcionalmente pelo IVA. */
-export function computeTotals(items: PosSaleItem[], discount?: PosDiscount | null): PosTotals {
-  const gross = sum(items.map(i => i.total));
-  const grossTax = sum(items.map(i => taxIncluded(i.total, i.tax_rate)));
+export function computeTotals(lines: { unit_price: number; quantity: number }[], discount?: PosDiscount | null): PosTotals {
+  const gross = round2(lines.reduce((sum, l) => sum + round2(l.unit_price * l.quantity), 0));
   let off = 0;
-  if (discount && gross > 0) {
+  if (discount && gross > 0 && discount.value > 0) {
     off = discount.type === 'pct'
-      ? round2(gross * Math.min(100, Math.max(0, discount.value)) / 100)
-      : Math.min(gross, round2(Math.max(0, discount.value)));
+      ? round2(gross * Math.min(100, discount.value) / 100)
+      : Math.min(gross, round2(discount.value));
   }
-  const total = round2(gross - off);
-  const tax_total = gross ? round2(grossTax * total / gross) : 0;
-  return { gross, discount: off, total, tax_total, subtotal: round2(total - tax_total) };
-}
-
-export function toSaleItem(line: PosCartLine): PosSaleItem {
-  return {
-    product_id: line.product.id,
-    name: line.product.name,
-    unit_price: line.product.price,
-    tax_rate: line.product.tax_rate,
-    quantity: line.quantity,
-    total: round2(line.product.price * line.quantity)
-  };
+  return { gross, discount: off, total: round2(gross - off) };
 }
 
 /** NUIT moçambicano: 9 dígitos. */
 export function isValidNuit(value: string | undefined | null): boolean {
-  return /^\d{9}$/.test((value ?? '').trim());
+  return /^\d{9}$/.test((value ?? '').replace(/\s/g, ''));
+}
+
+export function newClientUuid(): string {
+  return typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+      });
 }
 
 @Injectable({ providedIn: 'root' })
 export class PosService {
-  readonly sellers = signal<PosSeller[]>(mock.sellers as PosSeller[]);
-  readonly clients = signal<PosClient[]>(mock.clients);
-  readonly zones = signal<PosZone[]>(mock.restaurant.zones);
-  readonly tables = signal<PosTable[]>(mock.restaurant.tables);
+  private api = inject(PosApiService);
 
-  readonly settings = signal<PosSettings>(this.readSettings());
-  /** Cada modo é uma empresa de demonstração diferente (Loja / Restaurante). */
-  readonly store = computed<PosStore>(() => mock.stores[this.settings().mode]);
+  readonly phase = signal<PosPhase>('loading');
+  readonly error = signal<string | null>(null);
+  readonly info = signal<PosTerminalInfo | null>(null);
 
-  /** Todos os artigos (retalho + restaurante), com o stock actual. */
-  private readonly allProducts = signal<PosProduct[]>([]);
-  readonly sales = signal<PosSale[]>([]);
-  readonly sessions = signal<PosSession[]>([]);
-  readonly carts = signal<Record<string, PosCartLine[]>>({});
-  readonly tableOrders = signal<Record<string, PosTableOrder>>({});
-  readonly discounts = signal<Record<string, PosDiscount>>({});
+  readonly company = signal<PosCompany | null>(null);
+  readonly access = signal<PosAccess | null>(null);
+  readonly terminal = signal<{ id: string; name: string } | null>(null);
+  readonly categories = signal<PosCategory[]>([]);
+  readonly products = signal<PosProduct[]>([]);
+  readonly zones = signal<PosZone[]>([]);
+  readonly tables = signal<PosTable[]>([]);
+  readonly session = signal<PosSessionInfo | null>(null);
+  readonly walkInClientId = signal<string>('');
 
-  /** Operador com sessão iniciada neste terminal (PIN). */
-  readonly activeSellerId = signal<string>(mock.sellers[0].id);
-  readonly locked = signal(false);
-  readonly activeCartKey = signal<string>(POS_COUNTER_CART);
+  /** Pedidos de mesa abertos (restaurante), partilhados entre terminais. */
+  readonly orders = signal<PosOrder[]>([]);
+  /** Mesa aberta no ecrã de venda; null = balcão. */
+  readonly activeOrderId = signal<string | null>(null);
 
-  readonly categories = computed<PosCategory[]>(() =>
-    this.settings().mode === 'restaurant' ? mock.restaurant.categories : mock.categories);
-  readonly products = computed(() => {
-    const ids = new Set(this.categories().map(c => c.id));
-    return this.allProducts().filter(p => ids.has(p.category_id));
+  /** Conta dividida: quantidade a cobrar por linha da mesa (null = tudo). */
+  readonly billSplit = signal<Record<string, number> | null>(null);
+
+  /** Carrinho do balcão (venda directa). */
+  readonly cart = signal<PosCartLine[]>([]);
+  readonly discount = signal<PosDiscount | null>(null);
+
+  readonly operator = this.api.operator;
+  readonly isManager = computed(() => this.operator()?.staff.role === 'manager');
+  /**
+   * Quem cobra precisa de caixa aberta. O empregado de mesa (sem permissão de
+   * cobrar) trabalha só com pedidos: mesas, artigos e envio para a cozinha/bar.
+   */
+  readonly canSell = computed(() => {
+    const staff = this.operator()?.staff;
+    if (!staff) return false;
+    if (staff.role !== 'waiter') return true;
+    return staff.permissions?.['sell'] === true || staff.permissions?.['can_charge'] === true;
+  });
+  readonly mode = computed<PosMode>(() => this.company()?.business_type ?? 'retail');
+  readonly paperWidth = computed<PosPaperWidth>(() => this.company()?.settings?.paper_width === 58 ? 58 : 80);
+  readonly paymentMethods = computed(() => {
+    const enabled = this.company()?.settings?.payment_methods;
+    return POS_PAYMENT_METHODS.filter(m => !enabled?.length || enabled.includes(m.id) || m.id === 'cash');
   });
 
-  readonly currentSession = computed(() => this.sessions().find(s => s.status === 'open') ?? null);
-  readonly activeSeller = computed(() => this.seller(this.activeSellerId()));
-  readonly isManager = computed(() => this.activeSeller()?.role === 'manager');
+  readonly activeOrder = computed(() => this.orders().find(o => o.id === this.activeOrderId()) ?? null);
+  readonly activeTable = computed(() => {
+    const order = this.activeOrder();
+    return order ? this.tables().find(t => t.id === order.table_id) ?? null : null;
+  });
+  /** Linhas por pagar da mesa (as anuladas não contam). */
+  readonly orderLines = computed(() => (this.activeOrder()?.lines ?? []).filter(l => l.status !== 'voided' && l.quantity > l.paid_quantity));
 
-  readonly cart = computed(() => this.carts()[this.activeCartKey()] ?? []);
-  readonly cartDiscount = computed<PosDiscount | null>(() => this.discounts()[this.activeCartKey()] ?? null);
-  readonly cartCount = computed(() => this.cart().reduce((total, line) => total + line.quantity, 0));
-  readonly cartTotals = computed(() => computeTotals(this.cart().map(toSaleItem), this.cartDiscount()));
-  readonly activeTable = computed(() => this.tables().find(t => t.id === this.activeCartKey()) ?? null);
-  readonly activeOrder = computed<PosTableOrder | null>(() => this.tableOrders()[this.activeCartKey()] ?? null);
-  /** Linhas ainda não enviadas para a cozinha/bar. */
-  readonly unsentCount = computed(() => this.cart().reduce((total, l) => total + Math.max(0, l.quantity - (l.sent ?? 0)), 0));
+  /** O que está no ecrã de venda: a mesa aberta ou o carrinho do balcão. */
+  readonly saleLines = computed(() => {
+    if (this.activeOrder()) {
+      const split = this.billSplit();
+      return this.orderLines()
+        .map(l => ({
+          key: l.id, product_id: l.product_id, name: l.name, unit_price: l.unit_price,
+          quantity: split ? round2(split[l.id] ?? 0) : round2(l.quantity - l.paid_quantity), status: l.status, notes: l.notes
+        }))
+        .filter(l => l.quantity > 0);
+    }
+    return this.cart().map(l => ({
+      key: l.product.id, product_id: l.product.id, name: l.product.name, unit_price: l.product.price,
+      quantity: l.quantity, status: 'pending' as const, notes: l.notes ?? null
+    }));
+  });
+  readonly saleCount = computed(() => this.saleLines().reduce((sum, l) => sum + l.quantity, 0));
+  readonly totals = computed(() => computeTotals(this.saleLines(), this.discount()));
+  readonly unsentCount = computed(() => (this.activeOrder()?.lines ?? []).filter(l => l.status === 'pending').length);
 
-  constructor() {
-    this.load();
+  private realtime: RealtimeChannel | null = null;
+  private reloadTimer?: ReturnType<typeof setTimeout>;
+
+  // ---------- Arranque, emparelhamento e operadores ----------
+
+  async init() {
+    this.phase.set('loading');
+    this.error.set(null);
+    try {
+      if (!(await this.api.isPaired())) {
+        this.phase.set('unpaired');
+        return;
+      }
+      await this.loadInfo();
+      if (this.api.token) {
+        await this.bootstrap();
+        this.phase.set('ready');
+      } else {
+        this.phase.set('login');
+      }
+    } catch (e) {
+      this.handleFatal(e);
+    }
+  }
+
+  async pair(code: string) {
+    await this.api.pair(code);
+    await this.init();
+  }
+
+  async unpair() {
+    this.stopRealtime();
+    await this.api.unpair();
+    this.reset();
+    this.phase.set('unpaired');
+  }
+
+  async loadInfo() {
+    const info = await this.api.rpc<PosTerminalInfo>('pos_terminal_info');
+    this.info.set(info);
+    this.terminal.set(info.terminal);
+    this.access.set(info.access);
+  }
+
+  /** PIN do operador. Devolve a mensagem de erro, ou null se entrou. */
+  async login(staffId: string, pin: string): Promise<string | null> {
+    const result = await this.api.rpc<{ ok: boolean; error?: string } & Partial<PosOperatorToken>>(
+      'pos_operator_login', { p_staff_id: staffId, p_pin: pin });
+    if (!result.ok) return result.error ?? 'PIN errado.';
+    this.api.setOperator({ token: result.token!, expires_at: result.expires_at!, staff: result.staff! });
+    await this.bootstrap();
+    this.phase.set('ready');
+    return null;
+  }
+
+  /** Bloqueia o terminal: termina a sessão do operador (o carrinho do balcão fica). */
+  async lock() {
+    try { await this.api.op('pos_operator_logout'); } catch { /* sessão já terminada */ }
+    this.api.setOperator(null);
+    this.phase.set('login');
+    await this.loadInfo().catch(() => undefined);
+  }
+
+  async bootstrap() {
+    const boot = await this.api.op<Bootstrap>('pos_bootstrap');
+    this.company.set(boot.company);
+    this.access.set(boot.access);
+    this.terminal.set(boot.terminal);
+    this.categories.set(boot.categories);
+    this.products.set(boot.products.map(p => ({ ...p, price: Number(p.price), stock: p.stock === null ? null : Number(p.stock) })));
+    this.zones.set(boot.zones);
+    this.tables.set(boot.tables);
+    this.session.set(boot.session ? { ...boot.session, opening_float: Number(boot.session.opening_float) } : null);
+    this.walkInClientId.set(boot.walk_in_client_id);
+    if (boot.company.business_type === 'restaurant') {
+      await this.loadOrders();
+      this.startRealtime(boot.company.id);
+    } else {
+      this.stopRealtime();
+      this.orders.set([]);
+    }
+  }
+
+  /** Erro de uma operação: se o terminal foi revogado ou o operador saiu, volta ao ecrã certo. */
+  handleError(e: unknown): string {
+    if (e instanceof PosApiError) {
+      if (e.code === 'POS_TERMINAL_REVOKED') {
+        this.unpair();
+      } else if (e.code === 'POS_OPERATOR_EXPIRED') {
+        this.phase.set('login');
+        this.loadInfo().catch(() => undefined);
+      } else if (e.code === 'POS_NO_SESSION') {
+        this.session.set(null);
+      }
+      return e.message;
+    }
+    return e instanceof Error ? e.message : String(e);
+  }
+
+  private handleFatal(e: unknown) {
+    const message = this.handleError(e);
+    if (this.phase() === 'loading') {
+      this.error.set(message);
+      this.phase.set('error');
+    }
+  }
+
+  private reset() {
+    this.info.set(null);
+    this.company.set(null);
+    this.access.set(null);
+    this.terminal.set(null);
+    this.categories.set([]);
+    this.products.set([]);
+    this.zones.set([]);
+    this.tables.set([]);
+    this.session.set(null);
+    this.orders.set([]);
+    this.activeOrderId.set(null);
+    this.cart.set([]);
+    this.discount.set(null);
   }
 
   // ---------- Consultas ----------
 
-  seller(id: string | undefined): PosSeller | undefined {
-    return this.sellers().find(s => s.id === id);
+  category(id: string | null | undefined): PosCategory | undefined {
+    return this.categories().find(c => c.id === id);
   }
 
-  client(id: string): PosClient | undefined {
-    return this.clients().find(c => c.id === id);
+  product(id: string | null | undefined): PosProduct | undefined {
+    return this.products().find(p => p.id === id);
   }
 
-  category(id: string): PosCategory | undefined {
-    return [...mock.categories, ...mock.restaurant.categories].find(c => c.id === id);
-  }
-
-  product(id: string): PosProduct | undefined {
-    return this.allProducts().find(p => p.id === id);
-  }
-
-  table(id: string | undefined): PosTable | undefined {
+  table(id: string | null | undefined): PosTable | undefined {
     return this.tables().find(t => t.id === id);
   }
 
-  sale(id: string | undefined): PosSale | undefined {
-    return this.sales().find(s => s.id === id);
+  orderForTable(tableId: string): PosOrder | undefined {
+    return this.orders().find(o => o.table_id === tableId);
   }
 
-  tableTotal(tableId: string): number {
-    return computeTotals((this.carts()[tableId] ?? []).map(toSaleItem), this.discounts()[tableId]).total;
+  // ---------- Caixa ----------
+
+  async openSession(openingFloat: number) {
+    const s = await this.api.op<PosSessionInfo>('pos_open_session', { p_opening_float: openingFloat });
+    this.session.set({ ...s, opening_float: Number(s.opening_float) });
   }
 
-  /** Quantidade ainda disponível, descontando o que está em todos os carrinhos/mesas. */
-  available(product: PosProduct): number {
-    if (product.stock === null) return Infinity;
-    const reserved = Object.values(this.carts())
-      .flat()
-      .filter(line => line.product.id === product.id)
-      .reduce((total, line) => total + line.quantity, 0);
-    return product.stock - reserved;
-  }
-
-  /** Quanto ainda se pode devolver de cada artigo da venda. */
-  returnable(sale: PosSale): { item: PosSaleItem; max: number }[] {
-    return sale.items
-      .map(item => ({ item, max: item.quantity - (sale.returned?.[item.product_id] ?? 0) }))
-      .filter(r => r.max > 0);
-  }
-
-  // ---------- Operadores e PIN ----------
-
-  verifyPin(sellerId: string, pin: string): boolean {
-    return this.seller(sellerId)?.pin === pin;
-  }
-
-  /** Autorização de supervisor: devolve o gestor dono do PIN. */
-  managerByPin(pin: string): PosSeller | undefined {
-    return this.sellers().find(s => s.role === 'manager' && s.pin === pin);
-  }
-
-  lock() {
-    this.locked.set(true);
-  }
-
-  unlock(sellerId: string) {
-    this.activeSellerId.set(sellerId);
-    this.locked.set(false);
-  }
-
-  // ---------- Sessão de caixa ----------
-
-  openSession(sellerId: string, openingFloat: number): PosSession {
-    const session: PosSession = {
-      id: uid('ses'),
-      number: this.sessions().reduce((max, s) => Math.max(max, s.number), 0) + 1,
-      terminal_name: this.settings().terminal_name,
-      opened_at: new Date().toISOString(),
-      opened_by: sellerId,
-      opening_float: round2(Math.max(0, openingFloat)),
-      movements: [],
-      status: 'open'
-    };
-    this.sessions.update(list => [session, ...list]);
-    this.unlock(sellerId);
-    this.persist();
-    return session;
-  }
-
-  addMovement(type: 'in' | 'out', amount: number, reason: string) {
-    const session = this.currentSession();
-    if (!session || amount <= 0) return;
-    const movement: PosCashMovement = {
-      id: uid('mov'), type, amount: round2(amount), reason,
-      created_at: new Date().toISOString(), seller_id: this.activeSellerId()
-    };
-    this.sessions.update(list => list.map(s => s.id === session.id ? { ...s, movements: [...s.movements, movement] } : s));
-    this.persist();
-  }
-
-  summarize(session: PosSession): PosSessionSummary {
-    const sales = this.sales().filter(s => s.session_id === session.id);
-    const done = sales.filter(s => s.status === 'completed');
-    const salesOnly = done.filter(s => s.document_type !== 'NC');
-    const refunds = done.filter(s => s.document_type === 'NC');
-    const cancelled = sales.filter(s => s.status === 'cancelled');
-
-    const byMethod = POS_PAYMENT_METHODS.map(m => {
-      const payments = done.flatMap(s => s.payments.filter(p => p.method === m.id));
-      return { id: m.id, amount: sum(payments.map(p => p.amount)), count: payments.length };
+  cashMovement(type: 'in' | 'out', amount: number, reason: string, notes: string | null, authPin?: string) {
+    return this.api.op<PosSessionReport>('pos_cash_movement', {
+      p_type: type, p_amount: amount, p_reason: reason, p_notes: notes, p_auth_pin: authPin ?? null
     });
-    const sellerIds = [...new Set(done.map(s => s.seller_id))];
-    const bySeller = sellerIds
-      .map(id => { const list = done.filter(s => s.seller_id === id); return { seller_id: id, amount: sum(list.map(s => s.total)), count: list.length }; })
-      .sort((a, b) => b.amount - a.amount);
-
-    const cashSales = byMethod.find(m => m.id === 'cash')!.amount;
-    const ins = sum(session.movements.filter(m => m.type === 'in').map(m => m.amount));
-    const outs = sum(session.movements.filter(m => m.type === 'out').map(m => m.amount));
-
-    return {
-      count: salesOnly.length,
-      total: sum(done.map(s => s.total)),
-      tax_total: sum(done.map(s => s.tax_total)),
-      byMethod,
-      byDocument: {
-        VD: salesOnly.filter(s => s.document_type === 'VD').length,
-        FR: salesOnly.filter(s => s.document_type === 'FR').length,
-        NC: refunds.length
-      },
-      bySeller,
-      cancelled: { count: cancelled.length, total: sum(cancelled.map(s => s.total)) },
-      refunds: { count: refunds.length, total: Math.abs(sum(refunds.map(s => s.total))) },
-      discounts: sum(salesOnly.map(s => s.discount)),
-      cashSales,
-      ins,
-      outs,
-      expectedCash: round2(session.opening_float + cashSales + ins - outs)
-    };
   }
 
-  closeSession(countedCash: number, notes: string): PosSession | null {
-    const session = this.currentSession();
-    if (!session) return null;
-    const closed: PosSession = {
-      ...session,
-      status: 'closed',
-      closed_at: new Date().toISOString(),
-      closed_by: this.activeSellerId(),
-      expected_cash: this.summarize(session).expectedCash,
-      counted_cash: round2(countedCash),
-      notes: notes.trim() || undefined
-    };
-    this.sessions.update(list => list.map(s => s.id === session.id ? closed : s));
-    this.activeCartKey.set(POS_COUNTER_CART);
-    this.locked.set(false);
-    this.persist();
-    return closed;
+  sessionReport() {
+    return this.api.op<PosSessionReport>('pos_session_report');
   }
 
-  // ---------- Carrinho / pedido da mesa ----------
-
-  selectCart(key: string) {
-    this.activeCartKey.set(key);
-  }
-
-  addToCart(product: PosProduct): boolean {
-    if (this.available(product) <= 0) return false;
-    this.updateCart(lines => {
-      const existing = lines.find(line => line.product.id === product.id);
-      if (existing) return lines.map(line => line === existing ? { ...line, quantity: line.quantity + 1 } : line);
-      return [...lines, { product, quantity: 1, sent: 0 }];
+  async closeSession(counted: number, denominations: Record<string, number> | null, notes: string, authPin?: string) {
+    const report = await this.api.op<PosSessionReport>('pos_close_session', {
+      p_counted_cash: counted, p_denominations: denominations, p_notes: notes || null, p_auth_pin: authPin ?? null
     });
-    return true;
+    this.session.set(null);
+    this.cart.set([]);
+    this.discount.set(null);
+    this.activeOrderId.set(null);
+    // O fecho termina a sessão de todos os operadores do terminal.
+    this.api.setOperator(null);
+    return report;
   }
 
-  setQuantity(productId: string, quantity: number) {
-    this.updateCart(lines => lines
-      .map(line => {
-        if (line.product.id !== productId) return line;
-        const current = this.product(productId) ?? line.product;
-        const max = current.stock === null ? Infinity : this.available(current) + line.quantity;
-        return { ...line, quantity: Math.min(Math.max(0, Math.floor(quantity)), max) };
-      })
-      .filter(line => line.quantity > 0));
+  // ---------- Carrinho do balcão ----------
+
+  /** Quantidade que ainda se pode vender (avisa, não bloqueia: o stock pode ficar negativo). */
+  inCart(productId: string): number {
+    return this.cart().find(l => l.product.id === productId)?.quantity ?? 0;
   }
 
-  removeFromCart(productId: string) {
-    this.updateCart(lines => lines.filter(line => line.product.id !== productId));
+  addToCart(product: PosProduct, quantity = 1) {
+    this.cart.update(lines => {
+      const existing = lines.find(l => l.product.id === product.id && !l.notes);
+      if (existing) return lines.map(l => l === existing ? { ...l, quantity: round2(l.quantity + quantity) } : l);
+      return [...lines, { product, quantity }];
+    });
+  }
+
+  setCartQuantity(productId: string, quantity: number) {
+    this.cart.update(lines => lines
+      .map(l => l.product.id === productId ? { ...l, quantity: Math.max(0, l.product.sold_by_weight ? round2(quantity) : Math.floor(quantity)) } : l)
+      .filter(l => l.quantity > 0));
+    if (this.cart().length === 0) this.discount.set(null);
   }
 
   clearCart() {
-    this.updateCart(() => []);
+    this.cart.set([]);
+    this.discount.set(null);
   }
 
-  setDiscount(discount: PosDiscount | null) {
-    const key = this.activeCartKey();
-    this.discounts.update(map => {
-      const { [key]: _, ...rest } = map;
-      return discount && discount.value > 0 ? { ...rest, [key]: discount } : rest;
+  // ---------- Clientes ----------
+
+  searchClients(query: string) {
+    return this.api.op<PosClientRef[]>('pos_search_clients', { p_query: query });
+  }
+
+  createClient(name: string, nuit: string, phone?: string) {
+    return this.api.op<PosClientRef & { existing: boolean }>('pos_create_client', { p_name: name, p_nuit: nuit, p_phone: phone ?? null });
+  }
+
+  // ---------- Pagamentos móveis ----------
+
+  requestMobilePayment(method: 'mpesa' | 'emola', amount: number, phone: string) {
+    return this.api.op<PosPaymentRequest>('pos_request_mobile_payment', { p_method: method, p_amount: amount, p_phone: phone });
+  }
+
+  checkMobilePayment(requestId: string, simulate?: 'confirm' | 'fail' | 'cancel') {
+    return this.api.op<PosPaymentRequest>('pos_check_mobile_payment', { p_request_id: requestId, p_simulate: simulate ?? null });
+  }
+
+  // ---------- Emitir ----------
+
+  /** Cobra o balcão ou a mesa aberta (toda, ou só as linhas indicadas: conta dividida). */
+  async checkout(input: {
+    client_uuid: string;
+    client_id: string | null;
+    payments: PosPaymentInput[];
+    order_lines?: { line_id: string; quantity: number }[];
+  }, authPin?: string): Promise<{ document: PosDocument; orderClosed: boolean }> {
+    const payments = input.payments.map(p => p.method === 'cash'
+      ? { method: 'cash', tendered: p.tendered }
+      : p.method === 'mpesa' || p.method === 'emola'
+        ? { method: p.method, request_id: p.request_id }
+        : { method: p.method, amount: p.amount, reference: 'reference' in p ? p.reference ?? null : null });
+    const order = this.activeOrder();
+    const base = { client_uuid: input.client_uuid, client_id: input.client_id, discount: this.discount(), payments };
+
+    if (order) {
+      const split = this.billSplit();
+      const orderLines = input.order_lines ?? (split
+        ? Object.entries(split).filter(([, q]) => q > 0).map(([line_id, quantity]) => ({ line_id, quantity }))
+        : undefined);
+      const result = await this.api.op<{ document: PosDocument; order: PosOrder; order_closed: boolean }>('pos_checkout_order', {
+        p_order_id: order.id,
+        p_payload: { ...base, order_lines: orderLines?.length ? orderLines : undefined },
+        p_auth_pin: authPin ?? null
+      });
+      this.upsertOrder(result.order);
+      this.discount.set(null);
+      this.billSplit.set(null);
+      if (result.order_closed) this.activeOrderId.set(null);
+      return { document: result.document, orderClosed: result.order_closed };
+    }
+
+    const document = await this.api.op<PosDocument>('pos_issue_fr', {
+      p_payload: {
+        ...base,
+        lines: this.cart().map(l => ({ product_id: l.product.id, quantity: l.quantity, notes: l.notes ?? null }))
+      },
+      p_auth_pin: authPin ?? null
     });
-    this.persist();
+    this.clearCart();
+    this.applyStock(document, -1);
+    return { document, orderClosed: false };
+  }
+
+  /** Mantém o stock mostrado coerente sem recarregar o catálogo. */
+  private applyStock(document: PosDocument, sign: 1 | -1) {
+    const byProduct = new Map<string, number>();
+    for (const item of document.items) {
+      if (item.product_id) byProduct.set(item.product_id, (byProduct.get(item.product_id) ?? 0) + Number(item.quantity));
+    }
+    this.products.update(list => list.map(p => p.stock === null || !byProduct.has(p.id)
+      ? p
+      : { ...p, stock: round2(p.stock + sign * byProduct.get(p.id)!) }));
+  }
+
+  // ---------- Documentos ----------
+
+  listDocuments(scope: 'session' | 'today' | 'week', search?: string) {
+    return this.api.op<PosDocumentRow[]>('pos_list_documents', { p_scope: scope, p_search: search || null });
+  }
+
+  getDocument(id: string, reprint = false) {
+    return this.api.op<PosDocument>('pos_get_document', { p_invoice_id: id, p_reprint: reprint });
+  }
+
+  async voidDocument(id: string, reason: string, authPin?: string) {
+    const doc = await this.api.op<PosDocument>('pos_void_fr', { p_invoice_id: id, p_reason: reason, p_auth_pin: authPin ?? null });
+    this.applyStock(doc, 1);
+    return doc;
+  }
+
+  async creditNote(id: string, lines: { item_id: string; quantity: number }[], reason: string, method: PosPaymentMethod | null, authPin?: string) {
+    const doc = await this.api.op<PosDocument>('pos_issue_nc', {
+      p_invoice_id: id, p_lines: lines, p_reason: reason, p_refund_method: method, p_auth_pin: authPin ?? null
+    });
+    this.applyStock(doc, -1);
+    return doc;
   }
 
   // ---------- Restaurante ----------
 
-  /** Abre (ou retoma) a mesa e torna-a no carrinho activo. */
-  openTable(tableId: string) {
-    if (!this.tableOrders()[tableId]) {
-      const table = this.table(tableId);
-      this.tableOrders.update(orders => ({
-        ...orders,
-        [tableId]: { table_id: tableId, opened_at: new Date().toISOString(), waiter_id: this.activeSellerId(), covers: Math.min(2, table?.seats ?? 2) }
-      }));
-      this.persist();
-    }
-    this.activeCartKey.set(tableId);
+  async loadOrders() {
+    this.orders.set((await this.api.op<PosOrder[]>('pos_list_orders')).map(o => this.normalizeOrder(o)));
+    if (this.activeOrderId() && !this.activeOrder()) this.activeOrderId.set(null);
   }
 
-  setCovers(covers: number) {
-    const key = this.activeCartKey();
-    const order = this.tableOrders()[key];
+  async openTable(tableId: string, covers = 2): Promise<PosOrder> {
+    const existing = this.orderForTable(tableId);
+    if (existing) {
+      this.activeOrderId.set(existing.id);
+      this.discount.set(null);
+      this.billSplit.set(null);
+      return existing;
+    }
+    const order = await this.api.op<PosOrder>('pos_open_order', { p_table_id: tableId, p_covers: covers });
+    this.upsertOrder(order);
+    this.activeOrderId.set(order.id);
+    this.discount.set(null);
+    return order;
+  }
+
+  selectCounter() {
+    this.activeOrderId.set(null);
+    this.discount.set(null);
+    this.billSplit.set(null);
+  }
+
+  async addToOrder(product: PosProduct, quantity = 1, notes?: string) {
+    const order = this.activeOrder();
     if (!order) return;
-    this.tableOrders.update(orders => ({ ...orders, [key]: { ...order, covers: Math.max(1, Math.min(30, covers)) } }));
-    this.persist();
+    this.upsertOrder(await this.api.op<PosOrder>('pos_order_add_line', {
+      p_order_id: order.id, p_product_id: product.id, p_quantity: quantity, p_notes: notes ?? null
+    }));
   }
 
-  /** Mesa aberta sem nada pedido: liberta-a. */
-  releaseTableIfEmpty(tableId: string) {
-    if ((this.carts()[tableId] ?? []).length > 0 || !this.tableOrders()[tableId]) return;
-    this.tableOrders.update(orders => { const { [tableId]: _, ...rest } = orders; return rest; });
-    this.persist();
+  /** Muda a quantidade de uma linha da mesa; numa linha enviada pede motivo e gerente. */
+  async updateOrderLine(lineId: string, quantity: number, reason?: string, authPin?: string, notes?: string): Promise<PosVoidTicket | null> {
+    const result = await this.api.op<{ order: PosOrder; void_ticket: PosVoidTicket | null }>('pos_order_update_line', {
+      p_line_id: lineId, p_quantity: quantity, p_notes: notes ?? null, p_reason: reason ?? null, p_auth_pin: authPin ?? null
+    });
+    this.upsertOrder(result.order);
+    return result.void_ticket;
   }
 
-  /** Marca o que falta enviar e devolve-o, agrupado por posto (cozinha / bar). */
-  sendToKitchen(): Record<PosStation, { name: string; quantity: number }[]> {
-    const result: Record<PosStation, { name: string; quantity: number }[]> = { kitchen: [], bar: [] };
-    for (const line of this.cart()) {
-      const pending = line.quantity - (line.sent ?? 0);
-      if (pending > 0) result[line.product.station ?? 'kitchen'].push({ name: line.product.name, quantity: pending });
-    }
-    this.updateCart(lines => lines.map(line => ({ ...line, sent: line.quantity })));
+  async sendOrder(): Promise<{ tickets: PosKitchenTicket[]; table_name: string | null; covers: number; waiter: string; at: string } | null> {
+    const order = this.activeOrder();
+    if (!order) return null;
+    const result = await this.api.op<{ order: PosOrder; tickets: PosKitchenTicket[]; table_name: string | null; covers: number; waiter: string; at: string }>(
+      'pos_order_send', { p_order_id: order.id });
+    this.upsertOrder(result.order);
     return result;
   }
 
-  /**
-   * Leva o pedido actual para outra mesa: do balcão para uma mesa (a mesa passa a
-   * ser o "cliente" da venda) ou de uma mesa para outra livre.
-   */
-  moveToTable(to: string) {
-    const from = this.activeCartKey();
-    if (from === to || this.tableOrders()[to]) return;
-    const order = this.tableOrders()[from];
-    const table = this.table(to);
-    if (!table) return;
-    const moved: PosTableOrder = order
-      ? { ...order, table_id: to }
-      : { table_id: to, opened_at: new Date().toISOString(), waiter_id: this.activeSellerId(), covers: Math.min(2, table.seats) };
-    this.carts.update(carts => { const { [from]: lines, ...rest } = carts; return lines ? { ...rest, [to]: lines } : rest; });
-    this.discounts.update(map => { const { [from]: d, ...rest } = map; return d ? { ...rest, [to]: d } : rest; });
-    this.tableOrders.update(orders => { const { [from]: _, ...rest } = orders; return { ...rest, [to]: moved }; });
-    this.activeCartKey.set(to);
-    this.persist();
+  async moveOrder(tableId: string) {
+    const order = this.activeOrder();
+    if (!order) return;
+    this.upsertOrder(await this.api.op<PosOrder>('pos_order_move', { p_order_id: order.id, p_table_id: tableId }));
   }
 
-  // ---------- Vendas ----------
+  async setCovers(covers: number) {
+    const order = this.activeOrder();
+    if (!order) return;
+    this.upsertOrder(await this.api.op<PosOrder>('pos_order_set_covers', { p_order_id: order.id, p_covers: covers }));
+  }
 
-  checkout(input: PosCheckout): PosSale {
-    const key = this.activeCartKey();
-    const order = this.tableOrders()[key];
-    const discount = this.cartDiscount();
-    const items = this.cart().map(toSaleItem);
-    const totals = computeTotals(items, discount);
+  async cancelOrder(reason?: string, authPin?: string) {
+    const order = this.activeOrder();
+    if (!order) return;
+    await this.api.op('pos_order_cancel', { p_order_id: order.id, p_reason: reason ?? null, p_auth_pin: authPin ?? null });
+    this.orders.update(list => list.filter(o => o.id !== order.id));
+    this.activeOrderId.set(null);
+  }
 
-    // O troco sai sempre do numerário entregue.
-    const paid = sum(input.payments.map(p => p.amount));
-    const change = Math.max(0, round2(paid - totals.total));
-    const payments = this.mergePayments(input.payments, change);
-    const client = this.client(input.client_id);
-
-    const now = new Date();
-    const sale: PosSale = {
-      id: uid('v'),
-      number: this.nextNumber(input.document_type, now.getFullYear()),
-      document_type: input.document_type,
-      created_at: now.toISOString(),
-      seller_id: input.seller_id,
-      client_id: input.client_id,
-      client_name: (input.client_name?.trim() || client?.name) ?? '',
-      client_nuit: (input.client_nuit?.trim() || client?.nuit) || undefined,
-      session_id: this.currentSession()?.id,
-      table_id: order ? key : undefined,
-      covers: order?.covers,
-      payment_method: payments.length === 1 ? payments[0].method : 'mixed',
-      payments,
-      items,
-      ...totals,
-      amount_received: round2(paid),
-      change,
-      status: 'completed',
-      discount_by: discount?.authorized_by
-    };
-
-    this.adjustStock(items, -1);
-    this.sales.update(list => [sale, ...list]);
-    this.carts.update(carts => { const { [key]: _, ...rest } = carts; return rest; });
-    this.discounts.update(map => { const { [key]: _, ...rest } = map; return rest; });
-    if (order) {
-      this.tableOrders.update(orders => { const { [key]: _, ...rest } = orders; return rest; });
-      this.activeCartKey.set(POS_COUNTER_CART);
+  /** O balcão passa a mesa: abre a mesa e manda as linhas do carrinho para lá. */
+  async moveCartToTable(tableId: string) {
+    const lines = this.cart();
+    const order = await this.openTable(tableId);
+    for (const line of lines) {
+      this.upsertOrder(await this.api.op<PosOrder>('pos_order_add_line', {
+        p_order_id: order.id, p_product_id: line.product.id, p_quantity: line.quantity, p_notes: line.notes ?? null
+      }));
     }
-    this.persist();
-    return sale;
+    this.cart.set([]);
   }
 
-  /** Devolução: emite uma nota de crédito (valores negativos) e repõe o stock. */
-  refund(saleId: string, lines: { product_id: string; quantity: number }[], method: PosPaymentMethod, reason: string, authorizedBy: string): PosSale | null {
-    const original = this.sale(saleId);
-    const valid = lines.filter(l => l.quantity > 0);
-    if (!original || original.status !== 'completed' || original.document_type === 'NC' || valid.length === 0) return null;
-
-    // O desconto da venda original aplica-se também ao que se devolve.
-    const factor = original.gross ? original.total / original.gross : 1;
-    const items: PosSaleItem[] = valid.map(l => {
-      const it = original.items.find(i => i.product_id === l.product_id)!;
-      return { ...it, quantity: -l.quantity, total: round2(-it.unit_price * l.quantity) };
+  private upsertOrder(order: PosOrder) {
+    const normalized = this.normalizeOrder(order);
+    this.orders.update(list => {
+      const others = list.filter(o => o.id !== normalized.id);
+      return normalized.status === 'open' ? [...others, normalized] : others;
     });
-    const gross = sum(items.map(i => i.total));
-    const total = round2(gross * factor);
-    const tax_total = round2(sum(items.map(i => -taxIncluded(-i.total, i.tax_rate))) * factor);
+  }
 
-    const now = new Date();
-    const credit: PosSale = {
-      id: uid('nc'),
-      number: this.nextNumber('NC', now.getFullYear()),
-      document_type: 'NC',
-      created_at: now.toISOString(),
-      seller_id: this.activeSellerId(),
-      client_id: original.client_id,
-      client_name: original.client_name,
-      client_nuit: original.client_nuit,
-      session_id: this.currentSession()?.id,
-      table_id: original.table_id,
-      payment_method: method,
-      payments: [{ method, amount: total }],
-      items,
-      gross,
-      discount: round2(gross - total),
-      total,
-      tax_total,
-      subtotal: round2(total - tax_total),
-      amount_received: total,
-      change: 0,
-      status: 'completed',
-      discount_by: authorizedBy,
-      refund_of: original.id,
-      refund_reason: reason.trim() || undefined
+  private normalizeOrder(order: PosOrder): PosOrder {
+    return {
+      ...order,
+      total: Number(order.total),
+      due: Number(order.due),
+      lines: order.lines.map(l => ({ ...l, unit_price: Number(l.unit_price), quantity: Number(l.quantity), paid_quantity: Number(l.paid_quantity) }))
     };
-
-    const returned = { ...(original.returned ?? {}) };
-    valid.forEach(l => returned[l.product_id] = (returned[l.product_id] ?? 0) + l.quantity);
-    this.adjustStock(valid.map(l => ({ product_id: l.product_id, quantity: l.quantity })), 1);
-    this.sales.update(list => [credit, ...list.map(s => s.id === original.id ? { ...s, returned } : s)]);
-    this.persist();
-    return credit;
   }
 
-  /** Anula a venda (com autorização de um gestor) e devolve as quantidades ao stock. */
-  cancelSale(saleId: string, authorizedBy: string) {
-    const sale = this.sale(saleId);
-    if (!sale || sale.status === 'cancelled') return;
-    this.adjustStock(sale.items.map(i => ({ product_id: i.product_id, quantity: i.quantity })), 1);
-    this.sales.update(list => list.map(s => s.id === saleId ? { ...s, status: 'cancelled', cancelled_by: authorizedBy } : s));
-    this.persist();
-  }
-
-  // ---------- Definições do terminal ----------
-
-  updateSettings(patch: Partial<PosSettings>) {
-    const modeChanged = !!patch.mode && patch.mode !== this.settings().mode;
-    if (modeChanged) this.persist();
-    this.settings.update(s => ({ ...s, ...patch }));
-    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(this.settings())); } catch { /* armazenamento indisponível */ }
-    if (modeChanged) {
-      // Outra empresa: outras vendas, outra caixa, outras mesas.
-      this.activeCartKey.set(POS_COUNTER_CART);
-      this.locked.set(false);
-      this.load();
-    }
-  }
-
-  /** Repõe os dados de demonstração da empresa actual (mantém as definições). */
-  resetDemo() {
-    try { localStorage.removeItem(this.stateKey()); } catch { /* armazenamento indisponível */ }
-    this.activeCartKey.set(POS_COUNTER_CART);
-    this.locked.set(false);
-    this.load();
-  }
-
-  // ---------- Fonte de dados (a substituir pelo Supabase) ----------
-
-  private stateKey() {
-    return `${STATE_KEY}.${this.settings().mode}`;
-  }
-
-  private load() {
-    const stored = this.readStored();
-    const products: PosProduct[] = [...mock.products, ...mock.restaurant.products].map(p => ({
-      ...(p as PosProduct),
-      stock: stored && p.id in stored.stock ? stored.stock[p.id] : p.stock
-    }));
-    this.allProducts.set(products);
-    this.sales.set(stored?.sales ?? this.seedSales(products));
-    this.sessions.set(stored?.sessions ?? []);
-    this.discounts.set(stored?.discounts ?? {});
-    if (stored) {
-      this.carts.set(stored.carts);
-      this.tableOrders.set(stored.tableOrders);
-    } else if (this.settings().mode === 'restaurant') {
-      this.seedTables(products);
-    } else {
-      this.carts.set({});
-      this.tableOrders.set({});
-    }
-  }
-
-  private persist() {
-    const state: StoredState = {
-      sales: this.sales(),
-      stock: Object.fromEntries(this.allProducts().map(p => [p.id, p.stock])),
-      sessions: this.sessions(),
-      carts: this.carts(),
-      tableOrders: this.tableOrders(),
-      discounts: this.discounts()
-    };
-    try { localStorage.setItem(this.stateKey(), JSON.stringify(state)); } catch { /* armazenamento indisponível */ }
-  }
-
-  private readStored(): StoredState | null {
-    try {
-      const raw = localStorage.getItem(this.stateKey());
-      return raw ? JSON.parse(raw) as StoredState : null;
-    } catch {
-      return null;
-    }
-  }
-
-  private readSettings(): PosSettings {
-    try {
-      const raw = localStorage.getItem(SETTINGS_KEY);
-      if (raw) return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
-    } catch { /* armazenamento indisponível */ }
-    return DEFAULT_SETTINGS;
-  }
-
-  private updateCart(fn: (lines: PosCartLine[]) => PosCartLine[]) {
-    const key = this.activeCartKey();
-    this.carts.update(carts => {
-      const next = fn(carts[key] ?? []);
-      if (next.length === 0) { const { [key]: _, ...rest } = carts; return rest; }
-      return { ...carts, [key]: next };
+  private startRealtime(companyId: string) {
+    if (this.realtime) return;
+    this.realtime = this.api.watchOrders(companyId, () => {
+      clearTimeout(this.reloadTimer);
+      this.reloadTimer = setTimeout(() => this.loadOrders().catch(() => undefined), 400);
     });
-    if (!this.carts()[key]) this.discounts.update(map => { const { [key]: _, ...rest } = map; return rest; });
-    this.persist();
   }
 
-  /** Junta pagamentos da mesma forma e tira o troco ao numerário. */
-  private mergePayments(payments: PosPayment[], change: number): PosPayment[] {
-    const merged = new Map<PosPaymentMethod, number>();
-    payments.filter(p => p.amount > 0).forEach(p => merged.set(p.method, (merged.get(p.method) ?? 0) + p.amount));
-    if (change > 0 && merged.has('cash')) merged.set('cash', merged.get('cash')! - change);
-    return [...merged.entries()].map(([method, amount]) => ({ method, amount: round2(amount) })).filter(p => p.amount > 0);
-  }
-
-  /** Mesas já ocupadas no arranque da demonstração do restaurante. */
-  private seedTables(products: PosProduct[]) {
-    const now = Date.now();
-    const carts: Record<string, PosCartLine[]> = {};
-    const orders: Record<string, PosTableOrder> = {};
-    for (const o of mock.restaurant.open_orders) {
-      carts[o.table_id] = o.lines.map(l => ({ product: products.find(p => p.id === l.product_id)!, quantity: l.quantity, sent: l.sent }));
-      orders[o.table_id] = {
-        table_id: o.table_id, waiter_id: o.waiter_id, covers: o.covers,
-        opened_at: new Date(now - o.minutes_ago * 60_000).toISOString()
-      };
+  private stopRealtime() {
+    if (this.realtime) {
+      this.api.client.removeChannel(this.realtime);
+      this.realtime = null;
     }
-    this.carts.set(carts);
-    this.tableOrders.set(orders);
-  }
-
-  /** As vendas de exemplo são relativas a hoje, para o painel ter sempre "vendas de hoje". */
-  private seedSales(products: PosProduct[]): PosSale[] {
-    type RawSale = {
-      id: string; days_ago: number; time: string; seller_id: string; client_id?: string; table_id?: string; covers?: number;
-      payment_method: string; amount_received?: number; items: { product_id: string; quantity: number }[];
-    };
-    const raws: RawSale[] = this.settings().mode === 'restaurant' ? mock.restaurant.sales : mock.sales;
-    const now = new Date();
-    const seeded = raws.map((raw, index): PosSale => {
-      const [hours, minutes] = raw.time.split(':').map(Number);
-      const date = new Date(now);
-      date.setDate(date.getDate() - raw.days_ago);
-      date.setHours(hours, minutes, 0, 0);
-      // Uma venda "de hoje" nunca pode ficar no futuro.
-      if (date > now) date.setTime(now.getTime() - (index + 1) * 7 * 60_000);
-
-      const items = raw.items.map(entry => toSaleItem({ product: products.find(p => p.id === entry.product_id)!, quantity: entry.quantity }));
-      const totals = computeTotals(items);
-      const method = raw.payment_method as PosPaymentMethod;
-      const received = method === 'cash' ? Math.max(totals.total, raw.amount_received ?? totals.total) : totals.total;
-      const client = this.client(raw.client_id ?? POS_WALK_IN_CLIENT_ID);
-
-      return {
-        id: raw.id,
-        number: '',
-        document_type: 'VD',
-        created_at: date.toISOString(),
-        seller_id: raw.seller_id,
-        client_id: client?.id ?? POS_WALK_IN_CLIENT_ID,
-        client_name: client?.name ?? '',
-        client_nuit: client?.nuit,
-        table_id: raw.table_id,
-        covers: raw.covers,
-        payment_method: method,
-        payments: [{ method, amount: totals.total }],
-        items,
-        ...totals,
-        amount_received: received,
-        change: round2(received - totals.total),
-        status: 'completed'
-      };
-    });
-
-    // Numeração sequencial por ordem cronológica.
-    const chronological = [...seeded].sort((a, b) => a.created_at.localeCompare(b.created_at));
-    chronological.forEach((sale, i) => {
-      sale.number = `VD ${new Date(sale.created_at).getFullYear()}/${String(i + 1).padStart(4, '0')}`;
-    });
-    return chronological.reverse();
-  }
-
-  private nextNumber(type: PosDocumentType, year: number): string {
-    const prefix = `${type} ${year}/`;
-    const last = this.sales()
-      .filter(s => s.number.startsWith(prefix))
-      .reduce((max, s) => Math.max(max, Number(s.number.slice(prefix.length)) || 0), 0);
-    return `${prefix}${String(last + 1).padStart(4, '0')}`;
-  }
-
-  private adjustStock(lines: { product_id: string; quantity: number }[], direction: 1 | -1) {
-    this.allProducts.update(list => list.map(product => {
-      const line = lines.find(l => l.product_id === product.id);
-      if (!line || product.stock === null) return product;
-      return { ...product, stock: Math.max(0, product.stock + direction * line.quantity) };
-    }));
   }
 }

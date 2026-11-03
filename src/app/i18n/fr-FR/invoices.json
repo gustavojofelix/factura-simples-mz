@@ -68,7 +68,8 @@
   "annulBlock": {
     "notIssued": "Seules les factures émises peuvent être annulées.",
     "hasPayments": "Une facture comportant des paiements ne peut pas être annulée. Annulez d'abord les reçus.",
-    "closedQuarter": "Une facture d'un trimestre déjà clôturé ne peut pas être annulée."
+    "closedQuarter": "Une facture d'un trimestre déjà clôturé ne peut pas être annulée.",
+    "posDocument": "Les factures-reçus et les avoirs du point de vente s'annulent ou se corrigent dans le POS lui-même."
   },
   "format": {
     "dateTime": "{date} à {time}"

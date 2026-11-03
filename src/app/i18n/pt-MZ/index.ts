@@ -21,6 +21,7 @@ import profile from './profile.json';
 import errors from './errors.json';
 import messages from './messages.json';
 import pos from './pos.json';
+import posAdmin from './posAdmin.json';
 
 export default {
   common,
@@ -44,4 +45,5 @@ export default {
   errors,
   messages,
   pos,
+  posAdmin,
 };

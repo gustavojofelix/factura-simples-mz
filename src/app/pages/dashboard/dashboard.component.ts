@@ -186,7 +186,8 @@ export class DashboardComponent implements OnInit {
       .from('clients')
       .select('id')
       .eq('company_id', companyId)
-      .eq('is_active', true);
+      .eq('is_active', true)
+      .eq('is_walk_in', false);
 
     // Calculate actual status for each invoice (same logic as InvoiceService)
     const invoicesWithCalculatedStatus = (invoices || []).map(inv => {

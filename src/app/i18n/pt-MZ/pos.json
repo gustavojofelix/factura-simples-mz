@@ -1,13 +1,5 @@
 {
   "title": "Ponto de Venda",
-  "demo": {
-    "badge": "Demonstração",
-    "body": "Dados fictícios para apresentação. Tudo o que registar fica apenas neste dispositivo.",
-    "reset": "Repor dados de demonstração",
-    "resetTitle": "Repor dados de demonstração",
-    "resetMessage": "Vendas, sessões de caixa, mesas abertas e alterações de stock deste dispositivo serão apagadas.",
-    "resetDone": "Dados de demonstração repostos"
-  },
   "fullscreen": {
     "enter": "Ecrã inteiro",
     "exit": "Sair do ecrã inteiro"
@@ -24,9 +16,10 @@
     "xReport": "Relatório X (leitura parcial)",
     "closeSession": "Fechar caixa",
     "lock": "Bloquear / trocar operador",
-    "settings": "Definições do terminal",
     "backOffice": "Abrir back-office",
-    "customerDisplay": "Abrir ecrã do cliente"
+    "customerDisplay": "Abrir ecrã do cliente",
+    "refresh": "Actualizar produtos e preços",
+    "refreshed": "Catálogo actualizado"
   },
   "session": {
     "label": "Caixa nº {number}"
@@ -34,7 +27,7 @@
   "roles": {
     "cashier": "Caixa",
     "waiter": "Empregado de mesa",
-    "manager": "Gestor"
+    "manager": "Gerente"
   },
   "pin": {
     "clear": "Limpar",
@@ -42,22 +35,34 @@
   },
   "access": {
     "openTitle": "Abertura de caixa",
-    "unlockTitle": "Terminal bloqueado",
     "sessionOpenSince": "Caixa nº {number} aberta desde {date}",
     "chooseOperator": "Quem está a operar?",
     "enterPin": "Introduza o seu PIN",
     "openingFloat": "Fundo de caixa",
     "openingFloatHint": "Dinheiro que fica na gaveta para trocos no início do turno.",
     "openSession": "Abrir caixa",
-    "demoPins": "Demonstração — PINs: {pins}",
-    "demoBusiness": "Demonstração — escolha a empresa"
+    "pairTitle": "Emparelhar este dispositivo",
+    "loginTitle": "Quem está a operar?",
+    "pairHint": "Introduza o código gerado na aplicação da empresa.",
+    "pairCode": "Código de emparelhamento",
+    "pair": "Emparelhar",
+    "pairWhere": "O código gera-se em Ponto de Venda → Terminais, na aplicação ISPC Fácil, e vale 15 minutos.",
+    "noStaff": "Ainda não há funcionários. Crie-os em Ponto de Venda → Funcionários.",
+    "noPin": "Sem PIN",
+    "locked": "Bloqueado",
+    "grace": "A subscrição expirou. O POS continua a vender até {date}. Renove o plano para não parar.",
+    "graceShort": "Subscrição expirada: período de tolerância do POS.",
+    "graceBadge": "Renovar plano",
+    "switchOperator": "Trocar de operador"
   },
   "authorize": {
-    "title": "Autorização do gestor",
-    "settings": "Alterar as definições do terminal exige o PIN de um gestor.",
-    "cancel": "Anular a venda {number} exige o PIN de um gestor.",
-    "discount": "Aplicar um desconto exige o PIN de um gestor.",
-    "refund": "Devolver artigos da venda {number} exige o PIN de um gestor."
+    "title": "Autorização do gerente",
+    "cancel": "Anular a factura-recibo {number} exige o PIN de um gerente.",
+    "discount": "Esta operação exige o PIN de um gerente (ex.: desconto acima do seu limite).",
+    "refund": "Devolver artigos da {number} exige o PIN de um gerente.",
+    "cashMovement": "Movimentos de caixa exigem o PIN de um gerente.",
+    "difference": "A diferença de caixa exige o PIN de um gerente.",
+    "voidLine": "Retirar artigos já enviados exige o PIN de um gerente."
   },
   "tabs": {
     "tables": "Mesas",
@@ -65,14 +70,17 @@
     "history": "Vendas"
   },
   "terminal": {
-    "client": "Cliente",
     "searchPlaceholder": "Pesquisar ou ler código de barras",
     "allCategories": "Todas",
     "noProducts": "Nenhum produto encontrado",
     "outOfStock": "Esgotado",
     "lowStock": "Restam {count}",
     "inStock": "Stock: {count}",
-    "stockLimit": "Sem stock suficiente para {name}"
+    "stockLimit": "Sem stock suficiente para {name}",
+    "noCatalog": "Ainda não há produtos no POS. Configure-os em Ponto de Venda → Produtos.",
+    "unavailable": "{name} está esgotado hoje.",
+    "unavailableShort": "Esgotado hoje",
+    "weightPrompt": "Quantidade de {name} ({unit}):"
   },
   "cart": {
     "title": "Venda actual",
@@ -84,19 +92,16 @@
     "empty": "Carrinho vazio",
     "emptyHint": "Toque num produto para o adicionar.",
     "clear": "Limpar",
-    "subtotal": "Subtotal (sem IVA)",
-    "tax": "IVA incluído",
+    "subtotal": "Soma",
     "total": "Total a pagar",
     "decrease": "Diminuir quantidade",
     "increase": "Aumentar quantidade",
     "remove": "Remover artigo",
-    "resize": "Arraste para ajustar a largura (duplo clique repõe)"
+    "resize": "Arraste para ajustar a largura (duplo clique repõe)",
+    "taxNote": "IVA não aplicável (ISPC)"
   },
   "documents": {
-    "label": "Documento a emitir",
-    "VD": "Talão (VD)",
-    "FR": "Factura-Recibo",
-    "clientName": "Nome do cliente",
+    "FR": "Factura-recibo",
     "NC": "Nota de crédito"
   },
   "payment": {
@@ -105,16 +110,15 @@
     "exact": "Exacto",
     "change": "Troco",
     "short": "Em falta",
-    "checkout": "Finalizar venda",
+    "checkout": "Cobrar",
     "checkoutShort": "Cobrar",
-    "completed": "Venda {number} registada",
+    "completed": "Factura-recibo {number} emitida",
     "methods": {
       "cash": "Numerário",
       "mpesa": "M-Pesa",
       "emola": "e-Mola",
       "card": "Cartão",
-      "transfer": "Transferência",
-      "mixed": "Dividido"
+      "transfer": "Transferência"
     }
   },
   "tables": {
@@ -136,7 +140,6 @@
     "send": "Enviar",
     "bill": "Conta",
     "transfer": "Mudar",
-    "newItems": "{count} novo(s)",
     "sentShort": "enviado",
     "sent": "Pedido da mesa {table} enviado para a cozinha/bar",
     "transferred": "Mesa {from} passou para a mesa {to}",
@@ -144,45 +147,56 @@
     "chooseTable": "Mesa da venda",
     "noTable": "Sem mesa",
     "busyOne": "ocupada",
-    "assigned": "Pedido atribuído à mesa {table}"
+    "assigned": "Pedido atribuído à mesa {table}",
+    "none": "Ainda não há mesas. Crie-as em Ponto de Venda → Mesas.",
+    "newShort": "por enviar",
+    "addNote": "nota",
+    "notePrompt": "Nota para a cozinha ({name}):",
+    "cancelOrder": "Cancelar pedido da mesa",
+    "cancelTitle": "Cancelar o pedido da mesa {table}?",
+    "cancelMessage": "Já há artigos enviados para a cozinha/bar. Indique o motivo.",
+    "cancelConfirm": "Cancelar pedido",
+    "voidTitle": "Retirar {name}",
+    "voidMessage": "Este artigo já foi enviado. A cozinha/bar recebe um talão de anulação.",
+    "voidConfirm": "Retirar",
+    "voided": "{name} retirado; talão de anulação impresso",
+    "waiterHint": "Envie o pedido para a cozinha/bar. A cobrança é feita na caixa.",
+    "chooseTableFirst": "Escolha primeiro uma mesa."
   },
   "history": {
-    "todayTotal": "Vendido hoje",
     "todayCount": {
       "one": "{count} venda",
       "other": "{count} vendas"
     },
-    "averageTicket": "Ticket médio (hoje)",
-    "topSeller": "Melhor operador (hoje)",
-    "noSalesToday": "Sem vendas hoje",
-    "byMethod": "Hoje por forma de pagamento",
+    "averageTicket": "Ticket médio",
+    "noSalesToday": "Ainda sem vendas",
+    "byMethod": "Esta caixa por forma de pagamento",
     "searchPlaceholder": "Nº do documento ou cliente",
-    "allSellers": "Todos os operadores",
-    "allMethods": "Todas as formas",
     "period": "Período",
     "periods": {
       "session": "Esta caixa",
       "today": "Hoje",
-      "week": "Últimos 7 dias",
-      "all": "Tudo"
+      "week": "Últimos 7 dias"
     },
     "seller": "Operador",
     "empty": "Nenhuma venda encontrada",
-    "periodTotal": "Total: {amount}",
     "statuses": {
       "completed": "Concluída",
       "cancelled": "Anulada"
     },
     "cancel": "Anular venda",
     "cancelTitle": "Anular {number}",
-    "cancelMessage": "O documento fica anulado e as quantidades voltam ao stock.",
+    "cancelMessage": "A factura-recibo fica anulada, o valor é devolvido pela caixa e as quantidades voltam ao stock. Só é possível no próprio dia.",
     "cancelled": "{number} anulada",
-    "method": "Forma de pagamento"
+    "periodSales": "Vendido no período",
+    "drawer": "Numerário na gaveta"
   },
   "receipt": {
     "title": "Venda concluída",
     "newSale": "Nova venda",
-    "change": "Troco"
+    "change": "Troco",
+    "reprint": "Reimprimir (2.ª via)",
+    "taxNote": "IVA não liquidado: contribuinte sujeito ao ISPC."
   },
   "movement": {
     "inTitle": "Entrada de dinheiro",
@@ -220,41 +234,32 @@
     "notesPlaceholder": "Observações do fecho (opcional)",
     "confirm": "Fechar e imprimir relatório Z",
     "tablesOpen": {
-      "one": "Há {count} mesa aberta. Cobre-a ou transfira-a antes de fechar a caixa.",
-      "other": "Há {count} mesas abertas. Cobre-as antes de fechar a caixa."
+      "one": "Há {count} mesa aberta. Cobre-a ou cancele-a antes de fechar.",
+      "other": "Há {count} mesas abertas. Cobre-as ou cancele-as antes de fechar."
     },
     "done": "Caixa nº {number} fechada",
     "refunds": "Devoluções",
-    "discounts": "Descontos"
-  },
-  "settings": {
-    "title": "Definições do terminal",
-    "hint": "Aplicam-se só a este dispositivo.",
-    "mode": "Tipo de negócio",
-    "modes": {
-      "retail": "Loja / Retalho",
-      "restaurant": "Restaurante"
-    },
-    "document": "Documento por omissão",
-    "paper": "Largura do papel da impressora",
-    "terminalName": "Nome do terminal",
-    "saved": "Definições guardadas"
+    "discounts": "Descontos",
+    "simulated": "Inclui {amount} em pagamentos móveis simulados (fase de testes).",
+    "blindHint": "Contado: {amount}. O valor esperado é conferido pelo gerente.",
+    "notesRequired": "A diferença passa da tolerância: escreva a justificação. O gerente terá de autorizar com o PIN."
   },
   "display": {
     "thanks": "Obrigado pela preferência!",
     "welcome": "Bem-vindo!",
     "waiting": "À espera do terminal de caixa…",
     "openedTitle": "Ecrã do cliente aberto",
-    "openedBody": "Arraste a janela para o 2.º monitor e faça duplo clique para ecrã inteiro."
+    "openedBody": "Arraste a janela para o 2.º monitor e faça duplo clique para ecrã inteiro.",
+    "confirmOnPhone": "Confirme o pagamento {method} no seu telemóvel"
   },
   "offline": {
     "badge": "Sem internet",
-    "body": "Pode continuar a vender: as vendas ficam guardadas neste dispositivo."
+    "body": "Sem internet não é possível emitir documentos. O carrinho fica guardado; tente quando a rede voltar."
   },
   "discount": {
     "title": "Desconto",
     "edit": "Alterar desconto",
-    "hint": "Aplica-se ao total da venda e exige o PIN de um gestor.",
+    "hint": "Aplica-se ao total. Acima do seu limite, ao cobrar pede-se o PIN de um gerente.",
     "value": "Valor",
     "before": "Antes do desconto",
     "label": "Desconto",
@@ -266,7 +271,15 @@
   "split": {
     "toggle": "Dividir pagamento",
     "amount": "Valor desta parte",
-    "hint": "Escreva o valor (ou deixe o que falta) e toque na forma de pagamento."
+    "hint": "Escreva o valor (ou deixe o que falta) e toque na forma de pagamento.",
+    "oneCash": "O numerário entra uma única vez; altere o valor dessa parte.",
+    "mobileKept": "Um pagamento móvel confirmado não se retira: complete a venda.",
+    "bill": "Dividir",
+    "billTitle": "Dividir a conta",
+    "billHint": "Escolha o que esta pessoa paga agora. O resto fica na mesa para a próxima factura-recibo.",
+    "billPart": "Esta parte",
+    "billConfirm": "Cobrar esta parte",
+    "billActive": "A cobrar uma parte (ficam {amount} na mesa)"
   },
   "refund": {
     "action": "Devolver",
@@ -286,6 +299,48 @@
     "confirm": "Emitir nota de crédito",
     "done": "Nota de crédito {number} emitida ({amount})",
     "ref": "Referente a {number}",
-    "partiallyReturned": "Esta venda já tem devoluções."
+    "returnedQty": "{count} já devolvido(s)"
+  },
+  "loading": "A carregar…",
+  "retry": "Tentar novamente",
+  "unpair": {
+    "menu": "Desemparelhar este dispositivo",
+    "title": "Desemparelhar o dispositivo?",
+    "message": "O dispositivo deixa de estar ligado ao terminal. Para voltar a usá-lo é preciso um novo código.",
+    "confirm": "Desemparelhar"
+  },
+  "client": {
+    "walkIn": "Consumidor final",
+    "addNuit": "NUIT",
+    "title": "Cliente com NUIT",
+    "hint": "A factura-recibo sai em nome do cliente. Sem NUIT, sai para Consumidor final.",
+    "search": "Pesquisar por nome, NUIT ou telefone",
+    "noNuit": "Sem NUIT",
+    "new": "Novo cliente",
+    "name": "Nome",
+    "use": "Usar este cliente"
+  },
+  "reason": {
+    "other": "Outro motivo…",
+    "customerChanged": "Cliente mudou de ideias",
+    "wrongOrder": "Pedido errado",
+    "kitchenProblem": "Problema na cozinha",
+    "wrongSale": "Erro na venda",
+    "customerGaveUp": "Cliente desistiu",
+    "paymentProblem": "Problema no pagamento"
+  },
+  "mobile": {
+    "simulation": "Simulação",
+    "phone": "Telemóvel do cliente",
+    "simulationHint": "Fase de testes: o pagamento é simulado e confirma sozinho em segundos. Números terminados em 0000 falham.",
+    "send": "Pedir pagamento",
+    "waiting": "A aguardar a confirmação no telemóvel do cliente…",
+    "simConfirm": "Simular confirmação",
+    "simFail": "Simular falha",
+    "confirmed": "Pagamento confirmado",
+    "failed": "O pagamento não foi concluído",
+    "otherMethod": "Outra forma",
+    "retry": "Tentar de novo",
+    "checkoutHint": "Ao cobrar, pede-se o pagamento no telemóvel do cliente; a factura-recibo só sai depois da confirmação."
   }
 }

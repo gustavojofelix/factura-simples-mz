@@ -68,7 +68,8 @@
   "annulBlock": {
     "notIssued": "Apenas facturas emitidas podem ser anuladas.",
     "hasPayments": "Uma factura com pagamentos não pode ser anulada. Anule primeiro os recibos.",
-    "closedQuarter": "Uma factura de um trimestre já encerrado não pode ser anulada."
+    "closedQuarter": "Uma factura de um trimestre já encerrado não pode ser anulada.",
+    "posDocument": "Facturas-recibo e notas de crédito do Ponto de Venda anulam-se ou corrigem-se no próprio POS."
   },
   "format": {
     "dateTime": "{date} às {time}"

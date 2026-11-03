@@ -68,7 +68,8 @@
   "annulBlock": {
     "notIssued": "Only issued invoices can be cancelled.",
     "hasPayments": "An invoice with payments cannot be cancelled. Cancel the receipts first.",
-    "closedQuarter": "An invoice from a closed quarter cannot be cancelled."
+    "closedQuarter": "An invoice from a closed quarter cannot be cancelled.",
+    "posDocument": "Point of Sale invoice-receipts and credit notes are cancelled or corrected in the POS itself."
   },
   "format": {
     "dateTime": "{date} at {time}"

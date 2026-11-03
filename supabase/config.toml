@@ -71,3 +71,10 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/send-tax-reminders/deno.json"
 entrypoint = "./functions/send-tax-reminders/index.ts"
+
+# Emparelhamento de terminais POS: o dispositivo ainda não tem sessão.
+# A segurança vem do código de uso único (8 caracteres, 15 minutos).
+[functions.pos-pair-terminal]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/pos-pair-terminal/index.ts"

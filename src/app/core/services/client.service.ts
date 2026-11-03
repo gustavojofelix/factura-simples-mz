@@ -58,6 +58,8 @@ export class ClientService {
         .from('clients')
         .select('*')
         .eq('company_id', company.id)
+        // "Consumidor final" é um cliente técnico das vendas do POS.
+        .eq('is_walk_in', false)
         .order('client_code', { ascending: true });
 
       if (error) throw error;

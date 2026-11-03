@@ -1,17 +1,17 @@
 import {
+  PosCompany,
+  PosDocument,
+  PosKitchenTicket,
   PosPaperWidth,
-  PosSale,
-  PosSession,
-  PosSessionSummary,
-  PosStore,
-  PosSaleItem,
-  PosStation
+  PosSessionReport,
+  PosVoidTicket
 } from '../../core/services/pos.service';
 import { formatPosDate, formatPosMoney } from './pos-format';
 
 /**
  * Impressões do POS em impressora térmica (58 ou 80 mm), numa janela própria.
  * Sempre em português: são documentos para o cliente/AT, não interface (ver i18n.ts).
+ * Empresas no regime ISPC: sem IVA destacado.
  */
 
 const METHOD_LABELS: Record<string, string> = {
@@ -19,31 +19,39 @@ const METHOD_LABELS: Record<string, string> = {
 };
 
 const DOCUMENT_TITLES: Record<string, string> = {
-  VD: 'VENDA A DINHEIRO',
   FR: 'FACTURA-RECIBO',
   NC: 'NOTA DE CRÉDITO'
 };
 
+/** Menção fiscal no rodapé (a validar com o consultor fiscal). */
+const TAX_NOTE = 'IVA não liquidado: contribuinte sujeito ao ISPC';
+
+const STATIONS: Record<string, string> = { kitchen: 'COZINHA', bar: 'BAR' };
+
 const esc = (s: string | number | undefined | null) =>
   String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
-const mzn = (v: number) => formatPosMoney(v, 'pt-MZ');
+const mzn = (v: number) => formatPosMoney(Number(v), 'pt-MZ');
 const when = (iso: string) => formatPosDate(iso, 'pt-MZ');
+const qty = (v: number) => Number.isInteger(Number(v)) ? String(Number(v)) : Number(v).toFixed(3).replace(/0+$/, '').replace('.', ',');
 
-function header(store: PosStore): string {
-  return `<h1>${esc(store.name)}</h1>
-    <p>NUIT: ${esc(store.nuit)}</p>
-    <p>${esc(store.address)}</p>
-    <p>Tel: ${esc(store.phone)}</p>`;
+function header(company: PosCompany): string {
+  const custom = company.settings?.receipt_header?.trim();
+  return `<h1>${esc(company.name)}</h1>
+    <p>NUIT: ${esc(company.nuit)}</p>
+    ${company.address ? `<p>${esc(company.address)}${company.province ? ', ' + esc(company.province) : ''}</p>` : ''}
+    ${company.phone ? `<p>Tel: ${esc(company.phone)}</p>` : ''}
+    ${custom ? `<p>${esc(custom)}</p>` : ''}`;
 }
 
 function row(label: string, value: string, cls = ''): string {
   return `<tr class="${cls}"><td>${label}</td><td class="r">${value}</td></tr>`;
 }
 
-function itemsTable(items: Pick<PosSaleItem, 'name' | 'quantity' | 'unit_price' | 'total'>[]): string {
+function itemsTable(items: { name: string; quantity: number; unit_price: number; total: number; notes?: string | null }[]): string {
   return `<table>${items.map(i => `
     <tr><td colspan="2">${esc(i.name)}</td></tr>
-    <tr><td>&nbsp;&nbsp;${i.quantity} x ${mzn(i.unit_price)}</td><td class="r">${mzn(i.total)}</td></tr>`).join('')}</table>`;
+    ${i.notes ? `<tr><td colspan="2">&nbsp;&nbsp;» ${esc(i.notes)}</td></tr>` : ''}
+    <tr><td>&nbsp;&nbsp;${qty(i.quantity)} x ${mzn(i.unit_price)}</td><td class="r">${mzn(i.total)}</td></tr>`).join('')}</table>`;
 }
 
 function open(title: string, body: string, width: PosPaperWidth) {
@@ -69,123 +77,135 @@ function open(title: string, body: string, width: PosPaperWidth) {
   return true;
 }
 
-export interface PrintContext {
-  store: PosStore;
-  width: PosPaperWidth;
-  sellerName: (id: string | undefined) => string;
-  tableName: (id: string | undefined) => string;
-  saleNumber: (id: string | undefined) => string;
-}
+/** FR ou NC. `copy` marca a reimpressão como 2.ª via. */
+export function printDocument(doc: PosDocument, company: PosCompany, width: PosPaperWidth, copy = false) {
+  const isNc = doc.document_type === 'NC';
+  const gross = Number(doc.total) + Number(doc.discount_total);
+  const payments = doc.payments.filter(p => isNc ? Number(p.amount) < 0 : Number(p.amount) > 0);
+  const cash = payments.find(p => p.method === 'cash' && p.tendered);
+  const simulated = payments.some(p => p.simulated);
+  const footer = company.settings?.receipt_footer?.trim();
 
-export function printSale(sale: PosSale, ctx: PrintContext) {
-  const body = `${header(ctx.store)}
-    <hr><h2>${DOCUMENT_TITLES[sale.document_type]}</h2>
-    <p><strong>${esc(sale.number)}</strong></p>
-    <p>${when(sale.created_at)}</p>
-    ${sale.status === 'cancelled' ? '<p class="b">*** ANULADO ***</p>' : ''}
+  const body = `${header(company)}
+    <hr><h2>${DOCUMENT_TITLES[doc.document_type]}</h2>
+    <p><strong>${esc(doc.number)}</strong></p>
+    <p>${when(doc.issued_at)}</p>
+    ${copy ? '<p class="b">2.ª VIA</p>' : ''}
+    ${doc.status === 'anulada' ? '<p class="b">*** ANULADO ***</p>' : ''}
     <hr>
-    <p class="l">Cliente: ${esc(sale.client_name || 'Consumidor Final')}</p>
-    ${sale.client_nuit ? `<p class="l">NUIT cliente: ${esc(sale.client_nuit)}</p>` : ''}
-    ${sale.table_id ? `<p class="l">Mesa: ${esc(ctx.tableName(sale.table_id))}${sale.covers ? ` · ${sale.covers} pessoa(s)` : ''}</p>` : ''}
-    <p class="l">Operador: ${esc(ctx.sellerName(sale.seller_id))}</p>
-    ${sale.refund_of ? `<p class="l">Ref.: ${esc(ctx.saleNumber(sale.refund_of))}</p>` : ''}
-    ${sale.refund_reason ? `<p class="l">Motivo: ${esc(sale.refund_reason)}</p>` : ''}
-    <hr>${itemsTable(sale.items)}<hr>
+    <p class="l">Cliente: ${esc(doc.client.walk_in ? 'Consumidor final' : doc.client.name)}</p>
+    ${doc.client.nuit ? `<p class="l">NUIT cliente: ${esc(doc.client.nuit)}</p>` : ''}
+    ${doc.table_label ? `<p class="l">${esc(doc.table_label)}${doc.covers ? ` · ${doc.covers} pessoa(s)` : ''}</p>` : ''}
+    <p class="l">Operador: ${esc(doc.staff)}${doc.terminal ? ' · ' + esc(doc.terminal) : ''}</p>
+    ${doc.related ? `<p class="l">Ref.: ${esc(doc.related.number)}</p>` : ''}
+    ${doc.credit_reason ? `<p class="l">Motivo: ${esc(doc.credit_reason)}</p>` : ''}
+    <hr>${itemsTable(doc.items.map(i => ({ ...i, quantity: Math.abs(Number(i.quantity)), total: Math.abs(Number(i.unit_price) * Number(i.quantity)) })))}<hr>
     <table>
-      ${sale.discount && sale.document_type !== 'NC' ? row('Soma', mzn(sale.gross)) + row('Desconto', '-' + mzn(sale.discount)) : ''}
-      ${row('Subtotal (sem IVA)', mzn(sale.subtotal))}
-      ${row('IVA incluído', mzn(sale.tax_total))}
-      ${row(sale.document_type === 'NC' ? 'TOTAL A DEVOLVER' : 'TOTAL', mzn(sale.total), 'big')}
-      ${sale.payments.map(p => row(METHOD_LABELS[p.method], mzn(p.amount))).join('')}
-      ${sale.change > 0 ? row('Valor entregue', mzn(sale.amount_received)) + row('Troco', mzn(sale.change)) : ''}
+      ${Number(doc.discount_total) > 0 ? row('Soma', mzn(gross)) + row('Desconto', '-' + mzn(doc.discount_total)) : ''}
+      ${row(isNc ? 'TOTAL A DEVOLVER' : 'TOTAL', mzn(Math.abs(Number(doc.total))), 'big')}
+      ${payments.map(p => row(METHOD_LABELS[p.method] + (p.reference ? ` ${esc(p.reference)}` : ''), mzn(Math.abs(Number(p.amount))))).join('')}
+      ${cash && Number(cash.change) > 0 ? row('Valor entregue', mzn(cash.tendered!)) + row('Troco', mzn(cash.change)) : ''}
     </table>
+    ${simulated ? '<p>Pagamento móvel: simulação (fase de testes)</p>' : ''}
     <hr>
-    ${sale.document_type === 'FR' ? '<p>Documento processado por computador</p>' : ''}
-    <p>Obrigado pela preferência!</p><p>ISPC Fácil POS</p>`;
-  return open(sale.number, body, ctx.width);
+    <p>${TAX_NOTE}</p>
+    <p>Documento processado por computador</p>
+    ${footer ? `<p>${esc(footer)}</p>` : '<p>Obrigado pela preferência!</p>'}
+    <p>ISPC Fácil POS</p>`;
+  return open(doc.number, body, width);
 }
 
 /** Pedido para a cozinha / bar: só o que ainda não tinha sido enviado. */
-export function printKitchenOrder(
-  groups: Record<PosStation, { name: string; quantity: number }[]>,
-  tableLabel: string,
-  waiterName: string,
-  width: PosPaperWidth
-) {
-  const block = (title: string, lines: { name: string; quantity: number }[]) => lines.length === 0 ? '' : `
-    <h2>*** ${title} ***</h2>
-    <p class="b">${esc(tableLabel)}</p>
+export function printKitchenTickets(tickets: PosKitchenTicket[], tableLabel: string, covers: number, waiterName: string, width: PosPaperWidth) {
+  const body = tickets.map(ticket => `
+    <h2>*** ${STATIONS[ticket.station] ?? 'PEDIDO'} ***</h2>
+    <p class="b">${esc(tableLabel)} · ${covers} p.</p>
     <p>${when(new Date().toISOString())} · ${esc(waiterName)}</p><hr>
-    <table>${lines.map(l => `<tr class="big"><td>${l.quantity}x</td><td>${esc(l.name)}</td></tr>`).join('')}</table>
-    <hr><br>`;
-  return open('Pedido', block('COZINHA', groups.kitchen) + block('BAR', groups.bar), width);
+    <table>${ticket.lines.map(l => `<tr class="big"><td>${qty(l.quantity)}x</td><td>${esc(l.name)}</td></tr>
+      ${l.notes ? `<tr><td></td><td>» ${esc(l.notes)}</td></tr>` : ''}`).join('')}</table>
+    <hr><br>`).join('');
+  return open('Pedido', body, width);
+}
+
+/** Linha retirada depois de enviada: a estação tem de saber. */
+export function printVoidTicket(ticket: PosVoidTicket, width: PosPaperWidth) {
+  const body = `
+    <h2>*** ${STATIONS[ticket.station ?? ''] ?? 'PEDIDO'} ***</h2>
+    <h2>*** ANULADO ***</h2>
+    <p class="b">Mesa ${esc(ticket.table_name)}</p>
+    <p>${when(ticket.at)} · ${esc(ticket.waiter)}</p><hr>
+    <table><tr class="big"><td>-${qty(ticket.quantity)}x</td><td>${esc(ticket.product)}</td></tr></table>
+    <p class="l">Motivo: ${esc(ticket.reason)}</p>
+    ${ticket.authorized_by ? `<p class="l">Autorizado: ${esc(ticket.authorized_by)}</p>` : ''}<hr><br>`;
+  return open('Anulação', body, width);
 }
 
 /** Consulta de mesa (pré-conta): não é documento fiscal. */
 export function printBill(
-  ctx: PrintContext,
+  company: PosCompany,
+  width: PosPaperWidth,
   tableLabel: string,
   covers: number,
-  items: PosSaleItem[],
-  totals: { subtotal: number; tax_total: number; total: number }
+  items: { name: string; quantity: number; unit_price: number }[],
+  totals: { gross: number; discount: number; total: number }
 ) {
   const perPerson = covers > 1 ? row(`Por pessoa (${covers})`, mzn(totals.total / covers)) : '';
-  const body = `${header(ctx.store)}
+  const body = `${header(company)}
     <hr><h2>CONSULTA DE MESA</h2>
     <p class="b">${esc(tableLabel)}</p>
     <p>${when(new Date().toISOString())}</p><hr>
-    ${itemsTable(items)}<hr>
+    ${itemsTable(items.map(i => ({ ...i, total: i.unit_price * i.quantity })))}<hr>
     <table>
-      ${row('Subtotal (sem IVA)', mzn(totals.subtotal))}
-      ${row('IVA incluído', mzn(totals.tax_total))}
+      ${totals.discount > 0 ? row('Soma', mzn(totals.gross)) + row('Desconto', '-' + mzn(totals.discount)) : ''}
       ${row('TOTAL', mzn(totals.total), 'big')}
       ${perPerson}
     </table>
-    <hr><p class="b">NÃO SERVE DE FACTURA</p><p>Peça o documento ao pagar.</p>`;
-  return open('Consulta de mesa', body, ctx.width);
+    <hr><p class="b">NÃO SERVE DE FACTURA</p><p>Peça a factura-recibo ao pagar.</p>`;
+  return open('Consulta de mesa', body, width);
 }
 
-/** Relatório Z do fecho de caixa. */
-export function printZReport(session: PosSession, summary: PosSessionSummary, ctx: PrintContext) {
-  const counted = session.counted_cash ?? 0;
-  const diff = counted - (session.expected_cash ?? summary.expectedCash);
-  const methods = summary.byMethod.filter(m => m.count > 0)
-    .map(m => row(`${METHOD_LABELS[m.id]} (${m.count})`, mzn(m.amount))).join('');
-  const sellers = summary.bySeller.map(s => row(`${esc(ctx.sellerName(s.seller_id))} (${s.count})`, mzn(s.amount))).join('');
-  const movements = session.movements.map(m =>
+/** Relatório X (leitura parcial) ou Z (fecho de caixa), a partir do resumo do servidor. */
+export function printSessionReport(report: PosSessionReport, company: PosCompany, width: PosPaperWidth) {
+  const s = report.session;
+  const closed = s.status === 'closed';
+  const fr = report.documents.FR ?? { count: 0, total: 0 };
+  const nc = report.documents.NC ?? { count: 0, total: 0 };
+  const methods = Object.entries(report.payments)
+    .map(([m, v]) => row(`${METHOD_LABELS[m] ?? m} (${v!.count})`, mzn(v!.total))).join('');
+  const staff = report.by_staff.map(x => row(`${esc(x.name ?? '—')} (${x.count})`, mzn(x.total))).join('');
+  const movements = report.movements.map(m =>
     row(`${m.type === 'in' ? '+' : '-'} ${esc(m.reason)}`, mzn(m.amount))).join('');
 
-  const title = session.closed_at ? 'RELATÓRIO Z · FECHO DE CAIXA' : 'RELATÓRIO X · LEITURA PARCIAL';
-  const body = `${header(ctx.store)}
-    <hr><h2>${title}</h2>
-    <p class="b">Sessão nº ${session.number} · ${esc(session.terminal_name)}</p>
+  const body = `${header(company)}
+    <hr><h2>${closed ? 'RELATÓRIO Z · FECHO DE CAIXA' : 'RELATÓRIO X · LEITURA PARCIAL'}</h2>
+    <p class="b">Caixa nº ${s.number} · ${esc(s.terminal)}</p>
     <hr>
-    <p class="l">Abertura: ${when(session.opened_at)}</p>
-    <p class="l">Por: ${esc(ctx.sellerName(session.opened_by))}</p>
-    ${session.closed_at ? `<p class="l">Fecho: ${when(session.closed_at)}</p><p class="l">Por: ${esc(ctx.sellerName(session.closed_by))}</p>` : ''}
+    <p class="l">Abertura: ${when(s.opened_at)}</p>
+    <p class="l">Por: ${esc(s.opened_by)}</p>
+    ${closed && s.closed_at ? `<p class="l">Fecho: ${when(s.closed_at)}</p><p class="l">Por: ${esc(s.closed_by)}</p>` : ''}
     <hr><table>
-      ${row('Vendas', String(summary.count))}
-      ${row('  Talões (VD)', String(summary.byDocument.VD))}
-      ${row('  Facturas-recibo (FR)', String(summary.byDocument.FR))}
-      ${row(`Descontos`, '-' + mzn(summary.discounts))}
-      ${row(`Devoluções NC (${summary.refunds.count})`, '-' + mzn(summary.refunds.total))}
-      ${row('Total líquido', mzn(summary.total), 'b')}
-      ${row('IVA incluído', mzn(summary.tax_total))}
-      ${row(`Anuladas (${summary.cancelled.count})`, mzn(summary.cancelled.total))}
+      ${row(`Facturas-recibo (${fr.count})`, mzn(fr.total))}
+      ${row(`Notas de crédito (${nc.count})`, mzn(nc.total))}
+      ${row('Descontos concedidos', mzn(report.discounts))}
+      ${row('Total líquido', mzn(report.net_sales), 'b')}
+      ${row(`Anuladas (${report.voided.count})`, mzn(report.voided.total))}
+      ${report.authorizations ? row('Autorizações de gerente', String(report.authorizations)) : ''}
     </table>
     <hr><p class="l"><strong>Por forma de pagamento</strong></p><table>${methods || row('—', mzn(0))}</table>
-    ${sellers ? `<hr><p class="l"><strong>Por operador</strong></p><table>${sellers}</table>` : ''}
+    ${Number(report.simulated_payments) ? `<p class="l">Inclui ${mzn(report.simulated_payments)} em pagamentos móveis simulados.</p>` : ''}
+    ${staff ? `<hr><p class="l"><strong>Por operador</strong></p><table>${staff}</table>` : ''}
     <hr><p class="l"><strong>Gaveta</strong></p><table>
-      ${row('Fundo de caixa', mzn(session.opening_float))}
-      ${row('+ Vendas em numerário', mzn(summary.cashSales))}
-      ${row('+ Entradas', mzn(summary.ins))}
-      ${row('- Saídas', mzn(summary.outs))}
-      ${row('Esperado', mzn(session.expected_cash ?? summary.expectedCash), 'b')}
-      ${session.closed_at ? row('Contado', mzn(counted), 'b') + row('Diferença', (diff > 0 ? '+' : '') + mzn(diff), 'b') : ''}
+      ${row('Fundo de caixa', mzn(report.cash.opening_float))}
+      ${row('+ Numerário (vendas - devoluções)', mzn(report.cash.sales))}
+      ${row('+ Entradas', mzn(report.cash.in))}
+      ${row('- Saídas', mzn(report.cash.out))}
+      ${row('Esperado', mzn(report.cash.expected), 'b')}
+      ${report.close ? row('Contado', mzn(report.close.counted), 'b') + row('Diferença', (report.close.difference > 0 ? '+' : '') + mzn(report.close.difference), 'b') : ''}
     </table>
     ${movements ? `<hr><p class="l"><strong>Movimentos</strong></p><table>${movements}</table>` : ''}
-    ${session.notes ? `<hr><p class="l">Obs.: ${esc(session.notes)}</p>` : ''}
+    ${report.close?.notes ? `<hr><p class="l">Obs.: ${esc(report.close.notes)}</p>` : ''}
+    ${report.close?.approved_by ? `<p class="l">Diferença aprovada por: ${esc(report.close.approved_by)}</p>` : ''}
     <hr><br><p>______________________</p><p>Assinatura do operador</p><br>
     <p>______________________</p><p>Assinatura do supervisor</p>`;
-  return open(`Relatório ${session.closed_at ? 'Z' : 'X'} ${session.number}`, body, ctx.width);
+  return open(`Relatório ${closed ? 'Z' : 'X'} ${s.number}`, body, width);
 }

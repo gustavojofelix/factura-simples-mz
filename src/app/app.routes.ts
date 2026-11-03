@@ -118,6 +118,11 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/reports/saft-export/saft-export.component').then(m => m.SaftExportComponent)
       },
       {
+        path: 'ponto-de-venda',
+        canActivate: [roleGuard(REPORT_ROLES)],
+        loadComponent: () => import('./pages/pos-admin/pos-admin.component').then(m => m.PosAdminComponent)
+      },
+      {
         path: 'assistente',
         loadComponent: () => import('./pages/assistant/assistant.component').then(m => m.AssistantComponent)
       },

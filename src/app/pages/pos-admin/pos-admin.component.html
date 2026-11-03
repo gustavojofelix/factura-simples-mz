@@ -1,0 +1,523 @@
+<div class="p-4 sm:p-6">
+  <div class="flex flex-wrap items-start justify-between gap-4 mb-5">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-900 mb-1">{{ 'posAdmin.title' | t }}</h1>
+      <p class="text-gray-600">{{ 'posAdmin.subtitle' | t: { company: companyService.activeCompany()?.name ?? '' } }}</p>
+    </div>
+    <button mat-raised-button class="!bg-ispc-orange !text-white" [disabled]="!admin.access()?.allowed" (click)="openPos()">
+      <mat-icon>point_of_sale</mat-icon>
+      <span>{{ 'posAdmin.openPos' | t }}</span>
+    </button>
+  </div>
+
+  @if (admin.access(); as access) {
+    @if (!access.enabled) {
+      <div class="mb-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-800 flex gap-3">
+        <i class="fa-solid fa-lock mt-1" aria-hidden="true"></i>
+        <div>
+          <p class="font-bold">{{ 'posAdmin.notInPlan.title' | t }}</p>
+          <p class="text-sm">{{ 'posAdmin.notInPlan.body' | t }}</p>
+        </div>
+      </div>
+    } @else if (access.in_grace) {
+      <div class="mb-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-800 text-sm">
+        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+        {{ 'posAdmin.grace' | t: { date: access.grace_until ?? '' } }}
+      </div>
+    }
+  }
+
+  <div class="flex gap-1 overflow-x-auto pb-2 mb-4 border-b border-slate-200">
+    <button type="button" class="tab" [class.on]="tab() === 'general'" (click)="setTab('general')"><i class="fa-solid fa-store" aria-hidden="true"></i>{{ 'posAdmin.tabs.general' | t }}</button>
+    <button type="button" class="tab" [class.on]="tab() === 'terminals'" (click)="setTab('terminals')"><i class="fa-solid fa-tablet-screen-button" aria-hidden="true"></i>{{ 'posAdmin.tabs.terminals' | t }}</button>
+    <button type="button" class="tab" [class.on]="tab() === 'staff'" (click)="setTab('staff')"><i class="fa-solid fa-id-badge" aria-hidden="true"></i>{{ 'posAdmin.tabs.staff' | t }}</button>
+    @if (isRestaurant()) {
+      <button type="button" class="tab" [class.on]="tab() === 'tables'" (click)="setTab('tables')"><i class="fa-solid fa-chair" aria-hidden="true"></i>{{ 'posAdmin.tabs.tables' | t }}</button>
+    }
+    <button type="button" class="tab" [class.on]="tab() === 'products'" (click)="setTab('products')"><i class="fa-solid fa-tags" aria-hidden="true"></i>{{ 'posAdmin.tabs.products' | t }}</button>
+    <button type="button" class="tab" [class.on]="tab() === 'sales'" (click)="setTab('sales')"><i class="fa-solid fa-chart-line" aria-hidden="true"></i>{{ 'posAdmin.tabs.sales' | t }}</button>
+  </div>
+
+  @switch (tab()) {
+    <!-- ================= Geral ================= -->
+    @case ('general') {
+      <div class="grid lg:grid-cols-2 gap-4">
+        <div class="card space-y-5">
+          <div>
+            <span class="label">{{ 'posAdmin.general.businessType' | t }}</span>
+            <div class="seg">
+              <button type="button" [class.on]="businessType() === 'retail'" (click)="businessType.set('retail')"><i class="fa-solid fa-basket-shopping" aria-hidden="true"></i>{{ 'posAdmin.general.retail' | t }}</button>
+              <button type="button" [class.on]="businessType() === 'restaurant'" (click)="businessType.set('restaurant')"><i class="fa-solid fa-utensils" aria-hidden="true"></i>{{ 'posAdmin.general.restaurant' | t }}</button>
+            </div>
+            <p class="text-xs text-slate-500 mt-2">{{ 'posAdmin.general.businessTypeHint' | t }}</p>
+          </div>
+          <div>
+            <span class="label">{{ 'posAdmin.general.document' | t }}</span>
+            <p class="text-sm text-slate-600">{{ 'posAdmin.general.documentHint' | t }}</p>
+          </div>
+          <div>
+            <span class="label">{{ 'posAdmin.general.paper' | t }}</span>
+            <div class="seg">
+              <button type="button" [class.on]="settings().paper_width === 58" (click)="patchSettings({ paper_width: 58 })">58 mm</button>
+              <button type="button" [class.on]="settings().paper_width !== 58" (click)="patchSettings({ paper_width: 80 })">80 mm</button>
+            </div>
+          </div>
+          <label class="block">
+            <span class="label">{{ 'posAdmin.general.receiptHeader' | t }}</span>
+            <input class="field" maxlength="80" [value]="settings().receipt_header ?? ''" (input)="patchSettings({ receipt_header: $any($event.target).value })" [placeholder]="'posAdmin.general.receiptHeaderPlaceholder' | t">
+          </label>
+          <label class="block">
+            <span class="label">{{ 'posAdmin.general.receiptFooter' | t }}</span>
+            <input class="field" maxlength="80" [value]="settings().receipt_footer ?? ''" (input)="patchSettings({ receipt_footer: $any($event.target).value })" [placeholder]="'posAdmin.general.receiptFooterPlaceholder' | t">
+          </label>
+        </div>
+
+        <div class="card space-y-5">
+          <div>
+            <span class="label">{{ 'posAdmin.general.payments' | t }}</span>
+            <div class="flex flex-wrap gap-2">
+              @for (m of methods; track m.id) {
+                <button type="button" class="px-3 py-2 rounded-xl border text-sm font-semibold flex items-center gap-2"
+                  [class.border-ispc-orange]="methodEnabled(m.id)" [class.bg-orange-50]="methodEnabled(m.id)" [class.text-orange-800]="methodEnabled(m.id)"
+                  [class.border-slate-200]="!methodEnabled(m.id)" [class.text-slate-400]="!methodEnabled(m.id)" [disabled]="m.id === 'cash'"
+                  (click)="toggleMethod(m.id)">
+                  <i class="fa-solid {{ m.icon }}" aria-hidden="true"></i>{{ 'pos.payment.methods.' + m.id | t }}
+                </button>
+              }
+            </div>
+            <p class="text-xs text-amber-700 mt-2"><i class="fa-solid fa-flask" aria-hidden="true"></i> {{ 'posAdmin.general.mobileSimulated' | t }}</p>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="block">
+              <span class="label">{{ 'posAdmin.general.defaultFloat' | t }}</span>
+              <input class="field" type="number" min="0" step="50" [value]="settings().cash?.default_float ?? 1000" (input)="patchCash({ default_float: +$any($event.target).value || 0 })">
+            </label>
+            <label class="block">
+              <span class="label">{{ 'posAdmin.general.tolerance' | t }}</span>
+              <input class="field" type="number" min="0" step="10" [value]="settings().cash?.tolerance ?? 0" (input)="patchCash({ tolerance: +$any($event.target).value || 0 })">
+            </label>
+          </div>
+          <p class="text-xs text-slate-500 -mt-3">{{ 'posAdmin.general.toleranceHint' | t }}</p>
+          <label class="flex items-start gap-3 cursor-pointer">
+            <input type="checkbox" class="mt-1 w-4 h-4 accent-orange-600" [checked]="!!settings().cash?.blind_close" (change)="patchCash({ blind_close: $any($event.target).checked })">
+            <span>
+              <span class="block font-semibold text-slate-800 text-sm">{{ 'posAdmin.general.blindClose' | t }}</span>
+              <span class="block text-xs text-slate-500">{{ 'posAdmin.general.blindCloseHint' | t }}</span>
+            </span>
+          </label>
+          <label class="block">
+            <span class="label">{{ 'posAdmin.general.mobileTimeout' | t }}</span>
+            <input class="field" type="number" min="30" max="600" step="10" [value]="settings().mobile_timeout ?? 90" (input)="patchSettings({ mobile_timeout: +$any($event.target).value || 90 })">
+          </label>
+        </div>
+      </div>
+      <div class="mt-4">
+        <button mat-raised-button class="!bg-ispc-orange !text-white" [disabled]="saving()" (click)="saveGeneral()">
+          <mat-icon>save</mat-icon><span>{{ 'common.actions.save' | t }}</span>
+        </button>
+      </div>
+    }
+
+    <!-- ================= Terminais ================= -->
+    @case ('terminals') {
+      @if (pairing(); as p) {
+        <div class="card mb-4 border-ispc-orange bg-orange-50/40">
+          <div class="flex flex-wrap items-center gap-6">
+            <div>
+              <p class="label">{{ 'posAdmin.terminals.code' | t }}</p>
+              <p class="code">{{ p.code }}</p>
+              <p class="text-xs text-slate-500">{{ 'posAdmin.terminals.codeExpires' | t: { time: dateTime(p.expires_at) } }}</p>
+            </div>
+            <ol class="text-sm text-slate-700 list-decimal pl-5 space-y-1 flex-1 min-w-[240px]">
+              <li>{{ 'posAdmin.terminals.step1' | t }} <strong class="font-mono">{{ posUrl() }}</strong></li>
+              <li>{{ 'posAdmin.terminals.step2' | t }}</li>
+              <li>{{ 'posAdmin.terminals.step3' | t }}</li>
+            </ol>
+            <button mat-button (click)="pairing.set(null); load()">{{ 'common.actions.close' | t }}</button>
+          </div>
+        </div>
+      }
+      <div class="card">
+        <div class="flex flex-wrap gap-2 mb-4">
+          <input class="field !w-auto flex-1 min-w-[200px]" maxlength="60" [placeholder]="'posAdmin.terminals.newPlaceholder' | t" [value]="newTerminal()" (input)="newTerminal.set($any($event.target).value)" (keydown.enter)="addTerminal()">
+          <button mat-raised-button class="!bg-ispc-orange !text-white" [disabled]="!newTerminal().trim()" (click)="addTerminal()"><mat-icon>add</mat-icon><span>{{ 'posAdmin.terminals.add' | t }}</span></button>
+        </div>
+        @if (terminals().length === 0 && !loading()) {
+          <p class="text-sm text-slate-500 py-6 text-center">{{ 'posAdmin.terminals.empty' | t }}</p>
+        } @else {
+          <div class="overflow-x-auto">
+            <table>
+              <thead><tr><th>{{ 'posAdmin.terminals.name' | t }}</th><th>{{ 'posAdmin.terminals.status' | t }}</th><th>{{ 'posAdmin.terminals.lastSeen' | t }}</th><th></th></tr></thead>
+              <tbody>
+                @for (term of terminals(); track term.id) {
+                  @let status = terminalStatus(term);
+                  <tr [class.opacity-50]="status === 'revoked'">
+                    <td class="font-semibold">{{ term.name }}<div class="text-[11px] text-slate-400 font-normal truncate max-w-[280px]">{{ term.user_agent }}</div></td>
+                    <td>
+                      <span class="pill" [class.bg-emerald-100]="status === 'paired'" [class.text-emerald-700]="status === 'paired'"
+                        [class.bg-amber-100]="status === 'waiting'" [class.text-amber-700]="status === 'waiting'"
+                        [class.bg-slate-100]="status === 'new' || status === 'revoked'" [class.text-slate-600]="status === 'new' || status === 'revoked'">
+                        {{ 'posAdmin.terminals.statuses.' + status | t }}
+                      </span>
+                    </td>
+                    <td class="text-slate-500">{{ dateTime(term.last_seen_at) }}</td>
+                    <td class="text-right whitespace-nowrap">
+                      @if (status !== 'revoked') {
+                        <button mat-stroked-button (click)="pair(term.id)"><mat-icon>link</mat-icon><span>{{ (status === 'paired' ? 'posAdmin.terminals.repair' : 'posAdmin.terminals.pair') | t }}</span></button>
+                        <button mat-icon-button [matTooltip]="'posAdmin.terminals.rename' | t" (click)="renameTerminal(term)"><mat-icon>edit</mat-icon></button>
+                        <button mat-icon-button class="!text-rose-600" [matTooltip]="'posAdmin.terminals.revoke' | t" (click)="revoke(term)"><mat-icon>link_off</mat-icon></button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ================= Funcionários ================= -->
+    @case ('staff') {
+      @if (editingStaff(); as s) {
+        <div class="card mb-4">
+          <h3 class="!m-0 text-lg font-bold mb-4">{{ (s.id ? 'posAdmin.staff.edit' : 'posAdmin.staff.new') | t }}</h3>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <label class="block">
+              <span class="label">{{ 'posAdmin.staff.name' | t }}</span>
+              <input class="field" maxlength="60" [value]="s.name" (input)="patchStaff({ name: $any($event.target).value })">
+            </label>
+            <div>
+              <span class="label">{{ 'posAdmin.staff.role' | t }}</span>
+              <div class="seg">
+                @for (r of roles; track r) {
+                  <button type="button" [class.on]="s.role === r" (click)="patchStaff({ role: r })">{{ 'pos.roles.' + r | t }}</button>
+                }
+              </div>
+            </div>
+            <div>
+              <span class="label">{{ 'posAdmin.staff.color' | t }}</span>
+              <div class="flex gap-2">
+                @for (c of colors; track c) {
+                  <button type="button" class="w-8 h-8 rounded-full border-2" [style.background]="c" [class.border-slate-900]="s.color === c" [class.border-transparent]="s.color !== c" (click)="patchStaff({ color: c })" [attr.aria-label]="c"></button>
+                }
+              </div>
+            </div>
+            @if (s.role !== 'manager') {
+              <div class="space-y-3">
+                @if (s.role === 'waiter') {
+                  <label class="flex items-center gap-2 text-sm">
+                    <input type="checkbox" class="w-4 h-4 accent-orange-600" [checked]="!!s.permissions?.can_charge" (change)="patchPermissions({ sell: $any($event.target).checked, can_charge: $any($event.target).checked })">
+                    {{ 'posAdmin.staff.canCharge' | t }}
+                  </label>
+                }
+                <label class="block">
+                  <span class="label">{{ 'posAdmin.staff.maxDiscount' | t }}</span>
+                  <input class="field !w-28" type="number" min="0" max="100" [value]="s.permissions?.max_discount_pct ?? 0" (input)="patchPermissions({ max_discount_pct: +$any($event.target).value || 0 })">
+                </label>
+              </div>
+            }
+          </div>
+          <p class="text-xs text-slate-500 mt-4">{{ 'posAdmin.staff.rolesHint' | t }}</p>
+          <div class="flex justify-end gap-2 mt-4">
+            <button mat-button (click)="editingStaff.set(null)">{{ 'common.actions.cancel' | t }}</button>
+            <button mat-raised-button class="!bg-ispc-orange !text-white" [disabled]="s.name.trim().length < 2" (click)="saveStaff()">{{ 'common.actions.save' | t }}</button>
+          </div>
+        </div>
+      }
+      @if (pinFor(); as s) {
+        <div class="card mb-4 border-ispc-orange">
+          <h3 class="!m-0 text-lg font-bold">{{ 'posAdmin.staff.pinTitle' | t: { name: s.name } }}</h3>
+          <p class="text-sm text-slate-500 mt-1">{{ 'posAdmin.staff.pinHint' | t }}</p>
+          <div class="flex flex-wrap items-center gap-2 mt-3">
+            <input class="field !w-40 text-center tracking-[.4em] text-xl font-bold" type="password" inputmode="numeric" maxlength="4" autocomplete="new-password"
+              [value]="pinValue()" (input)="pinValue.set($any($event.target).value.replace(/\D/g, ''))" (keydown.enter)="savePin()">
+            <button mat-raised-button class="!bg-ispc-orange !text-white" [disabled]="pinValue().length !== 4" (click)="savePin()">{{ 'posAdmin.staff.setPin' | t }}</button>
+            <button mat-button (click)="pinFor.set(null)">{{ 'common.actions.cancel' | t }}</button>
+          </div>
+        </div>
+      }
+      <div class="card">
+        <div class="flex justify-between items-center mb-3">
+          <p class="text-sm text-slate-500">{{ 'posAdmin.staff.hint' | t }}</p>
+          <button mat-raised-button class="!bg-ispc-orange !text-white" (click)="newStaff()"><mat-icon>person_add</mat-icon><span>{{ 'posAdmin.staff.add' | t }}</span></button>
+        </div>
+        @if (staff().length === 0 && !loading()) {
+          <p class="text-sm text-slate-500 py-6 text-center">{{ 'posAdmin.staff.empty' | t }}</p>
+        } @else {
+          <div class="overflow-x-auto">
+            <table>
+              <thead><tr><th>{{ 'posAdmin.staff.name' | t }}</th><th>{{ 'posAdmin.staff.role' | t }}</th><th>{{ 'posAdmin.staff.status' | t }}</th><th></th></tr></thead>
+              <tbody>
+                @for (s of staff(); track s.id) {
+                  <tr [class.opacity-50]="!s.is_active">
+                    <td>
+                      <span class="inline-flex items-center gap-2 font-semibold">
+                        <span class="w-7 h-7 rounded-full text-white text-[11px] font-bold flex items-center justify-center" [style.background]="s.color">{{ s.name.slice(0, 1).toUpperCase() }}</span>
+                        {{ s.name }}
+                      </span>
+                    </td>
+                    <td>{{ 'pos.roles.' + s.role | t }}</td>
+                    <td>
+                      @if (!s.is_active) {
+                        <span class="pill bg-slate-100 text-slate-600">{{ 'posAdmin.staff.inactive' | t }}</span>
+                      } @else if (isLocked(s)) {
+                        <span class="pill bg-rose-100 text-rose-700">{{ 'posAdmin.staff.locked' | t }}</span>
+                      } @else {
+                        <span class="pill bg-emerald-100 text-emerald-700">{{ 'posAdmin.staff.active' | t }}</span>
+                      }
+                    </td>
+                    <td class="text-right whitespace-nowrap">
+                      @if (isLocked(s)) {
+                        <button mat-stroked-button (click)="unlock(s)"><mat-icon>lock_open</mat-icon><span>{{ 'posAdmin.staff.unlock' | t }}</span></button>
+                      }
+                      <button mat-stroked-button (click)="askPin(s)"><mat-icon>pin</mat-icon><span>{{ 'posAdmin.staff.setPin' | t }}</span></button>
+                      <button mat-icon-button [matTooltip]="'common.actions.edit' | t" (click)="editStaff(s)"><mat-icon>edit</mat-icon></button>
+                      <button mat-icon-button [matTooltip]="(s.is_active ? 'posAdmin.staff.deactivate' : 'posAdmin.staff.activate') | t" (click)="toggleStaff(s)">
+                        <mat-icon>{{ s.is_active ? 'person_off' : 'person' }}</mat-icon>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ================= Mesas ================= -->
+    @case ('tables') {
+      <div class="grid lg:grid-cols-[1fr_320px] gap-4">
+        <div class="space-y-4">
+          @for (zone of zones(); track zone.id) {
+            <div class="card">
+              <div class="flex items-center gap-2 mb-3">
+                <button mat-icon-button [matMenuTriggerFor]="iconMenu"><i class="fa-solid {{ zone.icon || 'fa-chair' }} text-orange-600" aria-hidden="true"></i></button>
+                <mat-menu #iconMenu="matMenu">
+                  <div class="flex gap-1 p-2">
+                    @for (icon of zoneIcons; track icon) {
+                      <button mat-icon-button (click)="setZoneIcon(zone, icon)"><i class="fa-solid {{ icon }}" aria-hidden="true"></i></button>
+                    }
+                  </div>
+                </mat-menu>
+                <h3 class="!m-0 text-lg font-bold flex-1">{{ zone.name }}</h3>
+                <button mat-icon-button class="!text-rose-600" (click)="removeZone(zone)" [matTooltip]="'common.actions.delete' | t"><mat-icon>delete</mat-icon></button>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                @for (tb of tablesOf(zone.id); track tb.id) {
+                  <div class="rounded-xl border px-3 py-2 flex items-center gap-2" [class.opacity-50]="!tb.is_active" [class.border-slate-200]="tb.is_active">
+                    <span class="font-bold">{{ tb.name }}</span>
+                    <span class="text-xs text-slate-500"><i class="fa-solid fa-chair" aria-hidden="true"></i>
+                      <input type="number" min="1" max="50" class="w-10 text-center outline-none" [value]="tb.seats" (change)="patchTable(tb, { seats: +$any($event.target).value || 1 })"></span>
+                    <button type="button" class="text-slate-300 hover:text-rose-500" (click)="removeTable(tb)" [attr.aria-label]="'common.actions.delete' | t"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+                  </div>
+                }
+                @if (tablesOf(zone.id).length === 0) { <p class="text-sm text-slate-400">{{ 'posAdmin.tables.noTables' | t }}</p> }
+              </div>
+            </div>
+          }
+          @if (tablesOf(null).length > 0) {
+            <div class="card">
+              <h3 class="!m-0 text-lg font-bold mb-3">{{ 'posAdmin.tables.noZone' | t }}</h3>
+              <div class="flex flex-wrap gap-2">
+                @for (tb of tablesOf(null); track tb.id) {
+                  <div class="rounded-xl border border-slate-200 px-3 py-2 flex items-center gap-2">
+                    <span class="font-bold">{{ tb.name }}</span>
+                    <button type="button" class="text-slate-300 hover:text-rose-500" (click)="removeTable(tb)"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+          @if (zones().length === 0 && !loading()) {
+            <p class="text-sm text-slate-500 py-6 text-center">{{ 'posAdmin.tables.empty' | t }}</p>
+          }
+        </div>
+
+        <div class="space-y-4">
+          <div class="card">
+            <span class="label">{{ 'posAdmin.tables.newZone' | t }}</span>
+            <div class="flex gap-2">
+              <input class="field" maxlength="40" [placeholder]="'posAdmin.tables.zonePlaceholder' | t" [value]="newZone()" (input)="newZone.set($any($event.target).value)" (keydown.enter)="addZone()">
+              <button mat-raised-button class="!bg-ispc-orange !text-white" [disabled]="!newZone().trim()" (click)="addZone()"><mat-icon>add</mat-icon></button>
+            </div>
+          </div>
+          <div class="card space-y-3">
+            <span class="label">{{ 'posAdmin.tables.addTables' | t }}</span>
+            <select class="field" (change)="patchBulk({ zone_id: $any($event.target).value })">
+              <option value="">{{ 'posAdmin.tables.noZone' | t }}</option>
+              @for (zone of zones(); track zone.id) { <option [value]="zone.id" [selected]="bulk().zone_id === zone.id">{{ zone.name }}</option> }
+            </select>
+            <div class="grid grid-cols-3 gap-2">
+              <label><span class="label">{{ 'posAdmin.tables.prefix' | t }}</span><input class="field" maxlength="6" [value]="bulk().prefix" (input)="patchBulk({ prefix: $any($event.target).value })"></label>
+              <label><span class="label">{{ 'posAdmin.tables.from' | t }}</span><input class="field" type="number" min="1" [value]="bulk().from" (input)="patchBulk({ from: +$any($event.target).value || 1 })"></label>
+              <label><span class="label">{{ 'posAdmin.tables.to' | t }}</span><input class="field" type="number" min="1" [value]="bulk().to" (input)="patchBulk({ to: +$any($event.target).value || 1 })"></label>
+            </div>
+            <label class="block"><span class="label">{{ 'posAdmin.tables.seats' | t }}</span><input class="field" type="number" min="1" max="50" [value]="bulk().seats" (input)="patchBulk({ seats: +$any($event.target).value || 4 })"></label>
+            <p class="text-xs text-slate-500">{{ 'posAdmin.tables.preview' | t: { first: bulk().prefix + bulk().from, last: bulk().prefix + bulk().to } }}</p>
+            <button mat-raised-button class="w-full !bg-ispc-orange !text-white" (click)="addTables()"><mat-icon>add</mat-icon><span>{{ 'posAdmin.tables.create' | t }}</span></button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ================= Produtos ================= -->
+    @case ('products') {
+      <div class="card mb-4">
+        <span class="label">{{ 'posAdmin.products.categories' | t }}</span>
+        <div class="flex flex-wrap gap-2 items-center">
+          @for (c of categories(); track c.id) {
+            <span class="inline-flex items-center gap-2 pl-2 pr-1 py-1 rounded-xl border border-slate-200">
+              <input type="color" class="w-6 h-6 rounded border-0 p-0 bg-transparent" [value]="c.color" (change)="patchCategory(c, { color: $any($event.target).value })" [attr.aria-label]="c.name">
+              <span class="font-semibold text-sm">{{ c.name }}</span>
+              <button type="button" class="w-6 h-6 text-slate-300 hover:text-rose-500" (click)="removeCategory(c)" [attr.aria-label]="'common.actions.delete' | t"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+            </span>
+          }
+          <input class="field !w-48" maxlength="60" [placeholder]="'posAdmin.products.newCategory' | t" [value]="newCategory()" (input)="newCategory.set($any($event.target).value)" (keydown.enter)="addCategory()">
+          <button mat-stroked-button [disabled]="!newCategory().trim()" (click)="addCategory()"><mat-icon>add</mat-icon></button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="flex flex-wrap gap-2 items-center justify-between mb-3">
+          <input class="field !w-72" type="search" [placeholder]="'posAdmin.products.search' | t" [value]="productSearch()" (input)="productSearch.set($any($event.target).value)">
+          <p class="text-xs text-slate-500">{{ 'posAdmin.products.hint' | t }}</p>
+        </div>
+        <div class="overflow-x-auto">
+          <table>
+            <thead>
+              <tr>
+                <th>{{ 'posAdmin.products.product' | t }}</th>
+                <th>{{ 'posAdmin.products.category' | t }}</th>
+                <th class="text-center">{{ 'posAdmin.products.visible' | t }}</th>
+                @if (isRestaurant()) { <th>{{ 'posAdmin.products.station' | t }}</th> }
+                <th class="text-center">{{ 'posAdmin.products.weight' | t }}</th>
+                <th class="text-center">{{ 'posAdmin.products.available' | t }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of filteredProducts(); track p.id) {
+                <tr [class.opacity-50]="!p.is_active">
+                  <td><span class="font-semibold">{{ p.name }}</span><div class="text-[11px] text-slate-400 font-mono">{{ p.code }} · {{ money(p.price) }}</div></td>
+                  <td>
+                    <select class="field !py-1.5 !w-44" (change)="patchProduct(p, { category_id: $any($event.target).value || null })">
+                      <option value="">—</option>
+                      @for (c of categories(); track c.id) { <option [value]="c.id" [selected]="p.category_id === c.id">{{ c.name }}</option> }
+                    </select>
+                  </td>
+                  <td class="text-center"><input type="checkbox" class="w-4 h-4 accent-orange-600" [checked]="p.pos_visible" (change)="patchProduct(p, { pos_visible: $any($event.target).checked })"></td>
+                  @if (isRestaurant()) {
+                    <td>
+                      <select class="field !py-1.5 !w-32" (change)="patchProduct(p, { pos_station: stationValue($any($event.target).value) })">
+                        <option value="" [selected]="!p.pos_station">—</option>
+                        <option value="kitchen" [selected]="p.pos_station === 'kitchen'">{{ 'posAdmin.products.kitchen' | t }}</option>
+                        <option value="bar" [selected]="p.pos_station === 'bar'">{{ 'posAdmin.products.bar' | t }}</option>
+                      </select>
+                    </td>
+                  }
+                  <td class="text-center"><input type="checkbox" class="w-4 h-4 accent-orange-600" [checked]="p.sold_by_weight" (change)="patchProduct(p, { sold_by_weight: $any($event.target).checked })"></td>
+                  <td class="text-center"><input type="checkbox" class="w-4 h-4 accent-orange-600" [checked]="p.pos_available" (change)="patchProduct(p, { pos_available: $any($event.target).checked })"></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          @if (filteredProducts().length === 0 && !loading()) {
+            <p class="text-sm text-slate-500 py-6 text-center">{{ 'posAdmin.products.empty' | t }}</p>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- ================= Vendas e caixas ================= -->
+    @case ('sales') {
+      <div class="seg mb-4">
+        <button type="button" [class.on]="range() === 'today'" (click)="setRange('today')">{{ 'posAdmin.sales.today' | t }}</button>
+        <button type="button" [class.on]="range() === 'week'" (click)="setRange('week')">{{ 'posAdmin.sales.week' | t }}</button>
+        <button type="button" [class.on]="range() === 'month'" (click)="setRange('month')">{{ 'posAdmin.sales.month' | t }}</button>
+      </div>
+      @if (report(); as r) {
+        <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-4">
+          <div class="card"><p class="label">{{ 'posAdmin.sales.net' | t }}</p><p class="text-2xl font-extrabold">{{ money(r.netSales) }}</p><p class="text-xs text-slate-500">{{ 'posAdmin.sales.ispcNote' | t }}</p></div>
+          <div class="card"><p class="label">{{ 'posAdmin.sales.receipts' | t }}</p><p class="text-2xl font-extrabold">{{ r.frCount }}</p><p class="text-xs text-slate-500">{{ 'posAdmin.sales.average' | t }} {{ money(r.frCount ? r.frTotal / r.frCount : 0) }}</p></div>
+          <div class="card"><p class="label">{{ 'posAdmin.sales.refunds' | t }}</p><p class="text-2xl font-extrabold text-rose-600">{{ money(r.ncTotal) }}</p><p class="text-xs text-slate-500">{{ r.ncCount }} NC · {{ r.voidedCount }} {{ 'posAdmin.sales.voided' | t }}</p></div>
+          <div class="card"><p class="label">{{ 'posAdmin.sales.discounts' | t }}</p><p class="text-2xl font-extrabold">{{ money(r.discounts) }}</p></div>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-4 mb-4">
+          <div class="card">
+            <p class="label">{{ 'posAdmin.sales.byMethod' | t }}</p>
+            @for (m of r.byMethod; track m.method) {
+              <div class="flex justify-between py-1.5 border-b border-slate-100 text-sm"><span>{{ 'pos.payment.methods.' + m.method | t }} ({{ m.count }})</span><span class="font-semibold">{{ money(m.total) }}</span></div>
+            }
+            @if (r.simulated) { <p class="text-xs text-amber-700 mt-2"><i class="fa-solid fa-flask" aria-hidden="true"></i> {{ 'posAdmin.sales.simulated' | t: { amount: money(r.simulated) } }}</p> }
+            @if (r.byMethod.length === 0) { <p class="text-sm text-slate-400">{{ 'posAdmin.sales.none' | t }}</p> }
+          </div>
+          <div class="card">
+            <p class="label">{{ 'posAdmin.sales.byStaff' | t }}</p>
+            @for (s of r.byStaff; track s.name) {
+              <div class="flex justify-between py-1.5 border-b border-slate-100 text-sm"><span>{{ s.name }} ({{ s.count }})</span><span class="font-semibold">{{ money(s.total) }}</span></div>
+            }
+            @if (r.byStaff.length === 0) { <p class="text-sm text-slate-400">{{ 'posAdmin.sales.none' | t }}</p> }
+          </div>
+          <div class="card">
+            <p class="label">{{ (range() === 'today' ? 'posAdmin.sales.byHour' : 'posAdmin.sales.byDay') | t }}</p>
+            @if (range() === 'today') {
+              <div class="flex items-end gap-1 h-32">
+                @for (v of r.byHour; track $index) {
+                  <div class="flex-1 rounded-t bg-ispc-orange/80" [style.height.%]="(v / hourMax()) * 100" [matTooltip]="$index + 'h · ' + money(v)"></div>
+                }
+              </div>
+              <div class="flex justify-between text-[10px] text-slate-400 mt-1"><span>0h</span><span>12h</span><span>23h</span></div>
+            } @else {
+              @for (d of r.byDay; track d.date) {
+                <div class="flex items-center gap-2 text-xs py-0.5">
+                  <span class="w-20 text-slate-500">{{ d.date }}</span>
+                  <div class="flex-1 h-2 rounded bg-slate-100"><div class="h-2 rounded bg-ispc-orange" [style.width.%]="(d.total / dayMax()) * 100"></div></div>
+                  <span class="w-28 text-right font-semibold">{{ money(d.total) }}</span>
+                </div>
+              }
+            }
+          </div>
+          <div class="card">
+            <p class="label">{{ 'posAdmin.sales.topProducts' | t }}</p>
+            @for (p of r.topProducts; track p.name) {
+              <div class="flex justify-between py-1.5 border-b border-slate-100 text-sm"><span class="truncate">{{ p.name }} <span class="text-slate-400">× {{ p.quantity }}</span></span><span class="font-semibold whitespace-nowrap">{{ money(p.total) }}</span></div>
+            }
+            @if (r.topProducts.length === 0) { <p class="text-sm text-slate-400">{{ 'posAdmin.sales.none' | t }}</p> }
+          </div>
+        </div>
+      }
+
+      <div class="card">
+        <p class="label">{{ 'posAdmin.sales.sessions' | t }}</p>
+        <div class="overflow-x-auto">
+          <table>
+            <thead><tr><th>#</th><th>{{ 'posAdmin.sales.terminal' | t }}</th><th>{{ 'posAdmin.sales.opened' | t }}</th><th>{{ 'posAdmin.sales.closed' | t }}</th><th class="text-right">{{ 'posAdmin.sales.expected' | t }}</th><th class="text-right">{{ 'posAdmin.sales.counted' | t }}</th><th class="text-right">{{ 'posAdmin.sales.difference' | t }}</th></tr></thead>
+            <tbody>
+              @for (s of sessions(); track s.id) {
+                <tr>
+                  <td class="font-bold">{{ s.number }}</td>
+                  <td>{{ s.terminal?.name }}</td>
+                  <td>{{ dateTime(s.opened_at) }}<div class="text-[11px] text-slate-400">{{ s.opener?.name }}</div></td>
+                  <td>
+                    @if (s.status === 'open') { <span class="pill bg-emerald-100 text-emerald-700">{{ 'posAdmin.sales.open' | t }}</span> }
+                    @else { {{ dateTime(s.closed_at) }}<div class="text-[11px] text-slate-400">{{ s.closer?.name }}</div> }
+                  </td>
+                  <td class="text-right">{{ s.expected_cash === null ? '—' : money(s.expected_cash) }}</td>
+                  <td class="text-right">{{ s.counted_cash === null ? '—' : money(s.counted_cash) }}</td>
+                  <td class="text-right font-semibold" [class.text-rose-600]="(s.difference ?? 0) < 0" [class.text-amber-600]="(s.difference ?? 0) > 0">
+                    {{ s.difference === null ? '—' : money(s.difference) }}
+                    @if (s.notes) { <i class="fa-regular fa-comment text-slate-400 ml-1" [matTooltip]="s.notes" aria-hidden="true"></i> }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          @if (sessions().length === 0 && !loading()) { <p class="text-sm text-slate-500 py-6 text-center">{{ 'posAdmin.sales.noSessions' | t }}</p> }
+        </div>
+      </div>
+    }
+  }
+
+  <app-confirm-dialog></app-confirm-dialog>
+</div>

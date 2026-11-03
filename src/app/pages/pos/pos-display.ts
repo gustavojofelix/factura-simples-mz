@@ -23,6 +23,8 @@ export type PosDisplayMessage =
       totals: PosTotals;
       /** Venda acabada de finalizar: agradecimento e troco. */
       paid?: { number: string; total: number; change: number };
+      /** Pagamento M-Pesa/e-Mola à espera da confirmação no telemóvel do cliente. */
+      mobile?: { method: 'mpesa' | 'emola'; amount: number };
     };
 
 export type PosDisplayState = Extract<PosDisplayMessage, { kind: 'state' }>;

@@ -1,3 +1,4 @@
+import { PosAdminService } from '../../core/services/pos-admin.service';
 import { Component, signal, computed } from '@angular/core';
 import { isSubscriptionFreeUrl } from '../../core/guards/subscription.guard';
 import { CommonModule } from '@angular/common';
@@ -66,6 +67,7 @@ export class MainLayoutComponent {
     { icon: 'fa-file-invoice-dollar', label: t('layout.nav.invoices'), route: '/facturas' },
     { icon: 'fa-address-book', label: t('layout.nav.clients'), route: '/clientes' },
     { icon: 'fa-boxes-stacked', label: t('layout.nav.products'), route: '/produtos' },
+    { icon: 'fa-cash-register', label: t('layout.nav.pos'), route: '/ponto-de-venda' },
     { icon: 'fa-landmark', label: t('layout.nav.taxes'), route: '/impostos' },
     { icon: 'fa-chart-column', label: t('layout.nav.reports'), route: '/relatorios' },
     { icon: 'fa-sliders', label: t('layout.nav.settings'), route: '/configuracoes' },
@@ -75,7 +77,10 @@ export class MainLayoutComponent {
   filteredMenuItems = computed(() => {
     const role = this.companyService.activeRole();
     
+    const posEnabled = !!this.posAdmin.access()?.enabled;
     return this.menuItems.filter(item => {
+      // Ponto de Venda: só com o módulo no plano (ou numa excepção da empresa).
+      if (item.route === '/ponto-de-venda' && (!posEnabled || role === 'user')) return false;
       // Vendedor (user) only gets Invoices, Clients, Products and the assistant
       if (role === 'user') {
         return ['/facturas', '/clientes', '/produtos', '/assistente'].includes(item.route);
@@ -100,6 +105,7 @@ export class MainLayoutComponent {
     public companyService: CompanyService,
     public subscriptionService: SubscriptionService,
     public accountService: AccountService,
+    private posAdmin: PosAdminService,
     private tenant: TenantService,
     private router: Router,
     private dialog: MatDialog
@@ -187,7 +193,7 @@ export class MainLayoutComponent {
     const groupNames: Record<string, string> = {
       '/painel': overview, '/assistente': overview,
       '/facturas': operations, '/clientes': operations,
-      '/produtos': operations, '/impostos': tax, '/relatorios': tax,
+      '/produtos': operations, '/ponto-de-venda': operations, '/impostos': tax, '/relatorios': tax,
       '/configuracoes': system, '/auditoria': system
     };
     const groups: { label: string; items: MenuItem[] }[] = [];

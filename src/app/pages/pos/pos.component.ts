@@ -7,18 +7,18 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Capacitor } from '@capacitor/core';
 import {
-  POS_COUNTER_CART,
-  POS_PAYMENT_METHODS,
-  POS_WALK_IN_CLIENT_ID,
-  PosPayment,
+  PosClientRef,
+  PosDocument,
+  PosDocumentRow,
+  PosPaymentInput,
   PosPaymentMethod,
+  PosPaymentRequest,
   PosProduct,
-  PosSale,
   PosService,
-  PosSession,
-  isValidNuit,
-  toSaleItem
+  PosSessionReport,
+  newClientUuid
 } from '../../core/services/pos.service';
+import { PosApiError } from '../../core/services/pos-api.service';
 import { POS_DISPLAY_CHANNEL, PosDisplayMessage, PosDisplayState } from './pos-display';
 import { ToastService } from '../../core/services/toast.service';
 import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
@@ -26,30 +26,46 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { ToastComponent } from '../../shared/components/toast.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog.component';
 import { t } from '../../core/i18n/i18n';
-import { PosReceiptDialogComponent, PosReceiptDialogData, posPrintContext } from './pos-receipt-dialog.component';
+import { PosReceiptAction, PosReceiptDialogComponent, PosReceiptDialogData } from './pos-receipt-dialog.component';
 import { PosAccessComponent } from './pos-access.component';
 import { PosTablesComponent } from './pos-tables.component';
 import {
   PosAuthorizeDialogComponent,
+  PosBillSplitDialogComponent,
+  PosClientDialogComponent,
   PosCloseDialogComponent,
+  PosCloseResult,
   PosDiscountDialogComponent,
   PosDiscountResult,
+  PosMobilePaymentDialogComponent,
   PosMovementDialogComponent,
+  PosMovementResult,
+  PosReasonDialogComponent,
   PosRefundDialogComponent,
-  PosRefundResult,
-  PosSettingsDialogComponent
+  PosRefundResult
 } from './pos-dialogs.component';
-import { printBill, printKitchenOrder, printSale, printZReport } from './pos-print';
+import { printBill, printDocument, printKitchenTickets, printSessionReport, printVoidTicket } from './pos-print';
 import { formatPosDate, formatPosMoney, formatPosTime } from './pos-format';
 
 type PosTab = 'tables' | 'terminal' | 'history';
-type PosPeriod = 'session' | 'today' | 'week' | 'all';
+type PosPeriod = 'session' | 'today' | 'week';
+
+/** Linha do ecrã de venda (balcão ou mesa). */
+type SaleLine = ReturnType<PosService['saleLines']>[number];
+
+/** Pagamento na lista do modo dividido, com o valor para mostrar. */
+type SplitPayment = PosPaymentInput & { label_amount: number };
 
 const LOW_STOCK = 5;
 
 const CART_WIDTH_KEY = 'pos.cartWidth';
 const CART_WIDTH_MIN = 340;
 const CART_WIDTH_MAX = 640;
+
+const VOID_LINE_REASONS = ['pos.reason.customerChanged', 'pos.reason.wrongOrder', 'pos.reason.kitchenProblem', 'pos.reason.other'];
+const VOID_SALE_REASONS = ['pos.reason.wrongSale', 'pos.reason.customerGaveUp', 'pos.reason.paymentProblem', 'pos.reason.other'];
+
+const round2 = (v: number) => Math.round(v * 100) / 100;
 
 function defaultCartWidth(): number {
   return typeof window !== 'undefined' && window.innerWidth >= 1536 ? 440 : 400;
@@ -61,11 +77,6 @@ function storedCartWidth(): number {
     if (value >= CART_WIDTH_MIN && value <= CART_WIDTH_MAX) return value;
   } catch { /* armazenamento indisponível */ }
   return defaultCartWidth();
-}
-
-function isSameDay(iso: string, day: Date): boolean {
-  const date = new Date(iso);
-  return date.getFullYear() === day.getFullYear() && date.getMonth() === day.getMonth() && date.getDate() === day.getDate();
 }
 
 /** Evento de instalação de PWA (Chrome/Android/Edge). */
@@ -104,9 +115,6 @@ const POS_HEAD: { tag: string; attrs: Record<string, string> }[] = [
   styleUrls: ['./pos.component.css']
 })
 export class PosComponent implements OnInit, OnDestroy {
-  readonly paymentMethods = POS_PAYMENT_METHODS;
-  readonly documentTypes: ('VD' | 'FR')[] = ['VD', 'FR'];
-  readonly counterCart = POS_COUNTER_CART;
   readonly lowStock = LOW_STOCK;
   readonly isNative = Capacitor.isNativePlatform();
   readonly fullscreenSupported = typeof document !== 'undefined' && !!document.documentElement.requestFullscreen;
@@ -123,20 +131,19 @@ export class PosComponent implements OnInit, OnDestroy {
 
   private searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
 
-  tab = signal<PosTab>(this.pos.settings().mode === 'restaurant' ? 'tables' : 'terminal');
-  isRestaurant = computed(() => this.pos.settings().mode === 'restaurant');
-  ready = computed(() => !!this.pos.currentSession() && !this.pos.locked());
+  tab = signal<PosTab>('terminal');
+  isRestaurant = computed(() => this.pos.mode() === 'restaurant');
+  /** Pronto a operar: com caixa aberta, ou empregado de mesa (só pedidos, sem caixa). */
+  ready = computed(() => this.pos.phase() === 'ready' && (!!this.pos.session() || !this.pos.canSell()));
+  /** Operação em curso (evita duplo toque em "Cobrar"). */
+  busy = signal(false);
 
   // ---------- Venda ----------
   search = signal('');
   category = signal<string>('all');
-  clientId = signal<string>(POS_WALK_IN_CLIENT_ID);
+  client = signal<PosClientRef | null>(null);
   paymentMethod = signal<PosPaymentMethod>('cash');
   amountReceived = signal<number | null>(null);
-  documentType = signal<'VD' | 'FR'>(this.pos.settings().default_document);
-  /** FR para cliente sem ficha: nome e NUIT escritos na hora. */
-  fiscalName = signal('');
-  fiscalNuit = signal('');
 
   cartWidth = signal(storedCartWidth());
   cartOpen = signal(false);
@@ -150,105 +157,66 @@ export class PosComponent implements OnInit, OnDestroy {
     );
   });
 
-  cartQuantities = computed(() => new Map(this.pos.cart().map(line => [line.product.id, line.quantity])));
+  /** Quantidade de cada artigo no ecrã de venda (para o selo no botão). */
+  lineQuantities = computed(() => {
+    const map = new Map<string, number>();
+    for (const l of this.pos.saleLines()) if (l.product_id) map.set(l.product_id, (map.get(l.product_id) ?? 0) + l.quantity);
+    return map;
+  });
 
-  selectedClient = computed(() => this.pos.client(this.clientId()));
-  /** FR precisa de NUIT: da ficha do cliente ou escrito na hora. */
-  needsFiscalData = computed(() => this.documentType() === 'FR' && !this.selectedClient()?.nuit);
-  fiscalValid = computed(() => !this.needsFiscalData() || (this.fiscalName().trim().length > 1 && isValidNuit(this.fiscalNuit())));
+  total = computed(() => this.pos.totals().total);
 
-  /** Pagamento dividido: várias formas na mesma venda (ex.: parte em numerário, parte M-Pesa). */
+  /** Pagamento dividido: várias formas na mesma venda. */
   splitMode = signal(false);
-  splitPayments = signal<PosPayment[]>([]);
+  splitPayments = signal<SplitPayment[]>([]);
   splitAmount = signal<number | null>(null);
-  paidSoFar = computed(() => Math.round(this.splitPayments().reduce((acc, p) => acc + p.amount, 0) * 100) / 100);
+  paidSoFar = computed(() => round2(this.splitPayments().reduce((acc, p) => acc + p.label_amount, 0)));
 
   received = computed(() => {
-    const total = this.pos.cartTotals().total;
     if (this.splitMode()) return this.paidSoFar();
-    return this.paymentMethod() === 'cash' ? (this.amountReceived() ?? total) : total;
+    return this.paymentMethod() === 'cash' ? (this.amountReceived() ?? this.total()) : this.total();
   });
-  change = computed(() => Math.max(0, Math.round((this.received() - this.pos.cartTotals().total) * 100) / 100));
-  missing = computed(() => Math.max(0, Math.round((this.pos.cartTotals().total - this.received()) * 100) / 100));
-  canCheckout = computed(() => this.pos.cart().length > 0 && this.missing() === 0 && this.fiscalValid());
+  change = computed(() => Math.max(0, round2(this.received() - this.total())));
+  missing = computed(() => Math.max(0, round2(this.total() - this.received())));
+  canCheckout = computed(() => this.pos.canSell() && !!this.pos.session() && this.pos.saleLines().length > 0
+    && this.total() > 0 && this.missing() === 0 && !this.busy());
 
   quickAmounts = computed(() => {
-    const total = this.pos.cartTotals().total;
+    const total = this.total();
     if (total <= 0) return [];
     const options = [50, 100, 200, 500, 1000].map(step => Math.ceil(total / step) * step);
     return [...new Set(options)].filter(v => v > total).slice(0, 3);
   });
 
-  /** Mesas livres para onde se pode transferir a mesa actual. */
-  freeTables = computed(() => this.pos.tables().filter(tb => !this.pos.tableOrders()[tb.id]));
+  freeTables = computed(() => this.pos.tables().filter(tb => !this.pos.orderForTable(tb.id)));
   perPerson = computed(() => {
     const covers = this.pos.activeOrder()?.covers ?? 1;
-    return covers > 1 ? this.pos.cartTotals().total / covers : 0;
+    return covers > 1 ? this.total() / covers : 0;
   });
 
-  // ---------- Vendas ----------
+  // ---------- Vendas (histórico) ----------
   historySearch = signal('');
-  sellerFilter = signal<string>('all');
-  methodFilter = signal<string>('all');
   period = signal<PosPeriod>('session');
+  documents = signal<PosDocumentRow[]>([]);
+  report = signal<PosSessionReport | null>(null);
+  historyLoading = signal(false);
+  private historyTimer?: ReturnType<typeof setTimeout>;
 
-  todaySales = computed(() => {
-    const today = new Date();
-    return this.pos.sales().filter(s => s.status === 'completed' && isSameDay(s.created_at, today));
-  });
-
-  /** Totais líquidos: as notas de crédito (negativas) abatem às vendas. */
   kpis = computed(() => {
-    const sales = this.todaySales();
-    const total = sales.reduce((sum, s) => sum + s.total, 0);
-    const count = sales.filter(s => s.document_type !== 'NC').length;
-    const bySeller = new Map<string, number>();
-    for (const sale of sales) bySeller.set(sale.seller_id, (bySeller.get(sale.seller_id) ?? 0) + sale.total);
-    const top = [...bySeller.entries()].sort((a, b) => b[1] - a[1])[0];
-    return {
-      total,
-      count,
-      average: count ? total / count : 0,
-      topSeller: top ? { seller: this.pos.seller(top[0]), total: top[1] } : null
-    };
+    const docs = this.documents().filter(d => d.status === 'paga');
+    const total = docs.reduce((sum, d) => sum + Number(d.total), 0);
+    const count = docs.filter(d => d.document_type === 'FR').length;
+    return { total, count, average: count ? total / count : 0 };
   });
 
   byMethod = computed(() => {
-    const payments = this.todaySales().flatMap(s => s.payments);
-    const total = payments.reduce((sum, p) => sum + p.amount, 0) || 1;
-    return this.paymentMethods
-      .map(method => {
-        const amount = payments.filter(p => p.method === method.id).reduce((sum, p) => sum + p.amount, 0);
-        return { ...method, amount, share: Math.max(0, (amount / total) * 100) };
-      })
+    const payments = this.report()?.payments ?? {};
+    const entries = this.pos.paymentMethods()
+      .map(m => ({ ...m, amount: Number(payments[m.id]?.total ?? 0) }))
       .filter(m => m.amount !== 0);
+    const max = Math.max(1, ...entries.map(e => Math.abs(e.amount)));
+    return entries.map(e => ({ ...e, share: Math.max(0, (e.amount / max) * 100) }));
   });
-
-  filteredSales = computed(() => {
-    const term = this.historySearch().trim().toLowerCase();
-    const seller = this.sellerFilter();
-    const method = this.methodFilter();
-    const period = this.period();
-    const sessionId = this.pos.currentSession()?.id;
-    const now = new Date();
-    const weekAgo = new Date(now);
-    weekAgo.setDate(weekAgo.getDate() - 6);
-    weekAgo.setHours(0, 0, 0, 0);
-
-    return this.pos.sales().filter(s => {
-      if (seller !== 'all' && s.seller_id !== seller) return false;
-      if (method !== 'all' && !s.payments.some(p => p.method === method)) return false;
-      if (period === 'session' && s.session_id !== sessionId) return false;
-      if (period === 'today' && !isSameDay(s.created_at, now)) return false;
-      if (period === 'week' && new Date(s.created_at) < weekAgo) return false;
-      if (term && !s.number.toLowerCase().includes(term) && !s.client_name.toLowerCase().includes(term)) return false;
-      return true;
-    });
-  });
-
-  periodTotal = computed(() => this.filteredSales()
-    .filter(s => s.status === 'completed')
-    .reduce((sum, s) => sum + s.total, 0));
 
   constructor(
     public pos: PosService,
@@ -256,16 +224,11 @@ export class PosComponent implements OnInit, OnDestroy {
     private confirmDialog: ConfirmDialogService,
     private dialog: MatDialog
   ) {
-    // Mudou a empresa (loja/restaurante) ou o documento por omissão nas definições.
-    let lastMode = this.pos.settings().mode;
+    // Ao entrar, o restaurante começa nas mesas e a loja na venda.
     effect(() => {
-      const settings = this.pos.settings();
-      untracked(() => {
-        this.resetPayment();
-        this.category.set('all');
-        if (settings.mode !== lastMode) this.tab.set(settings.mode === 'restaurant' ? 'tables' : 'terminal');
-        lastMode = settings.mode;
-      });
+      const restaurant = this.isRestaurant();
+      const ready = this.ready();
+      untracked(() => { if (ready) this.tab.set(restaurant ? 'tables' : 'terminal'); });
     });
 
     // Ecrã do cliente: publica a venda actual sempre que muda.
@@ -276,12 +239,14 @@ export class PosComponent implements OnInit, OnDestroy {
   }
 
   /** Estado mostrado no ecrã do cliente (2º monitor). */
+  private mobileWaiting = signal<{ method: 'mpesa' | 'emola'; amount: number } | null>(null);
   private displayState = computed<PosDisplayState>(() => ({
     kind: 'state',
-    store: this.pos.store().name,
+    store: this.pos.company()?.name ?? '',
     table: this.pos.activeTable()?.name,
-    lines: this.pos.cart().map(l => ({ name: l.product.name, quantity: l.quantity, total: l.product.price * l.quantity })),
-    totals: this.pos.cartTotals()
+    lines: this.pos.saleLines().map(l => ({ name: l.name, quantity: l.quantity, total: l.unit_price * l.quantity })),
+    totals: this.pos.totals(),
+    mobile: this.mobileWaiting() ?? undefined
   }));
   private display = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel(POS_DISPLAY_CHANNEL) : null;
   private paidOnDisplay = false;
@@ -292,6 +257,7 @@ export class PosComponent implements OnInit, OnDestroy {
   private readonly onOffline = () => this.online.set(false);
 
   ngOnInit() {
+    this.pos.init();
     if (this.display) {
       this.display.onmessage = (event: MessageEvent<PosDisplayMessage>) => {
         if (event.data.kind === 'hello') this.display?.postMessage(this.displayState());
@@ -323,6 +289,7 @@ export class PosComponent implements OnInit, OnDestroy {
     window.removeEventListener('online', this.onOnline);
     window.removeEventListener('offline', this.onOffline);
     clearTimeout(this.paidTimer);
+    clearTimeout(this.historyTimer);
     this.display?.close();
   }
 
@@ -332,7 +299,7 @@ export class PosComponent implements OnInit, OnDestroy {
     this.toast.info(t('pos.display.openedTitle'), t('pos.display.openedBody'));
   }
 
-  /** F2 pesquisa · F9 finaliza · Esc fecha o carrinho no telemóvel. */
+  /** F2 pesquisa · F9 cobra · Esc fecha o carrinho no telemóvel. */
   @HostListener('document:keydown', ['$event'])
   onShortcut(event: KeyboardEvent) {
     if (!this.ready() || this.dialog.openDialogs.length > 0) return;
@@ -348,17 +315,18 @@ export class PosComponent implements OnInit, OnDestroy {
     }
   }
 
-  money(value: number) { return formatPosMoney(value); }
+  money(value: number) { return formatPosMoney(Number(value)); }
   date(iso: string) { return formatPosDate(iso); }
   time(iso: string) { return formatPosTime(iso); }
+  qty(value: number) { return Number.isInteger(value) ? String(value) : value.toLocaleString(undefined, { maximumFractionDigits: 3 }); }
 
-  initials(name: string | undefined): string {
+  initials(name: string | null | undefined): string {
     const parts = (name ?? '').trim().split(/\s+/).filter(Boolean);
     if (parts.length === 0) return '?';
     return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
   }
 
-  firstName(name: string | undefined) {
+  firstName(name: string | null | undefined) {
     return (name ?? '').split(' ')[0];
   }
 
@@ -366,6 +334,37 @@ export class PosComponent implements OnInit, OnDestroy {
     if (!iso) return '';
     const minutes = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60_000));
     return minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)}h${String(minutes % 60).padStart(2, '0')}`;
+  }
+
+  // ---------- Erros e autorizações ----------
+
+  private fail(e: unknown) {
+    this.toast.error(this.pos.handleError(e));
+  }
+
+  /**
+   * Executa uma operação; se o servidor pedir a autorização de um gerente
+   * (POS_AUTH_REQUIRED) mostra o teclado de PIN e repete com o PIN.
+   */
+  private async withAuth<T>(reason: string, fn: (pin?: string) => Promise<T>): Promise<T | undefined> {
+    let pin: string | undefined;
+    let error: string | undefined;
+    for (;;) {
+      try {
+        return await fn(pin);
+      } catch (e) {
+        if (e instanceof PosApiError && (e.code === 'POS_AUTH_REQUIRED' || e.code === 'POS_AUTH_INVALID')) {
+          error = e.code === 'POS_AUTH_INVALID' ? e.message : undefined;
+          pin = await new Promise<string | undefined>(resolve => this.dialog
+            .open<PosAuthorizeDialogComponent, { reason: string; error?: string }, string | undefined>(
+              PosAuthorizeDialogComponent, { data: { reason, error }, maxWidth: '95vw', autoFocus: false })
+            .afterClosed().subscribe(resolve));
+          if (!pin) return undefined;
+          continue;
+        }
+        throw e;
+      }
+    }
   }
 
   // ---------- Aplicação ----------
@@ -386,141 +385,287 @@ export class PosComponent implements OnInit, OnDestroy {
   }
 
   openBackOffice() {
-    window.open('/#/painel', '_blank');
+    window.open('/#/ponto-de-venda', '_blank');
   }
 
-  async resetDemo() {
+  async refreshCatalog() {
+    try {
+      await this.pos.bootstrap();
+      this.toast.success(t('pos.menu.refreshed'));
+    } catch (e) {
+      this.fail(e);
+    }
+  }
+
+  async unpair() {
     const confirmed = await this.confirmDialog.confirm({
-      title: t('pos.demo.resetTitle'),
-      message: t('pos.demo.resetMessage'),
-      confirmLabel: t('pos.demo.reset'),
+      title: t('pos.unpair.title'),
+      message: t('pos.unpair.message'),
+      confirmLabel: t('pos.unpair.confirm'),
       cancelLabel: t('common.actions.cancel'),
       danger: true
     });
-    if (!confirmed) return;
-    this.pos.resetDemo();
-    this.resetPayment();
-    this.tab.set(this.isRestaurant() ? 'tables' : 'terminal');
-    this.toast.success(t('pos.demo.resetDone'));
+    if (confirmed) await this.pos.unpair();
   }
 
   // ---------- Caixa (sessão) ----------
 
-  lock() {
+  async lock() {
     this.cartOpen.set(false);
-    this.pos.lock();
+    await this.pos.lock();
   }
 
   movement(type: 'in' | 'out') {
-    this.dialog.open(PosMovementDialogComponent, { data: { type }, maxWidth: '95vw', autoFocus: false })
-      .afterClosed().subscribe(done => {
-        if (done) this.toast.success(t(type === 'in' ? 'pos.movement.inDone' : 'pos.movement.outDone'));
+    this.dialog.open<PosMovementDialogComponent, { type: 'in' | 'out' }, PosMovementResult>(PosMovementDialogComponent, { data: { type }, maxWidth: '95vw', autoFocus: false })
+      .afterClosed().subscribe(async result => {
+        if (!result) return;
+        try {
+          const done = await this.withAuth(t('pos.authorize.cashMovement'),
+            pin => this.pos.cashMovement(type, result.amount, result.reason, result.notes, pin));
+          if (done) this.toast.success(t(type === 'in' ? 'pos.movement.inDone' : 'pos.movement.outDone'));
+        } catch (e) {
+          this.fail(e);
+        }
       });
   }
 
-  printPartialReport() {
-    const session = this.pos.currentSession();
-    if (session) printZReport(session, this.pos.summarize(session), posPrintContext(this.pos));
+  async printPartialReport() {
+    try {
+      printSessionReport(await this.pos.sessionReport(), this.pos.company()!, this.pos.paperWidth());
+    } catch (e) {
+      this.fail(e);
+    }
   }
 
-  closeSession() {
-    const busy = Object.keys(this.pos.tableOrders()).length;
-    if (this.isRestaurant() && busy > 0) {
-      this.toast.warning(t('pos.close.tablesOpen', { count: busy }));
+  async closeSession() {
+    let report: PosSessionReport;
+    try {
+      report = await this.pos.sessionReport();
+    } catch (e) {
+      this.fail(e);
       return;
     }
-    this.dialog.open<PosCloseDialogComponent, unknown, PosSession | null>(PosCloseDialogComponent, { maxWidth: '95vw', autoFocus: false })
-      .afterClosed().subscribe(closed => {
-        if (!closed) return;
-        printZReport(closed, this.pos.summarize(closed), posPrintContext(this.pos));
-        this.resetPayment();
-        this.tab.set(this.isRestaurant() ? 'tables' : 'terminal');
-        this.toast.success(t('pos.close.done', { number: closed.number }));
-      });
-  }
-
-  /** Pede o PIN de um gestor, salvo se o operador actual já for gestor. */
-  private authorize(reason: string): Promise<string | undefined> {
-    if (this.pos.isManager()) return Promise.resolve(this.pos.activeSellerId());
-    return new Promise(resolve => this.dialog
-      .open<PosAuthorizeDialogComponent, { reason: string }, string | undefined>(PosAuthorizeDialogComponent, { data: { reason }, maxWidth: '95vw', autoFocus: false })
+    if (this.isRestaurant() && this.pos.orders().length > 0) {
+      this.toast.warning(t('pos.close.tablesOpen', { count: this.pos.orders().length }));
+      return;
+    }
+    const blind = !!this.pos.company()?.settings?.cash?.blind_close && !this.pos.isManager();
+    const result = await new Promise<PosCloseResult | undefined>(resolve => this.dialog
+      .open<PosCloseDialogComponent, { report: PosSessionReport; blind: boolean; tolerance: number }, PosCloseResult>(PosCloseDialogComponent, {
+        data: { report, blind, tolerance: Number(this.pos.company()?.settings?.cash?.tolerance ?? 0) }, maxWidth: '95vw', autoFocus: false
+      })
       .afterClosed().subscribe(resolve));
-  }
-
-  async openSettings() {
-    if (!(await this.authorize(t('pos.authorize.settings')))) return;
-    this.dialog.open(PosSettingsDialogComponent, { maxWidth: '95vw', autoFocus: false })
-      .afterClosed().subscribe(saved => { if (saved) this.toast.success(t('pos.settings.saved')); });
+    if (!result) return;
+    try {
+      const closed = await this.withAuth(t('pos.authorize.difference'),
+        pin => this.pos.closeSession(result.counted, result.denominations, result.notes, pin));
+      if (!closed) return;
+      printSessionReport(closed, this.pos.company()!, this.pos.paperWidth());
+      this.resetPayment();
+      this.toast.success(t('pos.close.done', { number: closed.session.number }));
+      await this.pos.lock();
+    } catch (e) {
+      this.fail(e);
+    }
   }
 
   // ---------- Mesas ----------
 
-  openTable(key: string) {
-    if (key === POS_COUNTER_CART) this.pos.selectCart(POS_COUNTER_CART);
-    else this.pos.openTable(key);
+  async openTable(tableId: string | null) {
     this.resetPayment();
-    this.tab.set('terminal');
+    if (tableId === null) {
+      this.pos.selectCounter();
+      this.tab.set('terminal');
+      return;
+    }
+    try {
+      await this.pos.openTable(tableId, Math.min(2, this.pos.table(tableId)?.seats ?? 2));
+      this.tab.set('terminal');
+    } catch (e) {
+      this.fail(e);
+    }
   }
 
   backToTables() {
-    const key = this.pos.activeCartKey();
-    if (key !== POS_COUNTER_CART) this.pos.releaseTableIfEmpty(key);
     this.cartOpen.set(false);
+    this.pos.selectCounter();
     this.tab.set('tables');
   }
 
-  sendToKitchen() {
+  async sendToKitchen() {
     const table = this.pos.activeTable();
-    const order = this.pos.activeOrder();
     if (!table || this.pos.unsentCount() === 0) return;
-    const groups = this.pos.sendToKitchen();
-    printKitchenOrder(groups, `${t('pos.tables.table')} ${table.name}`, this.pos.seller(order?.waiter_id)?.name ?? '', this.pos.settings().paper_width);
-    this.toast.success(t('pos.tables.sent', { table: table.name }));
+    try {
+      const result = await this.pos.sendOrder();
+      if (result?.tickets.length) {
+        printKitchenTickets(result.tickets, `${t('pos.tables.table')} ${table.name}`, result.covers, result.waiter, this.pos.paperWidth());
+      }
+      this.toast.success(t('pos.tables.sent', { table: table.name }));
+    } catch (e) {
+      this.fail(e);
+    }
   }
 
   printBill() {
     const table = this.pos.activeTable();
     if (!table) return;
-    printBill(posPrintContext(this.pos), `${t('pos.tables.table')} ${table.name}`, this.pos.activeOrder()?.covers ?? 1,
-      this.pos.cart().map(toSaleItem), this.pos.cartTotals());
+    printBill(this.pos.company()!, this.pos.paperWidth(), `${t('pos.tables.table')} ${table.name}`,
+      this.pos.activeOrder()?.covers ?? 1, this.pos.saleLines(), this.pos.totals());
   }
 
-  /**
-   * Restaurante: a mesa é o "cliente" da venda. Do balcão leva o pedido para a
-   * mesa escolhida; de uma mesa, muda-o para outra livre.
-   */
-  transferTo(tableId: string) {
+  async setCovers(covers: number) {
+    try {
+      await this.pos.setCovers(Math.max(1, covers));
+    } catch (e) {
+      this.fail(e);
+    }
+  }
+
+  /** Do balcão leva o carrinho para a mesa escolhida; de uma mesa, muda o pedido para outra livre. */
+  async transferTo(tableId: string) {
     const from = this.pos.activeTable();
     const to = this.pos.table(tableId)?.name ?? '';
-    this.pos.moveToTable(tableId);
-    this.toast.info(from
-      ? t('pos.tables.transferred', { from: from.name, to })
-      : t('pos.tables.assigned', { table: to }));
+    try {
+      if (from) await this.pos.moveOrder(tableId);
+      else await this.pos.moveCartToTable(tableId);
+      this.toast.info(from ? t('pos.tables.transferred', { from: from.name, to }) : t('pos.tables.assigned', { table: to }));
+    } catch (e) {
+      this.fail(e);
+    }
   }
 
-  onTableSelect(event: Event) {
-    const select = event.target as HTMLSelectElement;
-    const value = select.value;
-    if (value === POS_COUNTER_CART) {
-      this.backToTables();
-      this.openTable(POS_COUNTER_CART);
-    } else if (this.pos.tableOrders()[value]) {
-      this.openTable(value);
+  async onTableSelect(event: Event) {
+    const value = (event.target as HTMLSelectElement).value;
+    if (value === '') {
+      this.pos.selectCounter();
+    } else if (this.pos.orderForTable(value)) {
+      await this.openTable(value);
     } else {
-      this.transferTo(value);
+      await this.transferTo(value);
     }
+  }
+
+  /** Fecha a mesa sem cobrar: livre se nada foi enviado; senão pede motivo e gerente. */
+  async cancelOrder() {
+    const order = this.pos.activeOrder();
+    if (!order) return;
+    const hasSent = order.lines.some(l => l.status === 'sent');
+    let reason: string | undefined;
+    if (hasSent) {
+      reason = await this.askReason(t('pos.tables.cancelTitle', { table: order.table_name ?? '' }), t('pos.tables.cancelMessage'), t('pos.tables.cancelConfirm'), VOID_LINE_REASONS);
+      if (!reason) return;
+    }
+    try {
+      await this.withAuth(t('pos.authorize.voidLine'), async pin => { await this.pos.cancelOrder(reason, pin); return true; });
+      this.tab.set('tables');
+    } catch (e) {
+      this.fail(e);
+    }
+  }
+
+  /** Conta dividida por artigos: escolher o que se cobra agora. */
+  splitBill() {
+    const order = this.pos.activeOrder();
+    if (!order) return;
+    this.dialog.open<PosBillSplitDialogComponent, unknown, Record<string, number>>(PosBillSplitDialogComponent, {
+      data: { lines: this.pos.orderLines(), current: this.pos.billSplit() }, maxWidth: '95vw', autoFocus: false
+    }).afterClosed().subscribe(selection => {
+      if (!selection) return;
+      this.pos.billSplit.set(Object.keys(selection).length ? selection : null);
+      this.splitPayments.set([]);
+      this.amountReceived.set(null);
+    });
+  }
+
+  cancelBillSplit() {
+    this.pos.billSplit.set(null);
+    this.splitPayments.set([]);
+    this.amountReceived.set(null);
   }
 
   // ---------- Venda ----------
 
-  add(product: PosProduct) {
-    if (!this.pos.addToCart(product)) {
+  async add(product: PosProduct) {
+    if (!product.available) {
+      this.toast.warning(t('pos.terminal.unavailable', { name: product.name }));
+      return;
+    }
+    let quantity = 1;
+    if (product.sold_by_weight) {
+      const value = prompt(t('pos.terminal.weightPrompt', { name: product.name, unit: product.unit }), '1');
+      quantity = Number(String(value ?? '').replace(',', '.'));
+      if (!value || !Number.isFinite(quantity) || quantity <= 0) return;
+    }
+    if (this.pos.activeOrder()) {
+      if (this.pos.billSplit()) this.cancelBillSplit();
+      try {
+        await this.pos.addToOrder(product, quantity);
+      } catch (e) {
+        this.fail(e);
+      }
+      return;
+    }
+    if (!this.pos.canSell()) {
+      this.toast.info(t('pos.tables.chooseTableFirst'));
+      return;
+    }
+    if (product.stock !== null && product.stock - this.pos.inCart(product.id) - quantity < 0) {
       this.toast.warning(t('pos.terminal.stockLimit', { name: product.name }));
+    }
+    this.pos.addToCart(product, quantity);
+  }
+
+  addLine(line: SaleLine) {
+    const product = this.pos.product(line.product_id);
+    if (product) this.add(product);
+  }
+
+  /** −1 numa linha (ou retirar, com quantity = 0). Numa linha da mesa já enviada pede motivo e gerente. */
+  async changeLine(line: SaleLine, quantity: number) {
+    // Com a conta dividida, as linhas mostram só a parte a cobrar: não se editam.
+    if (this.pos.billSplit()) return;
+    if (!this.pos.activeOrder()) {
+      this.pos.setCartQuantity(line.key, quantity);
+      return;
+    }
+    const orderLine = this.pos.activeOrder()!.lines.find(l => l.id === line.key);
+    if (!orderLine) return;
+    const target = Math.max(0, round2(orderLine.paid_quantity + quantity));
+    let reason: string | undefined;
+    if (orderLine.status === 'sent') {
+      reason = await this.askReason(t('pos.tables.voidTitle', { name: line.name }), t('pos.tables.voidMessage'), t('pos.tables.voidConfirm'), VOID_LINE_REASONS);
+      if (!reason) return;
+    }
+    try {
+      const ticket = await this.withAuth(t('pos.authorize.voidLine'),
+        async pin => ({ ticket: await this.pos.updateOrderLine(orderLine.id, target, reason, pin) }));
+      if (ticket?.ticket) {
+        if (ticket.ticket.station) printVoidTicket(ticket.ticket, this.pos.paperWidth());
+        this.toast.info(t('pos.tables.voided', { name: line.name }));
+      }
+    } catch (e) {
+      this.fail(e);
     }
   }
 
-  decrease(productId: string, quantity: number) {
-    this.pos.setQuantity(productId, quantity - 1);
+  /** Nota para a cozinha numa linha por enviar ("sem cebola"). */
+  async editNote(line: SaleLine) {
+    if (!this.pos.activeOrder() || line.status !== 'pending') return;
+    const value = prompt(t('pos.tables.notePrompt', { name: line.name }), line.notes ?? '');
+    if (value === null) return;
+    try {
+      await this.pos.updateOrderLine(line.key, line.quantity, undefined, undefined, value);
+    } catch (e) {
+      this.fail(e);
+    }
+  }
+
+  async clearSale() {
+    if (!this.pos.activeOrder()) {
+      this.pos.clearCart();
+      return;
+    }
+    await this.cancelOrder();
   }
 
   onSearch(event: Event) {
@@ -543,10 +688,15 @@ export class PosComponent implements OnInit, OnDestroy {
     this.amountReceived.set(value === '' ? null : Number(value));
   }
 
+  chooseClient() {
+    this.dialog.open<PosClientDialogComponent, unknown, PosClientRef>(PosClientDialogComponent, { maxWidth: '95vw', autoFocus: false })
+      .afterClosed().subscribe(client => { if (client) this.client.set(client); });
+  }
+
   /** Toque numa forma de pagamento: escolhe-a, ou no modo dividido junta um pagamento. */
-  selectPayment(method: PosPaymentMethod) {
+  async selectPayment(method: PosPaymentMethod) {
     if (this.splitMode()) {
-      this.addSplitPayment(method);
+      await this.addSplitPayment(method);
       return;
     }
     this.paymentMethod.set(method);
@@ -560,18 +710,37 @@ export class PosComponent implements OnInit, OnDestroy {
     this.amountReceived.set(null);
   }
 
-  /** Só o numerário pode passar do que falta (o excesso é troco). */
-  private addSplitPayment(method: PosPaymentMethod) {
+  /** Só o numerário pode passar do que falta (o excesso é troco). M-Pesa/e-Mola confirmam já. */
+  private async addSplitPayment(method: PosPaymentMethod) {
     const remaining = this.missing();
     let amount = this.splitAmount() ?? remaining;
     if (method !== 'cash') amount = Math.min(amount, remaining);
-    amount = Math.round(amount * 100) / 100;
+    amount = round2(amount);
     if (amount <= 0) return;
-    this.splitPayments.update(list => [...list, { method, amount }]);
+    if (method === 'cash' && this.splitPayments().some(p => p.method === 'cash')) {
+      this.toast.warning(t('pos.split.oneCash'));
+      return;
+    }
+    let payment: SplitPayment;
+    if (method === 'mpesa' || method === 'emola') {
+      const request = await this.mobilePayment(method, amount);
+      if (!request) return;
+      payment = { method, request_id: request.id, amount, label_amount: amount };
+    } else if (method === 'cash') {
+      payment = { method, tendered: amount, label_amount: amount };
+    } else {
+      payment = { method, amount, label_amount: amount };
+    }
+    this.splitPayments.update(list => [...list, payment]);
     this.splitAmount.set(null);
   }
 
   removeSplitPayment(index: number) {
+    const payment = this.splitPayments()[index];
+    if (payment && (payment.method === 'mpesa' || payment.method === 'emola')) {
+      this.toast.warning(t('pos.split.mobileKept'));
+      return;
+    }
     this.splitPayments.update(list => list.filter((_, i) => i !== index));
   }
 
@@ -582,69 +751,89 @@ export class PosComponent implements OnInit, OnDestroy {
 
   private resetPayment() {
     this.amountReceived.set(null);
-    this.clientId.set(POS_WALK_IN_CLIENT_ID);
+    this.client.set(null);
     this.paymentMethod.set('cash');
-    this.documentType.set(this.pos.settings().default_document);
-    this.fiscalName.set('');
-    this.fiscalNuit.set('');
     this.splitMode.set(false);
     this.splitPayments.set([]);
     this.splitAmount.set(null);
   }
 
-  checkout() {
+  private mobilePayment(method: 'mpesa' | 'emola', amount: number): Promise<PosPaymentRequest | undefined> {
+    return new Promise(resolve => this.dialog
+      .open<PosMobilePaymentDialogComponent, unknown, PosPaymentRequest>(PosMobilePaymentDialogComponent, {
+        data: { method, amount, onWaiting: (waiting: boolean) => this.mobileWaiting.set(waiting ? { method, amount } : null) },
+        maxWidth: '95vw', autoFocus: false
+      })
+      .afterClosed().subscribe(resolve));
+  }
+
+  async checkout() {
     if (!this.canCheckout()) return;
-    const wasTable = !!this.pos.activeOrder();
-    const payments: PosPayment[] = this.splitMode()
-      ? this.splitPayments()
-      : [{ method: this.paymentMethod(), amount: this.received() }];
-    const sale = this.pos.checkout({
-      seller_id: this.pos.activeSellerId(),
-      client_id: this.clientId(),
-      client_name: this.needsFiscalData() ? this.fiscalName() : undefined,
-      client_nuit: this.needsFiscalData() ? this.fiscalNuit() : undefined,
-      payments,
-      document_type: this.documentType()
-    });
-    this.showPaidOnDisplay(sale);
-    this.resetPayment();
-    this.cartOpen.set(false);
-    this.toast.success(t('pos.payment.completed', { number: sale.number }));
-    this.openSale(sale, true);
-    if (wasTable) this.tab.set('tables');
+    this.busy.set(true);
+    try {
+      let payments: PosPaymentInput[];
+      if (this.splitMode()) {
+        payments = this.splitPayments().map(({ label_amount: _, ...p }) => p as PosPaymentInput);
+      } else {
+        const method = this.paymentMethod();
+        if (method === 'cash') {
+          payments = [{ method, tendered: this.received() }];
+        } else if (method === 'mpesa' || method === 'emola') {
+          const request = await this.mobilePayment(method, this.total());
+          if (!request) return;
+          payments = [{ method, request_id: request.id, amount: request.amount }];
+        } else {
+          payments = [{ method, amount: this.total() }];
+        }
+      }
+
+      const clientUuid = newClientUuid();
+      const result = await this.withAuth(t('pos.authorize.discount'), pin => this.pos.checkout({
+        client_uuid: clientUuid,
+        client_id: this.client()?.id ?? null,
+        payments
+      }, pin));
+      if (!result) return;
+
+      const change = result.document.payments.reduce((sum, p) => sum + Number(p.change || 0), 0);
+      this.showPaidOnDisplay(result.document.number, Number(result.document.total), change);
+      this.resetPayment();
+      this.cartOpen.set(false);
+      this.toast.success(t('pos.payment.completed', { number: result.document.number }));
+      if (this.pos.activeOrder() === null && this.isRestaurant() && !this.pos.cart().length) this.tab.set('tables');
+      this.openDocument(result.document, true);
+    } catch (e) {
+      this.fail(e);
+    } finally {
+      this.busy.set(false);
+    }
   }
 
   /** Ecrã do cliente: "Obrigado" e troco durante alguns segundos. */
-  private showPaidOnDisplay(sale: PosSale) {
+  private showPaidOnDisplay(number: string, total: number, change: number) {
     clearTimeout(this.paidTimer);
     this.paidOnDisplay = true;
-    this.display?.postMessage({ ...this.displayState(), lines: [], paid: { number: sale.number, total: sale.total, change: sale.change } } satisfies PosDisplayMessage);
+    this.display?.postMessage({ ...this.displayState(), lines: [], mobile: undefined, paid: { number, total, change } } satisfies PosDisplayMessage);
     this.paidTimer = setTimeout(() => {
       this.paidOnDisplay = false;
       this.display?.postMessage(this.displayState());
     }, 8000);
   }
 
-  /** Desconto na venda: precisa sempre do PIN de um gestor. */
+  /** Desconto: o servidor pede o PIN do gerente ao cobrar, se passar do limite do operador. */
   async openDiscount() {
-    if (this.pos.cart().length === 0) return;
-    const current = this.pos.cartDiscount();
+    if (this.pos.saleLines().length === 0) return;
+    const current = this.pos.discount();
     const result = await new Promise<PosDiscountResult | undefined>(resolve => this.dialog
       .open<PosDiscountDialogComponent, unknown, PosDiscountResult>(PosDiscountDialogComponent, {
-        data: { gross: this.pos.cartTotals().gross, current: current ? { type: current.type, value: current.value } : null },
+        data: { gross: this.pos.totals().gross, current },
         maxWidth: '95vw', autoFocus: false
       })
       .afterClosed().subscribe(resolve));
     if (!result) return;
-    if (result.value <= 0) {
-      this.pos.setDiscount(null);
-      return;
-    }
-    const manager = await this.authorize(t('pos.authorize.discount'));
-    if (!manager) return;
-    this.pos.setDiscount({ ...result, authorized_by: manager });
+    this.pos.discount.set(result.value > 0 ? result : null);
     this.splitPayments.set([]);
-    this.toast.success(t('pos.discount.applied', { amount: this.money(this.pos.cartTotals().discount) }));
+    if (result.value > 0) this.toast.success(t('pos.discount.applied', { amount: this.money(this.pos.totals().discount) }));
   }
 
   startResize(event: PointerEvent) {
@@ -673,44 +862,97 @@ export class PosComponent implements OnInit, OnDestroy {
 
   // ---------- Histórico ----------
 
-  openSale(sale: PosSale, justCompleted = false) {
-    this.dialog.open<PosReceiptDialogComponent, PosReceiptDialogData, 'refund' | undefined>(PosReceiptDialogComponent, {
-      data: { sale, justCompleted },
+  showHistory() {
+    this.tab.set('history');
+    this.loadHistory();
+  }
+
+  setPeriod(period: PosPeriod) {
+    this.period.set(period);
+    this.loadHistory();
+  }
+
+  onHistorySearch(value: string) {
+    this.historySearch.set(value);
+    clearTimeout(this.historyTimer);
+    this.historyTimer = setTimeout(() => this.loadHistory(), 300);
+  }
+
+  async loadHistory() {
+    this.historyLoading.set(true);
+    try {
+      const [docs, report] = await Promise.all([
+        this.pos.listDocuments(this.period(), this.historySearch()),
+        this.pos.sessionReport().catch(() => null)
+      ]);
+      this.documents.set(docs);
+      this.report.set(report);
+    } catch (e) {
+      this.fail(e);
+    } finally {
+      this.historyLoading.set(false);
+    }
+  }
+
+  async openRow(row: PosDocumentRow) {
+    try {
+      this.openDocument(await this.pos.getDocument(row.id));
+    } catch (e) {
+      this.fail(e);
+    }
+  }
+
+  openDocument(doc: PosDocument, justCompleted = false) {
+    this.dialog.open<PosReceiptDialogComponent, PosReceiptDialogData, PosReceiptAction | undefined>(PosReceiptDialogComponent, {
+      data: { doc, justCompleted },
       maxWidth: '95vw',
       width: '440px',
       autoFocus: false
-    }).afterClosed().subscribe(action => {
-      if (action === 'refund') this.refundSale(sale);
+    }).afterClosed().subscribe(async action => {
+      try {
+        if (action === 'print' || action === 'reprint') {
+          const fresh = await this.pos.getDocument(doc.id, true);
+          printDocument(fresh, this.pos.company()!, this.pos.paperWidth(), action === 'reprint');
+        } else if (action === 'refund') {
+          await this.refund(doc);
+        } else if (action === 'void') {
+          await this.voidDocument(doc);
+        }
+      } catch (e) {
+        this.fail(e);
+      }
     });
   }
 
-  /** Devolução total ou parcial: nota de crédito com autorização do gestor. */
-  async refundSale(sale: PosSale) {
-    const current = this.pos.sale(sale.id) ?? sale;
+  /** Devolução total ou parcial: nota de crédito (o servidor pede o gerente se for preciso). */
+  private async refund(doc: PosDocument) {
     const result = await new Promise<PosRefundResult | undefined>(resolve => this.dialog
-      .open<PosRefundDialogComponent, unknown, PosRefundResult>(PosRefundDialogComponent, { data: { sale: current }, maxWidth: '95vw', autoFocus: false })
+      .open<PosRefundDialogComponent, unknown, PosRefundResult>(PosRefundDialogComponent, { data: { doc }, maxWidth: '95vw', autoFocus: false })
       .afterClosed().subscribe(resolve));
     if (!result) return;
-    const manager = await this.authorize(t('pos.authorize.refund', { number: current.number }));
-    if (!manager) return;
-    const credit = this.pos.refund(current.id, result.lines, result.method, result.reason, manager);
+    const credit = await this.withAuth(t('pos.authorize.refund', { number: doc.number }),
+      pin => this.pos.creditNote(doc.id, result.lines, result.reason, result.method, pin));
     if (!credit) return;
-    printSale(credit, posPrintContext(this.pos));
-    this.toast.success(t('pos.refund.done', { number: credit.number, amount: this.money(Math.abs(credit.total)) }));
+    printDocument(credit, this.pos.company()!, this.pos.paperWidth());
+    this.toast.success(t('pos.refund.done', { number: credit.number, amount: this.money(Math.abs(Number(credit.total))) }));
+    if (this.tab() === 'history') this.loadHistory();
   }
 
-  async cancelSale(sale: PosSale) {
-    const manager = await this.authorize(t('pos.authorize.cancel', { number: sale.number }));
-    if (!manager) return;
-    const confirmed = await this.confirmDialog.confirm({
-      title: t('pos.history.cancelTitle', { number: sale.number }),
-      message: t('pos.history.cancelMessage'),
-      confirmLabel: t('pos.history.cancel'),
-      cancelLabel: t('common.actions.back'),
-      danger: true
-    });
-    if (!confirmed) return;
-    this.pos.cancelSale(sale.id, manager);
-    this.toast.info(t('pos.history.cancelled', { number: sale.number }));
+  private async voidDocument(doc: PosDocument) {
+    const reason = await this.askReason(t('pos.history.cancelTitle', { number: doc.number }), t('pos.history.cancelMessage'), t('pos.history.cancel'), VOID_SALE_REASONS);
+    if (!reason) return;
+    const voided = await this.withAuth(t('pos.authorize.cancel', { number: doc.number }),
+      pin => this.pos.voidDocument(doc.id, reason, pin));
+    if (!voided) return;
+    this.toast.info(t('pos.history.cancelled', { number: doc.number }));
+    if (this.tab() === 'history') this.loadHistory();
+  }
+
+  private askReason(title: string, message: string, confirm: string, reasons: string[]): Promise<string | undefined> {
+    return new Promise(resolve => this.dialog
+      .open<PosReasonDialogComponent, unknown, string>(PosReasonDialogComponent, {
+        data: { title, message, confirm, reasons }, maxWidth: '95vw', autoFocus: false
+      })
+      .afterClosed().subscribe(resolve));
   }
 }

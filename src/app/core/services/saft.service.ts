@@ -50,8 +50,11 @@ export interface SaftInvoiceLine {
 export interface SaftInvoice {
   id: string;
   invoice_number: string;
-  /** 'FT' factura; 'NC' nota de crédito (ainda não existe na aplicação). */
-  type?: 'FT' | 'NC';
+  /** 'FT' factura; 'FR' factura-recibo e 'NC' nota de crédito (Ponto de Venda). */
+  type?: 'FT' | 'FR' | 'NC';
+  /** NC: número do documento de origem e motivo (References). */
+  reference?: string | null;
+  reference_reason?: string | null;
   date: string;
   status: string;
   client_id?: string | null;
@@ -190,8 +193,14 @@ export function splitDocumentNumber(value: string, fallbackSeries: string): { se
   return { series: clean(match[1]) || fallbackSeries, number: Number(match[2]) };
 }
 
+/** "FR 2026/00012" → "2026/00012": o tipo já vai à parte no InvoiceNo. */
+function withoutTypePrefix(type: string, value: string): string {
+  const v = (value || '').trim();
+  return v.startsWith(type + ' ') ? v.substring(type.length + 1) : v;
+}
+
 function documentRef(type: string, value: string, fallbackSeries: string): string {
-  const { series, number } = splitDocumentNumber(value, fallbackSeries);
+  const { series, number } = splitDocumentNumber(withoutTypePrefix(type, value), fallbackSeries);
   return `${type} ${series}/${number ?? 0}`;
 }
 
@@ -441,7 +450,7 @@ export function buildSaftXml(data: SaftData): SaftResult {
   for (const inv of invoices) {
     const type = inv.type || 'FT';
     const annulled = inv.status === 'anulada';
-    const { series, number } = splitDocumentNumber(inv.invoice_number, type);
+    const { series, number } = splitDocumentNumber(withoutTypePrefix(type, inv.invoice_number), type);
     if (number !== null) {
       const key = `${type} ${series}`;
       seriesNumbers.set(key, [...(seriesNumbers.get(key) || []), number]);
@@ -510,6 +519,12 @@ export function buildSaftXml(data: SaftData): SaftResult {
       w.el('UnitPrice', fmtDecimal(item.unit_price));
       w.el('TaxPointDate', inv.date);
       w.el('Description', description);
+      if (type === 'NC' && inv.reference) {
+        w.open('References');
+        w.el('Reference', inv.reference);
+        w.el('Reason', truncate(inv.reference_reason || 'Devolução', 50));
+        w.close('References');
+      }
       w.el(type === 'NC' ? 'DebitAmount' : 'CreditAmount', fmtAmount(item.subtotal));
       w.open('Tax');
       w.el('TaxType', cfg.tax.type);
@@ -784,15 +799,31 @@ export class SaftService {
       for (const row of data || []) if (row.full_name) userNames.set(row.id, row.full_name);
     }
 
+    // NC: gravadas com valores negativos; no SAF-T os valores são positivos (a débito).
+    const numberById = new Map<string, string>(invoicesRaw.map(i => [String(i.id), i.invoice_number]));
+    const missingRefs = [...new Set(invoicesRaw
+      .filter(i => i.document_type === 'NC' && i.related_invoice_id && !numberById.has(String(i.related_invoice_id)))
+      .map(i => String(i.related_invoice_id)))];
+    for (const ids of this.chunk(missingRefs, 200)) {
+      const { data } = await this.supabase.db.from('invoices').select('id, invoice_number, document_type').in('id', ids);
+      for (const row of data || []) numberById.set(String(row.id), row.invoice_number);
+    }
+    const typeById = new Map<string, string>(invoicesRaw.map(i => [String(i.id), i.document_type || 'FT']));
+    const sign = (i: any) => (i.document_type === 'NC' ? -1 : 1);
+
     const invoices: SaftInvoice[] = invoicesRaw.map(i => ({
       id: i.id,
       invoice_number: i.invoice_number,
-      type: 'FT',
+      type: (i.document_type || 'FT') as SaftInvoice['type'],
+      reference: i.related_invoice_id && numberById.has(String(i.related_invoice_id))
+        ? documentRef(typeById.get(String(i.related_invoice_id)) || 'FR', numberById.get(String(i.related_invoice_id))!, 'FR')
+        : null,
+      reference_reason: i.credit_reason ?? null,
       date: String(i.date).substring(0, 10),
       status: i.status,
       client_id: i.client_id,
-      subtotal: Number(i.subtotal) || 0,
-      total: Number(i.total) || 0,
+      subtotal: sign(i) * (Number(i.subtotal) || 0),
+      total: sign(i) * (Number(i.total) || 0),
       created_at: i.created_at,
       issued_at: i.issued_at ?? null,
       annulled_at: i.annulled_at ?? annulmentDates.get(String(i.id)) ?? i.updated_at ?? null,
@@ -808,9 +839,9 @@ export class SaftService {
           product_id: item.product_id,
           product_name: item.product_name,
           description: item.description,
-          quantity: Number(item.quantity) || 0,
+          quantity: sign(i) * (Number(item.quantity) || 0),
           unit_price: Number(item.unit_price) || 0,
-          subtotal: Number(item.subtotal ?? item.total) || 0
+          subtotal: sign(i) * (Number(item.subtotal ?? item.total) || 0)
         }))
     }));
 

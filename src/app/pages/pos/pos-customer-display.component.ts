@@ -25,6 +25,13 @@ type DisplayState = PosDisplayState;
             }
             <p class="store">{{ s.store }}</p>
           </div>
+        } @else if (s.mobile) {
+          <div class="center">
+            <div class="check phone"><i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i></div>
+            <h1>{{ 'pos.display.confirmOnPhone' | t: { method: ('pos.payment.methods.' + s.mobile.method | t) } }}</h1>
+            <p class="change">{{ money(s.mobile.amount) }}</p>
+            <p class="store">{{ s.store }}</p>
+          </div>
         } @else if (s.lines.length === 0) {
           <div class="center">
             <img src="assets/ispc-facil-logo.png" alt="" class="logo">
@@ -52,7 +59,6 @@ type DisplayState = PosDisplayState;
               @if (s.totals.discount > 0) {
                 <p class="muted">{{ 'pos.discount.label' | t }} −{{ money(s.totals.discount) }}</p>
               }
-              <p class="muted">{{ 'pos.cart.tax' | t }} {{ money(s.totals.tax_total) }}</p>
               <p class="total-label">{{ 'pos.cart.total' | t }}</p>
               <p class="total-value">{{ money(s.totals.total) }}</p>
               <p class="count">{{ 'pos.cart.items' | t: { count: count() } }}</p>
@@ -75,6 +81,8 @@ type DisplayState = PosDisplayState;
     .muted { color: #94a3b8; font-size: clamp(14px, 2.6vh, 24px); line-height: 1.3; margin: 6px 0; }
     .store { margin-top: 4vh; line-height: 1.3; color: #f16c39; font-weight: 700; font-size: clamp(14px, 3vh, 28px); }
     .check { width: 14vh; height: 14vh; border-radius: 50%; background: #22c55e; display: flex; align-items: center; justify-content: center; font-size: 7vh; margin-bottom: 3vh; }
+    .check.phone { background: #f16c39; animation: pulse 1.4s ease-in-out infinite; }
+    @keyframes pulse { 50% { transform: scale(1.08); } }
     .change-label { margin: 4vh 0 0; line-height: 1.3; color: #86efac; font-size: clamp(14px, 3vh, 28px); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; }
     .change { font-size: clamp(32px, 13vh, 140px); font-weight: 900; line-height: 1.1; color: #4ade80; margin: .5vh 0 0; }
     .grid { height: 100%; display: grid; grid-template-columns: 1.4fr 1fr; }

@@ -1,13 +1,5 @@
 {
   "title": "Point de vente",
-  "demo": {
-    "badge": "Démonstration",
-    "body": "Données fictives pour la présentation. Tout ce que vous enregistrez reste uniquement sur cet appareil.",
-    "reset": "Réinitialiser la démonstration",
-    "resetTitle": "Réinitialiser les données de démonstration",
-    "resetMessage": "Les ventes, sessions de caisse, tables ouvertes et modifications de stock de cet appareil seront effacées.",
-    "resetDone": "Données de démonstration réinitialisées"
-  },
   "fullscreen": {
     "enter": "Plein écran",
     "exit": "Quitter le plein écran"
@@ -24,9 +16,10 @@
     "xReport": "Rapport X (lecture partielle)",
     "closeSession": "Clôturer la caisse",
     "lock": "Verrouiller / changer d'opérateur",
-    "settings": "Paramètres du terminal",
     "backOffice": "Ouvrir le back-office",
-    "customerDisplay": "Ouvrir l'écran client"
+    "customerDisplay": "Ouvrir l'écran client",
+    "refresh": "Actualiser les produits et les prix",
+    "refreshed": "Catalogue actualisé"
   },
   "session": {
     "label": "Caisse n° {number}"
@@ -34,7 +27,7 @@
   "roles": {
     "cashier": "Caissier",
     "waiter": "Serveur",
-    "manager": "Responsable"
+    "manager": "Gérant"
   },
   "pin": {
     "clear": "Effacer",
@@ -42,22 +35,34 @@
   },
   "access": {
     "openTitle": "Ouverture de caisse",
-    "unlockTitle": "Terminal verrouillé",
     "sessionOpenSince": "Caisse n° {number} ouverte depuis {date}",
     "chooseOperator": "Qui utilise la caisse ?",
     "enterPin": "Saisissez votre PIN",
     "openingFloat": "Fonds de caisse",
     "openingFloatHint": "Espèces laissées dans le tiroir pour rendre la monnaie en début de service.",
     "openSession": "Ouvrir la caisse",
-    "demoPins": "Démonstration — PIN : {pins}",
-    "demoBusiness": "Démonstration — choisissez l'entreprise"
+    "pairTitle": "Associer cet appareil",
+    "loginTitle": "Qui utilise la caisse ?",
+    "pairHint": "Saisissez le code généré dans l'application de l'entreprise.",
+    "pairCode": "Code d'association",
+    "pair": "Associer",
+    "pairWhere": "Le code se génère dans Point de vente → Terminaux de l'application ISPC Fácil et reste valable 15 minutes.",
+    "noStaff": "Aucun employé pour l'instant. Créez-les dans Point de vente → Employés.",
+    "noPin": "Sans PIN",
+    "locked": "Bloqué",
+    "grace": "L'abonnement a expiré. Le POS continue de vendre jusqu'au {date}. Renouvelez le forfait pour ne pas être bloqué.",
+    "graceShort": "Abonnement expiré : période de tolérance du POS.",
+    "graceBadge": "Renouveler",
+    "switchOperator": "Changer d'opérateur"
   },
   "authorize": {
-    "title": "Autorisation du responsable",
-    "settings": "Modifier les paramètres du terminal exige le PIN d'un responsable.",
-    "cancel": "Annuler la vente {number} exige le PIN d'un responsable.",
-    "discount": "Appliquer une remise exige le PIN d'un responsable.",
-    "refund": "Retourner des articles de la vente {number} exige le PIN d'un responsable."
+    "title": "Autorisation du gérant",
+    "cancel": "Annuler la facture-reçu {number} exige le PIN d'un gérant.",
+    "discount": "Cette opération exige le PIN d’un gérant (ex. : remise au-delà de votre limite).",
+    "refund": "Retourner des articles de {number} exige le PIN d'un gérant.",
+    "cashMovement": "Les mouvements de caisse exigent le PIN d'un gérant.",
+    "difference": "L'écart de caisse exige le PIN d'un gérant.",
+    "voidLine": "Retirer des articles déjà envoyés exige le PIN d'un gérant."
   },
   "tabs": {
     "tables": "Tables",
@@ -65,14 +70,17 @@
     "history": "Ventes"
   },
   "terminal": {
-    "client": "Client",
     "searchPlaceholder": "Rechercher ou scanner un code-barres",
     "allCategories": "Toutes",
     "noProducts": "Aucun produit trouvé",
     "outOfStock": "Épuisé",
     "lowStock": "Plus que {count}",
     "inStock": "Stock : {count}",
-    "stockLimit": "Stock insuffisant pour {name}"
+    "stockLimit": "Stock insuffisant pour {name}",
+    "noCatalog": "Aucun produit dans le POS. Configurez-les dans Point de vente → Produits.",
+    "unavailable": "{name} est épuisé aujourd'hui.",
+    "unavailableShort": "Épuisé aujourd'hui",
+    "weightPrompt": "Quantité de {name} ({unit}) :"
   },
   "cart": {
     "title": "Vente en cours",
@@ -84,19 +92,16 @@
     "empty": "Panier vide",
     "emptyHint": "Touchez un produit pour l'ajouter.",
     "clear": "Vider",
-    "subtotal": "Sous-total (HT)",
-    "tax": "TVA incluse",
+    "subtotal": "Somme",
     "total": "Total à payer",
     "decrease": "Diminuer la quantité",
     "increase": "Augmenter la quantité",
     "remove": "Retirer l'article",
-    "resize": "Faites glisser pour ajuster la largeur (double-clic pour réinitialiser)"
+    "resize": "Faites glisser pour ajuster la largeur (double-clic pour réinitialiser)",
+    "taxNote": "TVA non applicable (ISPC)"
   },
   "documents": {
-    "label": "Document à émettre",
-    "VD": "Ticket (VD)",
     "FR": "Facture-reçu",
-    "clientName": "Nom du client",
     "NC": "Avoir"
   },
   "payment": {
@@ -105,16 +110,15 @@
     "exact": "Exact",
     "change": "Monnaie",
     "short": "Manquant",
-    "checkout": "Valider la vente",
+    "checkout": "Encaisser",
     "checkoutShort": "Encaisser",
-    "completed": "Vente {number} enregistrée",
+    "completed": "Facture-reçu {number} émise",
     "methods": {
       "cash": "Espèces",
       "mpesa": "M-Pesa",
       "emola": "e-Mola",
       "card": "Carte",
-      "transfer": "Virement",
-      "mixed": "Fractionné"
+      "transfer": "Virement"
     }
   },
   "tables": {
@@ -136,7 +140,6 @@
     "send": "Envoyer",
     "bill": "Addition",
     "transfer": "Déplacer",
-    "newItems": "{count} nouveau(x)",
     "sentShort": "envoyé",
     "sent": "Commande de la table {table} envoyée en cuisine/au bar",
     "transferred": "La table {from} est passée à la table {to}",
@@ -144,45 +147,56 @@
     "chooseTable": "Table de la vente",
     "noTable": "Sans table",
     "busyOne": "occupée",
-    "assigned": "Commande attribuée à la table {table}"
+    "assigned": "Commande attribuée à la table {table}",
+    "none": "Aucune table pour l'instant. Créez-les dans Point de vente → Tables.",
+    "newShort": "à envoyer",
+    "addNote": "note",
+    "notePrompt": "Note pour la cuisine ({name}) :",
+    "cancelOrder": "Annuler la commande de la table",
+    "cancelTitle": "Annuler la commande de la table {table} ?",
+    "cancelMessage": "Des articles ont déjà été envoyés en cuisine/au bar. Indiquez le motif.",
+    "cancelConfirm": "Annuler la commande",
+    "voidTitle": "Retirer {name}",
+    "voidMessage": "Cet article a déjà été envoyé. La cuisine/le bar reçoit un ticket d'annulation.",
+    "voidConfirm": "Retirer",
+    "voided": "{name} retiré ; ticket d'annulation imprimé",
+    "waiterHint": "Envoyez la commande en cuisine/au bar. L'encaissement se fait à la caisse.",
+    "chooseTableFirst": "Choisissez d'abord une table."
   },
   "history": {
-    "todayTotal": "Vendu aujourd'hui",
     "todayCount": {
       "one": "{count} vente",
       "other": "{count} ventes"
     },
-    "averageTicket": "Panier moyen (aujourd'hui)",
-    "topSeller": "Meilleur opérateur (aujourd'hui)",
-    "noSalesToday": "Aucune vente aujourd'hui",
-    "byMethod": "Aujourd'hui par mode de paiement",
+    "averageTicket": "Ticket moyen",
+    "noSalesToday": "Pas encore de ventes",
+    "byMethod": "Cette caisse par moyen de paiement",
     "searchPlaceholder": "N° de document ou client",
-    "allSellers": "Tous les opérateurs",
-    "allMethods": "Tous les modes",
     "period": "Période",
     "periods": {
       "session": "Cette caisse",
       "today": "Aujourd'hui",
-      "week": "7 derniers jours",
-      "all": "Tout"
+      "week": "7 derniers jours"
     },
     "seller": "Opérateur",
     "empty": "Aucune vente trouvée",
-    "periodTotal": "Total : {amount}",
     "statuses": {
       "completed": "Terminée",
       "cancelled": "Annulée"
     },
     "cancel": "Annuler la vente",
     "cancelTitle": "Annuler {number}",
-    "cancelMessage": "Le document sera annulé et les quantités remises en stock.",
+    "cancelMessage": "La facture-reçu est annulée, le montant est rendu par la caisse et les quantités reviennent en stock. Possible uniquement le jour même.",
     "cancelled": "{number} annulée",
-    "method": "Mode de paiement"
+    "periodSales": "Vendu sur la période",
+    "drawer": "Espèces dans le tiroir"
   },
   "receipt": {
     "title": "Vente terminée",
     "newSale": "Nouvelle vente",
-    "change": "Monnaie"
+    "change": "Monnaie",
+    "reprint": "Réimprimer (duplicata)",
+    "taxNote": "TVA non facturée : contribuable soumis à l’ISPC."
   },
   "movement": {
     "inTitle": "Entrée d'espèces",
@@ -220,41 +234,32 @@
     "notesPlaceholder": "Remarques de clôture (facultatif)",
     "confirm": "Clôturer et imprimer le rapport Z",
     "tablesOpen": {
-      "one": "Il reste {count} table ouverte. Encaissez-la ou déplacez-la avant de clôturer.",
-      "other": "Il reste {count} tables ouvertes. Encaissez-les avant de clôturer."
+      "one": "Il y a {count} table ouverte. Encaissez-la ou annulez-la avant de clôturer.",
+      "other": "Il y a {count} tables ouvertes. Encaissez-les ou annulez-les avant de clôturer."
     },
     "done": "Caisse n° {number} clôturée",
     "refunds": "Retours",
-    "discounts": "Remises"
-  },
-  "settings": {
-    "title": "Paramètres du terminal",
-    "hint": "Ils s'appliquent uniquement à cet appareil.",
-    "mode": "Type d'activité",
-    "modes": {
-      "retail": "Magasin / Commerce",
-      "restaurant": "Restaurant"
-    },
-    "document": "Document par défaut",
-    "paper": "Largeur du papier de l'imprimante",
-    "terminalName": "Nom du terminal",
-    "saved": "Paramètres enregistrés"
+    "discounts": "Remises",
+    "simulated": "Comprend {amount} de paiements mobiles simulés (phase de test).",
+    "blindHint": "Compté : {amount}. Le montant attendu est vérifié par le gérant.",
+    "notesRequired": "L'écart dépasse la tolérance : indiquez la justification. Un gérant devra autoriser avec son PIN."
   },
   "display": {
     "thanks": "Merci de votre visite !",
     "welcome": "Bienvenue !",
     "waiting": "En attente de la caisse…",
     "openedTitle": "Écran client ouvert",
-    "openedBody": "Faites glisser la fenêtre sur le 2e écran et double-cliquez pour le plein écran."
+    "openedBody": "Faites glisser la fenêtre sur le 2e écran et double-cliquez pour le plein écran.",
+    "confirmOnPhone": "Confirmez le paiement {method} sur votre téléphone"
   },
   "offline": {
     "badge": "Hors ligne",
-    "body": "Vous pouvez continuer à vendre : les ventes sont enregistrées sur cet appareil."
+    "body": "Sans internet, aucun document ne peut être émis. Le panier est conservé ; réessayez quand le réseau revient."
   },
   "discount": {
     "title": "Remise",
     "edit": "Modifier la remise",
-    "hint": "S'applique au total de la vente et exige le PIN d'un responsable.",
+    "hint": "S'applique au total. Au-delà de votre limite, le PIN d'un gérant est demandé à l'encaissement.",
     "value": "Valeur",
     "before": "Avant remise",
     "label": "Remise",
@@ -266,7 +271,15 @@
   "split": {
     "toggle": "Paiement fractionné",
     "amount": "Montant de cette part",
-    "hint": "Saisissez le montant (ou laissez le reste) puis touchez le mode de paiement."
+    "hint": "Saisissez le montant (ou laissez le reste) puis touchez le mode de paiement.",
+    "oneCash": "Les espèces n'entrent qu'une fois ; modifiez le montant de cette partie.",
+    "mobileKept": "Un paiement mobile confirmé ne peut pas être retiré : terminez la vente.",
+    "bill": "Partager",
+    "billTitle": "Partager l'addition",
+    "billHint": "Choisissez ce que cette personne paie maintenant. Le reste reste sur la table pour la prochaine facture-reçu.",
+    "billPart": "Cette partie",
+    "billConfirm": "Encaisser cette partie",
+    "billActive": "Encaissement d'une partie ({amount} restent sur la table)"
   },
   "refund": {
     "action": "Rembourser",
@@ -286,6 +299,48 @@
     "confirm": "Émettre un avoir",
     "done": "Avoir {number} émis ({amount})",
     "ref": "Se rapporte à {number}",
-    "partiallyReturned": "Cette vente a déjà des retours."
+    "returnedQty": "{count} déjà retourné(s)"
+  },
+  "loading": "Chargement…",
+  "retry": "Réessayer",
+  "unpair": {
+    "menu": "Dissocier cet appareil",
+    "title": "Dissocier l'appareil ?",
+    "message": "L'appareil ne sera plus lié au terminal. Un nouveau code sera nécessaire pour le réutiliser.",
+    "confirm": "Dissocier"
+  },
+  "client": {
+    "walkIn": "Client de passage",
+    "addNuit": "NUIT",
+    "title": "Client avec NUIT",
+    "hint": "La facture-reçu est établie au nom du client. Sans NUIT, elle est établie au client de passage.",
+    "search": "Rechercher par nom, NUIT ou téléphone",
+    "noNuit": "Sans NUIT",
+    "new": "Nouveau client",
+    "name": "Nom",
+    "use": "Utiliser ce client"
+  },
+  "reason": {
+    "other": "Autre motif…",
+    "customerChanged": "Le client a changé d'avis",
+    "wrongOrder": "Commande erronée",
+    "kitchenProblem": "Problème en cuisine",
+    "wrongSale": "Erreur de vente",
+    "customerGaveUp": "Le client a renoncé",
+    "paymentProblem": "Problème de paiement"
+  },
+  "mobile": {
+    "simulation": "Simulation",
+    "phone": "Mobile du client",
+    "simulationHint": "Phase de test : le paiement est simulé et se confirme tout seul en quelques secondes. Les numéros finissant par 0000 échouent.",
+    "send": "Demander le paiement",
+    "waiting": "En attente de la confirmation sur le téléphone du client…",
+    "simConfirm": "Simuler la confirmation",
+    "simFail": "Simuler l'échec",
+    "confirmed": "Paiement confirmé",
+    "failed": "Le paiement n'a pas abouti",
+    "otherMethod": "Autre moyen",
+    "retry": "Réessayer",
+    "checkoutHint": "À l'encaissement, le paiement est demandé sur le téléphone du client ; la facture-reçu n'est émise qu'après confirmation."
   }
 }

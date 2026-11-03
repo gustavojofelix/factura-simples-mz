@@ -15,10 +15,15 @@ export interface InvoiceItem {
   unit_price: number;
   subtotal: number;
   total: number;
+  discount?: number;
+  notes?: string | null;
   product?: {
     type?: 'produto' | 'servico';
   };
 }
+
+/** FT = factura (aplicação), FR = factura-recibo e NC = nota de crédito (POS). */
+export type DocumentType = 'FT' | 'FR' | 'NC';
 
 export interface Invoice {
   id: string;
@@ -33,6 +38,12 @@ export interface Invoice {
   amount_pending: number;
   status: string;
   notes?: string;
+  /** NC: valores negativos; FR: já paga no acto. */
+  document_type?: DocumentType;
+  origin?: 'app' | 'pos';
+  related_invoice_id?: string | null;
+  credit_reason?: string | null;
+  discount_total?: number;
   created_at: string;
   created_by?: string;
   issuer_name?: string;
@@ -83,7 +94,8 @@ export class InvoiceService {
         .select(`
           *,
           client:clients (name, nuit, email, phone, address, document_type),
-          issuer:profiles (full_name)
+          issuer:profiles (full_name),
+          pos_staff:pos_staff (name)
         `)
         .eq('company_id', company.id)
         .order('created_at', { ascending: false });
@@ -93,7 +105,8 @@ export class InvoiceService {
       const invoicesWithStatus = (data || []).map(invoice => ({
         ...invoice,
         status: this.calculateInvoiceStatus(invoice),
-        issuer_name: (invoice.issuer as any)?.full_name
+        // Documentos do POS: o emissor é o funcionário do terminal.
+        issuer_name: (invoice.issuer as any)?.full_name ?? (invoice.pos_staff as any)?.name
       }));
 
       await this.updateInvoiceStatusesIfNeeded(invoicesWithStatus);
@@ -109,8 +122,10 @@ export class InvoiceService {
   private calculateInvoiceStatus(invoice: any): string {
     const currentStatus = (invoice.status || '').toLowerCase();
     
-    // Drafts and Annulled are terminal or special states that shouldn't be auto-recalculated by date/payment
-    if (currentStatus === 'rascunho' || currentStatus === 'anulada') {
+    // Drafts and Annulled are terminal or special states that shouldn't be auto-recalculated by date/payment.
+    // FR e NC (POS) ficam liquidadas no acto: o estado é o gravado.
+    if (currentStatus === 'rascunho' || currentStatus === 'anulada'
+        || (invoice.document_type && invoice.document_type !== 'FT')) {
       return currentStatus;
     }
 
@@ -159,7 +174,8 @@ export class InvoiceService {
         .select(`
           *,
           client:clients (name, nuit, email, phone, address, document_type),
-          issuer:profiles (full_name)
+          issuer:profiles (full_name),
+          pos_staff:pos_staff (name)
         `)
         .eq('id', invoiceId)
         .single();
@@ -177,7 +193,7 @@ export class InvoiceService {
         ...invoice,
         status: this.calculateInvoiceStatus(invoice),
         items: items || [],
-        issuer_name: (invoice.issuer as any)?.full_name
+        issuer_name: (invoice.issuer as any)?.full_name ?? (invoice.pos_staff as any)?.name
       };
 
       return invoiceWithStatus;
@@ -211,6 +227,10 @@ export class InvoiceService {
     if (invoice.status === 'rascunho' || invoice.status === 'anulada') {
       return t('invoices.annulBlock.notIssued');
     }
+    // FR e NC anulam-se ou corrigem-se no Ponto de Venda.
+    if (invoice.document_type && invoice.document_type !== 'FT') {
+      return t('invoices.annulBlock.posDocument');
+    }
     if (invoice.status === 'paga' || (Number(invoice.amount_paid) || 0) > 0) {
       return t('invoices.annulBlock.hasPayments');
     }
@@ -230,7 +250,8 @@ export class InvoiceService {
 
   canManagePayments(invoice: Invoice): boolean {
     // Can manage payments if not already fully paid and not a draft
-    return invoice.status !== 'paga' && invoice.status !== 'rascunho' && invoice.amount_pending > 0;
+    return (invoice.document_type ?? 'FT') === 'FT'
+      && invoice.status !== 'paga' && invoice.status !== 'rascunho' && invoice.amount_pending > 0;
   }
 
   getStatusLabel(status: string): string {
@@ -270,19 +291,13 @@ export class InvoiceService {
       const subtotal = this.roundMoney(items.reduce((sum, item) => sum + this.roundMoney(item.subtotal), 0));
       const total = this.roundMoney(subtotal);
 
-      let invoiceNumber = '';
-      if (status === 'rascunho') {
-        invoiceNumber = `RSC-${Date.now().toString().slice(-6)}`;
-      } else {
-        invoiceNumber = `${company.invoice_prefix}${String(company.invoice_number).padStart(5, '0')}`;
-      }
-
       const { data: invoice, error: invoiceError } = await this.supabase.db
         .from('invoices')
         .insert({
           company_id: company.id,
           client_id: clientId,
-          invoice_number: invoiceNumber,
+          // Atribuído no servidor (trigger): RSC-… nos rascunhos, série da empresa nas emitidas.
+          invoice_number: '',
           date: new Date().toISOString().split('T')[0],
           due_date: dueDate,
           subtotal,
@@ -316,17 +331,7 @@ export class InvoiceService {
       
       // Stock management: Decrement stock if not a draft
       if (status !== 'rascunho') {
-        await this.handleStockUpdate(items, 'decrement');
-      }
-
-      if (status !== 'rascunho') {
-        const updateSuccess = await this.companyService.updateCompany(company.id, {
-          invoice_number: company.invoice_number + 1
-        }, true);
-
-        if (!updateSuccess) {
-          console.error('Erro ao actualizar número da factura');
-        }
+        await this.applyStock(invoice.id, false);
       }
 
       await this.auditLogService.log(
@@ -355,33 +360,23 @@ export class InvoiceService {
     const company = this.companyService.activeCompany();
     if (!company) return false;
 
-    const invoiceNumber = `${company.invoice_prefix}${String(company.invoice_number).padStart(5, '0')}`;
-
     try {
-      const { error } = await this.supabase.db
+      // O número definitivo é atribuído no servidor ao sair de rascunho.
+      const { data: issued, error } = await this.supabase.db
         .from('invoices')
         .update({
           status: 'pendente',
-          invoice_number: invoiceNumber,
           date: new Date().toISOString().split('T')[0]
         })
-        .eq('id', invoiceId);
+        .eq('id', invoiceId)
+        .select('invoice_number')
+        .single();
 
       if (error) throw error;
-
-      await this.companyService.updateCompany(company.id, {
-        invoice_number: company.invoice_number + 1
-      }, true);
+      const invoiceNumber = issued.invoice_number;
 
       // Stock management: Decrement stock when emitting draft
-      const { data: items } = await this.supabase.db
-        .from('invoice_items')
-        .select('*')
-        .eq('invoice_id', invoiceId);
-      
-      if (items && items.length > 0) {
-        await this.handleStockUpdate(items, 'decrement');
-      }
+      await this.applyStock(invoiceId, false);
 
       await this.auditLogService.log(
         'Gerou Factura (Emitiu Rascunho)',
@@ -435,17 +430,7 @@ export class InvoiceService {
 
       if (updateError) throw updateError;
 
-      // Stock management: Restore old items stock if not a draft
-      if (invoice.status !== 'rascunho') {
-        const { data: oldItems } = await this.supabase.db
-          .from('invoice_items')
-          .select('*')
-          .eq('invoice_id', id);
-        
-        if (oldItems && oldItems.length > 0) {
-          await this.handleStockUpdate(oldItems, 'increment');
-        }
-      }
+      // Só os rascunhos se editam, e um rascunho ainda não mexeu no stock.
 
       // Replace Items (Delete all and Insert new)
       const { error: deleteItemsError } = await this.supabase.db
@@ -470,11 +455,6 @@ export class InvoiceService {
         .insert(itemsToInsert);
 
       if (insertItemsError) throw insertItemsError;
-
-      // Stock management: Decrement new items stock if not a draft
-      if (invoice.status !== 'rascunho') {
-        await this.handleStockUpdate(items, 'decrement');
-      }
 
       await this.auditLogService.log(
         'Atualizou Factura',
@@ -560,9 +540,7 @@ export class InvoiceService {
       if (updateError) throw updateError;
 
       // 2. Restore stock for items
-      if (invoice.items && invoice.items.length > 0) {
-        await this.handleStockUpdate(invoice.items, 'increment');
-      }
+      await this.applyStock(id, true);
 
       await this.auditLogService.log(
         'Anulou Factura',
@@ -682,34 +660,19 @@ export class InvoiceService {
     return this.calculateInvoiceStatus(invoice);
   }
 
-  private async handleStockUpdate(items: any[], type: 'decrement' | 'increment') {
-    for (const item of items) {
-      if (!item.product_id) continue;
-
-      // Fetch product to check type and current stock
-      // We do this inside the loop to get the most recent stock for each item
-      const { data: product, error } = await this.supabase.db
-        .from('products')
-        .select('type, stock')
-        .eq('id', item.product_id)
-        .single();
-
-      // Stock null = produto sem controlo de stock: nada a actualizar.
-      if (error || !product || product.type !== 'produto' || product.stock === null) continue;
-
-      const currentStock = Number(product.stock);
-      if (type === 'decrement' && currentStock < item.quantity) {
-        console.error(`Stock insuficiente para o produto ${item.product_id}. Operação de stock ignorada.`);
-        continue;
-      }
-      const newStock = type === 'decrement' 
-        ? currentStock - item.quantity 
-        : currentStock + item.quantity;
-
-      await this.supabase.db
-        .from('products')
-        .update({ stock: newStock })
-        .eq('id', item.product_id);
+  /**
+   * Aplica (ou reverte, no caso de anulação) o stock do documento no servidor,
+   * numa transacção e com histórico em stock_movements. Idempotente.
+   * Produtos sem controlo de stock e serviços são ignorados; se não houver
+   * stock suficiente, essa linha não mexe no stock (regra de sempre).
+   */
+  private async applyStock(invoiceId: string, reverse: boolean) {
+    const { error } = await this.supabase.db.rpc('apply_invoice_stock', {
+      p_invoice_id: invoiceId,
+      p_reverse: reverse
+    });
+    if (error) {
+      console.error('Erro ao actualizar o stock:', error);
     }
   }
 }

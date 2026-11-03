@@ -1,10 +1,14 @@
 import { Component, OnDestroy, computed, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { POS_COUNTER_CART, PosService } from '../../core/services/pos.service';
+import { PosService } from '../../core/services/pos.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { formatPosMoney } from './pos-format';
 
-/** Planta de mesas por zona: livres, ocupadas (com total, tempo e empregado) e por enviar. */
+/**
+ * Mesas por zona: livres, ocupadas (total por pagar, tempo, empregado) e com
+ * pedidos por enviar. Os pedidos vêm do servidor e actualizam-se em tempo real
+ * entre terminais. Emite o id da mesa, ou null para o balcão.
+ */
 @Component({
   selector: 'app-pos-tables',
   standalone: true,
@@ -17,7 +21,7 @@ import { formatPosMoney } from './pos-format';
         </button>
         @for (z of pos.zones(); track z.id) {
           <button type="button" class="pos-chip" [class.pos-chip-active]="zone() === z.id" (click)="zone.set(z.id)">
-            <i class="fa-solid {{ z.icon }}" aria-hidden="true"></i> {{ z.name }}
+            <i class="fa-solid {{ z.icon || 'fa-chair' }}" aria-hidden="true"></i> {{ z.name }}
           </button>
         }
         <span class="ml-auto flex items-center gap-3 text-xs text-slate-500">
@@ -26,30 +30,37 @@ import { formatPosMoney } from './pos-format';
         </span>
       </div>
 
+      @if (pos.tables().length === 0) {
+        <div class="text-center py-12 text-slate-400">
+          <i class="fa-solid fa-chair text-4xl mb-3" aria-hidden="true"></i>
+          <p>{{ 'pos.tables.none' | t }}</p>
+        </div>
+      }
+
       <div class="tables-grid">
-        <!-- Balcão / take-away -->
-        <button type="button" class="table-card counter" (click)="open.emit(counter)">
-          <i class="fa-solid fa-bag-shopping text-2xl" aria-hidden="true"></i>
-          <span class="font-bold">{{ 'pos.tables.counter' | t }}</span>
-          <span class="text-xs opacity-80">{{ 'pos.tables.counterHint' | t }}</span>
-        </button>
+        @if (pos.canSell()) {
+          <button type="button" class="table-card counter" (click)="open.emit(null)">
+            <i class="fa-solid fa-bag-shopping text-2xl" aria-hidden="true"></i>
+            <span class="font-bold">{{ 'pos.tables.counter' | t }}</span>
+            <span class="text-xs opacity-80">{{ 'pos.tables.counterHint' | t }}</span>
+          </button>
+        }
 
         @for (table of visible(); track table.id) {
-          @let order = pos.tableOrders()[table.id];
-          @let unsent = unsentFor(table.id);
+          @let order = pos.orderForTable(table.id);
           <button type="button" class="table-card" [class.busy]="order" (click)="open.emit(table.id)">
             <span class="flex items-start justify-between w-full">
               <span class="text-2xl font-extrabold leading-none">{{ table.name }}</span>
               <span class="text-[11px] font-semibold opacity-70"><i class="fa-solid fa-chair" aria-hidden="true"></i> {{ order?.covers ?? table.seats }}</span>
             </span>
             @if (order) {
-              <span class="mt-auto font-bold">{{ money(pos.tableTotal(table.id)) }}</span>
+              <span class="mt-auto font-bold">{{ money(order.due) }}</span>
               <span class="text-[11px] opacity-80 flex items-center gap-1 w-full">
                 <i class="fa-regular fa-clock" aria-hidden="true"></i> {{ elapsed(order.opened_at) }}
-                <span class="truncate">· {{ firstName(order.waiter_id) }}</span>
+                <span class="truncate">· {{ firstName(order.waiter) }}</span>
               </span>
-              @if (unsent > 0) {
-                <span class="unsent">{{ 'pos.tables.unsent' | t: { count: unsent } }}</span>
+              @if (order.unsent > 0) {
+                <span class="unsent">{{ 'pos.tables.unsent' | t: { count: order.unsent } }}</span>
               }
             } @else {
               <span class="mt-auto text-xs font-semibold text-emerald-700">{{ 'pos.tables.free' | t }}</span>
@@ -78,15 +89,14 @@ import { formatPosMoney } from './pos-format';
   `]
 })
 export class PosTablesComponent implements OnDestroy {
-  open = output<string>();
-  readonly counter = POS_COUNTER_CART;
+  open = output<string | null>();
   zone = signal<string>('all');
   /** Relógio para o tempo de ocupação das mesas. */
   private now = signal(Date.now());
   private timer = setInterval(() => this.now.set(Date.now()), 30_000);
 
   visible = computed(() => this.pos.tables().filter(t => this.zone() === 'all' || t.zone_id === this.zone()));
-  busyCount = computed(() => this.visible().filter(t => this.pos.tableOrders()[t.id]).length);
+  busyCount = computed(() => this.visible().filter(t => this.pos.orderForTable(t.id)).length);
   freeCount = computed(() => this.visible().length - this.busyCount());
 
   constructor(public pos: PosService) {}
@@ -97,12 +107,8 @@ export class PosTablesComponent implements OnDestroy {
 
   money(v: number) { return formatPosMoney(v); }
 
-  firstName(id: string) {
-    return this.pos.seller(id)?.name.split(' ')[0] ?? '';
-  }
-
-  unsentFor(tableId: string): number {
-    return (this.pos.carts()[tableId] ?? []).reduce((sum, l) => sum + Math.max(0, l.quantity - (l.sent ?? 0)), 0);
+  firstName(name: string | null) {
+    return (name ?? '').split(' ')[0];
   }
 
   elapsed(iso: string): string {

@@ -41,7 +41,7 @@ import { DOCUMENT_LOCALE, formatDocumentCurrency } from './document-format';
            ================================================================ -->
       <div class="doc-header">
         <div class="doc-header__identity">
-          <p class="doc-caption">FACTURA</p>
+          <p class="doc-caption">{{ caption() }}</p>
           <h1 class="doc-number">{{ invoice().invoice_number }}</h1>
           <p class="doc-issued">Data e Hora de Emissão: {{ formatDateTime(invoice().created_at || invoice().date) }}</p>
           @if (invoice().due_date) {
@@ -212,6 +212,8 @@ import { DOCUMENT_LOCALE, formatDocumentCurrency } from './document-format';
 })
 export class InvoiceDocumentComponent {
   invoice = input.required<Invoice>();
+  /** Título fiscal: as vendas do POS são facturas-recibo e as devoluções notas de crédito. */
+  caption = computed(() => ({ FR: 'FACTURA-RECIBO', NC: 'NOTA DE CRÉDITO' } as Record<string, string>)[this.invoice().document_type ?? 'FT'] ?? 'FACTURA');
   company = input<Company | null>(null);
   branding = input<DocumentBranding>(DEFAULT_DOCUMENT_BRANDING);
   /**

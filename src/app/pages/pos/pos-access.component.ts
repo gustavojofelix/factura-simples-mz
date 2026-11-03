@@ -2,16 +2,16 @@ import { Component, computed, input, signal, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { PosMode, PosSeller, PosService } from '../../core/services/pos.service';
+import { PosService, PosStaffSummary } from '../../core/services/pos.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { PosPinPadComponent } from './pos-pin-pad.component';
 import { formatPosDate, formatPosMoney } from './pos-format';
 
-type Step = 'operator' | 'pin' | 'float';
-
 /**
- * Entrada no POS sem login: escolher operador + PIN.
- * mode='open' abre a sessão de caixa (pede o fundo de caixa); mode='unlock' desbloqueia/troca de operador.
+ * Entrada no terminal:
+ *  - pair:   dispositivo ainda não emparelhado → código gerado em Ponto de Venda → Terminais
+ *  - login:  escolher o operador e o PIN (validado no servidor)
+ *  - open:   operador entrou mas a caixa está fechada → fundo de caixa e abrir
  */
 @Component({
   selector: 'app-pos-access',
@@ -22,56 +22,72 @@ type Step = 'operator' | 'pin' | 'float';
       <div class="w-full max-w-[520px]">
         <div class="text-center mb-6">
           <span class="inline-flex w-14 h-14 rounded-2xl bg-ispc-orange text-white items-center justify-center text-2xl shadow-lg shadow-orange-200">
-            <i class="fa-solid" [class.fa-cash-register]="mode() === 'open'" [class.fa-lock]="mode() === 'unlock'" aria-hidden="true"></i>
+            <i class="fa-solid" [class.fa-link]="mode() === 'pair'" [class.fa-lock]="mode() === 'login'" [class.fa-cash-register]="mode() === 'open'" aria-hidden="true"></i>
           </span>
-          <h2 class="!m-0 !mt-4 text-2xl font-extrabold text-slate-900">
-            {{ (mode() === 'open' ? 'pos.access.openTitle' : 'pos.access.unlockTitle') | t }}
-          </h2>
-          <p class="text-slate-500 mt-1">{{ pos.store().name }} · {{ pos.settings().terminal_name }}</p>
-          @if (mode() === 'unlock' && pos.currentSession(); as s) {
-            <p class="text-xs text-slate-400 mt-1">{{ 'pos.access.sessionOpenSince' | t: { number: s.number, date: date(s.opened_at) } }}</p>
+          <h2 class="!m-0 !mt-4 text-2xl font-extrabold text-slate-900">{{ 'pos.access.' + mode() + 'Title' | t }}</h2>
+          @if (mode() === 'pair') {
+            <p class="text-slate-500 mt-1">{{ 'pos.access.pairHint' | t }}</p>
+          } @else {
+            <p class="text-slate-500 mt-1">{{ pos.info()?.company?.name }} · {{ pos.terminal()?.name }}</p>
+            @if (pos.info()?.open_session; as s) {
+              <p class="text-xs text-slate-400 mt-1">{{ 'pos.access.sessionOpenSince' | t: { number: s.number, date: date(s.opened_at) } }}</p>
+            }
           }
         </div>
 
-        @if (mode() === 'open') {
-          <!-- Demonstração: escolher o tipo de empresa (cada uma tem os seus dados) -->
-          <div class="mb-4">
-            <p class="text-center text-[11px] font-bold uppercase tracking-widest text-amber-700 mb-2">{{ 'pos.access.demoBusiness' | t }}</p>
-            <div class="grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-white border border-slate-200">
-              @for (b of businesses; track b.mode) {
-                <button type="button" class="biz" [class.on]="pos.settings().mode === b.mode" (click)="pos.updateSettings({ mode: b.mode })">
-                  <i class="fa-solid {{ b.icon }}" aria-hidden="true"></i>
-                  <span>{{ 'pos.settings.modes.' + b.mode | t }}</span>
-                </button>
-              }
-            </div>
+        @if (graceWarning(); as until) {
+          <div class="mb-4 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800 flex gap-2">
+            <i class="fa-solid fa-triangle-exclamation mt-0.5" aria-hidden="true"></i>
+            <span>{{ 'pos.access.grace' | t: { date: until } }}</span>
           </div>
         }
 
         <div class="bg-white rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/60 p-5 sm:p-7">
-          @switch (step()) {
-            @case ('operator') {
-              <p class="text-sm font-semibold text-slate-500 mb-3">{{ 'pos.access.chooseOperator' | t }}</p>
-              <div class="grid grid-cols-2 gap-3">
-                @for (s of pos.sellers(); track s.id) {
-                  <button type="button" class="op-card" (click)="choose(s)">
-                    <span class="w-12 h-12 rounded-full text-white font-bold flex items-center justify-center" [style.background]="s.color">{{ initials(s.name) }}</span>
-                    <span class="font-semibold text-slate-800 text-sm leading-tight text-center">{{ s.name }}</span>
-                    <span class="text-[11px] text-slate-400">{{ 'pos.roles.' + s.role | t }}</span>
-                  </button>
-                }
-              </div>
-            }
-            @case ('pin') {
-              <button type="button" class="flex items-center gap-2 text-sm text-slate-500 mb-5" (click)="step.set('operator')">
-                <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-                <span class="w-7 h-7 rounded-full text-white text-[11px] font-bold flex items-center justify-center" [style.background]="seller()?.color">{{ initials(seller()?.name) }}</span>
-                <span class="font-semibold text-slate-800">{{ seller()?.name }}</span>
+          @switch (mode()) {
+            @case ('pair') {
+              <label class="block rounded-2xl border border-slate-200 focus-within:border-ispc-orange px-4 py-3">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">{{ 'pos.access.pairCode' | t }}</span>
+                <input type="text" autocomplete="off" autocapitalize="characters" maxlength="9" placeholder="XXXX-XXXX"
+                  class="w-full text-3xl font-extrabold tracking-[.2em] uppercase text-slate-900 outline-none bg-transparent"
+                  [value]="code()" (input)="code.set($any($event.target).value)" (keydown.enter)="pair()">
+              </label>
+              @if (error()) { <p class="text-sm text-rose-600 mt-3">{{ error() }}</p> }
+              <button mat-raised-button class="w-full !h-14 !mt-5 !rounded-2xl !text-base !font-bold !bg-ispc-orange !text-white disabled:!opacity-50"
+                [disabled]="busy() || code().replace('-', '').trim().length !== 8" (click)="pair()">
+                <mat-icon>link</mat-icon>
+                {{ 'pos.access.pair' | t }}
               </button>
-              <p class="text-center text-sm font-semibold text-slate-500 mb-4">{{ 'pos.access.enterPin' | t }}</p>
-              <app-pos-pin-pad (completed)="checkPin($event)" />
+              <p class="text-xs text-slate-400 mt-4 text-center">{{ 'pos.access.pairWhere' | t }}</p>
             }
-            @case ('float') {
+            @case ('login') {
+              @if (!staff()) {
+                <p class="text-sm font-semibold text-slate-500 mb-3">{{ 'pos.access.chooseOperator' | t }}</p>
+                @if ((pos.info()?.staff ?? []).length === 0) {
+                  <p class="text-sm text-slate-500">{{ 'pos.access.noStaff' | t }}</p>
+                }
+                <div class="grid grid-cols-2 gap-3">
+                  @for (s of pos.info()?.staff ?? []; track s.id) {
+                    <button type="button" class="op-card" [disabled]="!s.has_pin" (click)="choose(s)">
+                      <span class="w-12 h-12 rounded-full text-white font-bold flex items-center justify-center" [style.background]="s.color">{{ initials(s.name) }}</span>
+                      <span class="font-semibold text-slate-800 text-sm leading-tight text-center">{{ s.name }}</span>
+                      <span class="text-[11px]" [class.text-slate-400]="s.has_pin && !s.locked" [class.text-rose-500]="!s.has_pin || s.locked">
+                        {{ (!s.has_pin ? 'pos.access.noPin' : s.locked ? 'pos.access.locked' : 'pos.roles.' + s.role) | t }}
+                      </span>
+                    </button>
+                  }
+                </div>
+              } @else {
+                <button type="button" class="flex items-center gap-2 text-sm text-slate-500 mb-5" (click)="back()">
+                  <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+                  <span class="w-7 h-7 rounded-full text-white text-[11px] font-bold flex items-center justify-center" [style.background]="staff()?.color">{{ initials(staff()?.name) }}</span>
+                  <span class="font-semibold text-slate-800">{{ staff()?.name }}</span>
+                </button>
+                <p class="text-center text-sm font-semibold text-slate-500 mb-4">{{ 'pos.access.enterPin' | t }}</p>
+                <app-pos-pin-pad [disabled]="busy()" (completed)="checkPin($event)" />
+                @if (error()) { <p class="text-center text-sm text-rose-600 mt-4">{{ error() }}</p> }
+              }
+            }
+            @case ('open') {
               <p class="text-sm font-semibold text-slate-500 mb-1">{{ 'pos.access.openingFloat' | t }}</p>
               <p class="text-xs text-slate-400 mb-4">{{ 'pos.access.openingFloatHint' | t }}</p>
               <label class="block rounded-2xl border border-slate-200 focus-within:border-ispc-orange px-4 py-3">
@@ -86,18 +102,16 @@ type Step = 'operator' | 'pin' | 'float';
                     (click)="float.set(v)">{{ money(v) }}</button>
                 }
               </div>
-              <button mat-raised-button class="w-full !h-14 !mt-6 !rounded-2xl !text-base !font-bold !bg-ispc-orange !text-white" (click)="openSession()">
+              @if (error()) { <p class="text-sm text-rose-600 mt-3">{{ error() }}</p> }
+              <button mat-raised-button class="w-full !h-14 !mt-6 !rounded-2xl !text-base !font-bold !bg-ispc-orange !text-white disabled:!opacity-50"
+                [disabled]="busy()" (click)="openSession()">
                 <mat-icon>lock_open</mat-icon>
                 {{ 'pos.access.openSession' | t }}
               </button>
+              <button mat-button class="w-full !mt-2" (click)="pos.lock()">{{ 'pos.access.switchOperator' | t }}</button>
             }
           }
         </div>
-
-        <p class="text-center text-xs text-slate-400 mt-5">
-          <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-          {{ 'pos.access.demoPins' | t: { pins: demoPins() } }}
-        </p>
       </div>
     </div>
   `,
@@ -107,30 +121,33 @@ type Step = 'operator' | 'pin' | 'float';
       border-radius: 20px; border: 1px solid #e2e8f0; background: #fff; touch-action: manipulation;
       transition: border-color .15s ease, transform .08s ease;
     }
-    .op-card:hover { border-color: #f16c39; }
-    .biz { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; border-radius: 12px;
-      font-size: 14px; font-weight: 700; color: #64748b; touch-action: manipulation; }
-    .biz.on { background: #0f172a; color: #fff; }
+    .op-card:hover:not(:disabled) { border-color: #f16c39; }
+    .op-card:disabled { opacity: .55; }
     .op-card:active { transform: scale(.97); }
   `]
 })
 export class PosAccessComponent {
-  mode = input<'open' | 'unlock'>('open');
+  mode = input<'pair' | 'login' | 'open'>('login');
 
   readonly floatPresets = [0, 500, 1000, 2000, 5000];
-  readonly businesses: { mode: PosMode; icon: string }[] = [
-    { mode: 'retail', icon: 'fa-basket-shopping' },
-    { mode: 'restaurant', icon: 'fa-utensils' }
-  ];
-  step = signal<Step>('operator');
-  seller = signal<PosSeller | undefined>(undefined);
+  staff = signal<PosStaffSummary | null>(null);
+  code = signal('');
   float = signal(1000);
+  busy = signal(false);
+  error = signal<string | null>(null);
 
   private pinPad = viewChild(PosPinPadComponent);
 
-  demoPins = computed(() => this.pos.sellers().map(s => `${s.name.split(' ')[0]} ${s.pin}`).join(' · '));
+  /** Subscrição expirada, ainda dentro da tolerância do POS. */
+  graceWarning = computed(() => {
+    const access = this.pos.access() ?? this.pos.info()?.access;
+    return access?.in_grace && access.grace_until ? formatPosDate(access.grace_until).split(/[ ,]/)[0] : null;
+  });
 
-  constructor(public pos: PosService) {}
+  constructor(public pos: PosService) {
+    const preset = pos.company()?.settings?.cash?.default_float;
+    if (typeof preset === 'number') this.float.set(preset);
+  }
 
   money(v: number) { return formatPosMoney(v); }
   date(iso: string) { return formatPosDate(iso); }
@@ -140,19 +157,46 @@ export class PosAccessComponent {
     return parts.length ? (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase() : '?';
   }
 
-  choose(seller: PosSeller) {
-    this.seller.set(seller);
-    this.step.set('pin');
+  async pair() {
+    if (this.busy()) return;
+    this.busy.set(true);
+    this.error.set(null);
+    try {
+      await this.pos.pair(this.code());
+    } catch (e) {
+      this.error.set(this.pos.handleError(e));
+    } finally {
+      this.busy.set(false);
+    }
   }
 
-  checkPin(pin: string) {
-    const seller = this.seller();
-    if (!seller || !this.pos.verifyPin(seller.id, pin)) {
+  choose(staff: PosStaffSummary) {
+    this.error.set(null);
+    this.staff.set(staff);
+  }
+
+  back() {
+    this.error.set(null);
+    this.staff.set(null);
+  }
+
+  async checkPin(pin: string) {
+    const staff = this.staff();
+    if (!staff || this.busy()) return;
+    this.busy.set(true);
+    this.error.set(null);
+    try {
+      const error = await this.pos.login(staff.id, pin);
+      if (error) {
+        this.error.set(error);
+        this.pinPad()?.reject();
+      }
+    } catch (e) {
+      this.error.set(this.pos.handleError(e));
       this.pinPad()?.reject();
-      return;
+    } finally {
+      this.busy.set(false);
     }
-    if (this.mode() === 'unlock') this.pos.unlock(seller.id);
-    else this.step.set('float');
   }
 
   onFloat(event: Event) {
@@ -160,8 +204,16 @@ export class PosAccessComponent {
     this.float.set(Number.isFinite(value) ? Math.max(0, value) : 0);
   }
 
-  openSession() {
-    const seller = this.seller();
-    if (seller) this.pos.openSession(seller.id, this.float());
+  async openSession() {
+    if (this.busy()) return;
+    this.busy.set(true);
+    this.error.set(null);
+    try {
+      await this.pos.openSession(this.float());
+    } catch (e) {
+      this.error.set(this.pos.handleError(e));
+    } finally {
+      this.busy.set(false);
+    }
   }
 }
