@@ -136,8 +136,11 @@ export class PosAdminService {
     return { business_type: r.pos_business_type ?? 'retail', settings: r.pos_settings ?? {} };
   }
 
+  /** Por RPC: o UPDATE directo em companies só é permitido ao dono; Admin e Gestor também configuram o POS. */
   async saveSettings(business_type: PosMode, settings: PosCompanySettings) {
-    await this.run(this.db.from('companies').update({ pos_business_type: business_type, pos_settings: settings }).eq('id', this.companyId()));
+    await this.run(this.db.rpc('pos_save_settings', {
+      p_company_id: this.companyId(), p_business_type: business_type, p_settings: settings
+    }));
   }
 
   // ---------- Terminais ----------

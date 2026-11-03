@@ -515,6 +515,13 @@ import { friendlyFunctionError } from '../../../core/utils/error-message';
                 <option *ngFor="let a of activityTypes()" [value]="a.code">{{ a.name }}</option>
               </select>
             </div>
+            <div>
+              <select [ngModel]="posFilter()" (ngModelChange)="posFilter.set($event)" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
+                <option value="all">Ponto de Venda</option>
+                <option value="with">Com POS ({{ posCount() }})</option>
+                <option value="without">Sem POS</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -587,6 +594,7 @@ import { friendlyFunctionError } from '../../../core/utils/error-message';
                     </div>
                   </th>
 
+                  <th class="px-4 py-4">POS</th>
                   <th class="px-4 py-4 text-center">Ações</th>
                 </tr>
               </thead>
@@ -654,6 +662,25 @@ import { friendlyFunctionError } from '../../../core/utils/error-message';
                     </div>
                   </td>
 
+                  <!-- Ponto de Venda -->
+                  <td class="px-4 py-4">
+                    <ng-container *ngIf="posOverview()[company.id] as pos; else noPos">
+                      <div *ngIf="pos.enabled" class="flex flex-col gap-0.5">
+                        <span class="inline-flex w-fit items-center px-2 py-0.5 rounded-full text-[10px] font-bold"
+                          [class]="pos.allowed ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'">
+                          {{ pos.allowed ? (pos.in_grace ? 'Tolerância' : 'Activo') : 'Expirado' }}
+                          · {{ pos.source === 'override' ? 'Excepção' : 'Plano' }}
+                        </span>
+                        <span class="text-[10px] text-gray-500">
+                          {{ pos.business_type === 'restaurant' ? 'Restaurante' : 'Loja' }} · {{ pos.terminals }} term. · {{ pos.staff }} func.
+                        </span>
+                        <span *ngIf="pos.last_sale_at" class="text-[10px] text-gray-400">Última venda {{ pos.last_sale_at | date:'dd/MM HH:mm':'+0200' }}</span>
+                      </div>
+                      <span *ngIf="!pos.enabled" class="text-[10px] text-gray-400">—</span>
+                    </ng-container>
+                    <ng-template #noPos><span class="text-[10px] text-gray-400">—</span></ng-template>
+                  </td>
+
                   <!-- Ações -->
                   <td class="px-4 py-4 text-center">
                     <div class="flex items-center justify-center space-x-2">
@@ -700,6 +727,11 @@ export class AdminCompaniesComponent implements OnInit {
   planFilter = signal('all');
   subscriberFilter = signal('all');
   activityTypeFilter = signal('all');
+  /** Ponto de Venda por empresa (admin_pos_overview); vazio se a função não existir ainda. */
+  posOverview = signal<Record<string, { enabled: boolean; source: 'plan' | 'override' | null; allowed: boolean; in_grace: boolean;
+    business_type: string; terminals: number; staff: number; last_sale_at: string | null; sales_30d: number }>>({});
+  posFilter = signal<'all' | 'with' | 'without'>('all');
+  posCount = computed(() => Object.values(this.posOverview()).filter(p => p.enabled).length);
   businessVolumeFilter = signal('all');
   // Create Company
   isCreateModalOpen = false;
@@ -838,6 +870,11 @@ export class AdminCompaniesComponent implements OnInit {
       list = list.filter(c => c.activity_type === this.activityTypeFilter());
     }
 
+    if (this.posFilter() !== 'all') {
+      const withPos = this.posFilter() === 'with';
+      list = list.filter(c => !!this.posOverview()[c.id]?.enabled === withPos);
+    }
+
     if (this.businessVolumeFilter() !== 'all') {
       list = list.filter(c => {
         const vol = c.usage_30d || 0;
@@ -909,7 +946,17 @@ export class AdminCompaniesComponent implements OnInit {
     }
   }
 
+  async loadPosOverview() {
+    const { data, error } = await this.supabase.db.rpc('admin_pos_overview');
+    if (error) {
+      console.error('Error loading POS overview:', error);
+      return;
+    }
+    this.posOverview.set(Object.fromEntries((data || []).map((row: any) => [row.company_id, row])));
+  }
+
   async loadCompanies() {
+    this.loadPosOverview();
     this.isLoading.set(true);
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -1211,7 +1258,7 @@ export class AdminCompaniesComponent implements OnInit {
       return;
     }
     this.toast.success(enabled ? 'POS activado nesta empresa' : 'Excepção removida: vale o plano');
-    await this.loadPosInfo(companyId);
+    await Promise.all([this.loadPosInfo(companyId), this.loadPosOverview()]);
   }
 
   async setGraceDays(days: number) {
