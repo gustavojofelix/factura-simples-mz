@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../../core/services/supabase.service';
@@ -783,6 +783,12 @@ export class AdminCompaniesComponent implements OnInit {
   }
 
   // Phase 2 & 3: UI Logic
+  /**
+   * A aplicação não usa zone.js: estes campos não são sinais, por isso depois
+   * de um await é preciso pedir a actualização do ecrã (markForCheck). Sem isso
+   * o modal só aparecia "às vezes" (quando outra coisa redesenhava a página).
+   */
+  private cdr = inject(ChangeDetectorRef);
   isEditModalOpen = false;
   editingCompany: any = {};
   saveError = '';
@@ -1020,6 +1026,7 @@ export class AdminCompaniesComponent implements OnInit {
     this.editingCompany.category2 = category2?.code || this.editingCompany.category2 || '';
     this.editingCompany.category3 = category3?.code || this.editingCompany.category3 || '';
     this.isEditModalOpen = true;
+    this.cdr.markForCheck();
   }
 
   closeEditModal() {
@@ -1127,6 +1134,7 @@ export class AdminCompaniesComponent implements OnInit {
     if (error) {
       console.error('Error saving company:', error);
       this.saveError = 'Erro ao guardar contribuinte. Tente novamente.';
+      this.cdr.markForCheck();
       return;
     }
 
@@ -1145,6 +1153,7 @@ export class AdminCompaniesComponent implements OnInit {
     );
 
     this.closeEditModal();
+    this.cdr.markForCheck();
     this.loadCompanies();
   }
 
@@ -1158,6 +1167,8 @@ export class AdminCompaniesComponent implements OnInit {
       .select('*, profiles:profiles!company_users_user_id_fkey(full_name, email)')
       .eq('company_id', company.id);
 
+    // Cliques rápidos em duas empresas: ignora a resposta da anterior.
+    if (this.selectedCompany()?.id !== company.id) return;
     this.selectedCompany.set({
       ...company,
       users: usersData || []
@@ -1384,6 +1395,7 @@ export class AdminCompaniesComponent implements OnInit {
       this.createError = error.message || 'Erro ao criar contribuinte.';
     } finally {
       this.isCreating = false;
+      this.cdr.markForCheck();
     }
   }
 
