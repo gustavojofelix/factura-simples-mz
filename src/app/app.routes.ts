@@ -1,4 +1,5 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { Router, Routes } from '@angular/router';
 import { authGuard, guestGuard } from './core/guards/auth.guard';
 import { adminGuard, adminGuestGuard } from './core/guards/admin.guard';
 import { roleGuard, REPORT_ROLES } from './core/guards/role.guard';
@@ -118,9 +119,9 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/reports/saft-export/saft-export.component').then(m => m.SaftExportComponent)
       },
       {
+        // A gestão do POS está em Configurações → Ponto de Venda; mantém links antigos.
         path: 'ponto-de-venda',
-        canActivate: [roleGuard(REPORT_ROLES)],
-        loadComponent: () => import('./pages/pos-admin/pos-admin.component').then(m => m.PosAdminComponent)
+        redirectTo: () => inject(Router).createUrlTree(['/configuracoes'], { queryParams: { tab: 'pos' } })
       },
       {
         path: 'assistente',

@@ -385,7 +385,7 @@ export class PosComponent implements OnInit, OnDestroy {
   }
 
   openBackOffice() {
-    window.open('/#/ponto-de-venda', '_blank');
+    window.open('/#/configuracoes?tab=pos', '_blank');
   }
 
   async refreshCatalog() {

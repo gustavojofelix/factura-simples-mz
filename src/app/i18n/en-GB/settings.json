@@ -9,7 +9,8 @@
     "subscriptions": "Subscriptions",
     "companies": "Companies",
     "users": "Users",
-    "documents": "Documents"
+    "documents": "Documents",
+    "pos": "Point of Sale"
   },
   "companySelect": {
     "label": "Select a company"

@@ -9,7 +9,8 @@
     "subscriptions": "Subscrições",
     "companies": "Empresas",
     "users": "Utilizadores",
-    "documents": "Documentos"
+    "documents": "Documentos",
+    "pos": "Ponto de Venda"
   },
   "companySelect": {
     "label": "Selecione uma Empresa"

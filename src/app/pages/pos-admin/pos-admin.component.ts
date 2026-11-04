@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -60,6 +60,9 @@ const daysAgo = (n: number) => {
   `]
 })
 export class PosAdminComponent {
+  /** Dentro de Configurações (separador): título mais pequeno, como os outros separadores. */
+  embedded = input(false);
+
   admin = inject(PosAdminService);
   companyService = inject(CompanyService);
   private snackBar = inject(MatSnackBar);

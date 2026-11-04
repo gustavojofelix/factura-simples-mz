@@ -1,7 +1,11 @@
-<div class="p-4 sm:p-6">
+<div [class]="embedded() ? 'p-6' : 'p-4 sm:p-6'">
   <div class="flex flex-wrap items-start justify-between gap-4 mb-5">
     <div>
-      <h1 class="text-3xl font-bold text-gray-900 mb-1">{{ 'posAdmin.title' | t }}</h1>
+      @if (embedded()) {
+        <h2 class="text-xl font-semibold mb-1">{{ 'posAdmin.title' | t }}</h2>
+      } @else {
+        <h1 class="text-3xl font-bold text-gray-900 mb-1">{{ 'posAdmin.title' | t }}</h1>
+      }
       <p class="text-gray-600">{{ 'posAdmin.subtitle' | t: { company: companyService.activeCompany()?.name ?? '' } }}</p>
     </div>
     <button mat-raised-button class="!bg-ispc-orange !text-white" [disabled]="!admin.access()?.allowed" (click)="openPos()">

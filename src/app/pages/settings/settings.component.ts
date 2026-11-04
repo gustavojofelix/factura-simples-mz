@@ -31,6 +31,8 @@ import { ActivityService } from '../../core/services/activity.service';
 import { CompanyBankAccountService } from '../../core/services/company-bank-account.service';
 import { SubscriptionLimitDialogComponent } from '../../shared/components/subscription-limit-dialog.component';
 import { DocumentSettingsTabComponent } from './document-settings-tab/document-settings-tab.component';
+import { PosAdminComponent } from '../pos-admin/pos-admin.component';
+import { PosAdminService } from '../../core/services/pos-admin.service';
 import { friendlyErrorMessage } from '../../core/utils/error-message';
 import { PreferencesService } from '../../core/services/preferences.service';
 import { currentLocale, t } from '../../core/i18n/i18n';
@@ -57,6 +59,7 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
     MatTooltipModule,
     MatProgressSpinnerModule,
     DocumentSettingsTabComponent,
+    PosAdminComponent,
     TranslatePipe
   ],
   templateUrl: './settings.component.html',
@@ -75,6 +78,13 @@ export class SettingsComponent implements OnInit {
   selectedTab = signal(0);
   private destroyRef = inject(DestroyRef);
   private router = inject(Router);
+
+  /** Separador Ponto de Venda: só com o módulo no plano (ou numa excepção da empresa). É o último separador. */
+  private posAdmin = inject(PosAdminService);
+  posEnabled = computed(() => !!this.posAdmin.access()?.enabled);
+  readonly posTabIndex = 5;
+  /** ?tab=pos pedido antes de se saber se o POS está activo (o separador ainda não existe). */
+  private wantPosTab = signal(false);
 
   /** Subscrição da empresa activa expirada: só o separador de subscrição fica disponível. */
   locked = computed(() => {
@@ -132,6 +142,13 @@ export class SettingsComponent implements OnInit {
         this.selectedTab.set(SUBSCRIPTION_TAB_INDEX);
       }
     }, { allowSignalWrites: true });
+
+    effect(() => {
+      if (this.wantPosTab() && this.posEnabled() && !this.locked()) {
+        this.selectedTab.set(this.posTabIndex);
+        this.wantPosTab.set(false);
+      }
+    }, { allowSignalWrites: true });
   }
 
   async ngOnInit() {
@@ -146,6 +163,8 @@ export class SettingsComponent implements OnInit {
     this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
       if (params.get('tab') === 'subscricao') {
         this.selectedTab.set(SUBSCRIPTION_TAB_INDEX);
+      } else if (params.get('tab') === 'pos') {
+        this.wantPosTab.set(true);
       }
     });
 
@@ -158,7 +177,8 @@ export class SettingsComponent implements OnInit {
    * novo "Ver Planos" navegaria para o mesmo URL e o router ignorá-lo-ia.
    */
   onTabChange(index: number) {
-    if (index !== SUBSCRIPTION_TAB_INDEX && this.route.snapshot.queryParamMap.get('tab') === 'subscricao') {
+    const tab = this.route.snapshot.queryParamMap.get('tab');
+    if ((index !== SUBSCRIPTION_TAB_INDEX && tab === 'subscricao') || (index !== this.posTabIndex && tab === 'pos')) {
       this.router.navigate([], { relativeTo: this.route, queryParams: { tab: null }, queryParamsHandling: 'merge', replaceUrl: true });
     }
   }

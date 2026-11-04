@@ -553,6 +553,14 @@
           <app-document-settings-tab [companyId]="selectedCompanyId()"></app-document-settings-tab>
         </div>
       </mat-tab>
+
+      @if (posEnabled()) {
+        <mat-tab [label]="'settings.tabs.pos' | t" [disabled]="locked()">
+          <ng-template matTabContent>
+            <app-pos-admin [embedded]="true"></app-pos-admin>
+          </ng-template>
+        </mat-tab>
+      }
     </mat-tab-group>
   </div>
 </div>
