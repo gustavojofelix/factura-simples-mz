@@ -138,7 +138,7 @@ BEGIN
          (v_company, v_zone_bar, 'B1', 2, 3)
   ON CONFLICT (company_id, lower(btrim(name))) DO NOTHING;
 
-  -- 8. Terminais (emparelhar depois na aplicação: Ponto de Venda → Terminais) --
+  -- 8. Terminais (emparelhar depois na aplicação: Configurações → Ponto de Venda → Terminais) --
   INSERT INTO pos_terminals (company_id, name)
   SELECT v_company, t.name
     FROM (VALUES ('Caixa 1'), ('Bar'), ('Telemóvel Fátima')) t(name)

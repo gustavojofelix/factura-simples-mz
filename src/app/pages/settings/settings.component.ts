@@ -81,7 +81,8 @@ export class SettingsComponent implements OnInit {
 
   /** Separador Ponto de Venda: só com o módulo no plano (ou numa excepção da empresa). É o último separador. */
   private posAdmin = inject(PosAdminService);
-  posEnabled = computed(() => !!this.posAdmin.access()?.enabled);
+  // O Vendedor (user) não configura o POS (a base de dados também o recusa).
+  posEnabled = computed(() => !!this.posAdmin.access()?.enabled && this.companyService.activeRole() !== 'user');
   readonly posTabIndex = 5;
   /** ?tab=pos pedido antes de se saber se o POS está activo (o separador ainda não existe). */
   private wantPosTab = signal(false);
