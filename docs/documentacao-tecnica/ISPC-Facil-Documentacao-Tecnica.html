@@ -1,0 +1,981 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<title>ISPC Fácil — Documentação Técnica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --brand: #F26B38;
+    --brand-soft: #FDEDE6;
+    --ink: #2B2422;
+    --ink-2: #4A4340;
+    --muted: #7A716D;
+    --line: #E6DFDB;
+    --bg-soft: #FAF7F5;
+    --blue: #2F5D8A;
+    --blue-soft: #E8EFF6;
+    --green: #2E7D5B;
+    --green-soft: #E6F3EC;
+    --amber: #B7791F;
+    --amber-soft: #FDF3DC;
+  }
+  @page {
+    size: A4;
+    margin: 20mm 18mm 20mm 18mm;
+    @bottom-left { content: "ISPC Fácil · Documentação Técnica v1.0"; font: 8pt Inter, sans-serif; color: #7A716D; }
+    @bottom-right { content: "Página " counter(page) " de " counter(pages); font: 8pt Inter, sans-serif; color: #7A716D; }
+    @top-right { content: "Confidencial"; font: 8pt Inter, sans-serif; color: #B0A6A1; }
+  }
+  @page cover { margin: 0; @bottom-left { content: none; } @bottom-right { content: none; } @top-right { content: none; } }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: Inter, "Segoe UI", Arial, sans-serif; font-size: 9.6pt; line-height: 1.55; color: var(--ink); margin: 0; background: #fff; }
+  h1, h2, h3, h4 { font-family: Poppins, Inter, sans-serif; color: var(--ink); line-height: 1.25; }
+  h1 { font-size: 21pt; margin: 0 0 4mm; padding-bottom: 3mm; border-bottom: 3px solid var(--brand); break-before: page; }
+  h1 .num { color: var(--brand); margin-right: 3mm; }
+  h2 { font-size: 13.5pt; margin: 8mm 0 2.5mm; break-after: avoid; }
+  h3 { font-size: 11pt; margin: 5mm 0 2mm; break-after: avoid; color: var(--ink-2); }
+  h4 { font-size: 9.8pt; margin: 4mm 0 1.5mm; break-after: avoid; }
+  p { margin: 0 0 2.6mm; }
+  ul, ol { margin: 0 0 3mm; padding-left: 5.5mm; }
+  li { margin-bottom: 1mm; }
+  code, .mono { font-family: Consolas, "Cascadia Mono", monospace; font-size: 8.6pt; background: var(--bg-soft); padding: 0 1mm; border-radius: 2px; }
+  strong { font-weight: 600; }
+  a { color: var(--blue); text-decoration: none; }
+
+  table { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 8.8pt; break-inside: auto; }
+  thead { display: table-header-group; }
+  tr { break-inside: avoid; }
+  th { background: var(--ink); color: #fff; text-align: left; font-weight: 600; padding: 1.8mm 2.2mm; vertical-align: bottom; }
+  td { padding: 1.6mm 2.2mm; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tbody tr:nth-child(even) td { background: var(--bg-soft); }
+  td.k { font-weight: 600; white-space: nowrap; }
+
+  .lead { font-size: 10.6pt; color: var(--ink-2); }
+  .box { border-radius: 2.5mm; padding: 3.5mm 4.5mm; margin: 3mm 0 4.5mm; break-inside: avoid; }
+  .box > :last-child { margin-bottom: 0; }
+  .box-title { font-family: Poppins, sans-serif; font-weight: 600; font-size: 9.6pt; margin-bottom: 1.5mm; display: block; }
+  .summary { background: var(--brand-soft); border-left: 4px solid var(--brand); }
+  .summary .box-title { color: #B4471B; }
+  .tech { background: var(--blue-soft); border-left: 4px solid var(--blue); }
+  .tech .box-title { color: var(--blue); }
+  .ok { background: var(--green-soft); border-left: 4px solid var(--green); }
+  .ok .box-title { color: var(--green); }
+  .warn { background: var(--amber-soft); border-left: 4px solid var(--amber); }
+  .warn .box-title { color: var(--amber); }
+  .confirm { background: #FFF6A8; padding: 0 1mm; border-radius: 2px; font-weight: 600; }
+
+  .audience { display: inline-block; font-size: 7.6pt; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; padding: .6mm 2mm; border-radius: 10mm; margin-right: 1.5mm; vertical-align: middle; }
+  .aud-s { background: var(--brand-soft); color: #B4471B; }
+  .aud-t { background: var(--blue-soft); color: var(--blue); }
+
+  figure { margin: 4mm 0 5mm; break-inside: avoid; text-align: center; }
+  figure svg { width: 100%; height: auto; }
+  figcaption { font-size: 8.2pt; color: var(--muted); margin-top: 1.5mm; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+  .card { border: 1px solid var(--line); border-radius: 2.5mm; padding: 3mm 3.5mm; break-inside: avoid; }
+  .card h4 { margin-top: 0; color: var(--brand); }
+  .card p { margin-bottom: 0; font-size: 8.9pt; }
+
+  /* Capa */
+  .cover { page: cover; height: 297mm; position: relative; overflow: hidden; background: #fff; }
+  .cover .band { position: absolute; left: 0; top: 0; bottom: 0; width: 14mm; background: var(--brand); }
+  .cover .inner { position: absolute; left: 32mm; right: 22mm; top: 34mm; bottom: 26mm; display: flex; flex-direction: column; }
+  .cover img { width: 70mm; }
+  .cover .kicker { margin-top: 30mm; font-size: 10pt; text-transform: uppercase; letter-spacing: .14em; color: var(--brand); font-weight: 600; }
+  .cover .title { font-family: Poppins, sans-serif; font-size: 30pt; font-weight: 700; line-height: 1.12; margin: 4mm 0 5mm; }
+  .cover .subtitle { font-size: 12.5pt; color: var(--ink-2); max-width: 140mm; }
+  .cover .meta { margin-top: auto; border-top: 1px solid var(--line); padding-top: 5mm; display: grid; grid-template-columns: repeat(3, 1fr); gap: 5mm; font-size: 8.8pt; }
+  .cover .meta b { display: block; font-size: 7.6pt; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; margin-bottom: .8mm; }
+  .cover .deco { position: absolute; right: -40mm; top: 95mm; width: 150mm; opacity: .07; }
+
+  .toc { columns: 1; }
+  .toc ol { list-style: none; padding: 0; margin: 0; }
+  .toc > ol > li { font-weight: 600; margin: 2.5mm 0 1mm; font-size: 10.2pt; }
+  .toc ol ol { padding-left: 8mm; }
+  .toc ol ol li { font-weight: 400; font-size: 9.2pt; margin: .6mm 0; color: var(--ink-2); }
+  .toc .n { color: var(--brand); display: inline-block; min-width: 8mm; }
+
+  .first-h1 { break-before: auto; }
+  .avoid { break-inside: avoid; }
+  .small { font-size: 8.4pt; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- ================================================================ CAPA -->
+<section class="cover">
+  <div class="band"></div>
+  <svg class="deco" viewBox="0 0 200 200"><circle cx="45" cy="45" r="32" fill="#F26B38"/><circle cx="155" cy="155" r="32" fill="#F26B38"/><rect x="85" y="-20" width="30" height="240" fill="#F26B38" transform="rotate(45 100 100)"/></svg>
+  <div class="inner">
+    <img src="../../src/assets/ispc-facil-logo-wide.png" alt="ISPC Fácil">
+    <div class="kicker">Documentação Técnica</div>
+    <div class="title">Arquitectura, Infra-estrutura,<br>Segurança e Protecção de Dados</div>
+    <div class="subtitle">Descrição dos serviços prestados pela plataforma ISPC Fácil, da sua arquitectura e sistemas de informação, da infra-estrutura tecnológica e da localização dos dados, dos mecanismos de segurança, das práticas de protecção de dados e dos endereços públicos de Internet utilizados.</div>
+    <div class="meta">
+      <div><b>Versão</b>1.0 — 11 de Novembro de 2026</div>
+      <div><b>Preparado por</b>Law Technology Solutions (LTS)</div>
+      <div><b>Classificação</b>Confidencial — uso restrito ao destinatário</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ CONTROLO / COMO LER -->
+<h1 class="first-h1" style="break-before: page;">Sobre este documento</h1>
+
+<h2>Objectivo</h2>
+<p>Este documento responde ao pedido de documentação técnica da plataforma <strong>ISPC Fácil</strong>, que solicita informação sobre seis pontos. A tabela seguinte indica onde cada ponto é tratado.</p>
+
+<table>
+  <thead><tr><th style="width:8%">#</th><th style="width:52%">Informação solicitada</th><th>Onde encontrar</th></tr></thead>
+  <tbody>
+    <tr><td class="k">1</td><td>Os serviços prestados</td><td>Capítulo 2 — Serviços prestados</td></tr>
+    <tr><td class="k">2</td><td>Aspectos técnicos detalhados da arquitectura e dos sistemas de informação</td><td>Capítulo 3 — Arquitectura e sistemas de informação</td></tr>
+    <tr><td class="k">3</td><td>Descrição e diagramas da infra-estrutura tecnológica, incluindo a localização das bases de dados dos utilizadores nacionais</td><td>Capítulo 4 — Infra-estrutura tecnológica e localização dos dados</td></tr>
+    <tr><td class="k">4</td><td>Aspectos de segurança dos sistemas de informação</td><td>Capítulo 5 — Segurança dos sistemas de informação</td></tr>
+    <tr><td class="k">5</td><td>Aspectos de protecção de dados</td><td>Capítulo 6 — Protecção de dados pessoais</td></tr>
+    <tr><td class="k">6</td><td>Endereços IP públicos ou Número de Sistema Autónomo (ASN)</td><td>Capítulo 7 — Endereços IP públicos e ASN</td></tr>
+  </tbody>
+</table>
+
+<h2>Como ler este documento</h2>
+<p>O documento foi escrito para dois públicos. Cada capítulo começa com um <strong>resumo</strong> em linguagem não técnica, pensado para gestores, decisores e entidades reguladoras. A seguir vêm os <strong>detalhes técnicos</strong>, destinados a engenheiros, administradores de sistemas e programadores que venham a trabalhar com a plataforma.</p>
+<div class="grid2">
+  <div class="box summary"><span class="box-title">Caixas laranja — Resumo</span>O essencial de cada capítulo, sem termos técnicos. Quem só precisa de uma visão geral pode ler apenas estas caixas e o Capítulo 1.</div>
+  <div class="box tech"><span class="box-title">Caixas azuis — Nota técnica</span>Pormenores de implementação, nomes de componentes e de ficheiros, úteis para a equipa técnica.</div>
+</div>
+<p>Os termos técnicos usados estão explicados no <strong>Anexo A — Glossário</strong>.</p>
+
+<h2>Controlo de versões</h2>
+<table>
+  <thead><tr><th style="width:12%">Versão</th><th style="width:22%">Data</th><th>Alterações</th></tr></thead>
+  <tbody><tr><td class="k">1.0</td><td>11/11/2026</td><td>Primeira versão, em resposta ao pedido de documentação técnica.</td></tr></tbody>
+</table>
+<p class="small">A informação técnica deste documento foi obtida directamente do código-fonte, da configuração da plataforma e de consultas públicas de DNS feitas em 11/11/2026. Os endereços IP de serviços de nuvem podem mudar sem aviso; ver Capítulo 7.</p>
+
+<h2>Índice</h2>
+<div class="toc">
+<ol>
+  <li><span class="n">1</span>Sumário executivo</li>
+  <li><span class="n">2</span>Serviços prestados
+    <ol><li>2.1 O que é o ISPC Fácil · 2.2 Canais de acesso · 2.3 Módulos funcionais · 2.4 Planos e subscrições · 2.5 Perfis de utilizador · 2.6 Back-office da LTS</li></ol></li>
+  <li><span class="n">3</span>Arquitectura e sistemas de informação
+    <ol><li>3.1 Visão geral · 3.2 Pilha tecnológica · 3.3 Aplicação cliente · 3.4 Plataforma de servidor · 3.5 Funções de servidor · 3.6 Modelo de dados · 3.7 Fluxos principais · 3.8 Integrações externas · 3.9 Desenvolvimento e publicação</li></ol></li>
+  <li><span class="n">4</span>Infra-estrutura tecnológica e localização dos dados
+    <ol><li>4.1 Diagrama de infra-estrutura · 4.2 Componentes e fornecedores · 4.3 Localização das bases de dados · 4.4 Fluxos de dados transfronteiriços · 4.5 Disponibilidade e continuidade</li></ol></li>
+  <li><span class="n">5</span>Segurança dos sistemas de informação
+    <ol><li>5.1 Modelo de defesa em camadas · 5.2 Identidade e autenticação · 5.3 Autorização e isolamento entre empresas · 5.4 Cifragem · 5.5 Gestão de segredos · 5.6 Integridade dos documentos fiscais · 5.7 Auditoria e rastreabilidade · 5.8 Segurança do Ponto de Venda · 5.9 Segurança do assistente de IA · 5.10 Melhoria contínua</li></ol></li>
+  <li><span class="n">6</span>Protecção de dados pessoais
+    <ol><li>6.1 Princípios · 6.2 Dados tratados · 6.3 Finalidades · 6.4 Subcontratantes · 6.5 Transferências internacionais · 6.6 Direitos dos titulares · 6.7 Conservação · 6.8 Incidentes</li></ol></li>
+  <li><span class="n">7</span>Endereços IP públicos e ASN</li>
+  <li><span class="n">A–D</span>Anexos: Glossário · Funções de servidor · Domínios e serviços · Versões tecnológicas</li>
+</ol>
+</div>
+
+<!-- ================================================================ 1. SUMÁRIO EXECUTIVO -->
+<h1><span class="num">1</span>Sumário executivo</h1>
+
+<p class="lead">O ISPC Fácil é uma plataforma digital, acessível pela Internet, que permite aos contribuintes moçambicanos sujeitos ao <strong>Imposto Simplificado para Pequenos Contribuintes (ISPC)</strong> emitir facturas e recibos, gerir clientes e produtos, vender ao balcão (Ponto de Venda), calcular o imposto trimestral e preparar a Declaração Modelo 30.</p>
+
+<table>
+  <thead><tr><th style="width:24%">Tema</th><th>Resposta curta</th></tr></thead>
+  <tbody>
+    <tr><td class="k">Serviços</td><td>Facturação (Factura, Factura-Recibo, Nota de Crédito, Recibo), clientes, produtos, Ponto de Venda para lojas e restaurantes, cálculo do ISPC e Modelo 30, lembretes fiscais, relatórios e ficheiro SAF-T, assistente virtual com inteligência artificial, gestão de várias empresas e utilizadores, pagamento da subscrição por M-Pesa e e-Mola.</td></tr>
+    <tr><td class="k">Canais</td><td>Navegador web (<code>ispcfacil.com</code> e subdomínios por cliente), aplicação Android e iOS, e terminal de Ponto de Venda que funciona no navegador.</td></tr>
+    <tr><td class="k">Arquitectura</td><td>Aplicação web de página única (Angular) servida por uma rede de distribuição de conteúdos (Netlify). Toda a lógica de dados está numa plataforma de servidor gerida (Supabase) composta por base de dados PostgreSQL, autenticação, armazenamento de ficheiros, tempo real e funções de servidor.</td></tr>
+    <tr><td class="k">Localização dos dados</td><td><strong>A base de dados e os ficheiros dos utilizadores, incluindo os utilizadores nacionais, estão alojados fora de Moçambique</strong>, nos Estados Unidos da América, na região <strong>AWS us-east-2 (Ohio)</strong>, através do fornecedor Supabase. Não existe actualmente alojamento de dados em território moçambicano.</td></tr>
+    <tr><td class="k">Segurança</td><td>Comunicação sempre cifrada (HTTPS/TLS), cifragem dos dados em repouso pelo fornecedor, isolamento entre empresas aplicado na própria base de dados (Row-Level Security), perfis e permissões por função, numeração fiscal sequencial controlada pelo servidor, documentos emitidos que não podem ser alterados, registo de auditoria e chaves de serviços externos guardadas apenas no servidor.</td></tr>
+    <tr><td class="k">Protecção de dados</td><td>Recolha limitada ao necessário para facturação e obrigações fiscais; a equipa da LTS não tem acesso, por desenho, aos dados comerciais dos contribuintes (facturas, clientes, produtos, declarações). Os subcontratantes e as transferências internacionais estão identificados no Capítulo 6.</td></tr>
+    <tr><td class="k">IP e ASN</td><td>A plataforma <strong>não possui ASN próprio nem endereços IP dedicados</strong>. Usa os endereços e ASN dos fornecedores de nuvem: Amazon (AS16509), Cloudflare (AS13335), InMotion Hosting (AS54641) e Microsoft (AS8075). A lista completa está no Capítulo 7.</td></tr>
+  </tbody>
+</table>
+
+<div class="box summary"><span class="box-title">Em uma frase</span>O ISPC Fácil é um serviço de software na nuvem (SaaS) para facturação e cumprimento do ISPC, construído sobre fornecedores de nuvem internacionais, com os dados alojados nos Estados Unidos e protegidos por controlos de acesso aplicados na própria base de dados.</div>
+
+<!-- ================================================================ 2. SERVIÇOS -->
+<h1><span class="num">2</span>Serviços prestados</h1>
+
+<div class="box summary"><span class="box-title">Resumo</span>O ISPC Fácil ajuda o pequeno contribuinte a cumprir as suas obrigações sem conhecimentos técnicos: emite documentos fiscais, vende ao balcão, calcula quanto ISPC tem de pagar em cada trimestre, avisa dos prazos e prepara a declaração. Cada cliente tem o seu próprio endereço web e pode gerir uma ou várias empresas, com a sua equipa.</div>
+
+<h2>2.1 O que é o ISPC Fácil</h2>
+<p>O ISPC Fácil é uma plataforma de <strong>software como serviço (SaaS)</strong> desenvolvida e operada pela Law Technology Solutions (LTS). O cliente não instala servidores nem bases de dados: acede pela Internet, através do navegador ou da aplicação móvel, e paga uma subscrição periódica. O público-alvo são pessoas singulares e colectivas sujeitas ao ISPC, com destaque para comerciantes, prestadores de serviços e restauração.</p>
+
+<h2>2.2 Canais de acesso</h2>
+<table>
+  <thead><tr><th style="width:26%">Canal</th><th>Descrição</th></tr></thead>
+  <tbody>
+    <tr><td class="k">Sítio público</td><td><code>https://ispcfacil.com</code> — apresentação, preços, perguntas frequentes, termos e política de privacidade, registo e entrada.</td></tr>
+    <tr><td class="k">Aplicação web</td><td><code>https://&lt;conta&gt;.ispcfacil.com</code> — cada cliente (conta) tem um subdomínio próprio, por exemplo <code>loja-xyz.ispcfacil.com</code>.</td></tr>
+    <tr><td class="k">Aplicação móvel</td><td>Android (Google Play) e iOS (App Store), identificador <code>com.ispcfacilmz.app</code>. Usa o mesmo código e o mesmo servidor que a aplicação web.</td></tr>
+    <tr><td class="k">Ponto de Venda (POS)</td><td><code>https://&lt;conta&gt;.ispcfacil.com/pos</code> — aplicação de ecrã inteiro para caixas, tablets e computadores de balcão, com ecrã de cliente opcional. Pode ser instalada como aplicação no dispositivo.</td></tr>
+    <tr><td class="k">Back-office LTS</td><td>Área reservada à equipa da LTS para gerir subscritores, planos, pagamentos e conteúdos.</td></tr>
+  </tbody>
+</table>
+
+<h2>2.3 Módulos funcionais</h2>
+<table>
+  <thead><tr><th style="width:24%">Módulo</th><th>O que faz</th></tr></thead>
+  <tbody>
+    <tr><td class="k">Painel</td><td>Indicadores do trimestre: vendas, ISPC a pagar, facturas pendentes, clientes activos; actividade recente e atalhos.</td></tr>
+    <tr><td class="k">Facturação</td><td>Criação, rascunho, emissão, impressão, envio por e-mail e anulação de <strong>Factura (FT)</strong>, <strong>Factura-Recibo (FR)</strong> e <strong>Nota de Crédito (NC)</strong>. Numeração atribuída pelo servidor, sequencial e sem saltos. Três modelos visuais personalizáveis com logótipo, cor da marca e contas bancárias.</td></tr>
+    <tr><td class="k">Pagamentos e recibos</td><td>Registo de pagamentos (numerário, transferência, cheque, carteira móvel, outro) com emissão de <strong>Recibo (REC)</strong> numerado; anulação apenas com justificação e por perfis autorizados.</td></tr>
+    <tr><td class="k">Clientes</td><td>Ficha de cliente (nome, NUIT, contactos, morada), importação e exportação Excel, extracto de conta corrente.</td></tr>
+    <tr><td class="k">Produtos e serviços</td><td>Catálogo com código, código de barras, categorias, preço e stock; importação e exportação Excel.</td></tr>
+    <tr><td class="k">Impostos (ISPC)</td><td>Cálculo trimestral do ISPC por tipo de actividade (taxas de 3%, 4%, 5% e 20% sobre o volume de negócios; 12% e 15% para serviços), declarações, registo do pagamento com comprovativo, e preenchimento da <strong>Declaração Modelo 30</strong> em PDF e Excel.</td></tr>
+    <tr><td class="k">Lembretes fiscais</td><td>Avisos automáticos por e-mail e na aplicação antes e depois dos prazos (30 de Abril, 31 de Julho, 31 de Outubro e 31 de Janeiro).</td></tr>
+    <tr><td class="k">Relatórios</td><td>Relatório de vendas por período, extractos de clientes em PDF e por e-mail, e exportação do ficheiro <strong>SAF-T</strong> (estrutura SAF-T 1.04, país MZ, moeda MZN) em XML, CSV ou Excel.</td></tr>
+    <tr><td class="k">Ponto de Venda</td><td>Vendas rápidas ao balcão com emissão de Factura-Recibo; emparelhamento seguro de terminais; entrada de funcionários por PIN; abertura e fecho de caixa (relatórios X e Z); devoluções por Nota de Crédito; modo restaurante com mesas em tempo real, pedidos para cozinha e bar e divisão da conta; impressão em talão de 58 mm ou 80 mm.</td></tr>
+    <tr><td class="k">Assistente virtual (IA)</td><td>Conversa em linguagem natural sobre os dados da empresa (vendas, clientes, valores a receber, posição fiscal) e dúvidas sobre o ISPC, com respostas fiscais baseadas apenas em artigos validados pela LTS. Inclui pesquisa inteligente e alertas automáticos. Só lê dados; nunca os altera.</td></tr>
+    <tr><td class="k">Documentos da empresa</td><td>Carregamento de NUIT, alvará e certidões, com leitura automática (OCR) para pré-preencher os dados da empresa.</td></tr>
+    <tr><td class="k">Equipa e permissões</td><td>Convite de utilizadores por e-mail e atribuição de perfis (ver 2.5).</td></tr>
+    <tr><td class="k">Auditoria</td><td>Histórico de acções por empresa (quem, o quê, quando, de onde), com filtros e exportação.</td></tr>
+    <tr><td class="k">Idiomas</td><td>Interface em português (Moçambique), inglês e francês. Documentos fiscais sempre em português.</td></tr>
+  </tbody>
+</table>
+
+<h2>2.4 Planos e subscrições</h2>
+<p>O acesso é feito por subscrição. Existe um período experimental gratuito de 14 dias e planos pagos (Essencial, Profissional e Standard) com ciclos mensal, trimestral, semestral e anual. Cada plano define as funcionalidades disponíveis e os limites (número de empresas, utilizadores, facturas por mês, terminais POS, mensagens do assistente).</p>
+<p>O pagamento da subscrição pode ser feito por <strong>M-Pesa</strong> e <strong>e-Mola</strong>: o cliente recebe um pedido no telemóvel e confirma com o seu PIN. Também podem ser usados vouchers e a confirmação manual pela LTS. Quando a subscrição expira, o acesso às funções de trabalho fica bloqueado, mas o cliente mantém acesso às Configurações e ao Perfil para renovar. O bloqueio é aplicado tanto na aplicação como no servidor.</p>
+
+<h2>2.5 Perfis de utilizador</h2>
+<table>
+  <thead><tr><th style="width:24%">Perfil</th><th style="width:22%">Âmbito</th><th>Permissões</th></tr></thead>
+  <tbody>
+    <tr><td class="k">Proprietário</td><td>Conta e empresas</td><td>Acesso total; cria empresas, gere subscrição e equipa.</td></tr>
+    <tr><td class="k">Administrador</td><td>Empresa</td><td>Acesso total à empresa, incluindo configurações e auditoria.</td></tr>
+    <tr><td class="k">Gestor</td><td>Empresa</td><td>Tudo excepto configurações e auditoria; pode anular recibos e aprovar operações no POS.</td></tr>
+    <tr><td class="k">Utilizador / Vendedor</td><td>Empresa</td><td>Apenas facturas, clientes, produtos e assistente.</td></tr>
+    <tr><td class="k">Funcionário POS</td><td>Terminal POS</td><td>Caixa, empregado de mesa ou gerente; entra apenas com PIN, sem e-mail.</td></tr>
+    <tr><td class="k">Administrador da plataforma</td><td>LTS</td><td>Back-office: subscritores, planos, pagamentos, conteúdos. <strong>Sem acesso</strong> a facturas, clientes, produtos, recibos ou declarações dos contribuintes.</td></tr>
+  </tbody>
+</table>
+
+<h2>2.6 Back-office da LTS</h2>
+<p>A equipa da LTS dispõe de uma área de administração com: painel geral; gestão de subscritores e contribuintes (suspensão e activação); catálogo de actividades e respectivas taxas de ISPC; receitas e confirmação de pagamentos; planos e funcionalidades; vouchers; gestão do sítio público; base de conhecimento fiscal do assistente de IA; gestão de acessos; e auditoria.</p>
+
+<!-- ================================================================ 3. ARQUITECTURA -->
+<h1><span class="num">3</span>Arquitectura e sistemas de informação</h1>
+
+<div class="box summary"><span class="box-title">Resumo</span>O sistema tem duas partes. A primeira é a <strong>aplicação</strong> que o utilizador abre no navegador ou no telemóvel. A segunda é o <strong>servidor</strong>, onde ficam a base de dados, as contas de utilizador, os ficheiros e as regras de negócio. A aplicação nunca acede directamente aos serviços externos (pagamentos, e-mail, inteligência artificial): pede ao servidor, que guarda as chaves de acesso e decide o que pode ser feito.</div>
+
+<h2>3.1 Visão geral</h2>
+<figure>
+<svg viewBox="0 0 760 520" xmlns="http://www.w3.org/2000/svg" font-family="Inter, Segoe UI, Arial" font-size="11">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4A4340"/></marker>
+  </defs>
+  <!-- users -->
+  <text x="20" y="22" font-weight="700" fill="#7A716D" font-size="10" letter-spacing="1">UTILIZADORES</text>
+  <g>
+    <rect x="20" y="32" width="160" height="50" rx="8" fill="#FDEDE6" stroke="#F26B38"/>
+    <text x="100" y="53" text-anchor="middle" font-weight="600">Navegador web</text>
+    <text x="100" y="70" text-anchor="middle" fill="#4A4340" font-size="10">&lt;conta&gt;.ispcfacil.com</text>
+    <rect x="200" y="32" width="160" height="50" rx="8" fill="#FDEDE6" stroke="#F26B38"/>
+    <text x="280" y="53" text-anchor="middle" font-weight="600">App Android / iOS</text>
+    <text x="280" y="70" text-anchor="middle" fill="#4A4340" font-size="10">Capacitor</text>
+    <rect x="380" y="32" width="160" height="50" rx="8" fill="#FDEDE6" stroke="#F26B38"/>
+    <text x="460" y="53" text-anchor="middle" font-weight="600">Terminal POS</text>
+    <text x="460" y="70" text-anchor="middle" fill="#4A4340" font-size="10">/pos (PWA)</text>
+    <rect x="560" y="32" width="180" height="50" rx="8" fill="#FDEDE6" stroke="#F26B38"/>
+    <text x="650" y="53" text-anchor="middle" font-weight="600">Back-office LTS</text>
+    <text x="650" y="70" text-anchor="middle" fill="#4A4340" font-size="10">/admin</text>
+  </g>
+  <!-- netlify -->
+  <rect x="20" y="118" width="250" height="62" rx="8" fill="#fff" stroke="#2B2422"/>
+  <text x="145" y="140" text-anchor="middle" font-weight="700">Netlify (CDN)</text>
+  <text x="145" y="157" text-anchor="middle" fill="#4A4340" font-size="10">Ficheiros estáticos da aplicação Angular</text>
+  <text x="145" y="171" text-anchor="middle" fill="#4A4340" font-size="10">HTML · JavaScript · CSS · imagens</text>
+  <line x1="100" y1="82" x2="100" y2="116" stroke="#4A4340" stroke-dasharray="4 3" marker-end="url(#ar)"/>
+  <text x="108" y="104" fill="#7A716D" font-size="9">1. descarrega a aplicação</text>
+
+  <!-- supabase -->
+  <rect x="20" y="210" width="520" height="290" rx="10" fill="#E8EFF6" stroke="#2F5D8A"/>
+  <text x="36" y="232" font-weight="700" fill="#2F5D8A" font-size="12">Supabase — AWS us-east-2 (Ohio, EUA)</text>
+  <rect x="36" y="244" width="488" height="34" rx="6" fill="#fff" stroke="#2F5D8A"/>
+  <text x="280" y="265" text-anchor="middle" font-weight="600">Gateway de API (HTTPS, Cloudflare) — ycpnmwlkfolsaubndznj.supabase.co</text>
+  <line x1="300" y1="82" x2="300" y2="242" stroke="#4A4340" marker-end="url(#ar)"/>
+  <line x1="460" y1="82" x2="460" y2="242" stroke="#4A4340" marker-end="url(#ar)"/>
+  <text x="292" y="200" fill="#7A716D" font-size="9" text-anchor="end">2. pedidos de dados (HTTPS + JWT)</text>
+
+  <g font-size="10.5">
+    <rect x="36" y="294" width="112" height="56" rx="6" fill="#fff" stroke="#2F5D8A"/>
+    <text x="92" y="316" text-anchor="middle" font-weight="600">Auth</text><text x="92" y="332" text-anchor="middle" fill="#4A4340" font-size="9.5">contas, sessões, JWT</text>
+    <rect x="160" y="294" width="112" height="56" rx="6" fill="#fff" stroke="#2F5D8A"/>
+    <text x="216" y="316" text-anchor="middle" font-weight="600">API REST/RPC</text><text x="216" y="332" text-anchor="middle" fill="#4A4340" font-size="9.5">PostgREST</text>
+    <rect x="284" y="294" width="112" height="56" rx="6" fill="#fff" stroke="#2F5D8A"/>
+    <text x="340" y="316" text-anchor="middle" font-weight="600">Realtime</text><text x="340" y="332" text-anchor="middle" fill="#4A4340" font-size="9.5">mesas POS ao vivo</text>
+    <rect x="408" y="294" width="116" height="56" rx="6" fill="#fff" stroke="#2F5D8A"/>
+    <text x="466" y="316" text-anchor="middle" font-weight="600">Storage</text><text x="466" y="332" text-anchor="middle" fill="#4A4340" font-size="9.5">ficheiros privados</text>
+  </g>
+  <rect x="36" y="362" width="488" height="40" rx="6" fill="#fff" stroke="#2F5D8A"/>
+  <text x="280" y="380" text-anchor="middle" font-weight="600">Edge Functions (Deno) — 14 funções de servidor</text>
+  <text x="280" y="394" text-anchor="middle" fill="#4A4340" font-size="9.5">pagamentos · e-mail · IA · OCR · convites · POS · lembretes</text>
+  <rect x="36" y="414" width="488" height="72" rx="6" fill="#2B2422"/>
+  <text x="280" y="436" text-anchor="middle" font-weight="700" fill="#fff" font-size="12">PostgreSQL 17</text>
+  <text x="280" y="454" text-anchor="middle" fill="#F3E9E4" font-size="10">Row-Level Security por empresa · funções e gatilhos de negócio</text>
+  <text x="280" y="470" text-anchor="middle" fill="#F3E9E4" font-size="10">numeração fiscal · auditoria · pg_cron (tarefas diárias)</text>
+
+  <!-- external -->
+  <text x="580" y="232" font-weight="700" fill="#7A716D" font-size="10" letter-spacing="1">SERVIÇOS EXTERNOS</text>
+  <g font-size="10.5">
+    <rect x="580" y="244" width="160" height="40" rx="6" fill="#FAF7F5" stroke="#B0A6A1"/>
+    <text x="660" y="261" text-anchor="middle" font-weight="600">Sislog</text><text x="660" y="275" text-anchor="middle" fill="#4A4340" font-size="9.5">M-Pesa · e-Mola</text>
+    <rect x="580" y="292" width="160" height="40" rx="6" fill="#FAF7F5" stroke="#B0A6A1"/>
+    <text x="660" y="309" text-anchor="middle" font-weight="600">Servidor SMTP</text><text x="660" y="323" text-anchor="middle" fill="#4A4340" font-size="9.5">envio de e-mails</text>
+    <rect x="580" y="340" width="160" height="40" rx="6" fill="#FAF7F5" stroke="#B0A6A1"/>
+    <text x="660" y="357" text-anchor="middle" font-weight="600">Anthropic (Claude)</text><text x="660" y="371" text-anchor="middle" fill="#4A4340" font-size="9.5">assistente de IA</text>
+    <rect x="580" y="388" width="160" height="40" rx="6" fill="#FAF7F5" stroke="#B0A6A1"/>
+    <text x="660" y="405" text-anchor="middle" font-weight="600">Google Cloud Vision</text><text x="660" y="419" text-anchor="middle" fill="#4A4340" font-size="9.5">OCR de documentos</text>
+    <rect x="580" y="436" width="160" height="40" rx="6" fill="#FAF7F5" stroke="#B0A6A1"/>
+    <text x="660" y="453" text-anchor="middle" font-weight="600">OfficeGest</text><text x="660" y="467" text-anchor="middle" fill="#4A4340" font-size="9.5">facturação da LTS</text>
+  </g>
+  <line x1="524" y1="382" x2="560" y2="382" stroke="#4A4340"/>
+  <line x1="560" y1="264" x2="560" y2="456" stroke="#4A4340"/>
+  <line x1="560" y1="264" x2="578" y2="264" stroke="#4A4340" marker-end="url(#ar)"/>
+  <line x1="560" y1="312" x2="578" y2="312" stroke="#4A4340" marker-end="url(#ar)"/>
+  <line x1="560" y1="360" x2="578" y2="360" stroke="#4A4340" marker-end="url(#ar)"/>
+  <line x1="560" y1="408" x2="578" y2="408" stroke="#4A4340" marker-end="url(#ar)"/>
+  <line x1="560" y1="456" x2="578" y2="456" stroke="#4A4340" marker-end="url(#ar)"/>
+  <text x="580" y="500" fill="#7A716D" font-size="9">3. só o servidor fala com terceiros</text>
+</svg>
+<figcaption>Figura 1 — Arquitectura lógica do ISPC Fácil</figcaption>
+</figure>
+
+<p>A arquitectura segue o modelo <strong>cliente rico + backend gerido</strong> (Backend-as-a-Service):</p>
+<ol>
+  <li>O utilizador descarrega a aplicação (ficheiros estáticos) a partir da rede de distribuição de conteúdos da Netlify. Nenhum dado de cliente está guardado na Netlify.</li>
+  <li>A aplicação comunica directamente, por HTTPS, com a plataforma Supabase, apresentando o token de sessão do utilizador (JWT). A base de dados decide, linha a linha, o que esse utilizador pode ler ou alterar.</li>
+  <li>As operações que envolvem terceiros (pagamentos, e-mail, IA, OCR, facturação da LTS) passam obrigatoriamente pelas <strong>funções de servidor</strong>, que guardam as credenciais e aplicam as regras.</li>
+</ol>
+
+<h2>3.2 Pilha tecnológica</h2>
+<table>
+  <thead><tr><th style="width:24%">Camada</th><th style="width:34%">Tecnologia</th><th>Função</th></tr></thead>
+  <tbody>
+    <tr><td class="k">Interface web</td><td>Angular 21 (componentes standalone, signals), TypeScript 5.9, Tailwind CSS 3, Angular Material 21</td><td>Aplicação de página única, carregamento por rota.</td></tr>
+    <tr><td class="k">Aplicações móveis</td><td>Capacitor 8 (Android e iOS)</td><td>Empacota a aplicação web como aplicação nativa.</td></tr>
+    <tr><td class="k">Cliente de dados</td><td><code>@supabase/supabase-js</code> 2.x</td><td>Autenticação, consultas, RPC, ficheiros, tempo real e funções.</td></tr>
+    <tr><td class="k">Documentos</td><td>jsPDF + html2canvas; SheetJS (xlsx); fflate</td><td>PDF de facturas e Modelo 30, Excel, CSV, SAF-T.</td></tr>
+    <tr><td class="k">Base de dados</td><td>PostgreSQL 17.6 (Supabase)</td><td>Dados, regras de acesso (RLS), funções e gatilhos de negócio.</td></tr>
+    <tr><td class="k">Autenticação</td><td>Supabase Auth (GoTrue 2.194)</td><td>Contas, palavras-passe, Google OAuth, tokens JWT.</td></tr>
+    <tr><td class="k">API</td><td>PostgREST 14.1</td><td>API REST gerada a partir do esquema da base de dados.</td></tr>
+    <tr><td class="k">Ficheiros</td><td>Supabase Storage 1.67</td><td>Documentos da empresa e comprovativos (privados).</td></tr>
+    <tr><td class="k">Funções de servidor</td><td>Supabase Edge Functions (Deno, TypeScript)</td><td>Integrações externas e operações privilegiadas.</td></tr>
+    <tr><td class="k">Tarefas agendadas</td><td>pg_cron + pg_net</td><td>Alertas e lembretes fiscais diários.</td></tr>
+    <tr><td class="k">Alojamento web</td><td>Netlify</td><td>Publicação, CDN global, HTTPS, subdomínios por cliente.</td></tr>
+    <tr><td class="k">Integração contínua</td><td>GitHub Actions (Android), Codemagic (iOS)</td><td>Compilação e publicação nas lojas de aplicações.</td></tr>
+  </tbody>
+</table>
+
+<h2>3.3 Aplicação cliente</h2>
+<ul>
+  <li><strong>Estrutura:</strong> aplicação Angular totalmente baseada em componentes standalone, sem módulos; todas as rotas são carregadas a pedido (lazy loading), o que reduz o tempo de abertura.</li>
+  <li><strong>Estado:</strong> mantido em <em>signals</em> do Angular dentro de serviços (empresa activa, perfil, subscrição). Apenas preferências e identificadores (conta e empresa activas, idioma) ficam no armazenamento local do dispositivo.</li>
+  <li><strong>Multi-inquilino por subdomínio:</strong> o subdomínio (<code>&lt;conta&gt;.ispcfacil.com</code>) identifica a conta. A sessão é partilhada entre o domínio principal e os subdomínios através de cookies no domínio <code>.ispcfacil.com</code>.</li>
+  <li><strong>Guardas de rota:</strong> sessão obrigatória; conta válida para o subdomínio; subscrição activa; perfil autorizado para relatórios; perfil de administrador da plataforma para o back-office. Estas guardas só controlam a navegação: a decisão final de acesso é sempre tomada no servidor (Capítulo 5).</li>
+  <li><strong>Idiomas:</strong> sistema próprio de traduções com dicionários JSON em pt-MZ, en-GB e fr-FR; a escolha é guardada no perfil do utilizador.</li>
+  <li><strong>Geração de documentos:</strong> os PDF de facturas, recibos, extractos e Modelo 30 são gerados no próprio dispositivo; o Excel e o SAF-T também.</li>
+  <li><strong>Ligação à Internet:</strong> a aplicação requer ligação. O POS detecta a falta de rede, mantém o carrinho e não emite documentos até a ligação voltar, para evitar documentos fiscais fora de sequência.</li>
+</ul>
+
+<h2>3.4 Plataforma de servidor (Supabase)</h2>
+<p>O Supabase é uma plataforma gerida, construída sobre PostgreSQL e alojada na Amazon Web Services. O projecto do ISPC Fácil (<code>ycpnmwlkfolsaubndznj</code>) está na região <strong>us-east-2 (Ohio, EUA)</strong> e disponibiliza:</p>
+<table>
+  <thead><tr><th style="width:24%">Serviço</th><th>Uso no ISPC Fácil</th></tr></thead>
+  <tbody>
+    <tr><td class="k">PostgreSQL</td><td>Todos os dados de negócio. As regras críticas (numeração fiscal, bloqueio de documentos emitidos, limites do plano, anulações, stock) estão implementadas na base de dados, em funções e gatilhos, e não apenas na aplicação.</td></tr>
+    <tr><td class="k">Auth</td><td>Registo e entrada por e-mail e palavra-passe ou conta Google; recuperação de palavra-passe; emissão de tokens JWT de curta duração com renovação automática.</td></tr>
+    <tr><td class="k">PostgREST</td><td>Expõe tabelas e cerca de 30 funções RPC usadas pela aplicação, sempre sujeitas às políticas de acesso.</td></tr>
+    <tr><td class="k">Realtime</td><td>Sincronização em tempo real de pedidos e mesas do POS em modo restaurante, filtrada por empresa.</td></tr>
+    <tr><td class="k">Storage</td><td>Um contentor privado (<code>company-documents</code>), com ficheiros organizados por empresa e acesso por ligações assinadas válidas durante uma hora.</td></tr>
+    <tr><td class="k">Edge Functions</td><td>Funções de servidor descritas em 3.5.</td></tr>
+    <tr><td class="k">pg_cron</td><td>Três tarefas diárias: alertas inteligentes (05:00 UTC), geração de lembretes fiscais (06:00 UTC) e envio dos lembretes por e-mail (06:15 UTC).</td></tr>
+  </tbody>
+</table>
+
+<h2>3.5 Funções de servidor (Edge Functions)</h2>
+<p>As funções de servidor executam código TypeScript num ambiente isolado (Deno). São o único ponto de contacto com serviços externos. A lista completa, com o método de autenticação de cada uma, está no <strong>Anexo B</strong>.</p>
+<table>
+  <thead><tr><th style="width:30%">Grupo</th><th>Funções</th></tr></thead>
+  <tbody>
+    <tr><td class="k">Pagamentos de subscrição</td><td><code>process-subscription-payment</code>, <code>sislog-webhook</code>, <code>subscription-notify</code>, <code>sync-officegest</code></td></tr>
+    <tr><td class="k">Comunicações por e-mail</td><td><code>send-invoice-email</code>, <code>invite-user</code>, <code>notify-admin</code>, <code>send-tax-reminders</code></td></tr>
+    <tr><td class="k">Inteligência artificial</td><td><code>ai-assistant</code>, <code>ai-alerts</code></td></tr>
+    <tr><td class="k">Documentos (OCR)</td><td><code>process-document</code></td></tr>
+    <tr><td class="k">Ponto de Venda</td><td><code>pos-pair-terminal</code></td></tr>
+    <tr><td class="k">Administração</td><td><code>admin-create-user</code>, <code>cleanup-pending</code> (manutenção)</td></tr>
+  </tbody>
+</table>
+
+<h2>3.6 Modelo de dados</h2>
+<p>A base de dados é gerida por <strong>migrações versionadas</strong> (118 ficheiros SQL à data deste documento), o que permite reconstruir o esquema de forma reprodutível e rastrear cada alteração. As tabelas agrupam-se nos seguintes domínios:</p>
+<table>
+  <thead><tr><th style="width:24%">Domínio</th><th style="width:40%">Tabelas principais</th><th>Conteúdo</th></tr></thead>
+  <tbody>
+    <tr><td class="k">Identidade</td><td><code>auth.users</code>, <code>profiles</code></td><td>Conta de acesso, nome, telefone, idioma, perfil de plataforma.</td></tr>
+    <tr><td class="k">Contas e empresas</td><td><code>accounts</code>, <code>companies</code>, <code>company_users</code>, <code>company_documents</code>, <code>company_bank_accounts</code></td><td>Conta (subdomínio), empresas (NUIT, morada, contactos), membros e perfis, documentos e contas bancárias.</td></tr>
+    <tr><td class="k">Facturação</td><td><code>invoices</code>, <code>invoice_items</code>, <code>payments</code>, <code>document_series</code>, <code>document_settings</code>, <code>stock_movements</code></td><td>Documentos fiscais e linhas, recibos, séries de numeração, modelos, movimentos de stock.</td></tr>
+    <tr><td class="k">Clientes e produtos</td><td><code>clients</code>, <code>products</code>, <code>product_categories</code></td><td>Clientes dos contribuintes e catálogos.</td></tr>
+    <tr><td class="k">Ponto de Venda</td><td><code>pos_terminals</code>, <code>pos_staff</code>, <code>pos_sessions</code>, <code>pos_orders</code>, <code>pos_payments</code>, …</td><td>Terminais, funcionários (PIN cifrado), caixas, pedidos, mesas, pagamentos.</td></tr>
+    <tr><td class="k">Impostos</td><td><code>tax_declarations</code>, <code>tax_payments</code>, <code>tax_reminders</code>, <code>activity_types</code></td><td>Declarações trimestrais, pagamentos, lembretes, actividades e taxas.</td></tr>
+    <tr><td class="k">Subscrições</td><td><code>subscriptions</code>, <code>subscription_plans</code>, <code>subscription_features</code>, <code>subscription_payments</code>, <code>vouchers</code></td><td>Planos, funcionalidades, pagamentos M-Pesa/e-Mola, vouchers.</td></tr>
+    <tr><td class="k">Auditoria e registos</td><td><code>audit_logs</code>, <code>email_log</code></td><td>Acções dos utilizadores; histórico de e-mails enviados.</td></tr>
+    <tr><td class="k">Inteligência artificial</td><td><code>ai_conversations</code>, <code>ai_messages</code>, <code>ai_alerts</code>, <code>ai_knowledge_articles</code>, <code>ai_usage_events</code></td><td>Conversas, alertas, base de conhecimento fiscal, consumo.</td></tr>
+    <tr><td class="k">Conteúdos e definições</td><td><code>landing_content</code>, <code>system_settings</code>, <code>platform_settings</code></td><td>Sítio público, termos, privacidade, definições.</td></tr>
+  </tbody>
+</table>
+
+<h3>Modelo multi-inquilino</h3>
+<figure>
+<svg viewBox="0 0 760 250" xmlns="http://www.w3.org/2000/svg" font-family="Inter, Segoe UI, Arial" font-size="11">
+  <defs><marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4A4340"/></marker></defs>
+  <rect x="20" y="20" width="200" height="60" rx="8" fill="#FDEDE6" stroke="#F26B38"/>
+  <text x="120" y="44" text-anchor="middle" font-weight="700">Conta</text>
+  <text x="120" y="62" text-anchor="middle" font-size="10" fill="#4A4340">loja-xyz.ispcfacil.com · 1 proprietário</text>
+  <line x1="220" y1="50" x2="268" y2="50" stroke="#4A4340" marker-end="url(#ar2)"/>
+  <text x="244" y="42" text-anchor="middle" font-size="9" fill="#7A716D">1 : N</text>
+  <rect x="270" y="20" width="200" height="60" rx="8" fill="#fff" stroke="#2B2422"/>
+  <text x="370" y="44" text-anchor="middle" font-weight="700">Empresa A (NUIT)</text>
+  <text x="370" y="62" text-anchor="middle" font-size="10" fill="#4A4340">subscrição · séries · definições</text>
+  <rect x="285" y="92" width="200" height="40" rx="8" fill="#fff" stroke="#B0A6A1"/>
+  <text x="385" y="117" text-anchor="middle" font-weight="600" fill="#4A4340">Empresa B (NUIT)</text>
+  <line x1="470" y1="50" x2="518" y2="50" stroke="#4A4340" marker-end="url(#ar2)"/>
+  <rect x="520" y="20" width="220" height="112" rx="8" fill="#FAF7F5" stroke="#B0A6A1"/>
+  <text x="630" y="40" text-anchor="middle" font-weight="700">Dados da empresa</text>
+  <text x="630" y="60" text-anchor="middle" font-size="10" fill="#4A4340">facturas · recibos · clientes</text>
+  <text x="630" y="76" text-anchor="middle" font-size="10" fill="#4A4340">produtos · stock · POS</text>
+  <text x="630" y="92" text-anchor="middle" font-size="10" fill="#4A4340">declarações · auditoria</text>
+  <text x="630" y="116" text-anchor="middle" font-size="9.5" fill="#7A716D">todas as linhas têm company_id</text>
+  <rect x="20" y="170" width="200" height="60" rx="8" fill="#E8EFF6" stroke="#2F5D8A"/>
+  <text x="120" y="194" text-anchor="middle" font-weight="700">Utilizador</text>
+  <text x="120" y="212" text-anchor="middle" font-size="10" fill="#4A4340">sessão JWT (auth.uid)</text>
+  <line x1="220" y1="200" x2="370" y2="200" stroke="#2F5D8A"/>
+  <line x1="370" y1="200" x2="370" y2="134" stroke="#2F5D8A" marker-end="url(#ar2)"/>
+  <text x="300" y="192" text-anchor="middle" font-size="9.5" fill="#2F5D8A">company_users (perfil)</text>
+  <rect x="440" y="160" width="300" height="76" rx="8" fill="#2B2422"/>
+  <text x="590" y="184" text-anchor="middle" font-weight="700" fill="#fff">Barreira RLS na base de dados</text>
+  <text x="590" y="203" text-anchor="middle" font-size="10" fill="#F3E9E4">cada consulta só devolve linhas de empresas</text>
+  <text x="590" y="219" text-anchor="middle" font-size="10" fill="#F3E9E4">de que o utilizador é membro activo</text>
+  <line x1="630" y1="158" x2="630" y2="134" stroke="#F26B38" stroke-width="2" stroke-dasharray="4 3"/>
+</svg>
+<figcaption>Figura 2 — Conta, empresas, utilizadores e isolamento de dados</figcaption>
+</figure>
+<p>Cada <strong>conta</strong> corresponde a um subdomínio e a um proprietário, e agrupa uma ou mais <strong>empresas</strong> (cada uma com o seu NUIT). Todos os registos de negócio pertencem a uma empresa. Os utilizadores ligam-se às empresas através de <code>company_users</code>, com um perfil. A base de dados aplica o isolamento a cada consulta (ver 5.3).</p>
+
+<h2>3.7 Fluxos principais</h2>
+
+<h3>Emissão de uma factura</h3>
+<ol>
+  <li>O utilizador preenche a factura na aplicação; enquanto rascunho, recebe um número provisório.</li>
+  <li>Ao emitir, um gatilho na base de dados atribui o número definitivo da série, bloqueando a série durante a operação para garantir uma sequência sem saltos nem repetições.</li>
+  <li>A partir desse momento, o número, o tipo, a empresa e a origem do documento ficam imutáveis. Correcções fazem-se por anulação (com regras) ou por Nota de Crédito.</li>
+  <li>O stock é actualizado por uma função de servidor; o PDF é gerado no dispositivo e pode ser enviado por e-mail através da função <code>send-invoice-email</code>.</li>
+</ol>
+
+<h3>Pagamento da subscrição por M-Pesa ou e-Mola</h3>
+<figure>
+<svg viewBox="0 0 760 330" xmlns="http://www.w3.org/2000/svg" font-family="Inter, Segoe UI, Arial" font-size="10.5">
+  <defs><marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4A4340"/></marker></defs>
+  <g font-weight="600" text-anchor="middle">
+    <rect x="10" y="10" width="110" height="34" rx="6" fill="#FDEDE6" stroke="#F26B38"/><text x="65" y="31">Aplicação</text>
+    <rect x="160" y="10" width="140" height="34" rx="6" fill="#E8EFF6" stroke="#2F5D8A"/><text x="230" y="31">Função de pagamento</text>
+    <rect x="340" y="10" width="110" height="34" rx="6" fill="#FAF7F5" stroke="#B0A6A1"/><text x="395" y="31">Sislog</text>
+    <rect x="490" y="10" width="110" height="34" rx="6" fill="#FAF7F5" stroke="#B0A6A1"/><text x="545" y="31">Telemóvel</text>
+    <rect x="630" y="10" width="120" height="34" rx="6" fill="#2B2422"/><text x="690" y="31" fill="#fff">Base de dados</text>
+  </g>
+  <g stroke="#C9C0BB" stroke-dasharray="3 3"><line x1="65" y1="44" x2="65" y2="320"/><line x1="230" y1="44" x2="230" y2="320"/><line x1="395" y1="44" x2="395" y2="320"/><line x1="545" y1="44" x2="545" y2="320"/><line x1="690" y1="44" x2="690" y2="320"/></g>
+  <g stroke="#4A4340" marker-end="url(#ar3)">
+    <line x1="65" y1="70" x2="226" y2="70"/>
+    <line x1="230" y1="100" x2="686" y2="100"/>
+    <line x1="230" y1="130" x2="391" y2="130"/>
+    <line x1="395" y1="160" x2="541" y2="160"/>
+    <line x1="545" y1="190" x2="399" y2="190"/>
+    <line x1="395" y1="220" x2="234" y2="220"/>
+    <line x1="230" y1="250" x2="686" y2="250"/>
+    <line x1="65" y1="285" x2="686" y2="285" stroke-dasharray="5 3"/>
+  </g>
+  <g fill="#2B2422">
+    <text x="70" y="64">1. pedido (plano, telefone) + JWT</text>
+    <text x="236" y="94">2. regista pagamento «pendente»</text>
+    <text x="236" y="124">3. pede referência USSD</text>
+    <text x="400" y="154">4. pedido de confirmação</text>
+    <text x="403" y="184">5. cliente confirma com PIN</text>
+    <text x="240" y="214">6. notificação (webhook sislog-webhook)</text>
+    <text x="236" y="244">7. marca «pago», activa subscrição, e-mails, factura LTS (OfficeGest)</text>
+    <text x="70" y="279">8. a aplicação consulta o estado até ficar «pago»</text>
+  </g>
+</svg>
+<figcaption>Figura 3 — Sequência de pagamento da subscrição por carteira móvel</figcaption>
+</figure>
+<p>O webhook responde de imediato à Sislog e envia os e-mails em segundo plano. O processamento é idempotente: se a Sislog repetir a notificação, a subscrição não é activada duas vezes nem os e-mails duplicados.</p>
+
+<h3>Assistente virtual</h3>
+<p>A aplicação envia a pergunta à função <code>ai-assistant</code>. A função chama o modelo <strong>Claude</strong> (Anthropic), que não tem acesso directo à base de dados: só pode invocar um conjunto fechado de dez funções de consulta, que correm com a sessão do próprio utilizador e, portanto, com as mesmas restrições de acesso. O identificador da empresa é injectado pelo servidor e nunca vem do modelo. As respostas sobre matéria fiscal baseiam-se exclusivamente em artigos publicados e validados pela LTS. A resposta é enviada ao navegador em fluxo contínuo (Server-Sent Events). O consumo é limitado por plano.</p>
+
+<h3>Ponto de Venda</h3>
+<p>Um terminal é emparelhado com um código de 8 caracteres, de uso único e válido 15 minutos, gerado por um gestor. A função <code>pos-pair-terminal</code> cria para esse terminal uma identidade técnica própria, que só consegue operar através de funções POS específicas. Os funcionários entram com PIN pessoal. As vendas geram Factura-Recibo na mesma série fiscal da aplicação; em modo restaurante, as mesas e pedidos sincronizam-se em tempo real entre dispositivos.</p>
+
+<h2>3.8 Integrações externas</h2>
+<table>
+  <thead><tr><th style="width:20%">Serviço</th><th style="width:30%">Finalidade</th><th>Dados enviados</th></tr></thead>
+  <tbody>
+    <tr><td class="k">Sislog</td><td>Cobrança da subscrição por M-Pesa e e-Mola (pedido USSD e notificação)</td><td>Número de telefone, valor, referência.</td></tr>
+    <tr><td class="k">OfficeGest</td><td>Emissão da factura da LTS ao subscritor pela subscrição paga</td><td>Nome, NUIT, morada, e-mail e telefone da empresa subscritora; valor.</td></tr>
+    <tr><td class="k">Anthropic (Claude)</td><td>Assistente virtual</td><td>Pergunta, histórico recente da conversa, nome e NUIT da empresa, resultados das consultas autorizadas.</td></tr>
+    <tr><td class="k">Google Cloud Vision</td><td>Leitura automática (OCR) de documentos da empresa</td><td>Imagem do documento carregado (NUIT, alvará, certidão).</td></tr>
+    <tr><td class="k">Servidor SMTP</td><td>Envio de facturas, recibos, convites, lembretes e notificações</td><td>Endereço do destinatário, conteúdo e anexo PDF.</td></tr>
+    <tr><td class="k">Google (OAuth)</td><td>Entrada opcional com conta Google (apenas web)</td><td>Fluxo OAuth gerido pelo Supabase; recebe-se nome e e-mail.</td></tr>
+  </tbody>
+</table>
+
+<h2>3.9 Desenvolvimento e publicação</h2>
+<ul>
+  <li><strong>Código-fonte</strong> num repositório Git, com histórico completo de alterações.</li>
+  <li><strong>Esquema da base de dados</strong> gerido por migrações SQL versionadas e idempotentes, aplicadas por ordem.</li>
+  <li><strong>Aplicação web</strong> compilada (<code>ng build</code>) e publicada na Netlify; cada publicação é atómica e pode ser revertida para a versão anterior.</li>
+  <li><strong>Android:</strong> compilação automática por GitHub Actions ao criar uma etiqueta de versão, com envio para a faixa interna do Google Play.</li>
+  <li><strong>iOS:</strong> compilação automática na Codemagic, com envio para a App Store.</li>
+  <li><strong>Funções de servidor</strong> publicadas com a linha de comandos do Supabase; credenciais definidas como segredos do projecto.</li>
+</ul>
+
+<!-- ================================================================ 4. INFRA -->
+<h1><span class="num">4</span>Infra-estrutura tecnológica e localização dos dados</h1>
+
+<div class="box summary"><span class="box-title">Resumo</span>O ISPC Fácil não tem servidores físicos próprios: funciona inteiramente sobre fornecedores de nuvem. <strong>A base de dados e os ficheiros de todos os utilizadores, incluindo os moçambicanos, estão nos Estados Unidos (Amazon Web Services, Ohio), geridos pelo Supabase.</strong> A aplicação é distribuída por uma rede global de servidores (Netlify), que entrega o programa ao utilizador a partir do ponto mais próximo, mas não guarda dados de clientes. Os e-mails são enviados a partir de um servidor alojado nos Estados Unidos.</div>
+
+<h2>4.1 Diagrama de infra-estrutura</h2>
+<figure>
+<svg viewBox="0 0 760 470" xmlns="http://www.w3.org/2000/svg" font-family="Inter, Segoe UI, Arial" font-size="10.5">
+  <defs><marker id="ar4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4A4340"/></marker></defs>
+  <!-- Mozambique -->
+  <rect x="10" y="10" width="200" height="450" rx="10" fill="#FDEDE6" stroke="#F26B38"/>
+  <text x="110" y="34" text-anchor="middle" font-weight="700" fill="#B4471B" font-size="12">MOÇAMBIQUE</text>
+  <rect x="25" y="52" width="170" height="44" rx="6" fill="#fff" stroke="#F26B38"/><text x="110" y="71" text-anchor="middle" font-weight="600">Contribuintes e equipas</text><text x="110" y="86" text-anchor="middle" font-size="9.5" fill="#4A4340">navegador · app · POS</text>
+  <rect x="25" y="108" width="170" height="44" rx="6" fill="#fff" stroke="#F26B38"/><text x="110" y="127" text-anchor="middle" font-weight="600">Operadores ISP locais</text><text x="110" y="142" text-anchor="middle" font-size="9.5" fill="#4A4340">acesso à Internet</text>
+  <rect x="25" y="164" width="170" height="44" rx="6" fill="#fff" stroke="#F26B38"/><text x="110" y="183" text-anchor="middle" font-weight="600">M-Pesa · e-Mola</text><text x="110" y="198" text-anchor="middle" font-size="9.5" fill="#4A4340">carteiras móveis</text>
+  <rect x="25" y="220" width="170" height="44" rx="6" fill="#fff" stroke="#F26B38"/><text x="110" y="239" text-anchor="middle" font-weight="600">Equipa LTS</text><text x="110" y="254" text-anchor="middle" font-size="9.5" fill="#4A4340">back-office</text>
+  <text x="110" y="300" text-anchor="middle" font-size="9.5" fill="#B4471B">Sem servidores nem bases</text>
+  <text x="110" y="314" text-anchor="middle" font-size="9.5" fill="#B4471B">de dados do ISPC Fácil</text>
+  <text x="110" y="328" text-anchor="middle" font-size="9.5" fill="#B4471B">alojados em Moçambique</text>
+
+  <!-- Global edge -->
+  <rect x="240" y="10" width="220" height="200" rx="10" fill="#FAF7F5" stroke="#B0A6A1"/>
+  <text x="350" y="34" text-anchor="middle" font-weight="700" fill="#4A4340" font-size="12">REDE GLOBAL (EDGE)</text>
+  <rect x="255" y="50" width="190" height="62" rx="6" fill="#fff" stroke="#2B2422"/><text x="350" y="70" text-anchor="middle" font-weight="600">Netlify CDN</text><text x="350" y="85" text-anchor="middle" font-size="9.5" fill="#4A4340">aplicação web estática</text><text x="350" y="99" text-anchor="middle" font-size="9.5" fill="#4A4340">*.ispcfacil.com · AS16509</text>
+  <rect x="255" y="124" width="190" height="62" rx="6" fill="#fff" stroke="#2B2422"/><text x="350" y="144" text-anchor="middle" font-weight="600">Cloudflare</text><text x="350" y="159" text-anchor="middle" font-size="9.5" fill="#4A4340">entrada da API Supabase</text><text x="350" y="173" text-anchor="middle" font-size="9.5" fill="#4A4340">TLS · AS13335</text>
+
+  <!-- USA AWS -->
+  <rect x="240" y="230" width="220" height="230" rx="10" fill="#E8EFF6" stroke="#2F5D8A"/>
+  <text x="252" y="254" font-weight="700" fill="#2F5D8A" font-size="11">EUA — AWS us-east-2 (Ohio)</text>
+  <rect x="255" y="268" width="190" height="178" rx="6" fill="#fff" stroke="#2F5D8A"/>
+  <text x="350" y="288" text-anchor="middle" font-weight="700">Projecto Supabase</text>
+  <text x="350" y="310" text-anchor="middle" fill="#2B2422">PostgreSQL 17 (dados)</text>
+  <text x="350" y="328" text-anchor="middle" fill="#2B2422">Storage (ficheiros)</text>
+  <text x="350" y="346" text-anchor="middle" fill="#2B2422">Auth (contas)</text>
+  <text x="350" y="364" text-anchor="middle" fill="#2B2422">Realtime</text>
+  <text x="350" y="382" text-anchor="middle" fill="#2B2422">Edge Functions</text>
+  <text x="350" y="406" text-anchor="middle" font-size="9.5" fill="#2F5D8A" font-weight="600">BASE DE DADOS DOS</text>
+  <text x="350" y="420" text-anchor="middle" font-size="9.5" fill="#2F5D8A" font-weight="600">UTILIZADORES NACIONAIS</text>
+  <text x="350" y="436" text-anchor="middle" font-size="9" fill="#4A4340">AS16509 (Amazon)</text>
+
+  <!-- Third parties -->
+  <rect x="490" y="10" width="260" height="450" rx="10" fill="#fff" stroke="#B0A6A1"/>
+  <text x="620" y="34" text-anchor="middle" font-weight="700" fill="#4A4340" font-size="12">SUBCONTRATANTES</text>
+  <g>
+    <rect x="505" y="50" width="230" height="48" rx="6" fill="#FAF7F5" stroke="#B0A6A1"/><text x="620" y="70" text-anchor="middle" font-weight="600">Servidor de e-mail (SMTP)</text><text x="620" y="86" text-anchor="middle" font-size="9.5" fill="#4A4340">InMotion Hosting, EUA · AS54641</text>
+    <rect x="505" y="108" width="230" height="48" rx="6" fill="#FAF7F5" stroke="#B0A6A1"/><text x="620" y="128" text-anchor="middle" font-weight="600">Sislog (pagamentos)</text><text x="620" y="144" text-anchor="middle" font-size="9.5" fill="#4A4340">gateway M-Pesa / e-Mola</text>
+    <rect x="505" y="166" width="230" height="48" rx="6" fill="#FAF7F5" stroke="#B0A6A1"/><text x="620" y="186" text-anchor="middle" font-weight="600">Anthropic (IA)</text><text x="620" y="202" text-anchor="middle" font-size="9.5" fill="#4A4340">API Claude, EUA</text>
+    <rect x="505" y="224" width="230" height="48" rx="6" fill="#FAF7F5" stroke="#B0A6A1"/><text x="620" y="244" text-anchor="middle" font-weight="600">Google Cloud Vision (OCR)</text><text x="620" y="260" text-anchor="middle" font-size="9.5" fill="#4A4340">Google LLC, EUA · AS15169</text>
+    <rect x="505" y="282" width="230" height="48" rx="6" fill="#FAF7F5" stroke="#B0A6A1"/><text x="620" y="302" text-anchor="middle" font-weight="600">OfficeGest</text><text x="620" y="318" text-anchor="middle" font-size="9.5" fill="#4A4340">facturação interna da LTS</text>
+    <rect x="505" y="340" width="230" height="48" rx="6" fill="#FAF7F5" stroke="#B0A6A1"/><text x="620" y="360" text-anchor="middle" font-weight="600">Microsoft 365</text><text x="620" y="376" text-anchor="middle" font-size="9.5" fill="#4A4340">correio institucional · AS8075</text>
+    <rect x="505" y="398" width="230" height="48" rx="6" fill="#FAF7F5" stroke="#B0A6A1"/><text x="620" y="418" text-anchor="middle" font-weight="600">GitHub · Codemagic · lojas</text><text x="620" y="434" text-anchor="middle" font-size="9.5" fill="#4A4340">código e publicação de apps</text>
+  </g>
+
+  <!-- arrows -->
+  <line x1="195" y1="74" x2="253" y2="80" stroke="#4A4340" marker-end="url(#ar4)"/>
+  <line x1="195" y1="80" x2="253" y2="152" stroke="#4A4340" marker-end="url(#ar4)"/>
+  <line x1="432" y1="186" x2="432" y2="266" stroke="#2F5D8A" stroke-width="2" marker-end="url(#ar4)"/>
+  <line x1="445" y1="357" x2="475" y2="357" stroke="#4A4340"/>
+  <line x1="475" y1="74" x2="475" y2="357" stroke="#4A4340"/>
+  <line x1="475" y1="74" x2="503" y2="74" stroke="#4A4340" marker-end="url(#ar4)"/>
+  <line x1="475" y1="132" x2="503" y2="132" stroke="#4A4340" marker-end="url(#ar4)"/>
+  <line x1="475" y1="190" x2="503" y2="190" stroke="#4A4340" marker-end="url(#ar4)"/>
+  <line x1="475" y1="248" x2="503" y2="248" stroke="#4A4340" marker-end="url(#ar4)"/>
+  <line x1="475" y1="306" x2="503" y2="306" stroke="#4A4340" marker-end="url(#ar4)"/>
+  <path d="M505 146 H484 V224 H205 V186 H197" fill="none" stroke="#F26B38" stroke-dasharray="4 3" marker-end="url(#ar4)"/>
+  <text x="300" y="219" font-size="8" fill="#B4471B" text-anchor="middle">pedido USSD (Sislog → operadora)</text>
+</svg>
+<figcaption>Figura 4 — Infra-estrutura tecnológica e localização geográfica dos componentes</figcaption>
+</figure>
+
+<h2>4.2 Componentes e fornecedores</h2>
+<table>
+  <thead><tr><th style="width:21%">Componente</th><th style="width:19%">Fornecedor</th><th style="width:22%">Localização</th><th>Dados guardados</th></tr></thead>
+  <tbody>
+    <tr><td class="k">Base de dados</td><td>Supabase sobre AWS</td><td>EUA — us-east-2 (Ohio)</td><td><strong>Todos os dados de negócio e pessoais</strong>: contas, empresas, clientes, facturas, recibos, declarações, POS, auditoria, conversas de IA.</td></tr>
+    <tr><td class="k">Armazenamento de ficheiros</td><td>Supabase Storage sobre AWS</td><td>EUA — us-east-2 (Ohio)</td><td>Documentos da empresa, comprovativos de pagamento e de contas bancárias.</td></tr>
+    <tr><td class="k">Autenticação</td><td>Supabase Auth</td><td>EUA — us-east-2 (Ohio)</td><td>E-mail, palavra-passe (em hash), sessões.</td></tr>
+    <tr><td class="k">Funções de servidor</td><td>Supabase Edge Functions</td><td>Rede global do fornecedor</td><td>Nenhum dado persistente; processam pedidos em memória.</td></tr>
+    <tr><td class="k">Gateway de API</td><td>Cloudflare (via Supabase)</td><td>Rede global (anycast)</td><td>Nenhum dado persistente; termina TLS e encaminha.</td></tr>
+    <tr><td class="k">Aplicação web</td><td>Netlify</td><td>Rede global (CDN)</td><td>Apenas os ficheiros da aplicação; nenhum dado de cliente.</td></tr>
+    <tr><td class="k">DNS de <code>ispcfacil.com</code></td><td>NS1 (IBM)</td><td>Rede global (anycast)</td><td>Registos DNS.</td></tr>
+    <tr><td class="k">Servidor de e-mail e sítio <code>ispcfacil.co.mz</code></td><td>InMotion Hosting</td><td>EUA</td><td>E-mails enviados (cópia no servidor de correio).</td></tr>
+    <tr><td class="k">Correio institucional <code>ispcfacil.com</code></td><td>Microsoft 365</td><td>Nuvem Microsoft</td><td>Correspondência da LTS.</td></tr>
+    <tr><td class="k">Aplicações móveis</td><td>Google Play, Apple App Store</td><td>Global</td><td>Pacotes das aplicações; sem dados de clientes.</td></tr>
+  </tbody>
+</table>
+
+<h2>4.3 Localização das bases de dados dos utilizadores nacionais</h2>
+<div class="box warn"><span class="box-title">Declaração de localização</span>
+<p>A base de dados de produção do ISPC Fácil é uma única instância PostgreSQL gerida pelo Supabase, no projecto <code>ycpnmwlkfolsaubndznj</code>, alojada na região <strong>us-east-2 da Amazon Web Services, em Ohio, Estados Unidos da América</strong>. É nesta base de dados, e no armazenamento de ficheiros associado (mesma região), que se encontram os dados de <strong>todos</strong> os utilizadores, incluindo os utilizadores nacionais moçambicanos.</p>
+<p>À data deste documento <strong>não existe nenhuma base de dados, réplica ou cópia de segurança do ISPC Fácil alojada em território moçambicano</strong>.</p>
+</div>
+<div class="box tech"><span class="box-title">Nota técnica</span>A região foi verificada a partir da configuração do projecto ligado (endereço do pooler <code>aws-1-us-east-2.pooler.supabase.com</code>, que resolve para um balanceador AWS <code>elb.us-east-2.amazonaws.com</code>). O acesso directo à base de dados por PostgreSQL só é usado pela equipa técnica para manutenção; os utilizadores acedem sempre pela API HTTPS.</div>
+
+<h2>4.4 Fluxos de dados transfronteiriços</h2>
+<p>Como os servidores estão fora de Moçambique, toda a utilização da plataforma implica uma transferência de dados entre Moçambique e o estrangeiro:</p>
+<table>
+  <thead><tr><th style="width:32%">Fluxo</th><th style="width:26%">Origem → Destino</th><th>Protecção</th></tr></thead>
+  <tbody>
+    <tr><td class="k">Utilização da aplicação</td><td>Moçambique → EUA (Supabase)</td><td>HTTPS/TLS; token de sessão; regras de acesso na base de dados.</td></tr>
+    <tr><td class="k">Envio de e-mails</td><td>EUA (Supabase) → EUA (SMTP) → destinatário</td><td>Ligação SMTP cifrada (TLS, porta 465).</td></tr>
+    <tr><td class="k">Pagamentos</td><td>EUA (Supabase) ↔ Sislog ↔ operadoras em Moçambique</td><td>HTTPS; chave de API no servidor.</td></tr>
+    <tr><td class="k">Assistente de IA</td><td>EUA (Supabase) → EUA (Anthropic)</td><td>HTTPS; apenas dados da empresa activa a que o utilizador já tem acesso.</td></tr>
+    <tr><td class="k">OCR</td><td>EUA (Supabase) → Google Cloud</td><td>HTTPS; apenas a imagem do documento.</td></tr>
+  </tbody>
+</table>
+
+<h2>4.5 Disponibilidade e continuidade</h2>
+<ul>
+  <li><strong>Aplicação web:</strong> servida por CDN com múltiplos pontos de presença; uma falha num ponto é absorvida pelos restantes. Publicações atómicas com reversão imediata.</li>
+  <li><strong>Base de dados:</strong> serviço gerido pelo Supabase, que trata da actualização do PostgreSQL, monitorização e cópias de segurança de acordo com o plano contratado. <span class="confirm">[A confirmar pela LTS: plano Supabase contratado, frequência das cópias de segurança, recuperação para um ponto no tempo (PITR) e período de retenção.]</span></li>
+  <li><strong>Reconstrução:</strong> o esquema completo da base de dados está em migrações versionadas, o que permite recriar a estrutura noutro ambiente ou noutra região.</li>
+  <li><strong>Dependência de Internet:</strong> a aplicação precisa de ligação; em caso de falha de rede local, os dados ficam salvaguardados no servidor e nenhum documento fiscal é emitido fora de sequência.</li>
+</ul>
+
+<!-- ================================================================ 5. SEGURANÇA -->
+<h1><span class="num">5</span>Segurança dos sistemas de informação</h1>
+
+<div class="box summary"><span class="box-title">Resumo</span>A segurança não depende só da aplicação: as regras mais importantes estão <strong>dentro da base de dados</strong>. Mesmo que alguém contornasse a aplicação, a base de dados recusaria mostrar dados de uma empresa a quem não pertence a ela. Toda a comunicação é cifrada, as chaves dos serviços externos ficam no servidor, os documentos fiscais emitidos não podem ser alterados e as acções importantes ficam registadas.</div>
+
+<h2>5.1 Modelo de defesa em camadas</h2>
+<figure>
+<svg viewBox="0 0 760 190" xmlns="http://www.w3.org/2000/svg" font-family="Inter, Segoe UI, Arial" font-size="10.5">
+  <g text-anchor="middle">
+    <rect x="10" y="20" width="135" height="160" rx="8" fill="#FDEDE6" stroke="#F26B38"/>
+    <text x="77" y="44" font-weight="700" font-size="11.5">1. Rede</text>
+    <text x="77" y="72">HTTPS/TLS</text><text x="77" y="90">obrigatório</text><text x="77" y="118">CDN e gateway</text><text x="77" y="136">com protecção</text><text x="77" y="154">DDoS</text>
+
+    <rect x="160" y="20" width="135" height="160" rx="8" fill="#FBE3D8" stroke="#F26B38"/>
+    <text x="227" y="44" font-weight="700" font-size="11.5">2. Identidade</text>
+    <text x="227" y="72">Supabase Auth</text><text x="227" y="90">tokens JWT</text><text x="227" y="118">perfis e estado</text><text x="227" y="136">PIN no POS</text><text x="227" y="154">registo de falhas</text>
+
+    <rect x="310" y="20" width="135" height="160" rx="8" fill="#E8EFF6" stroke="#2F5D8A"/>
+    <text x="377" y="44" font-weight="700" font-size="11.5">3. Aplicação</text>
+    <text x="377" y="72">guardas de rota</text><text x="377" y="90">menus por perfil</text><text x="377" y="118">funções de servidor</text><text x="377" y="136">com segredos</text><text x="377" y="154">isolados</text>
+
+    <rect x="460" y="20" width="135" height="160" rx="8" fill="#D6E3F0" stroke="#2F5D8A"/>
+    <text x="527" y="44" font-weight="700" font-size="11.5">4. Base de dados</text>
+    <text x="527" y="72">RLS em todas</text><text x="527" y="90">as tabelas</text><text x="527" y="118">regras fiscais</text><text x="527" y="136">em gatilhos</text><text x="527" y="154">limites do plano</text>
+
+    <rect x="610" y="20" width="140" height="160" rx="8" fill="#2B2422"/>
+    <text x="680" y="44" font-weight="700" font-size="11.5" fill="#fff">5. Dados</text>
+    <text x="680" y="72" fill="#F3E9E4">cifra em repouso</text><text x="680" y="90" fill="#F3E9E4">ficheiros privados</text><text x="680" y="118" fill="#F3E9E4">PIN e códigos</text><text x="680" y="136" fill="#F3E9E4">em hash</text><text x="680" y="154" fill="#F3E9E4">auditoria</text>
+  </g>
+</svg>
+<figcaption>Figura 5 — Camadas de segurança, do exterior (rede) para o interior (dados)</figcaption>
+</figure>
+
+<h2>5.2 Identidade e autenticação</h2>
+<ul>
+  <li><strong>Contas</strong> geridas pelo Supabase Auth: e-mail e palavra-passe (guardada apenas em hash, nunca em texto legível) ou conta Google. Recuperação de palavra-passe por ligação enviada para o e-mail.</li>
+  <li><strong>Sessões</strong> baseadas em tokens JWT assinados, de curta duração e renovados automaticamente. Na web, a sessão é guardada em cookies do domínio <code>.ispcfacil.com</code>.</li>
+  <li><strong>Utilizadores suspensos</strong> são desligados automaticamente.</li>
+  <li><strong>Tentativas de entrada falhadas</strong> são registadas na auditoria, com limite de registos por endereço IP para impedir abuso.</li>
+  <li><strong>Promoção a administrador</strong> só pode ser feita por outro administrador; os utilizadores não podem alterar o seu próprio perfil de plataforma (bloqueado por gatilho na base de dados).</li>
+  <li><strong>Terminais POS</strong> têm identidade técnica própria, criada por emparelhamento; os funcionários entram com PIN guardado em hash bcrypt, com bloqueio de 5 minutos após 5 tentativas erradas.</li>
+</ul>
+
+<h2>5.3 Autorização e isolamento entre empresas</h2>
+<p>O isolamento entre clientes é o controlo mais importante de uma plataforma partilhada. No ISPC Fácil é aplicado pela própria base de dados através de <strong>Row-Level Security (RLS)</strong>:</p>
+<ul>
+  <li><strong>Todas as tabelas</strong> criadas pela plataforma têm RLS activo. Sem uma política que o permita explicitamente, nenhuma linha é visível.</li>
+  <li>As políticas usam funções como <code>is_company_member</code> e <code>has_company_role</code>, que verificam se o utilizador autenticado pertence à empresa da linha e, quando necessário, se tem o perfil adequado (proprietário, administrador, gestor).</li>
+  <li>Operações sensíveis (anular recibo, gerir funcionários POS, aprovar anulações) são feitas por funções de servidor que <strong>revalidam o perfil</strong> antes de agir.</li>
+  <li>Tabelas internas (séries de numeração, movimentos de stock, registo de e-mails, transacções POS) não aceitam escrita directa da aplicação: só podem ser alteradas por funções de servidor controladas.</li>
+  <li><strong>Separação de funções na LTS:</strong> os administradores da plataforma não têm acesso a facturas, linhas de factura, recibos, clientes, produtos nem declarações dos contribuintes. Esse acesso foi deliberadamente removido da base de dados.</li>
+  <li>Os limites do plano (número de empresas, utilizadores, facturas, terminais) e o bloqueio por subscrição expirada são aplicados também no servidor.</li>
+</ul>
+
+<h2>5.4 Cifragem</h2>
+<table>
+  <thead><tr><th style="width:28%">Situação</th><th>Mecanismo</th></tr></thead>
+  <tbody>
+    <tr><td class="k">Dados em trânsito</td><td>HTTPS/TLS em todas as ligações: aplicação (certificados geridos pela Netlify), API (Cloudflare/Supabase), funções de servidor e serviços externos. SMTP com TLS.</td></tr>
+    <tr><td class="k">Dados em repouso</td><td>Cifragem do disco da base de dados e do armazenamento de ficheiros assegurada pelo fornecedor (Supabase/AWS).</td></tr>
+    <tr><td class="k">Palavras-passe</td><td>Guardadas em hash pelo Supabase Auth.</td></tr>
+    <tr><td class="k">PIN e códigos POS</td><td>PIN em hash bcrypt; códigos de emparelhamento e tokens de sessão em SHA-256.</td></tr>
+    <tr><td class="k">Ficheiros</td><td>Contentor privado; acesso apenas por ligações assinadas temporárias (1 hora).</td></tr>
+  </tbody>
+</table>
+
+<h2>5.5 Gestão de segredos</h2>
+<ul>
+  <li>As chaves de serviços externos (IA, OCR, e-mail, pagamentos, facturação) e a chave de serviço do Supabase existem <strong>apenas no servidor</strong>, como segredos do projecto ou nas funções de servidor. Nunca são enviadas para o navegador ou para a aplicação móvel.</li>
+  <li>A aplicação cliente usa apenas a chave pública (anónima) do Supabase, que por si só não dá acesso a dados protegidos: todo o acesso continua sujeito ao RLS.</li>
+  <li>As tarefas agendadas autenticam-se nas funções de servidor com um segredo guardado no cofre do Supabase (Vault).</li>
+</ul>
+
+<h2>5.6 Integridade dos documentos fiscais</h2>
+<ul>
+  <li><strong>Numeração no servidor:</strong> o número definitivo é atribuído por gatilho na base de dados, com bloqueio da série, garantindo sequência contínua e sem duplicados. Um índice único impede números repetidos por empresa.</li>
+  <li><strong>Imutabilidade:</strong> depois de emitido, o número, o tipo, a empresa, a origem e a referência do documento não podem ser alterados (gatilho de bloqueio).</li>
+  <li><strong>Anulação em vez de eliminação:</strong> documentos emitidos são anulados com motivo, data e autor registados automaticamente. Não se anula uma factura com pagamentos nem uma factura de um trimestre já fechado; uma Factura-Recibo só se anula no próprio dia; depois disso, é obrigatória uma Nota de Crédito.</li>
+  <li><strong>Recibos:</strong> numeração sequencial protegida e anulação apenas por função própria, com motivo e perfil autorizado. Não existe eliminação de recibos.</li>
+  <li><strong>Exportação SAF-T</strong> com a estrutura 1.04, para entrega ou inspecção.</li>
+</ul>
+<div class="box tech"><span class="box-title">Nota técnica — certificação</span>O ISPC Fácil ainda não é software certificado pela Autoridade Tributária: o SAF-T é exportado com número de certificado «0» e sem assinatura digital (hash) dos documentos, porque o esquema oficial e o regime de certificação para Moçambique ainda não foram publicados. A arquitectura de numeração no servidor já está preparada para receber essa assinatura quando o regime for definido.</div>
+
+<h2>5.7 Auditoria e rastreabilidade</h2>
+<ul>
+  <li>Tabela de auditoria por empresa: quem fez, o quê, quando e a partir de que endereço IP.</li>
+  <li>O autor, a data e o IP são <strong>carimbados pelo servidor</strong> no momento do registo; não podem ser falsificados pela aplicação.</li>
+  <li>Os registos de auditoria <strong>não podem ser alterados nem apagados</strong> pelos utilizadores.</li>
+  <li>Eventos registados no servidor: pagamentos, alterações de estado de pagamentos de subscrição, operações do POS (PIN errado, abertura e fecho de caixa, emissão e anulação de documentos), tentativas de entrada falhadas. As restantes acções de negócio são registadas pela aplicação.</li>
+  <li>Os proprietários e administradores da empresa consultam a auditoria da sua empresa; a LTS consulta a auditoria da plataforma.</li>
+  <li>Registo de todos os e-mails de sistema enviados (destinatários, assunto, estado), visível apenas para a LTS.</li>
+</ul>
+
+<h2>5.8 Segurança do Ponto de Venda</h2>
+<ul>
+  <li>Emparelhamento com código de uso único, válido 15 minutos, gerado por um gestor e guardado em hash.</li>
+  <li>Cada terminal tem identidade técnica separada, que só opera através de funções POS e pode ser revogada a qualquer momento.</li>
+  <li>Sessões de operador com validade de 12 horas; PIN com bloqueio após tentativas erradas.</li>
+  <li>Operações sensíveis (anular linhas, devoluções) exigem autorização de um gerente.</li>
+  <li>Sem ligação à Internet, o POS não emite documentos.</li>
+</ul>
+
+<h2>5.9 Segurança do assistente de IA</h2>
+<ul>
+  <li>O modelo de IA não acede à base de dados nem escreve consultas: apenas invoca dez funções de leitura pré-definidas.</li>
+  <li>Essas funções correm com a sessão do utilizador; o assistente nunca vê o que o utilizador não poderia abrir na aplicação.</li>
+  <li>A empresa consultada é definida pelo servidor, não pelo modelo, o que impede que texto malicioso induza o assistente a ler outra empresa.</li>
+  <li>O assistente só lê dados; não cria, altera nem apaga registos.</li>
+  <li>As respostas fiscais têm de se basear em artigos publicados pela LTS, que mantém controlo editorial.</li>
+  <li>Quotas mensais por plano limitam a utilização.</li>
+</ul>
+
+<h2>5.10 Melhoria contínua</h2>
+<p>A segurança da plataforma é revista de forma contínua. As áreas em que a LTS está a trabalhar incluem:</p>
+<ul>
+  <li>revisão periódica das funções de servidor e das políticas de acesso, e rotação de credenciais;</li>
+  <li>formalização da política de conservação e eliminação de dados (ver 6.7);</li>
+  <li>assinatura digital dos documentos fiscais, logo que seja publicado o regime de certificação;</li>
+  <li>avaliação da possibilidade de alojamento regional ou nacional dos dados, caso seja exigido pela regulamentação;</li>
+  <li>modo de funcionamento sem ligação para o POS.</li>
+</ul>
+
+<!-- ================================================================ 6. PROTECÇÃO DE DADOS -->
+<h1><span class="num">6</span>Protecção de dados pessoais</h1>
+
+<div class="box summary"><span class="box-title">Resumo</span>O ISPC Fácil recolhe apenas os dados necessários para facturar e cumprir obrigações fiscais. Os dados de cada empresa só são visíveis para os membros dessa empresa; a própria equipa da LTS não vê as facturas nem os clientes dos contribuintes. Alguns serviços externos (e-mail, pagamentos, inteligência artificial, leitura de documentos) recebem os dados estritamente necessários para a sua função. Os dados ficam alojados nos Estados Unidos.</div>
+
+<h2>6.1 Princípios</h2>
+<div class="grid2">
+  <div class="card"><h4>Minimização</h4><p>Só se pedem os dados necessários para facturação, cumprimento fiscal e gestão da subscrição.</p></div>
+  <div class="card"><h4>Finalidade</h4><p>Os dados são usados para prestar o serviço contratado; não são vendidos nem usados para publicidade.</p></div>
+  <div class="card"><h4>Confidencialidade por desenho</h4><p>Isolamento por empresa na base de dados; a LTS não tem acesso aos dados comerciais dos contribuintes.</p></div>
+  <div class="card"><h4>Transparência</h4><p>Termos de utilização e política de privacidade publicados no sítio e aceites no registo.</p></div>
+</div>
+<p style="margin-top:3mm">O tratamento é feito tendo em conta o direito à privacidade consagrado na Constituição da República de Moçambique e a legislação moçambicana aplicável às transacções electrónicas e à protecção de dados pessoais.</p>
+
+<h2>6.2 Dados pessoais tratados</h2>
+<table>
+  <thead><tr><th style="width:22%">Titulares</th><th style="width:40%">Dados</th><th>Origem</th></tr></thead>
+  <tbody>
+    <tr><td class="k">Utilizadores da plataforma</td><td>Nome, e-mail, telefone, idioma, perfil; registos de acesso (data, IP); palavra-passe em hash</td><td>Registo e utilização</td></tr>
+    <tr><td class="k">Empresas subscritoras e seus representantes</td><td>Nome, NUIT, morada, província, distrito, telefone, e-mail, números M-Pesa/e-Mola, dados bancários (NIB, IBAN), documentos de registo</td><td>Configuração da empresa</td></tr>
+    <tr><td class="k">Clientes dos contribuintes</td><td>Nome, NUIT, telefone, e-mail, morada, notas; histórico de facturas e pagamentos</td><td>Introduzidos pelo contribuinte</td></tr>
+    <tr><td class="k">Funcionários POS</td><td>Nome, PIN em hash, registo de operações</td><td>Introduzidos pelo gestor</td></tr>
+    <tr><td class="k">Pagadores da subscrição</td><td>Número de telefone, e-mail, valor, referências da transacção</td><td>Pagamento</td></tr>
+    <tr><td class="k">Utilizadores do assistente de IA</td><td>Perguntas e respostas, resultados das consultas</td><td>Conversa</td></tr>
+  </tbody>
+</table>
+<p>A plataforma <strong>não trata</strong> categorias especiais de dados (saúde, origem étnica, convicções, dados biométricos) nem dados de cartões bancários.</p>
+
+<h2>6.3 Finalidades do tratamento</h2>
+<ul>
+  <li>Prestação do serviço: emissão de documentos fiscais, gestão de clientes, produtos, vendas e impostos.</li>
+  <li>Cumprimento de obrigações fiscais do contribuinte (ISPC, Modelo 30, SAF-T).</li>
+  <li>Gestão da subscrição, cobrança e facturação da LTS.</li>
+  <li>Comunicações de serviço: envio de documentos, convites, lembretes fiscais, confirmações de pagamento.</li>
+  <li>Segurança, prevenção de fraude e auditoria.</li>
+  <li>Apoio ao utilizador.</li>
+</ul>
+
+<h2>6.4 Subcontratantes</h2>
+<table>
+  <thead><tr><th style="width:22%">Subcontratante</th><th style="width:30%">Serviço</th><th style="width:28%">Dados</th><th>Localização</th></tr></thead>
+  <tbody>
+    <tr><td class="k">Supabase</td><td>Base de dados, autenticação, ficheiros, funções</td><td>Todos os dados da plataforma</td><td>EUA (AWS us-east-2)</td></tr>
+    <tr><td class="k">Amazon Web Services</td><td>Infra-estrutura do Supabase</td><td>Todos (cifrados em repouso)</td><td>EUA (Ohio)</td></tr>
+    <tr><td class="k">Cloudflare</td><td>Gateway de rede da API</td><td>Tráfego em trânsito</td><td>Global</td></tr>
+    <tr><td class="k">Netlify</td><td>Alojamento da aplicação web</td><td>Nenhum dado de cliente; registos técnicos de acesso</td><td>Global</td></tr>
+    <tr><td class="k">InMotion Hosting</td><td>Servidor de e-mail</td><td>Destinatários e conteúdo dos e-mails</td><td>EUA</td></tr>
+    <tr><td class="k">Sislog</td><td>Pagamentos M-Pesa / e-Mola</td><td>Telefone, valor, referência</td><td>Fornecedor de pagamentos</td></tr>
+    <tr><td class="k">Anthropic</td><td>Assistente de IA</td><td>Conversa, nome e NUIT da empresa, resultados de consultas</td><td>EUA</td></tr>
+    <tr><td class="k">Google</td><td>OCR de documentos; entrada com conta Google</td><td>Imagem do documento; nome e e-mail</td><td>EUA / global</td></tr>
+    <tr><td class="k">OfficeGest</td><td>Facturação da LTS aos subscritores</td><td>Identificação e contactos da empresa subscritora</td><td>Fornecedor de software de facturação</td></tr>
+  </tbody>
+</table>
+
+<h2>6.5 Transferências internacionais</h2>
+<p>Como descrito no Capítulo 4, os dados pessoais dos utilizadores moçambicanos são tratados e armazenados <strong>fora de Moçambique</strong>, principalmente nos Estados Unidos. As salvaguardas aplicadas são:</p>
+<ul>
+  <li>cifragem em trânsito (TLS) em todas as transferências e cifragem em repouso no destino;</li>
+  <li>escolha de fornecedores de nuvem de referência internacional, com programas de segurança e conformidade próprios;</li>
+  <li>envio a cada subcontratante apenas dos dados necessários à sua função;</li>
+  <li>controlo de acesso na base de dados independente do fornecedor (RLS).</li>
+</ul>
+<p>Caso a regulamentação moçambicana venha a exigir a localização dos dados em território nacional, a arquitectura permite migrar a base de dados para outra infra-estrutura PostgreSQL, uma vez que o esquema está totalmente descrito em migrações versionadas.</p>
+
+<h2>6.6 Direitos dos titulares</h2>
+<p>Os titulares podem pedir acesso, rectificação ou eliminação dos seus dados através dos canais de contacto da LTS (<code>info@ispcfacil.com</code>).</p>
+<ul>
+  <li><strong>Acesso e portabilidade:</strong> o contribuinte exporta os seus dados em Excel, CSV, PDF e SAF-T directamente na aplicação.</li>
+  <li><strong>Rectificação:</strong> o utilizador corrige o perfil, os dados da empresa e os dados dos clientes na aplicação. Documentos fiscais emitidos não são alterados; corrigem-se por anulação ou Nota de Crédito, como exige a lei fiscal.</li>
+  <li><strong>Eliminação:</strong> tratada a pedido, sem prejuízo da obrigação legal de conservar documentos fiscais. Clientes e empresas sem documentos associados podem ser eliminados pelo próprio utilizador; conversas com o assistente podem ser apagadas pelo utilizador.</li>
+</ul>
+
+<h2>6.7 Conservação</h2>
+<p>Os documentos fiscais (facturas, recibos, notas de crédito) e os registos que os suportam são conservados durante os prazos exigidos pela legislação fiscal e comercial. Os restantes dados são conservados enquanto a subscrição estiver activa e pelo tempo necessário às finalidades indicadas. <span class="confirm">[A confirmar pela LTS: prazos concretos de conservação após o fim da subscrição para dados de conta, auditoria, registos de e-mail e conversas de IA.]</span></p>
+
+<h2>6.8 Gestão de incidentes</h2>
+<p>A LTS monitoriza a plataforma através dos registos do Supabase (base de dados, autenticação, funções) e da auditoria interna. Em caso de incidente de segurança que afecte dados pessoais, a LTS contém o incidente, avalia o impacto, informa os clientes afectados e as autoridades competentes quando aplicável, e aplica medidas correctivas. <span class="confirm">[A confirmar pela LTS: responsável pela protecção de dados e contacto de incidentes.]</span></p>
+
+<!-- ================================================================ 7. IP / ASN -->
+<h1><span class="num">7</span>Endereços IP públicos e ASN</h1>
+
+<div class="box summary"><span class="box-title">Resumo</span>O ISPC Fácil <strong>não tem Número de Sistema Autónomo (ASN) próprio nem endereços IP fixos dedicados</strong>. Como todos os serviços estão na nuvem, os endereços pertencem aos fornecedores (Amazon, Cloudflare, InMotion, Microsoft) e podem mudar. Para efeitos de filtragem ou monitorização, recomenda-se usar os <strong>nomes de domínio</strong> indicados abaixo, e não os endereços IP.</div>
+
+<h2>7.1 Domínios e endereços da plataforma</h2>
+<p class="small">Resolução DNS pública realizada em 11/11/2026. ASN obtido por consulta ao serviço Team Cymru IP-to-ASN.</p>
+<table>
+  <thead><tr><th style="width:26%">Nome</th><th style="width:20%">Função</th><th style="width:25%">Endereços IP</th><th>ASN / Operador</th></tr></thead>
+  <tbody>
+    <tr><td class="k mono">ispcfacil.com</td><td>Sítio público e aplicação</td><td class="mono">52.74.6.109<br>13.215.239.219</td><td><strong>AS16509</strong> — Amazon.com (infra-estrutura Netlify)</td></tr>
+    <tr><td class="k mono">*.ispcfacil.com<br>app.ispcfacil.com</td><td>Aplicação por cliente (CNAME <code>ispcfacilmz.netlify.app</code>)</td><td class="mono">52.74.6.109<br>13.215.239.219</td><td><strong>AS16509</strong> — Amazon.com (infra-estrutura Netlify)</td></tr>
+    <tr><td class="k mono">ycpnmwlkfolsaubndznj<br>.supabase.co</td><td>API, autenticação, ficheiros, tempo real, funções</td><td class="mono">104.18.38.10<br>172.64.149.246</td><td><strong>AS13335</strong> — Cloudflare, Inc.</td></tr>
+    <tr><td class="k mono">aws-1-us-east-2<br>.pooler.supabase.com</td><td>Acesso PostgreSQL (manutenção técnica)</td><td class="mono">3.131.201.192<br>13.58.13.125<br>3.148.140.216</td><td><strong>AS16509</strong> — Amazon.com (AWS us-east-2)</td></tr>
+    <tr><td class="k mono">ispcfacil.co.mz<br>mail.ispcfacil.co.mz</td><td>Sítio institucional e servidor de e-mail (SMTP)</td><td class="mono">144.208.78.130</td><td><strong>AS54641</strong> — InMotion Hosting, Inc.</td></tr>
+    <tr><td class="k mono">MX de ispcfacil.com</td><td>Correio institucional</td><td class="mono">52.101.0.0/16 (vários)</td><td><strong>AS8075</strong> — Microsoft Corporation</td></tr>
+    <tr><td class="k mono">NS de ispcfacil.com</td><td>DNS autoritativo</td><td class="mono">dns1–4.p08.nsone.net</td><td>NS1 (rede anycast)</td></tr>
+  </tbody>
+</table>
+
+<h2>7.2 Serviços externos contactados pelo servidor</h2>
+<table>
+  <thead><tr><th style="width:30%">Nome</th><th style="width:22%">Serviço</th><th style="width:20%">Endereço IP</th><th>ASN / Operador</th></tr></thead>
+  <tbody>
+    <tr><td class="k mono">sms2q.com</td><td>Sislog (pagamentos)</td><td class="mono">67.209.116.164</td><td><strong>AS209341</strong> — WHG Hosting Services</td></tr>
+    <tr><td class="k mono">api.anthropic.com</td><td>Assistente de IA</td><td class="mono">160.79.104.10</td><td>Anthropic</td></tr>
+    <tr><td class="k mono">vision.googleapis.com</td><td>OCR</td><td class="mono">172.217.112.0/21 (vários)</td><td><strong>AS15169</strong> — Google LLC</td></tr>
+    <tr><td class="k mono">lawtec.officegest.com</td><td>Facturação LTS</td><td class="mono">62.48.222.226 e outros</td><td>Balanceador do fornecedor</td></tr>
+  </tbody>
+</table>
+
+<h2>7.3 Notas</h2>
+<ul>
+  <li>Os endereços da Netlify, Cloudflare e Google são <strong>dinâmicos e partilhados</strong> por múltiplos clientes desses fornecedores; podem variar consoante a localização de quem consulta e ao longo do tempo.</li>
+  <li>O tráfego de saída das funções de servidor (por exemplo, para a Sislog) não tem um IP fixo garantido. Caso um parceiro exija uma lista de IP autorizados, a LTS pode configurar um endereço de saída dedicado.</li>
+  <li>Para obter os valores actuais: <code>nslookup &lt;nome&gt;</code> e, para o ASN, <code>whois -h whois.cymru.com " -v &lt;ip&gt;"</code>.</li>
+</ul>
+
+<!-- ================================================================ ANEXOS -->
+<h1><span class="num">A</span>Glossário</h1>
+<table>
+  <thead><tr><th style="width:24%">Termo</th><th>Significado</th></tr></thead>
+  <tbody>
+    <tr><td class="k">API</td><td>Interface através da qual programas comunicam entre si; aqui, o canal pelo qual a aplicação pede dados ao servidor.</td></tr>
+    <tr><td class="k">ASN</td><td>Número de Sistema Autónomo: identificador de uma rede na Internet, atribuído a operadores e grandes fornecedores.</td></tr>
+    <tr><td class="k">CDN</td><td>Rede de distribuição de conteúdos: servidores espalhados pelo mundo que entregam ficheiros a partir do ponto mais próximo do utilizador.</td></tr>
+    <tr><td class="k">Edge Function</td><td>Pequeno programa que corre no servidor do Supabase para tarefas que não podem ser feitas no dispositivo (guardar chaves, falar com terceiros).</td></tr>
+    <tr><td class="k">Gatilho (trigger)</td><td>Regra que a base de dados executa automaticamente quando um registo é criado ou alterado.</td></tr>
+    <tr><td class="k">Hash</td><td>Transformação irreversível de um valor (por exemplo, um PIN) que permite verificá-lo sem o guardar em texto legível.</td></tr>
+    <tr><td class="k">ISPC</td><td>Imposto Simplificado para Pequenos Contribuintes.</td></tr>
+    <tr><td class="k">JWT</td><td>Token assinado digitalmente que prova a identidade de um utilizador em cada pedido.</td></tr>
+    <tr><td class="k">Migração</td><td>Ficheiro que descreve uma alteração à estrutura da base de dados, aplicado por ordem e guardado no histórico.</td></tr>
+    <tr><td class="k">Multi-inquilino</td><td>Uma única instalação servindo vários clientes, com os dados de cada um separados.</td></tr>
+    <tr><td class="k">NUIT</td><td>Número Único de Identificação Tributária.</td></tr>
+    <tr><td class="k">OCR</td><td>Reconhecimento óptico de caracteres: leitura automática de texto em imagens.</td></tr>
+    <tr><td class="k">PWA</td><td>Aplicação web que pode ser instalada no dispositivo como uma aplicação.</td></tr>
+    <tr><td class="k">RLS</td><td>Row-Level Security: regras na base de dados que decidem, linha a linha, quem pode ver ou alterar cada registo.</td></tr>
+    <tr><td class="k">RPC</td><td>Chamada a uma função definida no servidor.</td></tr>
+    <tr><td class="k">SaaS</td><td>Software como serviço: software usado pela Internet mediante subscrição.</td></tr>
+    <tr><td class="k">SAF-T</td><td>Standard Audit File for Tax: ficheiro normalizado com os dados de facturação, para a administração fiscal.</td></tr>
+    <tr><td class="k">TLS / HTTPS</td><td>Protocolos que cifram a comunicação entre o dispositivo e o servidor.</td></tr>
+    <tr><td class="k">USSD</td><td>Serviço de mensagens do telemóvel usado pelas carteiras móveis para pedir a confirmação do pagamento.</td></tr>
+    <tr><td class="k">Webhook</td><td>Notificação automática enviada por um sistema externo quando algo acontece (por exemplo, um pagamento concluído).</td></tr>
+  </tbody>
+</table>
+
+<h1><span class="num">B</span>Funções de servidor</h1>
+<table>
+  <thead><tr><th style="width:27%">Função</th><th style="width:43%">Finalidade</th><th>Autenticação</th></tr></thead>
+  <tbody>
+    <tr><td class="k mono">send-invoice-email</td><td>Envia factura, recibo ou extracto em PDF por e-mail.</td><td>Sessão do utilizador (JWT); dados lidos com RLS.</td></tr>
+    <tr><td class="k mono">invite-user</td><td>Convida um utilizador para uma empresa.</td><td>JWT; apenas proprietário da empresa.</td></tr>
+    <tr><td class="k mono">notify-admin</td><td>Avisa a LTS de novos registos e envia e-mail de boas-vindas.</td><td>JWT.</td></tr>
+    <tr><td class="k mono">admin-create-user</td><td>Criação de utilizadores a partir do back-office.</td><td>JWT.</td></tr>
+    <tr><td class="k mono">subscription-notify</td><td>Envia ou reenvia confirmações de subscrição.</td><td>JWT; apenas administrador da plataforma.</td></tr>
+    <tr><td class="k mono">process-subscription-payment</td><td>Inicia o pagamento M-Pesa/e-Mola via Sislog.</td><td>JWT.</td></tr>
+    <tr><td class="k mono">sislog-webhook</td><td>Recebe a confirmação de pagamento da Sislog e activa a subscrição.</td><td>Pública (chamada pela Sislog); correspondência por referência da transacção.</td></tr>
+    <tr><td class="k mono">sync-officegest</td><td>Emite a factura da LTS no OfficeGest.</td><td>JWT.</td></tr>
+    <tr><td class="k mono">ai-assistant</td><td>Assistente virtual (Claude), com resposta em fluxo.</td><td>JWT; consultas com RLS; quota por plano.</td></tr>
+    <tr><td class="k mono">ai-alerts</td><td>Gera alertas inteligentes por regras SQL (sem IA).</td><td>Segredo de tarefa agendada ou JWT.</td></tr>
+    <tr><td class="k mono">send-tax-reminders</td><td>Envia lembretes fiscais por e-mail.</td><td>Segredo de tarefa agendada, JWT de administrador ou pedido de teste do proprietário.</td></tr>
+    <tr><td class="k mono">pos-pair-terminal</td><td>Emparelha um terminal POS.</td><td>Código de uso único (15 min, em hash).</td></tr>
+    <tr><td class="k mono">process-document</td><td>OCR de documentos da empresa (Google Vision).</td><td>JWT (por omissão da plataforma).</td></tr>
+    <tr><td class="k mono">cleanup-pending</td><td>Manutenção de ambiente de testes.</td><td>JWT e segredo de manutenção.</td></tr>
+  </tbody>
+</table>
+
+<h1><span class="num">C</span>Domínios e serviços externos</h1>
+<table>
+  <thead><tr><th style="width:36%">Domínio</th><th style="width:22%">Chamado por</th><th>Finalidade</th></tr></thead>
+  <tbody>
+    <tr><td class="k mono">ispcfacil.com, *.ispcfacil.com</td><td>Navegador / app</td><td>Aplicação e sítio público.</td></tr>
+    <tr><td class="k mono">ycpnmwlkfolsaubndznj.supabase.co</td><td>Navegador / app</td><td>API, autenticação, ficheiros, tempo real, funções.</td></tr>
+    <tr><td class="k mono">fonts.googleapis.com, fonts.gstatic.com</td><td>Navegador</td><td>Tipos de letra.</td></tr>
+    <tr><td class="k mono">cdnjs.cloudflare.com</td><td>Navegador</td><td>Ícones (Font Awesome).</td></tr>
+    <tr><td class="k mono">accounts.google.com</td><td>Navegador</td><td>Entrada com conta Google (opcional).</td></tr>
+    <tr><td class="k mono">wa.me</td><td>Navegador</td><td>Ligação de apoio por WhatsApp.</td></tr>
+    <tr><td class="k mono">api.anthropic.com</td><td>Servidor</td><td>Assistente de IA.</td></tr>
+    <tr><td class="k mono">vision.googleapis.com</td><td>Servidor</td><td>OCR.</td></tr>
+    <tr><td class="k mono">sms2q.com</td><td>Servidor</td><td>Sislog — pagamentos.</td></tr>
+    <tr><td class="k mono">lawtec.officegest.com</td><td>Servidor</td><td>Facturação LTS.</td></tr>
+    <tr><td class="k mono">mail.ispcfacil.co.mz</td><td>Servidor</td><td>Envio de e-mail (SMTP).</td></tr>
+  </tbody>
+</table>
+
+<h1 style="break-before: auto; margin-top: 10mm;"><span class="num">D</span>Versões tecnológicas</h1>
+<table>
+  <thead><tr><th style="width:40%">Componente</th><th>Versão (Novembro de 2026)</th></tr></thead>
+  <tbody>
+    <tr><td class="k">Angular / Angular Material</td><td>21.0</td></tr>
+    <tr><td class="k">TypeScript</td><td>5.9</td></tr>
+    <tr><td class="k">Capacitor (Android / iOS)</td><td>8.3</td></tr>
+    <tr><td class="k">supabase-js</td><td>2.89</td></tr>
+    <tr><td class="k">PostgreSQL</td><td>17.6</td></tr>
+    <tr><td class="k">Supabase Auth (GoTrue)</td><td>2.194</td></tr>
+    <tr><td class="k">PostgREST</td><td>14.1</td></tr>
+    <tr><td class="k">Supabase Storage</td><td>1.67</td></tr>
+    <tr><td class="k">Aplicação Android</td><td>1.0.1 (código 2), identificador com.ispcfacilmz.app</td></tr>
+  </tbody>
+</table>
+
+</body>
+</html>
