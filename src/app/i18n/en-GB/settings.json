@@ -71,6 +71,7 @@
     "activateTrial": "Start free trial",
     "upgrade": "Upgrade (M-Pesa / e-Mola)",
     "subscribe": "Subscribe (M-Pesa / e-Mola)",
+    "renew": "Renew (M-Pesa / e-Mola)",
     "empty": "Select a company to view its subscription and the available plans",
     "shorterCycleBlockedShort": "You cannot shorten the period while the subscription is active"
   },

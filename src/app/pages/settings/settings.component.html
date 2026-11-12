@@ -235,7 +235,7 @@
               @for (plan of availablePlans; track plan.name) {
                 <mat-card class="plan-card border rounded-2xl shadow-sm transition-all relative overflow-hidden" 
                   [class.border-amber-400]="plan.is_popular" 
-                  [class.current-plan]="subscription()?.plan_name === plan.name && subscription()?.billing_cycle === selectedCycle()">
+                  [class.current-plan]="isCurrentPlan(plan)">
                   <mat-card-header>
                     <div class="w-full flex justify-between items-start">
                       <div>
@@ -268,12 +268,23 @@
                       }
                     </ul>
 
-                    @if (subscription()?.plan_name === plan.name && subscription()?.billing_cycle === selectedCycle()) {
-                      <!-- Plano atual com exatamente o mesmo período selecionado -->
+                    @if (isCurrentPlan(plan)) {
+                      <!-- Plano atual, activo, com exatamente o mesmo período selecionado -->
                       <div class="text-center py-2.5 bg-green-50 rounded-xl border border-green-200">
                         <span class="text-green-700 font-bold text-sm">{{ 'settings.subscription.currentPlanBadge' | t }}</span>
                       </div>
-                    } @else if (subscription()?.plan_name === plan.name && subscription()?.billing_cycle !== selectedCycle()) {
+                    } @else if (isSamePlan(plan) && !hasActivePeriod()) {
+                      <!-- Plano da subscrição expirada/cancelada: renovar (o Trial não se renova) -->
+                      @if (plan.monthly_price === 0) {
+                        <div class="text-center py-2.5 bg-slate-100 rounded-xl border border-slate-200">
+                          <span class="text-slate-500 font-medium text-sm">{{ 'settings.subscription.notAvailable' | t }}</span>
+                        </div>
+                      } @else {
+                        <button mat-raised-button color="primary" class="!py-2.5 !rounded-xl !font-bold w-full" (click)="changePlan(plan)">
+                          {{ 'settings.subscription.renew' | t }}
+                        </button>
+                      }
+                    } @else if (isSamePlan(plan)) {
                       <!-- Mesmo plano mas período diferente — permitir mudar o período -->
                       @if (plan.monthly_price === 0) {
                         <div class="text-center py-2.5 bg-slate-100 rounded-xl border border-slate-200">

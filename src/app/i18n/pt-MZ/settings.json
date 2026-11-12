@@ -71,6 +71,7 @@
     "activateTrial": "Ativar Período de Teste",
     "upgrade": "Fazer Upgrade (M-Pesa / e-Mola)",
     "subscribe": "Subscrever (M-Pesa / e-Mola)",
+    "renew": "Renovar (M-Pesa / e-Mola)",
     "empty": "Selecione uma empresa para ver a subscrição e os planos disponíveis",
     "shorterCycleBlockedShort": "Não é possível reduzir o período enquanto a subscrição estiver activa"
   },

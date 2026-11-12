@@ -144,6 +144,22 @@ export class SettingsComponent implements OnInit {
       }
     }, { allowSignalWrites: true });
 
+    // Mostra os preços no período da subscrição carregada/activada (ex.: Trimestral),
+    // para o cartão do plano actual aparecer como "Plano Atual" e não como downgrade
+    // do separador Mensal. Só muda quando a subscrição ou o seu período mudam,
+    // para não desfazer a escolha do utilizador nas actualizações por polling.
+    let lastCycleKey = '';
+    effect(() => {
+      const sub = this.subscription();
+      const key = sub ? `${sub.id}:${sub.billing_cycle}` : '';
+      if (key === lastCycleKey) return;
+      lastCycleKey = key;
+      const cycle = sub?.billing_cycle;
+      if (cycle === 'monthly' || cycle === 'quarterly' || cycle === 'semiannual' || cycle === 'yearly') {
+        this.selectedCycle.set(cycle);
+      }
+    }, { allowSignalWrites: true });
+
     effect(() => {
       if (this.wantPosTab() && this.posEnabled() && !this.locked()) {
         this.selectedTab.set(this.posTabIndex);
@@ -616,6 +632,19 @@ export class SettingsComponent implements OnInit {
   /** Mudar para este plano (no ciclo seleccionado) seria um downgrade bloqueado? */
   isDowngrade(plan: SubscriptionPlan, cycle: BillingCycle = this.selectedCycle()): boolean {
     return this.subscriptionService.isDowngrade(plan, cycle);
+  }
+
+  /** O plano é o da subscrição da empresa (independentemente do período ou de estar expirada). */
+  isSamePlan(plan: SubscriptionPlan): boolean {
+    const name = (this.subscription()?.plan_name || '').trim().toLowerCase();
+    return !!name && name === plan.name.trim().toLowerCase();
+  }
+
+  /** "Plano Atual": mesmo plano, mesmo período seleccionado e subscrição ainda activa. */
+  isCurrentPlan(plan: SubscriptionPlan): boolean {
+    return this.isSamePlan(plan)
+      && this.subscription()?.billing_cycle === this.selectedCycle()
+      && this.hasActivePeriod();
   }
 
   /** Subscrição actual activa (não expirada): só é possível fazer upgrade. */

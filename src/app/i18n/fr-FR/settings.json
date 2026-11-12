@@ -71,6 +71,7 @@
     "activateTrial": "Activer l'essai gratuit",
     "upgrade": "Passer à la formule supérieure (M-Pesa / e-Mola)",
     "subscribe": "S'abonner (M-Pesa / e-Mola)",
+    "renew": "Renouveler (M-Pesa / e-Mola)",
     "empty": "Sélectionnez une entreprise pour voir son abonnement et les formules disponibles",
     "shorterCycleBlockedShort": "Impossible de réduire la période tant que l'abonnement est actif"
   },
