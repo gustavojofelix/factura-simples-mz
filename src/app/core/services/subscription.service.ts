@@ -696,7 +696,8 @@ export class SubscriptionService {
   /**
    * Mudar para `target` (no ciclo `cycle`) é um downgrade não permitido?
    * - pago -> gratuito (Trial): sempre bloqueado;
-   * - nível inferior: sempre bloqueado, mesmo depois de expirar;
+   * - subscrição expirada/cancelada: qualquer plano pago é permitido;
+   * - nível inferior com a subscrição activa: bloqueado;
    * - ciclo mais curto (ex.: Anual -> Mensal) com a subscrição activa:
    *   bloqueado, salvo se o plano alvo for de nível superior.
    * Igual a public.subscription_change_is_downgrade() no SQL.
@@ -706,13 +707,14 @@ export class SubscriptionService {
     const current = this.currentPlanLevel();
     if (!sub || !current) return false;
     if (current.monthly_price > 0 && target.monthly_price === 0) return true;
+    if (!this.hasActivePeriod()) return false;
 
     const samePlan = (sub.plan_name || '').trim().toLowerCase() === target.name.trim().toLowerCase();
     const curTier = current.tier;
     const newTier = this.planTier(target);
     if (!samePlan && curTier !== null && newTier !== null && newTier < curTier) return true;
 
-    if (!cycle || !sub.billing_cycle || !this.hasActivePeriod()) return false;
+    if (!cycle || !sub.billing_cycle) return false;
     if (!samePlan && curTier !== null && newTier !== null && newTier > curTier) return false;
     return cycleDays(cycle) < cycleDays(sub.billing_cycle);
   }
