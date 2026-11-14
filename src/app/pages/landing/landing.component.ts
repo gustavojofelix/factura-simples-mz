@@ -11,7 +11,7 @@ import {
   HostListener
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { LoginFormComponent } from '../../shared/components/login-form/login-form.component';
@@ -180,11 +180,17 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
     private subscriptionService: SubscriptionService,
-    public cmsService: LandingCmsService
+    public cmsService: LandingCmsService,
+    private route: ActivatedRoute
   ) {}
 
   async ngOnInit() {
     this.loadCookieConsent();
+
+    // Links dos e-mails (rodapé): /#/?doc=termos ou /#/?doc=privacidade.
+    const doc = this.route.snapshot.queryParamMap.get('doc');
+    if (doc === 'termos') this.openTerms();
+    else if (doc === 'privacidade') this.openPrivacy();
 
     this.contactForm = this.fb.group({
       nome: ['', [Validators.required, Validators.minLength(2)]],

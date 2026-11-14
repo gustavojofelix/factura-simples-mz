@@ -1078,9 +1078,12 @@ export class AdminRevenueComponent implements OnInit {
 
       // 3. Factura no OfficeGest emitida já, como no pagamento automático.
       // Se falhar, fica disponível o botão de emitir no detalhe do pagamento.
-      this.supabase.client.functions
-        .invoke('sync-officegest', { body: { payment_ids: [payment.id] } })
-        .catch((e) => console.warn('OfficeGest após confirmação manual:', e));
+      // Esperamos pela emissão para o e-mail ao cliente seguir com o PDF da factura.
+      try {
+        await this.supabase.client.functions.invoke('sync-officegest', { body: { payment_ids: [payment.id] } });
+      } catch (e) {
+        console.warn('OfficeGest após confirmação manual:', e);
+      }
 
       // Auditoria
       await this.auditLogService.log(

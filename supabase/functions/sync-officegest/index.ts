@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.8";
+import { OFFICEGEST_DOCTYPE, ogFormFetch } from "../_shared/officegest.ts";
 
 /**
  * sync-officegest Edge Function
@@ -18,10 +19,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.8";
  *   { synced: number, failed: number, errors: string[], documents: { payment_id, document_number }[] }
  */
 
-const OFFICEGEST_BASE = Deno.env.get("OFFICEGEST_BASE_URL") || "https://lawtec.officegest.com";
-const OFFICEGEST_USER = Deno.env.get("OFFICEGEST_USER") || "admin";
-const OFFICEGEST_HASH = Deno.env.get("OFFICEGEST_HASH") || "f9b7aa18f67ca92aa3f615c64222b2ff0f77b148";
-const OFFICEGEST_DOCTYPE = Deno.env.get("OFFICEGEST_DOCTYPE") || "FT";
 // Artigo criado no OfficeGest para representar as subscrições
 const OFFICEGEST_ARTICLE_ID = Deno.env.get("OFFICEGEST_ARTICLE_ID") || "LFSUXT";
 
@@ -29,30 +26,6 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-// ── OfficeGest API helpers ────────────────────────────────────────────────────
-
-function ogAuthHeader(): string {
-  const credentials = btoa(`${OFFICEGEST_USER}:${OFFICEGEST_HASH}`);
-  return `Basic ${credentials}`;
-}
-
-async function ogFormFetch(path: string, method = "GET", formParams?: Record<string, string>): Promise<Response> {
-  const url = `${OFFICEGEST_BASE}/api${path}`;
-  const headers: Record<string, string> = {
-    "Authorization": ogAuthHeader(),
-    "Accept": "application/json",
-  };
-
-  const options: RequestInit = { method, headers };
-  if (formParams && (method === "POST" || method === "PUT" || method === "PATCH")) {
-    headers["Content-Type"] = "application/x-www-form-urlencoded";
-    options.body = new URLSearchParams(formParams).toString();
-  }
-
-  const res = await fetch(url, options);
-  return res;
-}
 
 // NUITs de demonstração ou genéricos que nunca devem ser usados como chave única de cliente
 const DUMMY_TAX_IDS = new Set([

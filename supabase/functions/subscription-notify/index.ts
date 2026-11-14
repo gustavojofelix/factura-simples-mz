@@ -69,6 +69,8 @@ serve(async (req) => {
   const result = await notifySubscriptionActivated(db, paymentId, {
     source,
     force,
+    // O painel já esperou pela emissão no OfficeGest: não atrasar a resposta.
+    invoiceWaitSeconds: 0,
     actorEmail: profile?.email || userData.user.email || null,
   });
 

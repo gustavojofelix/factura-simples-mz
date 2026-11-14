@@ -236,6 +236,10 @@ serve(async (req) => {
     // período na descrição. Em runInBackground para o runtime não cortar o
     // pedido quando respondemos à Sislog. Se falhar, o pagamento fica sem
     // officegest_document_id e o admin emite-a em Receitas → Sincronizar.
+    // 4. E-mails de confirmação (cliente + LTS) DEPOIS da factura, para seguirem
+    // com o PDF em anexo. Tudo em segundo plano, para responder 200 à Sislog de
+    // imediato. notifySubscriptionActivated é idempotente
+    // (client_notified_at / admin_notified_at) e regista tudo em email_log.
     runInBackground(
       fetch(`${supabaseUrl}/functions/v1/sync-officegest`, {
         method: "POST",
@@ -244,19 +248,15 @@ serve(async (req) => {
           "Authorization": `Bearer ${supabaseServiceKey}`,
         },
         body: JSON.stringify({ payment_ids: [payment.id] }),
-      }).then(async (r) => {
-        const txt = await r.text().catch(() => "");
-        console.log(`[SislogWebhook] OfficeGest sync result (${r.status}): ${txt}`);
-      }),
-    );
-
-    // 4. E-mails de confirmação (cliente + LTS) em segundo plano, para responder
-    // 200 à Sislog de imediato. notifySubscriptionActivated é idempotente
-    // (client_notified_at / admin_notified_at) e regista tudo em email_log.
-    runInBackground(
-      notifySubscriptionActivated(supabase, payment.id, { source: "webhook" }).then((r) =>
-        console.log(`[SislogWebhook] Notifications for ${payment.id}:`, JSON.stringify(r))
-      ),
+      })
+        .then(async (r) => {
+          const txt = await r.text().catch(() => "");
+          console.log(`[SislogWebhook] OfficeGest sync result (${r.status}): ${txt}`);
+        })
+        .catch((e) => console.error("[SislogWebhook] OfficeGest sync failed:", e))
+        // Se a factura falhou, não vale a pena esperar por ela.
+        .then(() => notifySubscriptionActivated(supabase, payment.id, { source: "webhook", invoiceWaitSeconds: 5 }))
+        .then((r) => console.log(`[SislogWebhook] Notifications for ${payment.id}:`, JSON.stringify(r))),
     );
 
     // Must return 200 so Sislog considers the notification delivered

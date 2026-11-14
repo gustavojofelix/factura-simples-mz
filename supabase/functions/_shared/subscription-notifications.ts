@@ -17,6 +17,7 @@ import {
   detailsTable,
   emailLayout,
   escapeHtml,
+  noticeBox,
   sendEmail,
   type SendEmailResult,
   uniqueEmails,
@@ -27,6 +28,7 @@ import {
   getCompanyNotificationSettings,
 } from "./notification-recipients.ts";
 import { type EmailLanguage, getUserLanguage, type Localized, pick } from "./i18n.ts";
+import { fetchOfficeGestInvoicePdf, type InvoicePdfResult } from "./officegest.ts";
 
 export type NotifySource = "webhook" | "manual" | "resend";
 
@@ -36,6 +38,11 @@ export interface NotifyOptions {
   actorEmail?: string | null;
   /** Ignora client_notified_at / admin_notified_at e envia de novo. */
   force?: boolean;
+  /**
+   * Segundos a esperar pela factura do OfficeGest quando ainda não foi emitida
+   * (a emissão corre em paralelo após a confirmação). Por omissão 30.
+   */
+  invoiceWaitSeconds?: number;
 }
 
 export interface NotifyPartResult {
@@ -285,6 +292,21 @@ const CLIENT_TEXT = {
     "fr-FR": (plan: string, start: string, end: string) =>
       `Comme il vous restait du temps d'abonnement payé, cette période commence ensuite : la formule <strong>${plan}</strong> sera active du <strong>${start}</strong> au <strong>${end}</strong>. D'ici là, vous conservez votre formule actuelle.`,
   } as Localized<(plan: string, start: string, end: string) => string>,
+  invoice: { "pt-MZ": "Factura", "en-GB": "Invoice", "fr-FR": "Facture" } as Localized,
+  /** `number` já vem escapado. */
+  invoiceAttached: {
+    "pt-MZ": (number: string) =>
+      `📎 Segue em anexo a factura <strong>${number}</strong> em PDF, referente a este pagamento. Guarde-a para a sua contabilidade.`,
+    "en-GB": (number: string) =>
+      `📎 Invoice <strong>${number}</strong> for this payment is attached as a PDF. Please keep it for your accounting records.`,
+    "fr-FR": (number: string) =>
+      `📎 Vous trouverez en pièce jointe la facture <strong>${number}</strong> au format PDF, relative à ce paiement. Conservez-la pour votre comptabilité.`,
+  } as Localized<(number: string) => string>,
+  invoiceLater: {
+    "pt-MZ": "A factura deste pagamento ainda está a ser emitida e ser-lhe-á enviada em breve. Se não a receber, contacte o apoio ao cliente.",
+    "en-GB": "The invoice for this payment is still being issued and will be sent to you shortly. If you do not receive it, please contact customer support.",
+    "fr-FR": "La facture de ce paiement est en cours d'émission et vous sera envoyée prochainement. Si vous ne la recevez pas, contactez l'assistance client.",
+  } as Localized,
   thanks: {
     "pt-MZ": "Agradecemos a sua preferência. Pode continuar a utilizar todas as funcionalidades sem interrupções.",
     "en-GB": "Thank you for choosing ISPC Fácil. You can continue to use all features without interruption.",
@@ -299,6 +321,8 @@ function clientHtml(
   plan: ReturnType<typeof activatedPlan>,
   language: EmailLanguage,
   period: { start: string; end: string; queued: boolean } | null = null,
+  invoiceNumber: string | null = null,
+  invoiceAttached = false,
 ): string {
   const t = CLIENT_TEXT;
   const L = language;
@@ -320,7 +344,11 @@ function clientHtml(
       [pick(t.method, L), `${methodLabel(payment.payment_method)}${payment.phone_number ? ` (${payment.phone_number})` : ""}`],
       [pick(t.reference, L), s.reference || payment.reference_code],
       [pick(t.validUntil, L), periodEnd],
+      ...(invoiceNumber ? [[pick(t.invoice, L), invoiceNumber] as [string, string]] : []),
     ])}
+    ${invoiceAttached && invoiceNumber
+      ? noticeBox(pick(t.invoiceAttached, L)(escapeHtml(invoiceNumber)))
+      : noticeBox(escapeHtml(pick(t.invoiceLater, L)))}
     <p>${pick(t.thanks, L)}</p>`;
   return emailLayout(pick(t.title, L), inner, undefined, L);
 }
@@ -333,9 +361,15 @@ function adminHtml(
   opts: NotifyOptions,
   plan: ReturnType<typeof activatedPlan>,
   period: { start: string; end: string; queued: boolean } | null = null,
+  invoice: { number: string | null; pdf: InvoicePdfResult | null } = { number: null, pdf: null },
 ): string {
   const c = payment.companies ?? {};
   const s = sislogInfo(payment);
+  const invoiceStatus = !invoice.number
+    ? "Ainda não emitida no OfficeGest (emitir em Receitas → Emitir no OfficeGest e reenviar os e-mails)."
+    : invoice.pdf?.ok
+      ? `${invoice.number} — PDF anexado (cliente e LTS)`
+      : `${invoice.number} — PDF não anexado: ${invoice.pdf && !invoice.pdf.ok ? invoice.pdf.error : "desconhecido"}`;
   const inner = `
     <p>Foi registado um pagamento de subscrição concluído.</p>
     ${detailsTable([
@@ -362,11 +396,38 @@ function adminHtml(
       ["Operador", s.provider],
       ["Data do pagamento", s.paidAt || formatDateTime(payment.updated_at)],
       ["Subscrição válida até", periodEnd],
+      ["Factura", invoiceStatus],
       ["Origem", sourceLabel(opts)],
       ["Cliente notificado em", clientRecipients.length ? clientRecipients.join(", ") : "Sem destinatário"],
       ["ID do pagamento", payment.id],
     ])}`;
   return emailLayout("Nova subscrição paga", inner, "Notificação interna do ISPC Fácil.");
+}
+
+interface InvoiceRef {
+  id: string | null;
+  number: string | null;
+}
+
+/**
+ * Factura do OfficeGest deste pagamento. A emissão (sync-officegest) corre em
+ * paralelo à confirmação, por isso espera até `seconds` que ela apareça.
+ */
+async function waitForInvoice(db: DbClient, payment: Row, seconds: number): Promise<InvoiceRef> {
+  let id: string | null = payment.officegest_document_id ?? null;
+  let number: string | null = payment.officegest_document_number ?? null;
+  const deadline = Date.now() + Math.max(0, seconds) * 1000;
+  while (!id && Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 3000));
+    const { data } = await db
+      .from("subscription_payments")
+      .select("officegest_document_id, officegest_document_number")
+      .eq("id", payment.id)
+      .maybeSingle();
+    id = data?.officegest_document_id ?? null;
+    number = data?.officegest_document_number ?? null;
+  }
+  return { id, number: number || id };
 }
 
 function partFromSend(r: SendEmailResult): NotifyPartResult {
@@ -430,6 +491,20 @@ export async function notifySubscriptionActivated(
       relatedId: payment.id,
     };
 
+    // Factura do OfficeGest em PDF, anexada aos dois e-mails.
+    const invoice = await waitForInvoice(db, payment, options.invoiceWaitSeconds ?? 30);
+    const invoicePdf: InvoicePdfResult | null = invoice.id
+      ? await fetchOfficeGestInvoicePdf(invoice.id, invoice.number)
+      : null;
+    if (invoicePdf && !invoicePdf.ok) {
+      console.warn(`[subscription-notify] PDF da factura ${invoice.number} indisponível: ${invoicePdf.error}`);
+    } else if (!invoice.id) {
+      console.warn(`[subscription-notify] payment ${paymentId} sem factura no OfficeGest; e-mail sai sem anexo.`);
+    }
+    const attachments = invoicePdf?.ok
+      ? [{ filename: invoicePdf.filename, content: invoicePdf.content, contentType: "application/pdf" }]
+      : undefined;
+
     let client: NotifyPartResult = { ok: true, status: "already_sent" };
     if (needClient) {
       client = partFromSend(
@@ -437,8 +512,13 @@ export async function notifySubscriptionActivated(
           ...common,
           kind: "subscription_activated_client",
           to: clientRecipients,
+          replyTo: adminRecipients()[0],
           subject: pick(CLIENT_TEXT.subject, owner.language),
-          html: clientHtml(payment, owner.fullName, clientPeriodEnd, plan, owner.language, clientPeriod),
+          html: clientHtml(
+            payment, owner.fullName, clientPeriodEnd, plan, owner.language, clientPeriod,
+            invoice.number, !!attachments,
+          ),
+          attachments,
         }),
       );
     }
@@ -452,7 +532,11 @@ export async function notifySubscriptionActivated(
           to: adminRecipients(),
           replyTo: owner.email || undefined,
           subject: `[ISPC Fácil] Nova subscrição paga – ${companyName}`,
-          html: adminHtml(payment, owner, clientRecipients, periodEnd, options, plan, adminPeriod),
+          html: adminHtml(payment, owner, clientRecipients, periodEnd, options, plan, adminPeriod, {
+            number: invoice.number,
+            pdf: invoicePdf,
+          }),
+          attachments,
         }),
       );
     }
