@@ -43,7 +43,9 @@
   },
   "details": {
     "subscriptionExpired": "A subscrição desta empresa expirou. Renove o plano em Configurações → Subscrição para continuar.",
-    "downgradeBlocked": "Não é possível fazer downgrade do plano."
+    "downgradeBlocked": "Não é possível voltar ao período de teste depois de subscrever um plano pago.",
+    "queueLimit": "Já tem mais de 360 dias de subscrição pagos à frente.",
+    "subscriptionChangeBlocked": "O plano e as datas da subscrição só mudam através de um pagamento."
   },
   "text": {
     "network": "Sem ligação ao servidor. Verifique a sua internet e tente novamente.",

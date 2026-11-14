@@ -51,30 +51,25 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY') || '';
     const supabase           = createClient(supabaseUrl, supabaseServiceKey);
 
-    // ── Bloquear downgrade (plano inferior, ou ciclo mais curto com a subscrição activa) ──
+    // ── A compra é permitida? ───────────────────────────────────────────────
+    // Qualquer plano pago pode ser comprado: se a empresa já tem tempo pago, o
+    // novo período entra na fila (ver enqueue_subscription_period). Só se
+    // bloqueia o regresso ao Trial e uma fila com mais de 360 dias à frente.
     // Verificado ANTES do pedido USSD para que o cliente nunca seja cobrado.
-    const { data: isDowngrade, error: downgradeError } = await supabase.rpc('is_subscription_downgrade', {
-      p_company_id:   companyId,
-      p_target_plan:  planName,
-      p_target_cycle: billingCycle,
+    const { data: blockReason, error: blockError } = await supabase.rpc('subscription_purchase_block_reason', {
+      p_company_id:    companyId,
+      p_plan_name:     planName,
+      p_billing_cycle: billingCycle,
     });
-    if (downgradeError) {
-      // Migração ainda não aplicada ou erro transitório: não bloquear o pagamento.
-      console.warn('is_subscription_downgrade failed:', downgradeError.message);
-    } else if (isDowngrade === true) {
-      const { data: currentSub } = await supabase
-        .from('subscriptions')
-        .select('plan_name')
-        .eq('company_id', companyId)
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+    if (blockError) {
+      // Erro transitório: não bloquear o pagamento (o webhook aceita-o sempre).
+      console.warn('subscription_purchase_block_reason failed:', blockError.message);
+    } else if (blockReason) {
+      const error = blockReason === 'SUBSCRIPTION_QUEUE_LIMIT'
+        ? 'Já tem mais de 360 dias de subscrição pagos à frente. Poderá comprar mais tempo mais tarde.'
+        : 'Não é possível voltar ao período de teste depois de subscrever um plano pago.';
       return new Response(
-        JSON.stringify({
-          success: false,
-          code:    'SUBSCRIPTION_DOWNGRADE_BLOCKED',
-          error:   `Não é possível fazer downgrade do plano actual${currentSub?.plan_name ? ` (${currentSub.plan_name})` : ''}. Só é possível manter o plano ou mudar para um plano superior.`,
-        }),
+        JSON.stringify({ success: false, code: blockReason, error }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
     }

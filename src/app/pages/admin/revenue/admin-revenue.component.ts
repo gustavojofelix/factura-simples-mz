@@ -4,7 +4,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { startWith } from 'rxjs/operators';
 import { SupabaseService } from '../../../core/services/supabase.service';
-import { SubscriptionService } from '../../../core/services/subscription.service';
+import { BillingCycle, SubscriptionService } from '../../../core/services/subscription.service';
 import { AuditLogService } from '../../../core/services/audit-log.service';
 
 type PaymentStatus = 'pending' | 'completed' | 'failed' | 'cancelled';
@@ -1053,6 +1053,22 @@ export class AdminRevenueComponent implements OnInit {
     this.actionError.set('');
     this.actionSuccess.set('');
     try {
+      // 1. Período da subscrição (entra na fila se a empresa ainda tem tempo pago).
+      // Idempotente por pagamento: confirmar duas vezes não cria dois períodos.
+      const enqueued = await this.subscriptionService.enqueuePeriod(payment.company_id, {
+        planName: payment.plan_name,
+        billingCycle: payment.billing_cycle as BillingCycle,
+        amount: payment.amount,
+        currency: payment.currency,
+        paymentMethod: payment.payment_method,
+        paymentId: payment.id,
+        source: 'manual',
+      });
+      if (!enqueued.ok) {
+        throw new Error(`Não foi possível activar a subscrição: ${enqueued.error || 'erro desconhecido'}. O pagamento não foi alterado.`);
+      }
+
+      // 2. Pagamento concluído.
       const { error } = await this.supabase.db
         .from('subscription_payments')
         .update({ status: 'completed', updated_at: new Date().toISOString() })
@@ -1060,22 +1076,11 @@ export class AdminRevenueComponent implements OnInit {
 
       if (error) throw error;
 
-      // Activar subscrição da empresa
-      const subUpdated = await this.subscriptionService.upsertSubscription(
-        payment.company_id,
-        {
-          plan_name: payment.plan_name,
-          billing_cycle: payment.billing_cycle as any,
-          amount: payment.amount,
-          currency: payment.currency,
-          payment_method: payment.payment_method as any,
-          status: 'active'
-        }
-      );
-
-      if (!subUpdated) {
-        throw new Error('Pagamento confirmado mas não foi possível activar a subscrição. Verifique manualmente.');
-      }
+      // 3. Factura no OfficeGest emitida já, como no pagamento automático.
+      // Se falhar, fica disponível o botão de emitir no detalhe do pagamento.
+      this.supabase.client.functions
+        .invoke('sync-officegest', { body: { payment_ids: [payment.id] } })
+        .catch((e) => console.warn('OfficeGest após confirmação manual:', e));
 
       // Auditoria
       await this.auditLogService.log(

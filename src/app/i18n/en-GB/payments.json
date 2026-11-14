@@ -85,11 +85,14 @@
       "confirmed": "Payment confirmed! {plan} plan activated.",
       "voucherError": "Error validating voucher.",
       "noTrialBack": "You cannot return to the free trial after subscribing to a paid plan.",
-      "noDowngrade": "Downgrading the plan is not possible.",
       "activatedVoucher": "Subscription activated successfully with voucher!",
       "activateError": "Error activating subscription.",
       "activateUnexpected": "Unexpected error activating subscription.",
-      "requestError": "Error submitting payment request"
-    }
+      "requestError": "Error submitting payment request",
+      "queueLimit": "You already have more than 360 days of paid subscription ahead. You can buy more time later."
+    },
+    "periodRange": "Period: {start} to {end}",
+    "periodQueued": "You still have paid time: the {plan} plan starts when it ends. Until then you keep your current plan.",
+    "invoiceNow": "You pay now and the invoice is issued today."
   }
 }

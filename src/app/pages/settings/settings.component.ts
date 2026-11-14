@@ -21,7 +21,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CompanyService, Company } from '../../core/services/company.service';
 import { AccountService } from '../../core/services/account.service';
 import { TenantService } from '../../core/services/tenant.service';
-import { SubscriptionService, SubscriptionPlan, BillingCycle } from '../../core/services/subscription.service';
+import { SubscriptionService, SubscriptionPlan, SubscriptionPeriod, maputoToday } from '../../core/services/subscription.service';
 import { UserManagementService, UserWithCompanies } from '../../core/services/user-management.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CompanyDialogComponent } from '../../shared/components/company-dialog.component';
@@ -509,52 +509,34 @@ export class SettingsComponent implements OnInit {
       return;
     }
 
-    if (this.isDowngrade(plan, targetCycle)) {
-      this.snackBar.open(this.downgradeBlockedMessage(plan, targetCycle), t('common.actions.close'), { duration: 6000 });
+    // O Trial não se compra nem se volta a ele.
+    if (this.isPlanUnavailable(plan)) {
+      this.snackBar.open(t('settings.messages.downgradeToTrial'), t('common.actions.close'), { duration: 6000 });
+      return;
+    }
+    if (this.queueLimitReached()) {
+      this.snackBar.open(t('settings.messages.queueLimit'), t('common.actions.close'), { duration: 6000 });
       return;
     }
 
-    if (plan.monthly_price > 0) {
-      // Launch Mobile Payment Dialog for M-Pesa / e-Mola
-      const dialogRef = this.dialog.open(PaymentDialogComponent, {
-        data: {
-          companyId,
-          subscriptionId: sub?.id,
-          plan,
-          billingCycle: targetCycle
-        },
-        width: '450px',
-        maxWidth: '95vw',
-        panelClass: 'dark-dialog'
-      });
+    // Qualquer plano pago: se ainda houver tempo pago, o período entra na fila.
+    const dialogRef = this.dialog.open(PaymentDialogComponent, {
+      data: {
+        companyId,
+        subscriptionId: sub?.id,
+        plan,
+        billingCycle: targetCycle
+      },
+      width: '450px',
+      maxWidth: '95vw',
+      panelClass: 'dark-dialog'
+    });
 
-      dialogRef.afterClosed().subscribe(async (success) => {
-        if (success) {
-          await this.loadCompanySettings(companyId);
-        }
-      });
-      return;
-    }
-
-    this.loading.set(true);
-    const success = await this.subscriptionService.changePlan(
-      sub?.id || '',
-      plan.name,
-      targetCycle,
-      companyId
-    );
-
-    if (success) {
-      await this.loadCompanySettings(companyId);
-    }
-
-    this.loading.set(false);
-
-    if (success) {
-      this.snackBar.open(t('settings.messages.planChanged'), t('common.actions.close'), { duration: 3000 });
-    } else {
-      this.snackBar.open(t('settings.messages.planChangeError'), t('common.actions.close'), { duration: 3000 });
-    }
+    dialogRef.afterClosed().subscribe(async (success) => {
+      if (success) {
+        await this.loadCompanySettings(companyId);
+      }
+    });
   }
 
   getStatusColor(status: string): string {
@@ -629,9 +611,29 @@ export class SettingsComponent implements OnInit {
     return this.preferences.formatDate(date);
   }
 
-  /** Mudar para este plano (no ciclo seleccionado) seria um downgrade bloqueado? */
-  isDowngrade(plan: SubscriptionPlan, cycle: BillingCycle = this.selectedCycle()): boolean {
-    return this.subscriptionService.isDowngrade(plan, cycle);
+  /** Planos gratuitos (Trial) não se compram. */
+  isPlanUnavailable(plan: SubscriptionPlan): boolean {
+    return this.subscriptionService.isPlanUnavailable(plan);
+  }
+
+  /** Já há mais de 360 dias pagos à frente. */
+  queueLimitReached(): boolean {
+    return this.subscriptionService.queueLimitReached();
+  }
+
+  /** Data em que começaria um período comprado agora (hoje ou a seguir ao último pago). */
+  nextPeriodStart(): string {
+    return this.subscriptionService.nextPeriodStart();
+  }
+
+  /** Uma compra agora entra na fila (ainda há tempo pago à frente). */
+  purchaseIsQueued(): boolean {
+    return this.nextPeriodStart() > maputoToday();
+  }
+
+  /** Períodos já pagos que ainda não começaram. */
+  upcomingPeriods(): SubscriptionPeriod[] {
+    return this.subscriptionService.upcomingPeriods();
   }
 
   /** O plano é o da subscrição da empresa (independentemente do período ou de estar expirada). */
@@ -652,27 +654,4 @@ export class SettingsComponent implements OnInit {
     return this.subscriptionService.hasActivePeriod();
   }
 
-  /** O plano é de nível superior ao actual (para mostrar "Fazer Upgrade"). */
-  isUpgrade(plan: SubscriptionPlan): boolean {
-    const current = this.subscriptionService.currentPlanLevel();
-    if (!current || !this.hasActivePeriod()) return false;
-    const curTier = current.tier ?? 0;
-    const newTier = this.subscriptionService.planTier(plan) ?? 0;
-    return newTier > curTier;
-  }
-
-  downgradeBlockedMessage(plan: SubscriptionPlan, cycle: BillingCycle = this.selectedCycle()): string {
-    if (plan.monthly_price === 0) {
-      return t('settings.messages.downgradeToTrial');
-    }
-    if (this.subscriptionService.isDowngrade(plan)) {
-      return t('settings.messages.downgradeActive');
-    }
-    return t('settings.messages.shorterCycleBlocked');
-  }
-
-  /** O bloqueio deste plano é só pelo ciclo mais curto (deixa de valer quando a subscrição expirar). */
-  isCycleOnlyDowngrade(plan: SubscriptionPlan): boolean {
-    return this.isDowngrade(plan) && !this.subscriptionService.isDowngrade(plan);
-  }
 }

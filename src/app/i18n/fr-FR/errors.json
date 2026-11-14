@@ -43,7 +43,9 @@
   },
   "details": {
     "subscriptionExpired": "L'abonnement de cette entreprise a expiré. Renouvelez la formule dans Paramètres → Abonnement pour continuer.",
-    "downgradeBlocked": "Impossible de passer à une formule inférieure."
+    "downgradeBlocked": "Impossible de revenir à l'essai gratuit après avoir souscrit une formule payante.",
+    "queueLimit": "Vous avez déjà plus de 360 jours d'abonnement payés à venir.",
+    "subscriptionChangeBlocked": "La formule et les dates de l'abonnement ne changent que par un paiement."
   },
   "text": {
     "network": "Pas de connexion au serveur. Vérifiez votre connexion internet et réessayez.",

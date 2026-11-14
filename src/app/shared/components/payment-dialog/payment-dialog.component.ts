@@ -8,7 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { SubscriptionService, SubscriptionPlan } from '../../../core/services/subscription.service';
+import { SubscriptionService, SubscriptionPlan, maputoToday } from '../../../core/services/subscription.service';
 import { VoucherService, VoucherValidationResult } from '../../../core/services/voucher.service';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
@@ -119,6 +119,16 @@ export interface PaymentDialogData {
             {{ 'payments.subscription.planBadge' | t: { plan: data.plan.name } }}
           </span>
         </div>
+      </div>
+
+      <!-- PERÍODO QUE ESTE PAGAMENTO COMPRA (fila de subscrições) -->
+      <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-1">
+        <div class="flex items-center gap-1.5 text-slate-300 font-semibold">
+          <mat-icon class="!text-sm !w-4 !h-4 text-orange-400">event</mat-icon>
+          <span>{{ 'payments.subscription.periodRange' | t: { start: (periodStart | date:'dd/MM/yyyy'), end: (periodEnd | date:'dd/MM/yyyy') } }}</span>
+        </div>
+        <p *ngIf="periodQueued" class="text-slate-400 leading-snug">{{ 'payments.subscription.periodQueued' | t: { plan: data.plan.name } }}</p>
+        <p class="text-slate-500 leading-snug">{{ 'payments.subscription.invoiceNow' | t }}</p>
       </div>
 
       <!-- IF FINAL PRICE IS 0 MZN (FREE ACTIVATION WITH VOUCHER) -->
@@ -286,6 +296,11 @@ export class PaymentDialogComponent implements OnInit, OnDestroy {
   voucherMessage = '';
   currentUserEmail = '';
 
+  /** Período que este pagamento compra: começa hoje ou a seguir ao último período pago. */
+  periodStart = '';
+  periodEnd = '';
+  periodQueued = false;
+
   constructor(
     public dialogRef: MatDialogRef<PaymentDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: PaymentDialogData,
@@ -298,6 +313,9 @@ export class PaymentDialogComponent implements OnInit, OnDestroy {
     this.paymentForm = this.fb.group({
       phone: ['', [Validators.required, Validators.pattern(/^(?:258)?(?:84|85|86|87)\d{7}$/)]]
     });
+    this.periodStart = this.subscriptionService.nextPeriodStart();
+    this.periodEnd = this.subscriptionService.nextPeriodEnd(this.data.billingCycle);
+    this.periodQueued = this.periodStart > maputoToday();
   }
 
   async ngOnInit() {
@@ -415,33 +433,35 @@ export class PaymentDialogComponent implements OnInit, OnDestroy {
     this.voucherMessage = '';
   }
 
-  /** Bloqueia downgrade (plano inferior, ou ciclo mais curto com a subscrição activa). */
-  private blockIfDowngrade(): boolean {
-    if (!this.subscriptionService.isDowngrade(this.data.plan, this.data.billingCycle)) return false;
-    this.snackBar.open(
-      this.data.plan.monthly_price === 0
-        ? t('payments.subscription.messages.noTrialBack')
-        : t('payments.subscription.messages.noDowngrade'),
-      t('common.actions.close'),
-      { duration: 6000 },
-    );
+  /** Plano gratuito (voltar ao Trial) ou fila com mais de 360 dias à frente. */
+  private blockIfUnavailable(): boolean {
+    let message = '';
+    if (this.subscriptionService.isPlanUnavailable(this.data.plan)) {
+      message = t('payments.subscription.messages.noTrialBack');
+    } else if (this.subscriptionService.queueLimitReached()) {
+      message = t('payments.subscription.messages.queueLimit');
+    }
+    if (!message) return false;
+    this.snackBar.open(message, t('common.actions.close'), { duration: 6000 });
     return true;
   }
 
   async onActivateFreeWithVoucher() {
-    if (this.blockIfDowngrade()) return;
+    if (this.blockIfUnavailable()) return;
     this.loading.set(true);
     const companyId = this.data.companyId;
 
     try {
-      // 1. Upsert active subscription with 0 MZN
-      const success = await this.subscriptionService.upsertSubscription(companyId, {
-        plan_name: this.data.plan.name,
-        plan_id: this.data.plan.id,
-        billing_cycle: this.data.billingCycle,
+      // 1. Novo período a 0 MZN (entra na fila se ainda houver tempo pago)
+      const result = await this.subscriptionService.enqueuePeriod(companyId, {
+        planName: this.data.plan.name,
+        billingCycle: this.data.billingCycle,
         amount: 0,
-        status: 'active'
+        currency: this.data.plan.currency || 'MZN',
+        paymentMethod: 'voucher',
+        source: 'voucher',
       });
+      const success = result.ok;
 
       // 2. Redeem voucher if applied
       const vResult = this.voucherResult();
@@ -474,7 +494,7 @@ export class PaymentDialogComponent implements OnInit, OnDestroy {
       this.paymentForm.markAllAsTouched();
       return;
     }
-    if (this.blockIfDowngrade()) return;
+    if (this.blockIfUnavailable()) return;
 
     this.loading.set(true);
 

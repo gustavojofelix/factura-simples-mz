@@ -178,31 +178,34 @@ serve(async (req) => {
       return new Response("OK", { status: 200 });
     }
 
-    // 0. Downgrade (plano inferior, ou ciclo mais curto com a subscrição
-    // activa)? Ex.: dois pagamentos pendentes em corrida. O dinheiro já foi cobrado, por isso os dias são
-    // somados, mas o plano superior actual é mantido e o pagamento fica
-    // assinalado (sislog_response.downgrade_ignored) para revisão do admin.
-    let downgradeIgnored = false;
-    {
-      const { data: isDowngrade, error: downgradeError } = await supabase.rpc(
-        "is_subscription_downgrade",
-        {
-          p_company_id: payment.company_id,
-          p_target_plan: payment.plan_name,
-          p_target_cycle: payment.billing_cycle,
-        },
-      );
-      if (downgradeError) {
-        console.warn("[SislogWebhook] is_subscription_downgrade failed:", downgradeError.message);
-      } else if (isDowngrade === true) {
-        downgradeIgnored = true;
-        console.warn(
-          `[SislogWebhook] Payment ${payment.id} requested a downgrade to "${payment.plan_name}" (${payment.billing_cycle}) — keeping the current plan and only extending the period.`,
-        );
-      }
+    // 1. Criar o período de subscrição (entra na fila). Feito ANTES de marcar o
+    // pagamento como concluído: se falhar, devolvemos 500, a Sislog volta a
+    // tentar e o pagamento continua 'pending'. É idempotente por payment_id.
+    // Se a empresa já tem tempo pago, o período começa no dia seguinte ao fim
+    // do último; senão começa hoje. O plano escolhido vale nesse período.
+    const { data: period, error: periodError } = await supabase.rpc(
+      "enqueue_subscription_period",
+      {
+        p_company_id: payment.company_id,
+        p_plan_name: payment.plan_name,
+        p_billing_cycle: payment.billing_cycle,
+        p_amount: payment.amount,
+        p_currency: payment.currency || "MZN",
+        p_payment_method: payment.payment_method,
+        p_payment_id: payment.id,
+        p_source: "payment",
+      },
+    );
+    if (periodError) {
+      console.error("[SislogWebhook] enqueue_subscription_period failed:", periodError);
+      throw periodError;
     }
+    const periodRow = Array.isArray(period) ? period[0] : period;
+    console.log(
+      `[SislogWebhook] Period for company ${payment.company_id}: ${payment.plan_name} ${periodRow?.start_date} → ${periodRow?.end_date}`,
+    );
 
-    // 1. Mark payment as completed
+    // 2. Mark payment as completed
     console.log(`[SislogWebhook] Marking payment ${payment.id} as completed`);
     const { error: updateCompleteError } = await supabase
       .from("subscription_payments")
@@ -215,9 +218,8 @@ serve(async (req) => {
           value,
           provider,
           paymentdatetime,
-          ...(downgradeIgnored
-            ? { downgrade_ignored: true, downgrade_requested_plan: payment.plan_name }
-            : {}),
+          period_start: periodRow?.start_date ?? null,
+          period_end: periodRow?.end_date ?? null,
         },
       })
       .eq("id", payment.id);
@@ -230,128 +232,12 @@ serve(async (req) => {
       throw updateCompleteError;
     }
 
-    // 2. Activate or extend the subscription. A payment made while the
-    // subscription is active starts after its current end date, so paid days
-    // are never lost. Expired subscriptions start from today.
-    // Os pacotes contam em dias (1 mês = 30 dias), igual a subscription_cycle_days() no SQL.
-    const daysToAdd = payment.billing_cycle === "yearly"
-      ? 360
-      : payment.billing_cycle === "semiannual"
-        ? 180
-        : payment.billing_cycle === "quarterly"
-          ? 90
-          : 30;
-    const today = new Date();
-    const todayStr = today.toISOString().substring(0, 10);
-
-    const addDaysToDate = (date: Date, days: number): Date => {
-      const result = new Date(date);
-      result.setUTCDate(result.getUTCDate() + days);
-      return result;
-    };
-
-    let existingSubscription: any = null;
-    if (payment.subscription_id) {
-      const { data } = await supabase
-        .from("subscriptions")
-        .select("id, start_date, end_date, plan_name, billing_cycle, amount")
-        .eq("id", payment.subscription_id)
-        .maybeSingle();
-      existingSubscription = data;
-    }
-
-    if (!existingSubscription) {
-      const { data, error } = await supabase
-        .from("subscriptions")
-        .select("id, start_date, end_date, plan_name, billing_cycle, amount")
-        .eq("company_id", payment.company_id)
-        .limit(1)
-        .maybeSingle();
-      if (error) throw error;
-      existingSubscription = data;
-    }
-
-    const currentEnd = existingSubscription?.end_date
-      ? new Date(`${existingSubscription.end_date}T00:00:00Z`)
-      : null;
-    const todayStart = new Date(`${todayStr}T00:00:00Z`);
-    const isActivePeriod = !!currentEnd && currentEnd.getTime() >= todayStart.getTime();
-    const periodStart = isActivePeriod
-      ? existingSubscription.start_date
-      : todayStr;
-    const newEnd = addDaysToDate(isActivePeriod ? currentEnd! : todayStart, daysToAdd);
-    const nextBillingDateStr = newEnd.toISOString().substring(0, 10);
-    const startDateStr = periodStart || todayStr;
-
-    console.log(
-      `[SislogWebhook] Activating subscription for company: ${payment.company_id}. Start date: ${startDateStr}, End/Next billing: ${nextBillingDateStr}`,
-    );
-
-    if (existingSubscription?.id) {
-      console.log(
-        `[SislogWebhook] Updating existing subscription by ID: ${existingSubscription.id}`,
-      );
-      const { error: updateSubError } = await supabase
-        .from("subscriptions")
-        .update({
-          // Downgrade bloqueado: mantém plano/ciclo/valor actuais, só soma os dias.
-          ...(downgradeIgnored
-            ? {}
-            : {
-              plan_name: payment.plan_name,
-              billing_cycle: payment.billing_cycle,
-              amount: payment.amount,
-            }),
-          status: "active",
-          payment_method: payment.payment_method,
-          start_date: startDateStr,
-          end_date: nextBillingDateStr,
-          next_billing_date: nextBillingDateStr,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", existingSubscription.id);
-
-      if (updateSubError) {
-        console.error(
-          "[SislogWebhook] Error updating subscription:",
-          updateSubError,
-        );
-        throw updateSubError;
-      }
-    } else {
-      console.log(
-        `[SislogWebhook] Inserting new subscription record for company: ${payment.company_id}`,
-      );
-      const { error: insertSubError } = await supabase
-        .from("subscriptions")
-        .insert({
-          company_id: payment.company_id,
-          plan_name: payment.plan_name,
-          billing_cycle: payment.billing_cycle,
-          amount: payment.amount,
-          status: "active",
-          payment_method: payment.payment_method,
-          start_date: startDateStr,
-          end_date: nextBillingDateStr,
-          next_billing_date: nextBillingDateStr,
-          updated_at: new Date().toISOString(),
-        });
-
-      if (insertSubError) {
-        console.error(
-          "[SislogWebhook] Error inserting new subscription:",
-          insertSubError,
-        );
-        throw insertSubError;
-      }
-    }
-
-
-    // 3. Emit invoice in OfficeGest (fire-and-forget — non-blocking)
-    // This call does not affect Sislog retries; errors are logged only.
-    try {
-      const syncUrl = `${supabaseUrl}/functions/v1/sync-officegest`;
-      fetch(syncUrl, {
+    // 3. Factura no OfficeGest, emitida já (data de hoje), com as datas do
+    // período na descrição. Em runInBackground para o runtime não cortar o
+    // pedido quando respondemos à Sislog. Se falhar, o pagamento fica sem
+    // officegest_document_id e o admin emite-a em Receitas → Sincronizar.
+    runInBackground(
+      fetch(`${supabaseUrl}/functions/v1/sync-officegest`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -361,12 +247,8 @@ serve(async (req) => {
       }).then(async (r) => {
         const txt = await r.text().catch(() => "");
         console.log(`[SislogWebhook] OfficeGest sync result (${r.status}): ${txt}`);
-      }).catch((e) => {
-        console.warn("[SislogWebhook] OfficeGest sync call failed (non-critical):", e);
-      });
-    } catch (syncErr) {
-      console.warn("[SislogWebhook] OfficeGest sync setup failed (non-critical):", syncErr);
-    }
+      }),
+    );
 
     // 4. E-mails de confirmação (cliente + LTS) em segundo plano, para responder
     // 200 à Sislog de imediato. notifySubscriptionActivated é idempotente

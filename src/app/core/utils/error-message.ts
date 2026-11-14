@@ -59,6 +59,8 @@ const DETAIL_MESSAGES: Record<string, string> = {
   DUPLICATE_COMPANY_NUIT: 'errors.constraints.companyNuit',
   SUBSCRIPTION_EXPIRED: 'errors.details.subscriptionExpired',
   SUBSCRIPTION_DOWNGRADE_BLOCKED: 'errors.details.downgradeBlocked',
+  SUBSCRIPTION_QUEUE_LIMIT: 'errors.details.queueLimit',
+  SUBSCRIPTION_CHANGE_BLOCKED: 'errors.details.subscriptionChangeBlocked',
 };
 
 const TEXT_MESSAGES: Array<[RegExp, string]> = [

@@ -179,6 +179,31 @@ async function loadSubscription(db: DbClient, payment: Row): Promise<Row | null>
   return data ?? null;
 }
 
+/** Período criado por este pagamento (fila de subscrições), se existir. */
+interface PaidPeriod {
+  start: string;
+  end: string;
+  /** Começa depois de hoje: o cliente comprou mais tempo com a subscrição ainda activa. */
+  queued: boolean;
+}
+
+async function loadPaidPeriod(db: DbClient, paymentId: string): Promise<PaidPeriod | null> {
+  try {
+    const { data, error } = await db
+      .from("subscription_periods")
+      .select("start_date, end_date")
+      .eq("payment_id", paymentId)
+      .maybeSingle();
+    if (error || !data) return null;
+    const today = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Africa/Maputo", year: "numeric", month: "2-digit", day: "2-digit",
+    }).format(new Date());
+    return { start: data.start_date, end: data.end_date, queued: String(data.start_date) > today };
+  } catch {
+    return null;
+  }
+}
+
 function sislogInfo(payment: Row) {
   const s = (payment.sislog_response ?? {}) as Row;
   return {
@@ -250,6 +275,16 @@ const CLIENT_TEXT = {
   method: { "pt-MZ": "Método", "en-GB": "Payment method", "fr-FR": "Moyen de paiement" } as Localized,
   reference: { "pt-MZ": "Referência", "en-GB": "Reference", "fr-FR": "Référence" } as Localized,
   validUntil: { "pt-MZ": "Válida até", "en-GB": "Valid until", "fr-FR": "Valable jusqu'au" } as Localized,
+  paidPeriod: { "pt-MZ": "Período pago", "en-GB": "Paid period", "fr-FR": "Période payée" } as Localized,
+  /** `plan`, `start` e `end` já vêm escapados. */
+  queued: {
+    "pt-MZ": (plan: string, start: string, end: string) =>
+      `Como ainda tinha tempo de subscrição pago, este período começa a seguir: o plano <strong>${plan}</strong> fica activo de <strong>${start}</strong> a <strong>${end}</strong>. Até lá mantém o plano actual.`,
+    "en-GB": (plan: string, start: string, end: string) =>
+      `As you still had paid subscription time, this period starts afterwards: the <strong>${plan}</strong> plan will be active from <strong>${start}</strong> to <strong>${end}</strong>. Until then you keep your current plan.`,
+    "fr-FR": (plan: string, start: string, end: string) =>
+      `Comme il vous restait du temps d'abonnement payé, cette période commence ensuite : la formule <strong>${plan}</strong> sera active du <strong>${start}</strong> au <strong>${end}</strong>. D'ici là, vous conservez votre formule actuelle.`,
+  } as Localized<(plan: string, start: string, end: string) => string>,
   thanks: {
     "pt-MZ": "Agradecemos a sua preferência. Pode continuar a utilizar todas as funcionalidades sem interrupções.",
     "en-GB": "Thank you for choosing ISPC Fácil. You can continue to use all features without interruption.",
@@ -263,6 +298,7 @@ function clientHtml(
   periodEnd: string,
   plan: ReturnType<typeof activatedPlan>,
   language: EmailLanguage,
+  period: { start: string; end: string; queued: boolean } | null = null,
 ): string {
   const t = CLIENT_TEXT;
   const L = language;
@@ -275,9 +311,11 @@ function clientHtml(
     <p>${pick(t.hello, L)} <strong>${escapeHtml(ownerName || pick(t.dearClient, L))}</strong>,</p>
     <p>${pick(t.confirmed, L)(escapeHtml(companyName))}</p>
     ${downgradeNote}
+    ${period?.queued ? `<p>${pick(t.queued, L)(escapeHtml(plan.planName), escapeHtml(period.start), escapeHtml(period.end))}</p>` : ""}
     ${detailsTable([
       [pick(t.plan, L), plan.planName],
       [pick(t.cycle, L), cycleLabel(payment.billing_cycle, L)],
+      ...(period ? [[pick(t.paidPeriod, L), `${period.start} – ${period.end}`] as [string, string]] : []),
       [pick(t.amount, L), formatAmount(payment.amount, payment.currency || "MZN", L)],
       [pick(t.method, L), `${methodLabel(payment.payment_method)}${payment.phone_number ? ` (${payment.phone_number})` : ""}`],
       [pick(t.reference, L), s.reference || payment.reference_code],
@@ -294,6 +332,7 @@ function adminHtml(
   periodEnd: string,
   opts: NotifyOptions,
   plan: ReturnType<typeof activatedPlan>,
+  period: { start: string; end: string; queued: boolean } | null = null,
 ): string {
   const c = payment.companies ?? {};
   const s = sislogInfo(payment);
@@ -311,6 +350,9 @@ function adminHtml(
         ? [["Downgrade recusado", `Pedido "${plan.requestedPlan ?? "—"}" com a subscrição activa; mantido o plano actual e prolongado o período.`] as [string, string]]
         : []),
       ["Ciclo", cycleLabel(payment.billing_cycle)],
+      ...(period
+        ? [["Período pago", `${period.start} a ${period.end}${period.queued ? " (em fila: começa depois do período actual)" : ""}`] as [string, string]]
+        : []),
       ["Valor", formatAmount(payment.amount, payment.currency || "MZN")],
       ["Método", methodLabel(payment.payment_method)],
       ["Telefone", payment.phone_number],
@@ -376,6 +418,11 @@ export async function notifySubscriptionActivated(
     const clientPeriodEnd = periodEndRaw ? formatCompanyDate(periodEndRaw, settings) : "—";
     const companyName = payment.companies?.name || "Empresa";
     const plan = activatedPlan(payment, subscription);
+    const paid = await loadPaidPeriod(db, payment.id);
+    const clientPeriod = paid
+      ? { start: formatCompanyDate(paid.start, settings), end: formatCompanyDate(paid.end, settings), queued: paid.queued }
+      : null;
+    const adminPeriod = paid ? { start: formatDate(paid.start), end: formatDate(paid.end), queued: paid.queued } : null;
 
     const common = {
       companyId: payment.company_id,
@@ -391,7 +438,7 @@ export async function notifySubscriptionActivated(
           kind: "subscription_activated_client",
           to: clientRecipients,
           subject: pick(CLIENT_TEXT.subject, owner.language),
-          html: clientHtml(payment, owner.fullName, clientPeriodEnd, plan, owner.language),
+          html: clientHtml(payment, owner.fullName, clientPeriodEnd, plan, owner.language, clientPeriod),
         }),
       );
     }
@@ -405,7 +452,7 @@ export async function notifySubscriptionActivated(
           to: adminRecipients(),
           replyTo: owner.email || undefined,
           subject: `[ISPC Fácil] Nova subscrição paga – ${companyName}`,
-          html: adminHtml(payment, owner, clientRecipients, periodEnd, options, plan),
+          html: adminHtml(payment, owner, clientRecipients, periodEnd, options, plan, adminPeriod),
         }),
       );
     }

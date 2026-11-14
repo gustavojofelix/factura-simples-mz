@@ -54,6 +54,44 @@ export function maputoToday(): string {
 
 export type BillingCycle = "monthly" | "quarterly" | "semiannual" | "yearly";
 
+/**
+ * Um período pago da fila de subscrições (public.subscription_periods).
+ * Cada pagamento cria um período com o seu plano; se a empresa ainda tem tempo
+ * pago, o período começa no dia seguinte ao fim do último. Datas inclusivas.
+ */
+export interface SubscriptionPeriod {
+  id: string;
+  company_id: string;
+  plan_id?: string | null;
+  plan_name: string;
+  billing_cycle: BillingCycle;
+  amount: number;
+  currency: string;
+  payment_method?: string | null;
+  start_date: string;
+  end_date: string;
+  payment_id?: string | null;
+  source: 'payment' | 'manual' | 'voucher' | 'legacy';
+  cancelled_at?: string | null;
+  created_at: string;
+}
+
+/** Um período novo não pode começar mais do que isto depois de hoje (igual ao SQL). */
+export const SUBSCRIPTION_QUEUE_LIMIT_DAYS = 360;
+
+/** Soma dias a uma data YYYY-MM-DD (sem fuso horário). */
+export function addDaysIso(date: string, days: number): string {
+  const d = new Date(`${date.substring(0, 10)}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().substring(0, 10);
+}
+
+/** Dias entre duas datas YYYY-MM-DD (b - a). */
+export function daysBetweenIso(a: string, b: string): number {
+  const ms = new Date(`${b.substring(0, 10)}T00:00:00Z`).getTime() - new Date(`${a.substring(0, 10)}T00:00:00Z`).getTime();
+  return Math.round(ms / 86400000);
+}
+
 /** Duração do ciclo em dias, igual a public.subscription_cycle_days() no SQL. */
 export function cycleDays(cycle: string): number {
   switch (cycle) {
@@ -108,6 +146,10 @@ export const SUBSCRIPTION_CYCLE_DAYS: Record<Subscription['billing_cycle'], numb
 export class SubscriptionService {
   private subscriptionSignal = signal<Subscription | null>(null);
   subscription = this.subscriptionSignal.asReadonly();
+
+  /** Períodos (não cancelados) da empresa carregada, por data de início. */
+  private periodsSignal = signal<SubscriptionPeriod[]>([]);
+  periods = this.periodsSignal.asReadonly();
 
   private plansSignal = signal<SubscriptionPlan[]>([]);
   plans = this.plansSignal.asReadonly();
@@ -424,7 +466,16 @@ export class SubscriptionService {
   }
 
   private async fetchSubscription(companyId: string): Promise<void> {
-    // O nível do plano não depende da subscrição: os dois pedidos correm em paralelo.
+    // Põe a linha de subscriptions em dia com o período em vigor (ex.: hoje
+    // começou o período seguinte da fila). Falha em silêncio: o servidor já
+    // usa o período em vigor nas suas verificações.
+    try {
+      await this.supabase.client.rpc('refresh_company_subscription', { p_company_id: companyId });
+    } catch {
+      /* migração por aplicar ou erro transitório */
+    }
+
+    // O nível do plano e os períodos não dependem da subscrição: os pedidos correm em paralelo.
     const [{ data, error }] = await Promise.all([
       this.supabase.client
         .from("subscriptions")
@@ -435,6 +486,7 @@ export class SubscriptionService {
         .limit(1)
         .maybeSingle(),
       this.loadCurrentPlanLevel(companyId),
+      this.loadPeriods(companyId),
     ]);
 
     if (error) {
@@ -443,6 +495,21 @@ export class SubscriptionService {
     }
 
     this.subscriptionSignal.set(data);
+  }
+
+  private async loadPeriods(companyId: string): Promise<void> {
+    const { data, error } = await this.supabase.client
+      .from('subscription_periods')
+      .select('*')
+      .eq('company_id', companyId)
+      .is('cancelled_at', null)
+      .order('start_date', { ascending: true });
+    if (error) {
+      // Migração por aplicar: sem fila, a interface usa só a linha de subscriptions.
+      this.periodsSignal.set([]);
+      return;
+    }
+    this.periodsSignal.set((data || []) as SubscriptionPeriod[]);
   }
 
   /** Carrega o nível e preço do plano actual (mesmo que o plano esteja desactivado). */
@@ -506,143 +573,53 @@ export class SubscriptionService {
     return true;
   }
 
-  async upsertSubscription(
+  /**
+   * Cria um período na fila de subscrições (enqueue_subscription_period).
+   * - 'voucher': activação a 0 MZN feita pelo próprio cliente;
+   * - 'manual': pagamento confirmado pelo admin (passar paymentId).
+   * Os pagamentos M-Pesa/e-Mola criam o período no sislog-webhook.
+   */
+  async enqueuePeriod(
     companyId: string,
-    updates: Partial<Subscription>
-  ): Promise<boolean> {
-    if (!companyId) return false;
+    input: {
+      planName: string;
+      billingCycle: BillingCycle;
+      amount: number;
+      currency?: string;
+      paymentMethod?: string | null;
+      paymentId?: string | null;
+      source: 'voucher' | 'manual';
+    },
+  ): Promise<{ ok: boolean; period?: SubscriptionPeriod; error?: string; code?: string }> {
+    const { data, error } = await this.supabase.client.rpc('enqueue_subscription_period', {
+      p_company_id: companyId,
+      p_plan_name: input.planName,
+      p_billing_cycle: input.billingCycle,
+      p_amount: input.amount,
+      p_currency: input.currency || 'MZN',
+      p_payment_method: input.paymentMethod ?? null,
+      p_payment_id: input.paymentId ?? null,
+      p_source: input.source,
+    });
 
-    const cycle = updates.billing_cycle || 'monthly';
-    const daysToAdd = SUBSCRIPTION_CYCLE_DAYS[cycle] ?? 30;
-
-    const { data: existing } = await this.supabase.client
-      .from('subscriptions')
-      .select('id, start_date, end_date, next_billing_date')
-      .eq('company_id', companyId)
-      .limit(1)
-      .maybeSingle();
-
-    const today = new Date();
-    const todayStr = today.toISOString().substring(0, 10);
-    const existingEnd = existing?.end_date ? new Date(`${existing.end_date}T00:00:00Z`) : null;
-    const isExistingPeriodActive = !!existingEnd && existingEnd.getTime() >= new Date(`${todayStr}T00:00:00Z`).getTime();
-    const periodStart = updates.start_date || (isExistingPeriodActive ? existing!.start_date : todayStr);
-    const endDateObj = isExistingPeriodActive ? existingEnd! : new Date(`${todayStr}T00:00:00Z`);
-    endDateObj.setUTCDate(endDateObj.getUTCDate() + daysToAdd);
-    const endDateStr = endDateObj.toISOString().substring(0, 10);
-
-    const payload = {
-      company_id: companyId,
-      plan_name: updates.plan_name || 'Trial',
-      plan_id: updates.plan_id,
-      status: updates.status || 'active',
-      billing_cycle: cycle,
-      amount: updates.amount !== undefined ? updates.amount : 0,
-      currency: updates.currency || 'MZN',
-      payment_method: updates.payment_method || 'mpesa',
-      start_date: periodStart,
-      end_date: endDateStr,
-      next_billing_date: endDateStr,
-      auto_renew: updates.auto_renew ?? true,
-      updated_at: new Date().toISOString()
-    };
-
-    let resultData: any = null;
-    if (existing?.id) {
-      const { data: updated, error: updateError } = await this.supabase.client
-        .from('subscriptions')
-        .update(payload)
-        .eq('id', existing.id)
-        .select('*')
-        .maybeSingle();
-
-      if (updateError) {
-        console.error('Error updating subscription:', updateError);
-        return false;
-      }
-      resultData = updated;
-    } else {
-      const { data: inserted, error: insertError } = await this.supabase.client
-        .from('subscriptions')
-        .insert(payload)
-        .select('*')
-        .maybeSingle();
-
-      if (insertError) {
-        console.error('Error inserting subscription:', insertError);
-        return false;
-      }
-      resultData = inserted;
+    if (error) {
+      console.error('Error enqueuing subscription period:', error);
+      return { ok: false, error: error.message, code: (error as { details?: string }).details || undefined };
     }
 
-    if (resultData) {
-      this.subscriptionSignal.set(resultData);
-    }
+    const period = (Array.isArray(data) ? data[0] : data) as SubscriptionPeriod | undefined;
     await this.loadSubscription(companyId);
 
     await this.auditLogService.log(
       'Ativou/Atualizou Subscrição da Empresa',
-      'subscriptions',
-      payload,
-      resultData?.id,
-      payload.plan_name,
-      companyId
+      'subscription_periods',
+      { ...input, start_date: period?.start_date, end_date: period?.end_date },
+      period?.id,
+      input.planName,
+      companyId,
     );
 
-    return true;
-  }
-
-  async changePlan(
-    subscriptionId: string | null | undefined,
-    planName: string,
-    billingCycle: "monthly" | "quarterly" | "semiannual" | "yearly",
-    companyId?: string
-  ): Promise<boolean> {
-    const plan = this.findPlan(planName);
-    if (!plan) return false;
-    if (this.isDowngrade(plan, billingCycle)) return false;
-
-    let amount = plan.monthly_price;
-
-    switch (billingCycle) {
-      case "quarterly":
-        amount = plan.three_months_price || (plan.monthly_price * 3);
-        break;
-      case "semiannual":
-        amount = plan.six_months_price || (plan.monthly_price * 6);
-        break;
-      case "yearly":
-        amount = plan.yearly_price;
-        break;
-      case "monthly":
-      default:
-        amount = plan.monthly_price;
-        break;
-    }
-
-    const targetCompanyId = companyId || this.subscriptionSignal()?.company_id;
-
-    if (targetCompanyId) {
-      return await this.upsertSubscription(targetCompanyId, {
-        plan_name: plan.name,
-        plan_id: plan.id,
-        billing_cycle: billingCycle,
-        amount,
-        status: "active",
-      });
-    }
-
-    if (subscriptionId) {
-      return await this.updateSubscription(subscriptionId, {
-        plan_name: plan.name,
-        plan_id: plan.id,
-        billing_cycle: billingCycle,
-        amount,
-        status: "active",
-      });
-    }
-
-    return false;
+    return { ok: true, period };
   }
 
   async updatePaymentMethod(
@@ -683,7 +660,7 @@ export class SubscriptionService {
   }
 
   /**
-   * Subscrição actual activa e dentro do período (downgrade bloqueado).
+   * Subscrição actual activa e dentro do período.
    * Compara datas no fuso de Moçambique, como public.subscription_today() no SQL,
    * para que a interface e o servidor concordem sobre o dia da expiração.
    */
@@ -709,29 +686,57 @@ export class SubscriptionService {
   }
 
   /**
-   * Mudar para `target` (no ciclo `cycle`) é um downgrade não permitido?
-   * - pago -> gratuito (Trial): sempre bloqueado;
-   * - subscrição expirada/cancelada: qualquer plano pago é permitido;
-   * - nível inferior com a subscrição activa: bloqueado;
-   * - ciclo mais curto (ex.: Anual -> Mensal) com a subscrição activa:
-   *   bloqueado, salvo se o plano alvo for de nível superior.
-   * Igual a public.subscription_change_is_downgrade() no SQL.
+   * Planos gratuitos (Trial) não se compram: o Trial é atribuído ao criar a
+   * empresa e não se volta a ele. Qualquer plano pago pode ser comprado; se
+   * ainda houver tempo pago, entra na fila. Igual a subscription_purchase_block_reason().
    */
-  isDowngrade(target: SubscriptionPlan, cycle?: BillingCycle): boolean {
-    const sub = this.subscriptionSignal();
-    const current = this.currentPlanLevel();
-    if (!sub || !current) return false;
-    if (current.monthly_price > 0 && target.monthly_price === 0) return true;
-    if (!this.hasActivePeriod()) return false;
+  isPlanUnavailable(target: SubscriptionPlan): boolean {
+    return (target.monthly_price || 0) === 0;
+  }
 
-    const samePlan = (sub.plan_name || '').trim().toLowerCase() === target.name.trim().toLowerCase();
-    const curTier = current.tier;
-    const newTier = this.planTier(target);
-    if (!samePlan && curTier !== null && newTier !== null && newTier < curTier) return true;
+  /** Período em vigor hoje (fila), se houver. */
+  currentPeriod(): SubscriptionPeriod | null {
+    const today = maputoToday();
+    return this.periodsSignal().find((p) => p.start_date <= today && p.end_date >= today) ?? null;
+  }
 
-    if (!cycle || !sub.billing_cycle) return false;
-    if (!samePlan && curTier !== null && newTier !== null && newTier > curTier) return false;
-    return cycleDays(cycle) < cycleDays(sub.billing_cycle);
+  /** Períodos já pagos que ainda não começaram. */
+  upcomingPeriods(): SubscriptionPeriod[] {
+    const today = maputoToday();
+    return this.periodsSignal().filter((p) => p.start_date > today);
+  }
+
+  /**
+   * Onde começaria um período comprado agora: hoje, ou no dia seguinte ao fim
+   * do último período pago. O Trial não segura a fila.
+   */
+  nextPeriodStart(): string {
+    const today = maputoToday();
+    let lastEnd: string | null = null;
+    for (const p of this.periodsSignal()) {
+      if (!lastEnd || p.end_date > lastEnd) lastEnd = p.end_date;
+    }
+    if (!lastEnd) {
+      // Ainda sem fila: uma subscrição paga activa (anterior à fila) conta.
+      const sub = this.subscriptionSignal();
+      const level = this.currentPlanLevel();
+      if (sub?.end_date && this.hasActivePeriod() && (level?.monthly_price ?? 0) > 0) {
+        lastEnd = sub.end_date.substring(0, 10);
+      }
+    }
+    if (!lastEnd) return today;
+    const next = addDaysIso(lastEnd, 1);
+    return next > today ? next : today;
+  }
+
+  /** Fim (inclusivo) de um período de `cycle` comprado agora. */
+  nextPeriodEnd(cycle: BillingCycle): string {
+    return addDaysIso(this.nextPeriodStart(), cycleDays(cycle) - 1);
+  }
+
+  /** A fila já tem mais de 360 dias pagos à frente: não é possível comprar mais por agora. */
+  queueLimitReached(): boolean {
+    return daysBetweenIso(maputoToday(), this.nextPeriodStart()) > SUBSCRIPTION_QUEUE_LIMIT_DAYS;
   }
 
   isSubscriptionActive(): boolean {

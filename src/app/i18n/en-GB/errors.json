@@ -43,7 +43,9 @@
   },
   "details": {
     "subscriptionExpired": "This company's subscription has expired. Renew the plan in Settings → Subscription to continue.",
-    "downgradeBlocked": "Downgrading the plan is not possible."
+    "downgradeBlocked": "You cannot return to the free trial after subscribing to a paid plan.",
+    "queueLimit": "You already have more than 360 days of paid subscription ahead.",
+    "subscriptionChangeBlocked": "The subscription plan and dates only change through a payment."
   },
   "text": {
     "network": "No connection to the server. Check your internet connection and try again.",

@@ -85,11 +85,14 @@
       "confirmed": "Pagamento confirmado! Plano {plan} activado.",
       "voucherError": "Erro ao validar voucher.",
       "noTrialBack": "Não é possível voltar ao período de teste depois de subscrever um plano pago.",
-      "noDowngrade": "Não é possível fazer downgrade do plano.",
       "activatedVoucher": "Subscrição ativada com sucesso via Voucher!",
       "activateError": "Erro ao ativar subscrição.",
       "activateUnexpected": "Erro inesperado ao ativar subscrição.",
-      "requestError": "Erro ao efetuar pedido de pagamento"
-    }
+      "requestError": "Erro ao efetuar pedido de pagamento",
+      "queueLimit": "Já tem mais de 360 dias de subscrição pagos à frente. Poderá comprar mais tempo mais tarde."
+    },
+    "periodRange": "Período: {start} a {end}",
+    "periodQueued": "Ainda tem tempo pago: o plano {plan} começa quando esse tempo terminar. Até lá mantém o plano actual.",
+    "invoiceNow": "O pagamento é feito agora e a factura é emitida hoje."
   }
 }

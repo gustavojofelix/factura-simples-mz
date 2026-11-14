@@ -50,30 +50,28 @@
     "expired": "Subscription expired",
     "lockedMessage": "The system is locked. Choose a plan below to use all features again.",
     "daysRemaining": {
-      "one": "<strong>{count}</strong> day left in the current period.",
-      "other": "<strong>{count}</strong> days left in the current period."
+      "one": "<strong>{count}</strong> day of paid subscription left.",
+      "other": "<strong>{count}</strong> days of paid subscription left."
     },
     "pastDueTitle": "Payment overdue",
     "pastDueMessage": "Please update your payment method to keep using the service.",
     "noPlan": "This company does not have an active plan yet. Choose one of the plans below to subscribe.",
     "availablePlans": "Available plans",
-    "upgradeInfo": "You can upgrade at any time. While the subscription is active, you cannot move to a lower plan or a shorter period. Once it expires, you can choose any plan.",
+    "upgradeInfo": "You can buy any plan at any time. If you still have paid time, the new period starts when the current one ends, with the plan and features you choose.",
     "mostPopular": "Most popular",
     "trial": "Trial",
     "trialDays": "14-day free trial",
     "period": "Period: {cycle}",
     "currentPlanBadge": "✓ Current plan",
     "notAvailable": "Not available",
-    "switchTo": "Switch to {cycle}",
-    "downgradeNotAllowed": "Downgrade not allowed",
-    "downgradeBlockedShort": "You cannot move to a lower plan while the subscription is active",
-    "availableAfter": "Available after {date}",
-    "activateTrial": "Start free trial",
-    "upgrade": "Upgrade (M-Pesa / e-Mola)",
     "subscribe": "Subscribe (M-Pesa / e-Mola)",
     "renew": "Renew (M-Pesa / e-Mola)",
     "empty": "Select a company to view its subscription and the available plans",
-    "shorterCycleBlockedShort": "You cannot shorten the period while the subscription is active"
+    "addPeriod": "Add {cycle} (M-Pesa / e-Mola)",
+    "startsOn": "Starts on {date}, when your paid time ends",
+    "queueLimitShort": "You already have more than 360 paid days ahead",
+    "upcomingTitle": "Upcoming periods (already paid)",
+    "periodRange": "{start} to {end}"
   },
   "status": {
     "active": "Active",
@@ -147,12 +145,9 @@
     "removeAccessConfirm": "Are you sure you want to remove this access?",
     "accessRemoved": "Access removed successfully",
     "removeAccessFailed": "Could not remove the access.",
-    "planChanged": "Plan changed successfully",
-    "planChangeError": "Error changing plan",
     "downgradeToTrial": "You cannot go back to the free trial after subscribing to a paid plan.",
-    "downgradeActive": "Downgrading to a lower plan is not possible while the subscription is active.",
-    "shorterCycleBlocked": "You cannot switch to a shorter period while the subscription is active.",
-    "revokeAccessConfirm": "Remove access for {email} to: {companies}?"
+    "revokeAccessConfirm": "Remove access for {email} to: {companies}?",
+    "queueLimit": "You already have more than 360 days of paid subscription ahead. You can buy more time later."
   },
   "documentTab": {
     "noCompany": "Select a company to customise its documents.",

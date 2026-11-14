@@ -294,6 +294,7 @@ async function createSalesDocument(
   paymentMethod: string,
   paymentDate: string,
   referenceCode: string,
+  period: { start: string; end: string } | null = null,
 ): Promise<{ documentId: string; documentNumber: string } | { error: string }> {
   try {
     const cycleLabel = billingCycle === "yearly" ? "Anual (12 meses)"
@@ -310,14 +311,18 @@ async function createSalesDocument(
     // e incluímos a data real do pagamento nas observações.
     const today = new Date().toISOString().substring(0, 10);
     const paidAtFormatted = paymentDate ? new Date(paymentDate).toLocaleDateString("pt-MZ") : today;
+    // Período do serviço (pode começar no futuro, se o cliente comprou mais tempo
+    // com a subscrição ainda activa). A factura é sempre emitida no dia do pagamento.
+    const ddmmyyyy = (d: string) => d.substring(0, 10).split("-").reverse().join("/");
+    const periodLabel = period ? ` · período ${ddmmyyyy(period.start)} a ${ddmmyyyy(period.end)}` : "";
 
     const formParams: Record<string, string> = {
       idcustomer: customerId,
       date: today,
       currency: "MT",
-      observations: `Ref: ${referenceCode} | Pago em: ${paidAtFormatted} | Plano: ${planName} (${cycleLabel}) | Método: ${methodLabel}`,
+      observations: `Ref: ${referenceCode} | Pago em: ${paidAtFormatted} | Plano: ${planName} (${cycleLabel})${period ? ` | Período: ${ddmmyyyy(period.start)} a ${ddmmyyyy(period.end)}` : ""} | Método: ${methodLabel}`,
       "lines[1][idarticle]": OFFICEGEST_ARTICLE_ID,
-      "lines[1][description]": `Subscrição ISPC Fácil — Plano ${planName} (${cycleLabel})`,
+      "lines[1][description]": `Subscrição ISPC Fácil — Plano ${planName} (${cycleLabel})${periodLabel}`,
       "lines[1][quantity]": "1",
       "lines[1][sellingprice]": String(amount),
       "lines[1][vat]": "0",
@@ -467,7 +472,21 @@ serve(async (req) => {
 
         const customerId = custResult.customerId;
 
-        // 2. Criar documento de venda
+        // 2. Período do serviço pago (fila de subscrições). Sem período (pagamentos
+        // antigos ou migração por aplicar) a factura sai só com plano e ciclo.
+        let period: { start: string; end: string } | null = null;
+        const { data: periodRow, error: periodError } = await supabase
+          .from("subscription_periods")
+          .select("start_date, end_date")
+          .eq("payment_id", payment.id)
+          .maybeSingle();
+        if (periodError) {
+          console.warn(`[SyncOfficeGest] Período do payment ${payment.id} indisponível:`, periodError.message);
+        } else if (periodRow) {
+          period = { start: periodRow.start_date, end: periodRow.end_date };
+        }
+
+        // 3. Criar documento de venda
         const docResult = await createSalesDocument(
           customerId,
           companyName,
@@ -477,6 +496,7 @@ serve(async (req) => {
           payment.payment_method ?? "",
           payment.created_at ?? new Date().toISOString(),
           payment.reference_code ?? payment.id,
+          period,
         );
 
         if ("error" in docResult || !docResult.documentId) {
@@ -484,7 +504,7 @@ serve(async (req) => {
           throw new Error(`Falha ao criar FT no OfficeGest: ${errorMsg}`);
         }
 
-        // 3. Actualizar subscription_payments com ID do documento e cliente real
+        // 4. Actualizar subscription_payments com ID do documento e cliente real
         const { error: updateError } = await supabase
           .from("subscription_payments")
           .update({

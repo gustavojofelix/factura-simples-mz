@@ -50,30 +50,28 @@
     "expired": "Subscrição expirada",
     "lockedMessage": "O sistema está bloqueado. Escolha um plano abaixo para voltar a usar todas as funcionalidades.",
     "daysRemaining": {
-      "one": "Restam <strong>{count}</strong> dia(s) no período actual.",
-      "other": "Restam <strong>{count}</strong> dia(s) no período actual."
+      "one": "Resta <strong>{count}</strong> dia de subscrição paga.",
+      "other": "Restam <strong>{count}</strong> dias de subscrição paga."
     },
     "pastDueTitle": "Pagamento em Atraso",
     "pastDueMessage": "Por favor, atualize seu método de pagamento para continuar usando o serviço.",
     "noPlan": "Esta empresa ainda não possui um plano ativo. Escolha um dos tarifários abaixo para subscrever.",
     "availablePlans": "Planos Disponíveis",
-    "upgradeInfo": "Pode fazer upgrade a qualquer momento. Enquanto a subscrição estiver activa, não é possível mudar para um plano inferior nem para um período mais curto. Depois de expirar, pode escolher qualquer plano.",
+    "upgradeInfo": "Pode comprar qualquer plano a qualquer momento. Se ainda tiver tempo pago, o novo período começa quando o actual terminar, com o plano e as funcionalidades que escolher.",
     "mostPopular": "Mais Popular",
     "trial": "Trial",
     "trialDays": "14 dias de teste",
     "period": "Período: {cycle}",
     "currentPlanBadge": "✓ Plano Atual",
     "notAvailable": "Não disponível",
-    "switchTo": "Mudar para {cycle}",
-    "downgradeNotAllowed": "Downgrade não permitido",
-    "downgradeBlockedShort": "Não é possível mudar para um plano inferior enquanto a subscrição estiver activa",
-    "availableAfter": "Disponível após {date}",
-    "activateTrial": "Ativar Período de Teste",
-    "upgrade": "Fazer Upgrade (M-Pesa / e-Mola)",
     "subscribe": "Subscrever (M-Pesa / e-Mola)",
     "renew": "Renovar (M-Pesa / e-Mola)",
     "empty": "Selecione uma empresa para ver a subscrição e os planos disponíveis",
-    "shorterCycleBlockedShort": "Não é possível reduzir o período enquanto a subscrição estiver activa"
+    "addPeriod": "Acrescentar {cycle} (M-Pesa / e-Mola)",
+    "startsOn": "Começa a {date}, quando terminar o tempo já pago",
+    "queueLimitShort": "Já tem mais de 360 dias pagos à frente",
+    "upcomingTitle": "Próximos períodos (já pagos)",
+    "periodRange": "{start} a {end}"
   },
   "status": {
     "active": "Ativo",
@@ -147,12 +145,9 @@
     "removeAccessConfirm": "Tem certeza que deseja remover este acesso?",
     "accessRemoved": "Acesso removido com sucesso",
     "removeAccessFailed": "Não foi possível remover o acesso.",
-    "planChanged": "Plano alterado com sucesso",
-    "planChangeError": "Erro ao alterar plano",
     "downgradeToTrial": "Não é possível voltar ao período de teste depois de subscrever um plano pago.",
-    "downgradeActive": "Não é possível fazer downgrade para um plano inferior enquanto a subscrição estiver activa.",
-    "shorterCycleBlocked": "Não é possível mudar para um período mais curto enquanto a subscrição estiver activa.",
-    "revokeAccessConfirm": "Remover o acesso de {email} a: {companies}?"
+    "revokeAccessConfirm": "Remover o acesso de {email} a: {companies}?",
+    "queueLimit": "Já tem mais de 360 dias de subscrição pagos à frente. Poderá comprar mais tempo mais tarde."
   },
   "documentTab": {
     "noCompany": "Seleccione uma empresa para personalizar os seus documentos.",

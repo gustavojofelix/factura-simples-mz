@@ -50,30 +50,28 @@
     "expired": "Abonnement expiré",
     "lockedMessage": "Le système est bloqué. Choisissez une formule ci-dessous pour retrouver toutes les fonctionnalités.",
     "daysRemaining": {
-      "one": "Il reste <strong>{count}</strong> jour dans la période en cours.",
-      "other": "Il reste <strong>{count}</strong> jours dans la période en cours."
+      "one": "Il reste <strong>{count}</strong> jour d'abonnement payé.",
+      "other": "Il reste <strong>{count}</strong> jours d'abonnement payé."
     },
     "pastDueTitle": "Paiement en retard",
     "pastDueMessage": "Veuillez mettre à jour votre moyen de paiement pour continuer à utiliser le service.",
     "noPlan": "Cette entreprise n'a pas encore de formule active. Choisissez l'une des formules ci-dessous pour vous abonner.",
     "availablePlans": "Formules disponibles",
-    "upgradeInfo": "Vous pouvez passer à une formule supérieure à tout moment. Tant que l'abonnement est actif, il n'est pas possible de passer à une formule inférieure ni à une période plus courte. Une fois expiré, vous pouvez choisir n'importe quelle formule.",
+    "upgradeInfo": "Vous pouvez acheter n'importe quelle formule à tout moment. S'il vous reste du temps payé, la nouvelle période commence à la fin de la période actuelle, avec la formule et les fonctionnalités choisies.",
     "mostPopular": "La plus populaire",
     "trial": "Essai",
     "trialDays": "14 jours d'essai gratuit",
     "period": "Période : {cycle}",
     "currentPlanBadge": "✓ Formule actuelle",
     "notAvailable": "Non disponible",
-    "switchTo": "Passer à {cycle}",
-    "downgradeNotAllowed": "Rétrogradation non autorisée",
-    "downgradeBlockedShort": "Impossible de passer à une formule inférieure tant que l'abonnement est actif",
-    "availableAfter": "Disponible après le {date}",
-    "activateTrial": "Activer l'essai gratuit",
-    "upgrade": "Passer à la formule supérieure (M-Pesa / e-Mola)",
     "subscribe": "S'abonner (M-Pesa / e-Mola)",
     "renew": "Renouveler (M-Pesa / e-Mola)",
     "empty": "Sélectionnez une entreprise pour voir son abonnement et les formules disponibles",
-    "shorterCycleBlockedShort": "Impossible de réduire la période tant que l'abonnement est actif"
+    "addPeriod": "Ajouter {cycle} (M-Pesa / e-Mola)",
+    "startsOn": "Commence le {date}, à la fin du temps déjà payé",
+    "queueLimitShort": "Vous avez déjà plus de 360 jours payés à venir",
+    "upcomingTitle": "Prochaines périodes (déjà payées)",
+    "periodRange": "du {start} au {end}"
   },
   "status": {
     "active": "Actif",
@@ -147,12 +145,9 @@
     "removeAccessConfirm": "Voulez-vous vraiment retirer cet accès ?",
     "accessRemoved": "Accès retiré avec succès",
     "removeAccessFailed": "Impossible de retirer l'accès.",
-    "planChanged": "Formule modifiée avec succès",
-    "planChangeError": "Erreur lors du changement de formule",
     "downgradeToTrial": "Impossible de revenir à l'essai gratuit après avoir souscrit une formule payante.",
-    "downgradeActive": "Impossible de passer à une formule inférieure tant que l'abonnement est actif.",
-    "shorterCycleBlocked": "Impossible de passer à une période plus courte tant que l'abonnement est actif.",
-    "revokeAccessConfirm": "Retirer l'accès de {email} à : {companies} ?"
+    "revokeAccessConfirm": "Retirer l'accès de {email} à : {companies} ?",
+    "queueLimit": "Vous avez déjà plus de 360 jours d'abonnement payés à venir. Vous pourrez acheter plus de temps plus tard."
   },
   "documentTab": {
     "noCompany": "Sélectionnez une entreprise pour personnaliser ses documents.",
