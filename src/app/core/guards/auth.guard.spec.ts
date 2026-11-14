@@ -12,7 +12,8 @@ describe('Auth Guards', () => {
   beforeEach(() => {
     mockAuthService = {
       waitForInitialization: jasmine.createSpy().and.resolveTo(),
-      isAuthenticated: jasmine.createSpy()
+      isAuthenticated: jasmine.createSpy(),
+      isCurrentUserSuspended: jasmine.createSpy().and.resolveTo(false)
     };
 
     mockRouter = {

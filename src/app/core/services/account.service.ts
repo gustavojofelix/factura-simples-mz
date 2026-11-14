@@ -144,26 +144,29 @@ export class AccountService {
     this.setActive(account);
   }
 
-  /** Decide para onde ir depois de login / redefinição de palavra-passe. */
+  /**
+   * Decide para onde ir depois de login / redefinição de palavra-passe.
+   * Vai sempre para /painel: o accountGuard envia o titular de uma conta sem
+   * empresas para /configurar-empresa, sem repetir aqui a mesma consulta.
+   */
   async resolvePostLoginTarget(): Promise<PostLoginTarget> {
     await this.loadAccounts();
     const accounts = this.accounts();
 
     if (this.tenant.currentSlug()) {
       if (this.accessDenied()) return { kind: 'route', route: '/sem-acesso' };
-      return { kind: 'route', route: await this.homeRouteFor(this.activeAccount()!) };
+      return { kind: 'route', route: '/painel' };
     }
 
     if (accounts.length === 0) return { kind: 'route', route: '/configurar-conta' };
 
     if (this.tenant.usesSubdomains) {
       if (accounts.length > 1) return { kind: 'route', route: '/escolher-conta' };
-      const account = accounts[0];
-      return { kind: 'external', url: this.tenant.accountUrl(account.slug, await this.homeRouteFor(account)) };
+      return { kind: 'external', url: this.tenant.accountUrl(accounts[0].slug, '/painel') };
     }
 
     // App nativa / dev: fica na mesma origem, na conta activa.
-    return { kind: 'route', route: await this.homeRouteFor(this.activeAccount() ?? accounts[0]) };
+    return { kind: 'route', route: '/painel' };
   }
 
   /** O dono de uma conta sem empresas vai configurar a primeira; os restantes vão ao painel. */

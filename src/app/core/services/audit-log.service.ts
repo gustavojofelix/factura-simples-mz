@@ -44,8 +44,10 @@ export class AuditLogService {
     companyId?: string
   ): Promise<boolean> {
     try {
-      const userRes = await this.supabase.auth.getUser();
-      const user = userRes.data?.user;
+      // Sessão local (sem pedido de rede): o trigger audit_logs_stamp grava
+      // user_id/user_email no servidor, isto é só o valor de recurso.
+      const { data: { session } } = await this.supabase.auth.getSession();
+      const user = session?.user;
 
       const logData: any = {
         action,

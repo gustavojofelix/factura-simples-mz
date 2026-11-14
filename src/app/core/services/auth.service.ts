@@ -34,6 +34,8 @@ export class AuthService {
   private languageService = inject(LanguageService);
   private _isAdminCache: boolean | null = null;
   private _authResolved = false;
+  /** Utilizador cujo estado (suspenso ou não) já foi verificado nesta página. */
+  private verifiedUserId: string | null = null;
   private authInitialized = new Promise<void>((resolve) => {
     this.resolveAuth = resolve;
   });
@@ -59,6 +61,7 @@ export class AuthService {
 
     this.supabase.auth.onAuthStateChange((event, session) => {
       this.currentUser.set(session?.user ?? null);
+      if (session?.user?.id !== this.verifiedUserId) this.verifiedUserId = null;
       this.isLoading.set(false);
       this._isAdminCache = null; // Invalidate cache on auth state change
       if (!this._authResolved) {
@@ -70,6 +73,20 @@ export class AuthService {
 
   async waitForInitialization(): Promise<void> {
     return this.authInitialized;
+  }
+
+  /**
+   * Indica se o utilizador autenticado está suspenso. A consulta ao perfil faz-se
+   * uma vez por carregamento da página (ou nenhuma, logo após o login).
+   */
+  async isCurrentUserSuspended(): Promise<boolean> {
+    const user = this.currentUser();
+    if (!user) return false;
+    if (this.verifiedUserId === user.id) return false;
+    const profile = await this.getCurrentProfile();
+    if (profile?.status === 'suspended') return true;
+    if (this.currentUser()?.id === user.id) this.verifiedUserId = user.id;
+    return false;
   }
 
   async signUp(email: string, password: string, fullName: string, phone?: string, accountSlug?: string): Promise<AuthResponse> {
@@ -250,13 +267,16 @@ export class AuthService {
 
     this.currentUser.set(user);
     this._isAdminCache = null; // Clear cache on new login
-    await this.auditLogService.log(
+    // O estado do perfil acabou de ser verificado: o authGuard não repete a consulta.
+    this.verifiedUserId = user.id;
+    // Sem await: o registo de auditoria não deve atrasar a entrada no painel.
+    void this.auditLogService.log(
       'Entrou no Sistema (Login)',
       'auth',
       { email: user.email, method }
     );
     // Língua do perfil: se for diferente da actual, a página recarrega já autenticada.
-    await this.languageService.syncWithProfile(user.id, profile?.language);
+    this.languageService.syncWithProfile(user.id, profile?.language);
     return { success: true, user };
   }
 

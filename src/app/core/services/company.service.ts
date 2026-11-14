@@ -103,7 +103,24 @@ export class CompanyService {
     }, { allowSignalWrites: true });
   }
 
-  async loadCompanies() {
+  /** Pedido em curso por conta: o effect e os guards pedem as empresas ao mesmo tempo no arranque. */
+  private loadingCompanies: { accountId: string; promise: Promise<void> } | null = null;
+  /** Papel do utilizador nas empresas partilhadas, vindo da própria listagem (evita outra consulta). */
+  private sharedRoles = new Map<string, string>();
+
+  loadCompanies(): Promise<void> {
+    const account = this.accountService.activeAccount();
+    if (this.loadingCompanies && this.loadingCompanies.accountId === account?.id) {
+      return this.loadingCompanies.promise;
+    }
+    const promise = this.fetchCompanies().finally(() => {
+      if (this.loadingCompanies?.promise === promise) this.loadingCompanies = null;
+    });
+    if (account) this.loadingCompanies = { accountId: account.id, promise };
+    return promise;
+  }
+
+  private async fetchCompanies() {
     const user = this.authService.currentUser();
     const account = this.accountService.activeAccount();
     if (!user || !account) return;
@@ -111,30 +128,34 @@ export class CompanyService {
     this.isLoading.set(true);
 
     try {
-      const { data: ownedCompanies, error: ownedError } = await this.supabase.db
-        .from('companies')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('account_id', account.id)
-        .order('created_at', { ascending: false });
+      const [
+        { data: ownedCompanies, error: ownedError },
+        { data: sharedCompanies, error: sharedError }
+      ] = await Promise.all([
+        this.supabase.db
+          .from('companies')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('account_id', account.id)
+          .order('created_at', { ascending: false }),
+        this.supabase.db
+          .from('company_users')
+          .select('company_id, role, companies(*)')
+          .eq('user_id', user.id)
+          .neq('role', 'owner')
+      ]);
 
       if (ownedError) throw ownedError;
-
-      const { data: sharedCompanies, error: sharedError } = await this.supabase.db
-        .from('company_users')
-        .select('company_id, companies(*)')
-        .eq('user_id', user.id)
-        .neq('role', 'owner');
-
       if (sharedError) throw sharedError;
 
-      const shared = (sharedCompanies || [])
-        .map((cu: any) => cu.companies)
-        .filter((c: any) => c !== null && c.account_id === account.id);
+      const sharedRows = (sharedCompanies || [])
+        .filter((cu: any) => cu.companies !== null && cu.companies.account_id === account.id);
+      const shared = sharedRows.map((cu: any) => cu.companies);
 
       // A conta pode ter mudado enquanto a consulta corria.
       if (this.accountService.activeAccount()?.id !== account.id) return;
 
+      this.sharedRoles = new Map(sharedRows.map((cu: any) => [cu.company_id as string, cu.role as string]));
       const allCompanies = [...(ownedCompanies || []), ...shared];
       this.companies.set(allCompanies);
 
@@ -311,6 +332,8 @@ export class CompanyService {
 
     const company = this.companies().find(c => c.id === companyId);
     if (company?.user_id === user.id) return 'owner';
+    const knownRole = this.sharedRoles.get(companyId);
+    if (company && knownRole) return knownRole;
 
     const { data, error } = await this.supabase.db
       .from('company_users')

@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, effect, computed, inject } from '@angular/core';
+import { Component, signal, effect, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -56,7 +56,7 @@ interface RecentInvoice {
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent {
   readonly lastUpdatedAt = signal<Date | null>(null);
   readonly greeting = computed(() => {
     const hour = new Date().getHours();
@@ -110,6 +110,8 @@ export class DashboardComponent implements OnInit {
     private auditLogService: AuditLogService,
     public router: Router
   ) {
+    // Carregamento inicial e ao trocar de empresa (não repetir em ngOnInit:
+    // duplicaria todos os pedidos do painel).
     effect(() => {
       const company = this.companyService.activeCompany();
       if (company) {
@@ -127,13 +129,6 @@ export class DashboardComponent implements OnInit {
         this.recentActivities.set([]);
       }
     });
-  }
-
-  ngOnInit() {
-    const company = this.companyService.activeCompany();
-    if (company) {
-      this.loadDashboardData(company.id);
-    }
   }
 
   async loadDashboardData(companyId: string) {
@@ -173,75 +168,72 @@ export class DashboardComponent implements OnInit {
   }
 
   async loadMetrics(companyId: string) {
-    const currentMonth = new Date().toISOString().slice(0, 7);
-
-    const { data: invoices } = await this.supabase.db
-      .from('invoices')
-      .select('total, status, date, amount_paid, due_date')
-      .eq('company_id', companyId)
-      .neq('status', 'rascunho')
-      .neq('status', 'anulada');
-
-    const { data: clients } = await this.supabase.db
-      .from('clients')
-      .select('id')
-      .eq('company_id', companyId)
-      .eq('is_active', true)
-      .eq('is_walk_in', false);
-
-    // Calculate actual status for each invoice (same logic as InvoiceService)
-    const invoicesWithCalculatedStatus = (invoices || []).map(inv => {
-      let calculatedStatus = inv.status;
-      
-      // If fully paid, status is 'paga'
-      if (inv.amount_paid >= inv.total) {
-        calculatedStatus = 'paga';
-      }
-      // If has due date and is overdue and not fully paid
-      else if (inv.due_date) {
-        const dueDate = new Date(inv.due_date);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        dueDate.setHours(0, 0, 0, 0);
-        
-        if (dueDate < today && inv.amount_paid < inv.total) {
-          calculatedStatus = 'vencida';
-        }
-      }
-      
-      return { ...inv, calculatedStatus };
-    });
-
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonthIndex = now.getMonth();
     const currentQuarter = Math.floor(currentMonthIndex / 3) + 1;
-    const quarterStartMonth = Math.floor(currentMonthIndex / 3) * 3;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    const quarterInvoices = invoicesWithCalculatedStatus.filter(inv => {
-      if (!inv.date) return false;
-      const invDate = new Date(inv.date);
-      return invDate.getFullYear() === currentYear && 
-             invDate.getMonth() >= quarterStartMonth &&
-             invDate.getMonth() <= quarterStartMonth + 2;
+    // Os três pedidos são independentes: correm em paralelo.
+    const [{ data: pendingRows }, { count: clientCount }, taxCalc] = await Promise.all([
+      // Só as pendentes contam para o indicador (o resto do histórico não é preciso).
+      this.supabase.db
+        .from('invoices')
+        .select('total, amount_paid, due_date')
+        .eq('company_id', companyId)
+        .eq('status', 'pendente'),
+      this.supabase.db
+        .from('clients')
+        .select('id', { count: 'exact', head: true })
+        .eq('company_id', companyId)
+        .eq('is_active', true)
+        .eq('is_walk_in', false),
+      // Cálculo exacto do ISPC (vendas acumuladas e excessos).
+      this.taxService.calculateTaxForPeriod(currentYear, currentQuarter)
+    ]);
+
+    // Mesma regra do InvoiceService: paga se liquidada, vencida se passou o prazo.
+    const pendingInvoices = (pendingRows || []).filter(inv => {
+      if (inv.amount_paid >= inv.total) return false;
+      if (inv.due_date) {
+        const dueDate = new Date(inv.due_date);
+        dueDate.setHours(0, 0, 0, 0);
+        if (dueDate < today) return false;
+      }
+      return true;
     });
 
-    const pendingInvoices = invoicesWithCalculatedStatus.filter(inv =>
-      inv.calculatedStatus === 'pendente'
-    );
-
-    // Fetch precise ISPC calculation from TaxService to take into account cumulative sales and excesses
-    const taxCalc = await this.taxService.calculateTaxForPeriod(currentYear, currentQuarter);
-    
-    const totalQuarterSales = taxCalc ? taxCalc.totalSales : quarterInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
-    const estimatedIspc = taxCalc ? taxCalc.ispcAmount : totalQuarterSales * 0.03;
+    let totalQuarterSales = taxCalc?.totalSales ?? 0;
+    let estimatedIspc = taxCalc?.ispcAmount ?? 0;
+    if (!taxCalc) {
+      // Recurso se o cálculo falhar: soma simples das vendas do trimestre a 3%.
+      totalQuarterSales = await this.loadQuarterSalesFallback(companyId, currentYear, currentMonthIndex);
+      estimatedIspc = totalQuarterSales * 0.03;
+    }
 
     this.metrics.set({
       quarterSales: totalQuarterSales,
       ispcToPay: estimatedIspc,
       pendingInvoices: pendingInvoices.length,
-      activeClients: clients?.length || 0
+      activeClients: clientCount || 0
     });
+  }
+
+  private async loadQuarterSalesFallback(companyId: string, year: number, monthIndex: number): Promise<number> {
+    const quarterStartMonth = Math.floor(monthIndex / 3) * 3;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const start = `${year}-${pad(quarterStartMonth + 1)}-01`;
+    const end = quarterStartMonth + 3 > 11 ? `${year + 1}-01-01` : `${year}-${pad(quarterStartMonth + 4)}-01`;
+    const { data } = await this.supabase.db
+      .from('invoices')
+      .select('total')
+      .eq('company_id', companyId)
+      .neq('status', 'rascunho')
+      .neq('status', 'anulada')
+      .gte('date', start)
+      .lt('date', end);
+    return (data || []).reduce((sum, inv) => sum + (inv.total || 0), 0);
   }
 
   async loadRecentInvoices(companyId: string) {

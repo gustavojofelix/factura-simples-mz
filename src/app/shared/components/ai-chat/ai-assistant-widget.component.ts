@@ -17,7 +17,8 @@ import { TranslatePipe } from '../../../core/i18n/translate.pipe';
  *
  * O painel só é instanciado depois da primeira abertura: manter o chat montado
  * em todas as páginas custaria um pedido de quota e uma subscrição de sinais a
- * utilizadores que nunca o abrem.
+ * utilizadores que nunca o abrem. O código do chat também só é descarregado
+ * nessa altura (@defer), o que alivia o primeiro carregamento do painel.
  */
 @Component({
   selector: 'app-ai-assistant-widget',
@@ -32,7 +33,15 @@ import { TranslatePipe } from '../../../core/i18n/translate.pipe';
           <button mat-icon-button class="ai-widget__close" [attr.aria-label]="'common.actions.close' | t" (click)="fechar()">
             <mat-icon class="!text-[20px] !w-5 !h-5">close</mat-icon>
           </button>
-          <app-ai-chat variant="widget" />
+          <!-- @defer: o chat (e o jsPDF/html2canvas/xlsx que importa) só é
+               descarregado na primeira abertura, não no arranque de cada página. -->
+          @defer (on immediate) {
+            <app-ai-chat variant="widget" />
+          } @placeholder (minimum 0ms) {
+            <div class="flex h-full items-center justify-center p-8 text-slate-400">
+              <mat-icon class="animate-pulse">smart_toy</mat-icon>
+            </div>
+          }
         </div>
       }
 

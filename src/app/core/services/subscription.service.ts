@@ -411,15 +411,31 @@ export class SubscriptionService {
     return true;
   }
 
-  async loadSubscription(companyId: string): Promise<void> {
-    const { data, error } = await this.supabase.client
-      .from("subscriptions")
-      .select("*")
-      .eq("company_id", companyId)
-      .order("updated_at", { ascending: false })
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+  /** Pedido em curso: o guard, o layout e o painel pedem a subscrição em simultâneo no arranque. */
+  private loadingSubscription: { companyId: string; promise: Promise<void> } | null = null;
+
+  loadSubscription(companyId: string): Promise<void> {
+    if (this.loadingSubscription?.companyId === companyId) return this.loadingSubscription.promise;
+    const promise = this.fetchSubscription(companyId).finally(() => {
+      if (this.loadingSubscription?.promise === promise) this.loadingSubscription = null;
+    });
+    this.loadingSubscription = { companyId, promise };
+    return promise;
+  }
+
+  private async fetchSubscription(companyId: string): Promise<void> {
+    // O nível do plano não depende da subscrição: os dois pedidos correm em paralelo.
+    const [{ data, error }] = await Promise.all([
+      this.supabase.client
+        .from("subscriptions")
+        .select("*")
+        .eq("company_id", companyId)
+        .order("updated_at", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      this.loadCurrentPlanLevel(companyId),
+    ]);
 
     if (error) {
       console.error("Error loading subscription:", error);
@@ -427,7 +443,6 @@ export class SubscriptionService {
     }
 
     this.subscriptionSignal.set(data);
-    await this.loadCurrentPlanLevel(companyId);
   }
 
   /** Carrega o nível e preço do plano actual (mesmo que o plano esteja desactivado). */

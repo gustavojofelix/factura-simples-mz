@@ -9,8 +9,7 @@ export const authGuard: CanActivateFn = async (route, state) => {
   await authService.waitForInitialization();
 
   if (authService.isAuthenticated()) {
-    const profile = await authService.getCurrentProfile();
-    if (profile?.status === 'suspended') {
+    if (await authService.isCurrentUserSuspended()) {
       await authService.signOut();
       router.navigate(['/entrar'], { queryParams: { error: 'suspended' } });
       return false;

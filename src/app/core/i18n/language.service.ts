@@ -28,12 +28,13 @@ export class LanguageService {
    * Após o login: adopta a língua guardada no perfil (recarregando se for diferente)
    * ou, se o perfil ainda não tiver língua, grava a actual.
    */
-  async syncWithProfile(userId: string, profileLanguage: unknown): Promise<void> {
+  syncWithProfile(userId: string, profileLanguage: unknown): void {
     if (isAppLanguage(profileLanguage)) {
       if (storeLanguage(profileLanguage)) window.location.reload();
       return;
     }
-    await this.saveToProfile(this.current, userId);
+    // Em segundo plano: gravar a língua no perfil não deve atrasar o login.
+    void this.saveToProfile(this.current, userId);
   }
 
   private async saveToProfile(code: AppLanguage, userId?: string): Promise<void> {

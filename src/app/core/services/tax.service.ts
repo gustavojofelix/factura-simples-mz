@@ -256,33 +256,27 @@ export class TaxService {
     const { startDate, endDate } = this.getPeriodDates(year, period);
 
     try {
-      // Buscar todas as faturas do trimestre
-      const { data: invoices, error } = await this.supabase.db
-        .from('invoices')
-        .select('total, date')
-        .eq('company_id', company.id)
-        .neq('status', 'rascunho')
-        .neq('status', 'anulada')
-        .gte('date', startDate)
-        .lte('date', endDate);
-
-      if (error) throw error;
-
-      // Calcular total de vendas do trimestre
-      const totalSales = this.fromCents((invoices || []).reduce((sum, inv) => sum + this.toCents(inv.total), 0));
-
-      // Buscar vendas anuais até este trimestre para determinar a taxa correta
+      // Vendas do ano até ao fim do período: contêm também as do próprio
+      // trimestre, por isso basta uma consulta. A taxa da actividade é
+      // independente e corre em paralelo.
       const yearStart = `${year}-01-01`;
-      const { data: yearInvoices, error: yearError } = await this.supabase.db
-        .from('invoices')
-        .select('total, date')
-        .eq('company_id', company.id)
-        .neq('status', 'rascunho')
-        .neq('status', 'anulada')
-        .gte('date', yearStart)
-        .lte('date', endDate);
+      const [{ data: yearInvoices, error: yearError }, configuredActivity] = await Promise.all([
+        this.supabase.db
+          .from('invoices')
+          .select('total, date')
+          .eq('company_id', company.id)
+          .neq('status', 'rascunho')
+          .neq('status', 'anulada')
+          .gte('date', yearStart)
+          .lte('date', endDate),
+        this.getConfiguredActivityRate(company)
+      ]);
 
       if (yearError) throw yearError;
+
+      // Calcular total de vendas do trimestre
+      const invoices = (yearInvoices || []).filter(inv => inv.date >= startDate);
+      const totalSales = this.fromCents(invoices.reduce((sum, inv) => sum + this.toCents(inv.total), 0));
 
       const annualSalesBeforeQuarter = (yearInvoices || [])
         .filter(inv => inv.date < startDate)
@@ -292,7 +286,6 @@ export class TaxService {
         .reduce((sum, inv) => sum + this.toCents(inv.total), 0) / 100;
 
       // Determinar a taxa baseada no tipo de atividade e volume anual
-      const configuredActivity = await this.getConfiguredActivityRate(company);
       const baseRate = configuredActivity.baseRate;
       const isScaleActivity = configuredActivity.isScaleActivity;
 
