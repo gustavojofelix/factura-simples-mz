@@ -1,26 +1,16 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormControl } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { MatStepperModule } from '@angular/material/stepper';
 import { MatIconModule } from '@angular/material/icon';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatCardModule } from '@angular/material/card';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../../core/services/auth.service';
-import { nuitValidator } from '../../core/validators/nuit.validator';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { DocumentProcessingService } from '../../core/services/document-processing.service';
 import { SupabaseService } from '../../core/services/supabase.service';
-import { CompanyDocument } from '../../core/services/document-processing.service';
-import { ActivityService, ActivityType } from '../../core/services/activity.service';
 import { CompanyService } from '../../core/services/company.service';
 import { AccountService } from '../../core/services/account.service';
 import { AuditLogService } from '../../core/services/audit-log.service';
@@ -29,7 +19,12 @@ import { t } from '../../core/i18n/i18n';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { LanguageSwitcherComponent } from '../../shared/components/language-switcher/language-switcher.component';
 
-
+/**
+ * /configurar-empresa: cria a primeira empresa da conta só com o nome.
+ * NUIT, endereço, tipo de entidade e actividades completam-se depois em
+ * Configurações. Quem acabou de se registar já indicou o nome (e se quer dados
+ * de demonstração) no registo: nesse caso a empresa é criada sem perguntar nada.
+ */
 @Component({
   selector: 'app-company-setup',
   standalone: true,
@@ -39,421 +34,67 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSelectModule,
-    MatStepperModule,
     MatIconModule,
+    MatCheckboxModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
-    MatCardModule,
-    MatChipsModule,
-    MatTooltipModule,
     TranslatePipe,
     LanguageSwitcherComponent
   ],
   templateUrl: './company-setup.component.html',
   styleUrls: ['./company-setup.component.css']
 })
-export class CompanySetupComponent {
-  private readonly destroyRef = inject(DestroyRef);
+export class CompanySetupComponent implements OnInit {
   private readonly errorDialog = inject(ErrorDialogService);
-  companyInfoForm: FormGroup;
-  settingsForm: FormGroup;
+  private readonly fb = inject(FormBuilder);
+  private readonly authService = inject(AuthService);
+  private readonly supabase = inject(SupabaseService);
+  private readonly router = inject(Router);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly companyService = inject(CompanyService);
+  private readonly accountService = inject(AccountService);
+  private readonly auditLogService = inject(AuditLogService);
+
+  form: FormGroup = this.fb.group({
+    name: ['', [Validators.required, Validators.minLength(2)]],
+    loadDemoData: [true]
+  });
+
   isLoading = signal(false);
-  nuitDocumentUrl = signal<string | null>(null);
-  isUploadingNuit = signal(false);
-  commercialActivityUrl = signal<string | null>(null);
-  isUploadingCommercial = signal(false);
-  isUploadingAlvara = signal(false);
+  /** A criar a empresa pedida no registo (sem mostrar o formulário). */
+  isAutoCreating = signal(false);
 
+  async ngOnInit() {
+    const account = this.accountService.activeAccount();
 
-  otherDocuments = signal<Partial<CompanyDocument>[]>([]);
-  isUploadingOther = signal(false);
-  newDocType = new FormControl('');
-
-  documentTypes = [
-    'Certidão de Registo Comercial',
-    'Boletim da República',
-    'Documento de Identificação (Sócios)',
-    'Contrato de Arrendamento',
-    'Outros'
-  ];
-
-  provinces = [
-    'Maputo', 'Gaza', 'Inhambane', 'Sofala', 'Manica', 'Tete',
-    'Zambézia', 'Nampula', 'Niassa', 'Cabo Delgado'
-  ];
-
-  // Valores gravados na BD (em português); só a etiqueta é traduzida.
-  countries = [
-    'Moçambique', 'África do Sul', 'Angola', 'Brasil', 'Eswatini', 'Malawi',
-    'Portugal', 'Tanzânia', 'Zâmbia', 'Zimbabué'
-  ];
-
-  private readonly countryKeys: Record<string, string> = {
-    'Moçambique': 'mozambique',
-    'África do Sul': 'southAfrica',
-    'Angola': 'angola',
-    'Brasil': 'brazil',
-    'Eswatini': 'eswatini',
-    'Malawi': 'malawi',
-    'Portugal': 'portugal',
-    'Tanzânia': 'tanzania',
-    'Zâmbia': 'zambia',
-    'Zimbabué': 'zimbabwe'
-  };
-
-  private readonly docTypeKeys: Record<string, string> = {
-    'Certidão de Registo Comercial': 'commercialRegistry',
-    'Boletim da República': 'republicBulletin',
-    'Documento de Identificação (Sócios)': 'partnersId',
-    'Contrato de Arrendamento': 'leaseAgreement',
-    'Outros': 'other',
-    'Alvará': 'licence'
-  };
-
-  countryLabel(country: string): string {
-    const key = this.countryKeys[country];
-    return key ? t(`companySetup.countries.${key}`) : country;
-  }
-
-  docTypeLabel(type: string | null | undefined): string {
-    const key = type ? this.docTypeKeys[type] : undefined;
-    return key ? t(`companySetup.documentTypes.${key}`) : (type ?? '');
-  }
-
-  activityTypes = signal<ActivityType[]>([]);
-  isLoadingActivities = signal(false);
-
-  constructor(
-    private fb: FormBuilder,
-    private authService: AuthService,
-    private supabase: SupabaseService,
-    private router: Router,
-    private snackBar: MatSnackBar,
-    private documentService: DocumentProcessingService,
-    private activityService: ActivityService,
-    private companyService: CompanyService,
-    private accountService: AccountService,
-    private auditLogService: AuditLogService
-  ) {
-    this.companyInfoForm = this.fb.group({
-      name: ['', [Validators.required, Validators.minLength(3)]],
-      entityType: ['', Validators.required],
-      email: ['', [Validators.email]],
-      nuit: ['', [Validators.required, nuitValidator()]],
-      address: ['', Validators.required],
-      country: ['Moçambique', Validators.required],
-      postalCode: [''],
-      province: [''],
-      category1: [''],
-      category2: [''],
-      category3: [''],
-      business_volume: ['3', Validators.required]
-    });
-
-
-    this.settingsForm = this.fb.group({
-      currency: ['MZN'],
-      invoicePrefix: ['FAC', [Validators.required, Validators.maxLength(10)]]
-    });
-
-    this.setupCategoryWatchers();
-    this.loadActivityCatalog();
-  }
-
-  async loadActivityCatalog() {
-    this.isLoadingActivities.set(true);
-    try {
-      this.activityTypes.set(await this.activityService.list(false));
-    } catch (error) {
-      console.error('Erro ao carregar catálogo de actividades:', error);
-      this.errorDialog.show(error, {
-        title: t('companySetup.errors.loadActivitiesTitle'),
-        context: t('companySetup.errors.contextLoadActivities'),
-        retryLabel: t('common.actions.retry')
-      }).then(result => { if (result === 'retry') this.loadActivityCatalog(); });
-    } finally {
-      this.isLoadingActivities.set(false);
-    }
-  }
-
-  setupCategoryWatchers() {
-    this.companyInfoForm.get('category1')?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-      this.companyInfoForm.patchValue({ category2: '', category3: '' }, { emitEvent: false });
-    });
-
-    this.companyInfoForm.get('category2')?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((cat2) => {
-      this.companyInfoForm.patchValue({ category3: '' }, { emitEvent: false });
-
-      if (cat2 === 'servicos_nao_liberais') {
-        this.companyInfoForm.patchValue({ business_volume: '12' });
-      } else if (cat2 === 'servicos_liberais') {
-        this.companyInfoForm.patchValue({ business_volume: '15' });
-      } else {
-        const currentVol = this.companyInfoForm.get('business_volume')?.value;
-        if (currentVol === '12' || currentVol === '15' || currentVol === '20') {
-          this.companyInfoForm.patchValue({ business_volume: '3' });
-        }
-      }
-    });
-  }
-
-  getServiceType(): 'liberal' | 'nao_liberais' | null {
-    const cat2 = this.companyInfoForm.get('category2')?.value;
-    if (cat2 === 'servicos_nao_liberais') return 'nao_liberais';
-    if (cat2 === 'servicos_liberais') return 'liberal';
-    return null;
-  }
-
-  isISPCScaleActivity() {
-    const cat2 = this.companyInfoForm.get('category2')?.value;
-    return cat2 !== 'servicos_nao_liberais' && cat2 !== 'servicos_liberais';
-  }
-
-  getCat1Options() {
-    return this.activityTypes()
-      .filter(activity => !activity.parent_id)
-      .map(activity => ({ id: activity.code, label: activity.name }));
-  }
-
-  getCat2Options() {
-    const cat1 = this.companyInfoForm.get('category1')?.value;
-    if (!cat1) return [];
-    const parent = this.activityTypes().find(activity => activity.code === cat1);
-    if (!parent) return [];
-    return this.activityTypes()
-      .filter(activity => activity.parent_id === parent.id)
-      .map(activity => ({ id: activity.code, label: activity.name }));
-  }
-
-  getCat3Options() {
-    const cat1 = this.companyInfoForm.get('category1')?.value;
-    const cat2 = this.companyInfoForm.get('category2')?.value;
-
-    if (!cat1 || !cat2) return [];
-    const parent = this.activityTypes().find(activity => activity.code === cat2);
-    if (!parent) return [];
-    return this.activityTypes()
-      .filter(activity => activity.parent_id === parent.id)
-      .map(activity => ({ id: activity.code, label: activity.name }));
-  }
-
-  get alvaraDoc(): Partial<CompanyDocument> | undefined {
-    return this.otherDocuments().find(d => d.type === 'Alvará');
-  }
-
-  get otherDocsWithoutAlvara() {
-    return this.otherDocuments().filter(doc => doc.type !== 'Alvará');
-  }
-
-  async onAlvaraDocumentSelected(event: Event) {
-    const input = event.target as HTMLInputElement;
-    if (!input.files || input.files.length === 0) return;
-
-    const file = input.files[0];
-    this.isUploadingAlvara.set(true);
-
-    try {
-      const result = await this.documentService.uploadDocument(file, 'temp', 'other' as any);
-
-      this.otherDocuments.update(docs => [...docs, {
-        type: 'Alvará',
-        url: result.url,
-        file_name: file.name
-      }]);
-
-      this.snackBar.open(t('companySetup.messages.licenceUploaded'), t('common.actions.close'), { duration: 3000 });
-    } catch (error: any) {
-      console.error('Erro ao subir Alvará:', error);
-      this.errorDialog.show(error, { title: t('companySetup.errors.uploadLicenceTitle'), context: t('companySetup.errors.contextUploadLicence') });
-    } finally {
-      this.isUploadingAlvara.set(false);
-      input.value = '';
-    }
-  }
-
-  async onNuitDocumentSelected(event: Event) {
-    const input = event.target as HTMLInputElement;
-    if (!input.files || input.files.length === 0) return;
-
-    const file = input.files[0];
-    this.isUploadingNuit.set(true);
-
-    try {
-      const result = await this.documentService.uploadDocument(file, 'temp', 'nuit');
-      this.nuitDocumentUrl.set(result.url);
-
-      if (result.extractedData) {
-        if (result.extractedData.nuit) {
-          this.companyInfoForm.patchValue({ nuit: result.extractedData.nuit });
-          this.formatNuit();
-        }
-        if (result.extractedData.tradeName && !this.companyInfoForm.get('name')?.value) {
-          this.companyInfoForm.patchValue({ name: result.extractedData.tradeName });
-        }
-        if (result.extractedData.address && !this.companyInfoForm.get('address')?.value) {
-          this.companyInfoForm.patchValue({ address: result.extractedData.address });
-        }
-        if (result.extractedData.province) {
-          this.companyInfoForm.patchValue({ province: result.extractedData.province });
-        }
-
-        this.snackBar.open(t('companySetup.messages.dataExtracted'), t('common.actions.close'), { duration: 3000 });
-      } else {
-        this.snackBar.open(t('companySetup.messages.documentUploaded'), t('common.actions.close'), { duration: 3000 });
-      }
-    } catch (error: any) {
-      console.error('Erro ao subir NUIT:', error);
-      this.errorDialog.show(error, { title: t('companySetup.errors.uploadNuitTitle'), context: t('companySetup.errors.contextUploadNuit') });
-    } finally {
-      this.isUploadingNuit.set(false);
-      input.value = '';
-    }
-  }
-
-  async onCommercialDocumentSelected(event: Event) {
-    const input = event.target as HTMLInputElement;
-    if (!input.files || input.files.length === 0) return;
-
-    const file = input.files[0];
-    this.isUploadingCommercial.set(true);
-
-    try {
-      const result = await this.documentService.uploadDocument(file, 'temp', 'commercial_activity');
-      this.commercialActivityUrl.set(result.url);
-
-      if (result.extractedData) {
-        if (result.extractedData.tradeName && !this.companyInfoForm.get('name')?.value) {
-          this.companyInfoForm.patchValue({ name: result.extractedData.tradeName });
-        }
-        if (result.extractedData.address && !this.companyInfoForm.get('address')?.value) {
-          this.companyInfoForm.patchValue({ address: result.extractedData.address });
-        }
-        if (result.extractedData.province && !this.companyInfoForm.get('province')?.value) {
-          this.companyInfoForm.patchValue({ province: result.extractedData.province });
-        }
-
-        this.snackBar.open(t('companySetup.messages.dataExtracted'), t('common.actions.close'), { duration: 3000 });
-      } else {
-        this.snackBar.open(t('companySetup.messages.documentUploaded'), t('common.actions.close'), { duration: 3000 });
-      }
-    } catch (error: any) {
-      console.error('Erro ao subir Exercício de Actividade Comercial:', error);
-      this.errorDialog.show(error, { title: t('companySetup.errors.uploadDocumentTitle'), context: t('companySetup.errors.contextUploadCommercial') });
-    } finally {
-      this.isUploadingCommercial.set(false);
-      input.value = '';
-    }
-  }
-
-  async onOtherDocumentSelected(event: Event) {
-    const input = event.target as HTMLInputElement;
-    const type = this.newDocType.value;
-
-    if (!input.files || input.files.length === 0 || !type) return;
-
-    if (this.isDocTypeSelected(type)) {
-      this.snackBar.open(t('companySetup.messages.typeExists', { type: this.docTypeLabel(type) }), t('common.actions.close'), { duration: 3000 });
-      input.value = '';
+    // Já tem empresa (ex.: recarregou a página depois de a criar).
+    if (account && (await this.accountService.homeRouteFor(account)) === '/painel') {
+      if (this.authService.pendingCompanySetup()) await this.authService.clearPendingCompanySetup();
+      this.router.navigate(['/painel']);
       return;
     }
 
-    const file = input.files[0];
-    this.isUploadingOther.set(true);
-
-    try {
-      const result = await this.documentService.uploadDocument(file, 'temp', 'other' as any);
-
-      this.otherDocuments.update(docs => [...docs, {
-        type,
-        url: result.url,
-        file_name: file.name
-      }]);
-
-      this.newDocType.setValue('');
-      this.snackBar.open(t('companySetup.messages.documentAdded'), t('common.actions.close'), { duration: 3000 });
-    } catch (error: any) {
-      console.error('Erro ao subir documento:', error);
-      this.errorDialog.show(error, { title: t('companySetup.errors.uploadDocumentTitle'), context: t('companySetup.errors.contextUploadOther', { type: this.docTypeLabel(type) }) });
-    } finally {
-      this.isUploadingOther.set(false);
-      input.value = '';
+    const pending = this.authService.pendingCompanySetup();
+    if (pending) {
+      this.form.setValue({ name: pending.name, loadDemoData: pending.loadDemoData });
+      this.isAutoCreating.set(true);
+      const created = await this.createCompany();
+      if (!created) this.isAutoCreating.set(false);
+      return;
     }
-  }
 
-  isDocTypeSelected(type: string): boolean {
-    return this.otherDocuments().some(d => d.type === type);
-  }
-
-  async viewOtherDocument(doc: Partial<CompanyDocument>) {
-    if (doc.url) {
-      const signedUrl = await this.documentService.getSignedUrl(doc.url);
-      window.open(signedUrl, '_blank');
-    }
-  }
-
-  async removeOtherDocument(doc: Partial<CompanyDocument>) {
-    try {
-      if (doc.url) {
-        await this.documentService.deleteDocument(doc.url);
-      }
-      this.otherDocuments.update(docs => docs.filter(d => d !== doc));
-      this.snackBar.open(t('companySetup.messages.documentRemovedFromList'), t('common.actions.close'), { duration: 3000 });
-    } catch (error) {
-      console.error('Erro ao remover documento:', error);
-      this.errorDialog.show(error, { title: t('companySetup.errors.removeDocumentTitle'), context: t('companySetup.errors.contextRemoveDocument') });
-    }
-  }
-
-  async viewDocument() {
-    const url = this.nuitDocumentUrl();
-    if (url) {
-      const signedUrl = await this.documentService.getSignedUrl(url);
-      window.open(signedUrl, '_blank');
-    }
-  }
-
-  async viewCommercialDocument() {
-    const url = this.commercialActivityUrl();
-    if (url) {
-      const signedUrl = await this.documentService.getSignedUrl(url);
-      window.open(signedUrl, '_blank');
-    }
-  }
-
-  async clearCommercialDocument() {
-    const url = this.commercialActivityUrl();
-    if (!url) return;
-    try {
-      await this.documentService.deleteDocument(url);
-      this.commercialActivityUrl.set(null);
-      this.snackBar.open(t('companySetup.messages.documentRemoved'), t('common.actions.close'), { duration: 3000 });
-    } catch (error) {
-      console.error('Erro ao remover documento:', error);
-      this.errorDialog.show(error, { title: t('companySetup.errors.removeDocumentTitle'), context: t('companySetup.errors.contextRemoveDocument') });
-    }
-  }
-
-  formatNuit() {
-    const nuitControl = this.companyInfoForm.get('nuit');
-    if (!nuitControl) return;
-
-    let value = nuitControl.value.replace(/\D/g, '');
-    if (value.length > 9) {
-      value = value.substring(0, 9);
-    }
-    nuitControl.setValue(value, { emitEvent: false });
+    if (account?.name) this.form.patchValue({ name: account.name });
   }
 
   async onSubmit() {
-    if (this.companyInfoForm.invalid || this.settingsForm.invalid) {
-      this.snackBar.open(t('companySetup.messages.fillRequired'), t('common.actions.close'), {
-        duration: 3000,
-        panelClass: ['error-snackbar']
-      });
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
       return;
     }
+    await this.createCompany();
+  }
 
+  private async createCompany(): Promise<boolean> {
     this.isLoading.set(true);
 
     const user = (await this.supabase.auth.getUser()).data.user;
@@ -463,146 +104,82 @@ export class CompanySetupComponent {
         context: t('companySetup.errors.contextCreateCompany')
       });
       this.isLoading.set(false);
-      return;
-    }
-
-    // O RLS impede o cliente de ver empresas de outros subscritores, pelo que
-    // um NUIT já usado noutra conta só se detecta através de uma RPC. O trigger
-    // `enforce_company_nuit_unique` continua a ser a garantia final.
-    if (!(await this.companyService.isNuitAvailable(this.companyInfoForm.value.nuit))) {
-      this.flagDuplicateNuit();
-      this.isLoading.set(false);
-      return;
+      return false;
     }
 
     const account = this.accountService.activeAccount();
-    const companyData = {
-      user_id: user.id,
-      // O trigger assign_company_account usa a conta do titular quando vem vazio.
-      ...(account?.is_owner ? { account_id: account.id } : {}),
-      name: this.companyInfoForm.value.name,
-      entity_type: this.companyInfoForm.value.entityType,
-      email: this.companyInfoForm.value.email,
-      nuit: this.companyInfoForm.value.nuit,
-      address: this.companyInfoForm.value.address,
-      country: this.companyInfoForm.value.country,
-      postal_code: this.companyInfoForm.value.postalCode || null,
-      currency: this.settingsForm.value.currency,
-      invoice_prefix: this.settingsForm.value.invoicePrefix,
-      invoice_number: 1,
-      nuit_document_url: this.nuitDocumentUrl() || undefined,
-      commercial_activity_document_url: this.commercialActivityUrl() || undefined,
-      category1: this.companyInfoForm.value.category1,
-      category2: this.companyInfoForm.value.category2,
-      category3: this.companyInfoForm.value.category3,
-      business_volume: this.companyInfoForm.value.business_volume,
-      documents_metadata: {
-        province: this.companyInfoForm.value.province
-      }
-    };
+    const name = (this.form.value.name as string).trim();
+    const loadDemoData = !!this.form.value.loadDemoData;
 
     try {
       const { data, error } = await this.supabase.db
         .from('companies')
-        .insert(companyData)
+        .insert({
+          user_id: user.id,
+          // O trigger assign_company_account usa a conta do titular quando vem vazio.
+          ...(account?.is_owner ? { account_id: account.id } : {}),
+          name,
+          // Os restantes dados completam-se em Configurações (o NUIT vazio não conta para a unicidade).
+          nuit: '',
+          entity_type: 'singular',
+          email: user.email ?? '',
+          address: '',
+          currency: 'MZN',
+          invoice_prefix: 'FAC',
+          invoice_number: 1,
+          business_volume: '3'
+        })
         .select()
         .single();
 
       if (error) throw error;
 
-      // A empresa é criada aqui directamente, sem passar pelo CompanyService,
-      // por isso o registo de auditoria também tem de ser feito aqui. O vínculo
-      // do titular em company_users é criado pelo trigger da própria inserção.
+      // O vínculo do titular, a subscrição de teste e as definições são criados
+      // pelo trigger da própria inserção.
       await this.auditLogService.log(
         'Criou Empresa',
         'settings',
-        { company_name: data.name, nuit: data.nuit },
+        { company_name: data.name },
         data.id,
         data.name,
         data.id
       );
 
-      const category1 = this.companyInfoForm.value.category1;
-      const category2 = this.companyInfoForm.value.category2;
-      const category3 = this.companyInfoForm.value.category3;
-      const companyActivities = [
-        category1 ? { activity_type_id: this.activityTypes().find(a => a.code === category1)?.id, activity_role: 'principal' as const, is_primary: true } : null,
-        category2 ? { activity_type_id: this.activityTypes().find(a => a.code === category2)?.id, activity_role: this.getServiceType() ? 'servico' as const : 'comercial' as const, is_primary: false } : null,
-        category3 ? { activity_type_id: this.activityTypes().find(a => a.code === category3)?.id, activity_role: this.getServiceType() ? 'servico' as const : 'comercial' as const, is_primary: false } : null
-      ].filter((activity): activity is { activity_type_id: string; activity_role: 'principal' | 'comercial' | 'servico'; is_primary: boolean } => !!activity?.activity_type_id);
-
-      if (companyActivities.length > 0) {
-        await this.activityService.saveCompanyActivities(data.id, companyActivities);
+      if (loadDemoData) {
+        const { error: demoError } = await this.supabase.db.rpc('seed_demo_data', { p_company_id: data.id });
+        if (demoError) {
+          console.error('Erro ao carregar dados de demonstração:', demoError);
+          this.snackBar.open(t('companySetup.quick.demoFailed'), t('common.actions.close'), { duration: 5000 });
+        } else {
+          await this.auditLogService.log(
+            'Carregou Dados de Demonstração',
+            'settings',
+            { company_name: data.name },
+            data.id,
+            data.name,
+            data.id
+          );
+        }
       }
 
-      // 2. Salvar documentos adicionais se existirem
-      if (this.otherDocuments().length > 0) {
-        const docPromises = this.otherDocuments().map(doc =>
-          this.documentService.saveDocument(data.id, doc.type!, doc.url!, doc.file_name!)
-        );
-        await Promise.all(docPromises);
-      }
-
-      this.snackBar.open(t('companySetup.messages.companyConfigured'), t('common.actions.close'), {
-        duration: 3000,
-        panelClass: ['success-snackbar']
-      });
-
+      await this.authService.clearPendingCompanySetup();
       await this.companyService.loadCompanies();
       this.router.navigate(['/painel']);
+      return true;
     } catch (error: any) {
       console.error('Erro ao criar empresa:', error);
-      if (CompanyService.isDuplicateNuitError(error)) {
-        this.flagDuplicateNuit();
-      } else {
-        this.errorDialog.show(error, {
-          title: t('companySetup.errors.createCompanyTitle'),
-          context: t('companySetup.errors.contextCreateCompany')
-        });
-      }
+      this.errorDialog.show(error, {
+        title: t('companySetup.errors.createCompanyTitle'),
+        context: t('companySetup.errors.contextCreateCompany')
+      });
+      return false;
     } finally {
       this.isLoading.set(false);
     }
   }
 
-  /**
-   * Assinala o NUIT como já registado. A notificação desaparece, o erro no
-   * campo fica — e o formulário passa a inválido até o utilizador o corrigir.
-   */
-  private flagDuplicateNuit() {
-    const control = this.companyInfoForm.get('nuit');
-    control?.setErrors({ duplicateNuit: true });
-    control?.markAsTouched();
-    this.snackBar.open(t('companySetup.messages.duplicateNuit'), t('common.actions.close'), {
-      duration: 5000,
-      panelClass: ['error-snackbar']
-    });
-  }
-
-  getErrorMessage(form: FormGroup, field: string): string {
-    const control = form.get(field);
-    if (!control || !control.touched) return '';
-
-    if (control.hasError('required')) {
-      return t('auth.validation.requiredShort');
-    }
-    if (control.hasError('minlength')) {
-      const minLength = control.getError('minlength').requiredLength;
-      return t('auth.validation.minLength', { min: minLength });
-    }
-    if (control.hasError('maxlength')) {
-      const maxLength = control.getError('maxlength').requiredLength;
-      return t('companySetup.validation.maxLength', { max: maxLength });
-    }
-    if (control.hasError('nuit')) {
-      return control.getError('nuit');
-    }
-    if (control.hasError('pattern') && field === 'nuit') {
-      return t('companySetup.validation.nuitDigits');
-    }
-    if (control.hasError('duplicateNuit')) {
-      return t('companySetup.validation.duplicateNuit');
-    }
-    return '';
+  async signOut() {
+    await this.authService.signOut();
+    this.router.navigate(['/entrar']);
   }
 }

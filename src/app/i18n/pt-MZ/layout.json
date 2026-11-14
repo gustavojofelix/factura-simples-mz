@@ -66,5 +66,20 @@
     "subscriptionExpired": "Subscrição Expirada",
     "expiredBody": "O sistema está bloqueado até subscrever um plano. Os seus dados estão guardados e voltam a ficar disponíveis assim que o pagamento for confirmado.",
     "choosePlan": "Escolher Plano"
+  },
+  "demo": {
+    "title": "Está a ver dados de demonstração",
+    "body": "Os clientes, produtos e facturas de exemplo (facturas DEMO) servem para explorar. Quando quiser começar a sério, remova-os: as suas facturas reais começam no n.º 1.",
+    "remove": "Remover dados de demonstração",
+    "confirmTitle": "Remover dados de demonstração?",
+    "confirmMessage": "Os clientes, produtos e facturas de exemplo serão apagados. Os dados que criou não são afectados.",
+    "confirmLabel": "Remover",
+    "removed": "Dados de demonstração removidos.",
+    "removeError": "Não foi possível remover os dados de demonstração."
+  },
+  "completeCompany": {
+    "title": "Complete os dados da empresa",
+    "body": "Adicione o NUIT, o endereço e o tipo de entidade para que apareçam nas suas facturas.",
+    "action": "Completar dados"
   }
 }

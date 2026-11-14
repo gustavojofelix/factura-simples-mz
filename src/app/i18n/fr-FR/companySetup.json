@@ -122,5 +122,16 @@
     "nuitDigits": "Le NUIT doit comporter 9 chiffres",
     "maxLength": "Maximum {max} caractères",
     "duplicateNuit": "Une entité avec ce NUIT est déjà enregistrée"
+  },
+  "quick": {
+    "title": "Votre première entreprise",
+    "subtitle": "Le nom suffit. Le NUIT, l'adresse et les autres données peuvent être complétés plus tard dans Paramètres.",
+    "name": "Nom de l'entreprise",
+    "namePlaceholder": "Ex. : Ma Boutique, Lda",
+    "loadDemoData": "Charger des données de démonstration",
+    "loadDemoDataHint": "Clients, produits et factures d'exemple. Supprimables en un clic.",
+    "submit": "Commencer",
+    "preparing": "Préparation de votre compte...",
+    "demoFailed": "L'entreprise a été créée, mais les données de démonstration n'ont pas pu être chargées."
   }
 }

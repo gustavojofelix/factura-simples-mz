@@ -28,8 +28,12 @@ export interface UserProfile {
 export class AuthService {
   currentUser = signal<User | null>(null);
   isLoading = signal<boolean>(true);
-  /** Na app nativa o redirect OAuth exige deep links (ainda não configurados). */
-  readonly googleSignInAvailable = !Capacitor.isNativePlatform();
+  /**
+   * Botão "Continuar com Google" desligado por agora (registo e login).
+   * Para voltar a ligar: `!Capacitor.isNativePlatform()` — na app nativa o
+   * redirect OAuth exige deep links (ainda não configurados).
+   */
+  readonly googleSignInAvailable = false && !Capacitor.isNativePlatform();
 
   private languageService = inject(LanguageService);
   private _isAdminCache: boolean | null = null;
@@ -89,17 +93,29 @@ export class AuthService {
     return false;
   }
 
-  async signUp(email: string, password: string, fullName: string, phone?: string, accountSlug?: string): Promise<AuthResponse> {
+  /**
+   * Registo rápido: só email, palavra-passe e nome da empresa. O nome da
+   * pessoa fica por definir (o perfil usa o email) e pode ser preenchido depois.
+   */
+  async signUp(
+    email: string,
+    password: string,
+    companyName: string,
+    accountSlug: string,
+    loadDemoData: boolean
+  ): Promise<AuthResponse> {
     try {
       const { data, error } = await this.supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            full_name: fullName,
-            phone: phone,
             // O trigger handle_new_user cria a conta (subdomínio) e o perfil.
-            account_slug: accountSlug
+            account_slug: accountSlug,
+            account_name: companyName,
+            // Lidos em /configurar-empresa, que cria a primeira empresa sem perguntar nada.
+            company_name: companyName,
+            load_demo_data: loadDemoData
           }
         }
       });
@@ -109,7 +125,7 @@ export class AuthService {
       }
 
       if (data.user) {
-        this.notifySignup(email, fullName, phone, accountSlug);
+        this.notifySignup(email, companyName, undefined, accountSlug);
         return { success: true, user: data.user };
       }
 
@@ -209,6 +225,20 @@ export class AuthService {
   isOAuthUser(user: User | null = this.currentUser()): boolean {
     const provider = user?.app_metadata?.['provider'];
     return !!provider && provider !== 'email';
+  }
+
+  /** Empresa pedida no registo e ainda por criar (null quando não há). */
+  pendingCompanySetup(): { name: string; loadDemoData: boolean } | null {
+    const meta = this.currentUser()?.user_metadata;
+    const name = typeof meta?.['company_name'] === 'string' ? meta['company_name'].trim() : '';
+    if (!name) return null;
+    return { name, loadDemoData: meta?.['load_demo_data'] !== false };
+  }
+
+  /** Esquece a empresa pendente do registo, depois de criada. */
+  async clearPendingCompanySetup(): Promise<void> {
+    const { error } = await this.supabase.auth.updateUser({ data: { company_name: null, load_demo_data: null } });
+    if (error) console.warn('Não foi possível limpar os dados do registo:', error.message);
   }
 
   /** Avisa o administrador de um novo registo (e envia as boas-vindas ao utilizador). */

@@ -24,152 +24,66 @@
         </div>
       }
 
-      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-5">
-        <div>
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>{{ 'auth.register.fullName' | t }}</mat-label>
-            <input
-              matInput
-              type="text"
-              formControlName="fullName"
-              [placeholder]="'auth.register.fullNamePlaceholder' | t"
-              autocomplete="name"
-            />
-            <mat-icon matPrefix class="text-gray-400">person</mat-icon>
-            @if (getErrorMessage('fullName')) {
-              <mat-error>{{ getErrorMessage('fullName') }}</mat-error>
-            }
-          </mat-form-field>
-        </div>
-
-        <div>
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>{{ 'auth.register.accountAddress' | t }}</mat-label>
-            <input
-              matInput
-              type="text"
-              formControlName="accountSlug"
-              [placeholder]="'auth.register.accountAddressPlaceholder' | t"
-              autocomplete="off"
-              autocapitalize="off"
-              spellcheck="false"
-              (input)="onSlugInput()"
-            />
-            <mat-icon matPrefix class="text-gray-400">language</mat-icon>
-            <span matTextSuffix class="text-gray-500">.{{ rootDomain }}</span>
-            @if (getErrorMessage('accountSlug')) {
-              <mat-error>{{ getErrorMessage('accountSlug') }}</mat-error>
-            }
-            @if (registerForm.get('accountSlug')?.pending) {
-              <mat-hint>{{ 'auth.register.checkingAvailability' | t }}</mat-hint>
-            } @else if (registerForm.get('accountSlug')?.valid) {
-              <mat-hint class="!text-green-700">{{ 'auth.register.available' | t }}</mat-hint>
-            } @else {
-              <mat-hint>{{ 'auth.register.accountAddressHint' | t }}</mat-hint>
-            }
-          </mat-form-field>
-        </div>
-
-        <div>
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>{{ 'auth.login.email' | t }}</mat-label>
-            <input
-              matInput
-              type="email"
-              formControlName="email"
-              [placeholder]="'auth.login.emailPlaceholder' | t"
-              autocomplete="email"
-            />
-            <mat-icon matPrefix class="text-gray-400">email</mat-icon>
-            @if (getErrorMessage('email')) {
-              <mat-error>{{ getErrorMessage('email') }}</mat-error>
-            }
-          </mat-form-field>
-        </div>
-
-        <div>
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>{{ 'auth.register.phoneOptional' | t }}</mat-label>
-            <input
-              matInput
-              type="tel"
-              formControlName="phone"
-              placeholder="+258 XX XXX XXXX"
-              (input)="formatPhone()"
-              autocomplete="tel"
-            />
-            <mat-icon matPrefix class="text-gray-400">phone</mat-icon>
-            @if (getErrorMessage('phone')) {
-              <mat-error>{{ getErrorMessage('phone') }}</mat-error>
-            }
-            <mat-hint>{{ 'auth.register.phoneHint' | t }}</mat-hint>
-          </mat-form-field>
-        </div>
-
-        <div>
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>{{ 'common.fields.password' | t }}</mat-label>
-            <input
-              matInput
-              [type]="hidePassword() ? 'password' : 'text'"
-              formControlName="password"
-              [placeholder]="'auth.register.passwordPlaceholder' | t"
-              autocomplete="new-password"
-            />
-            <mat-icon matPrefix class="text-gray-400">lock</mat-icon>
-            <button
-              mat-icon-button
-              matSuffix
-              type="button"
-              (click)="hidePassword.set(!hidePassword())"
-            >
-              <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
-            </button>
-            @if (getErrorMessage('password')) {
-              <mat-error>{{ getErrorMessage('password') }}</mat-error>
-            }
-          </mat-form-field>
-        </div>
-
-        <div>
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>{{ 'auth.register.confirmPassword' | t }}</mat-label>
-            <input
-              matInput
-              [type]="hideConfirmPassword() ? 'password' : 'text'"
-              formControlName="confirmPassword"
-              [placeholder]="'auth.register.confirmPasswordPlaceholder' | t"
-              autocomplete="new-password"
-            />
-            <mat-icon matPrefix class="text-gray-400">lock</mat-icon>
-            <button
-              mat-icon-button
-              matSuffix
-              type="button"
-              (click)="hideConfirmPassword.set(!hideConfirmPassword())"
-            >
-              <mat-icon>{{ hideConfirmPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
-            </button>
-            @if (getErrorMessage('confirmPassword')) {
-              <mat-error>{{ getErrorMessage('confirmPassword') }}</mat-error>
-            }
-          </mat-form-field>
-        </div>
-
-        <div>
-          <mat-checkbox formControlName="acceptTerms" color="primary" class="text-sm">
-            <span class="text-gray-700">
-              {{ 'auth.register.acceptPrefix' | t }}
-              <a href="javascript:void(0)" (click)="openTerms($event)" class="text-ispc-orange hover:underline">{{ 'auth.register.termsLink' | t }}</a>
-              {{ 'auth.register.acceptAnd' | t }}
-              <a href="javascript:void(0)" (click)="openPrivacy($event)" class="text-ispc-orange hover:underline">{{ 'auth.register.privacyLink' | t }}</a>{{ 'auth.register.acceptSuffix' | t }}
-            </span>
-          </mat-checkbox>
-          @if (registerForm.get('acceptTerms')?.touched && registerForm.get('acceptTerms')?.hasError('required')) {
-            <div class="text-red-600 text-xs mt-1">
-              {{ 'auth.register.mustAcceptTerms' | t }}
-            </div>
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-4">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>{{ 'auth.register.companyName' | t }}</mat-label>
+          <input
+            matInput
+            type="text"
+            formControlName="companyName"
+            [placeholder]="'auth.register.companyNamePlaceholder' | t"
+            autocomplete="organization"
+          />
+          <mat-icon matPrefix class="text-gray-400">business</mat-icon>
+          @if (getErrorMessage('companyName')) {
+            <mat-error>{{ getErrorMessage('companyName') }}</mat-error>
           }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>{{ 'auth.login.email' | t }}</mat-label>
+          <input
+            matInput
+            type="email"
+            formControlName="email"
+            [placeholder]="'auth.login.emailPlaceholder' | t"
+            autocomplete="email"
+          />
+          <mat-icon matPrefix class="text-gray-400">email</mat-icon>
+          @if (getErrorMessage('email')) {
+            <mat-error>{{ getErrorMessage('email') }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>{{ 'common.fields.password' | t }}</mat-label>
+          <input
+            matInput
+            [type]="hidePassword() ? 'password' : 'text'"
+            formControlName="password"
+            [placeholder]="'auth.register.passwordPlaceholder' | t"
+            autocomplete="new-password"
+          />
+          <mat-icon matPrefix class="text-gray-400">lock</mat-icon>
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            [attr.aria-label]="'auth.register.togglePassword' | t"
+            (click)="hidePassword.set(!hidePassword())"
+          >
+            <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          @if (getErrorMessage('password')) {
+            <mat-error>{{ getErrorMessage('password') }}</mat-error>
+          }
+        </mat-form-field>
+
+        <div class="rounded-xl border border-orange-200 bg-orange-50/60 px-3 py-2">
+          <mat-checkbox formControlName="loadDemoData" color="primary">
+            <span class="text-sm font-medium text-gray-800">{{ 'auth.register.loadDemoData' | t }}</span>
+          </mat-checkbox>
+          <p class="text-xs text-gray-600 ml-10 -mt-1">{{ 'auth.register.loadDemoDataHint' | t }}</p>
         </div>
 
         <button
@@ -185,6 +99,13 @@
             <span>{{ 'auth.register.submit' | t }}</span>
           }
         </button>
+
+        <p class="text-xs text-gray-500 text-center">
+          {{ 'auth.register.termsNoticePrefix' | t }}
+          <a href="javascript:void(0)" (click)="openTerms($event)" class="text-ispc-orange hover:underline">{{ 'auth.register.termsLink' | t }}</a>
+          {{ 'auth.register.acceptAnd' | t }}
+          <a href="javascript:void(0)" (click)="openPrivacy($event)" class="text-ispc-orange hover:underline">{{ 'auth.register.privacyLink' | t }}</a>{{ 'auth.register.acceptSuffix' | t }}
+        </p>
       </form>
 
       <div class="mt-6">

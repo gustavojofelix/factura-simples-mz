@@ -281,6 +281,8 @@
     "subscritor_ativado": "Abonné activé",
     "subscritor_suspenso": "Abonné suspendu",
     "tentativa_de_login_falhada": "Tentative de connexion échouée",
-    "tentativa_de_login_em_conta_suspensa": "Tentative de connexion sur un compte suspendu"
+    "tentativa_de_login_em_conta_suspensa": "Tentative de connexion sur un compte suspendu",
+    "carregou_dados_de_demonstracao": "A chargé les données de démonstration",
+    "removeu_dados_de_demonstracao": "A supprimé les données de démonstration"
   }
 }

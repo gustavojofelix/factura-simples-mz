@@ -2,6 +2,9 @@ import { Component, DestroyRef, OnInit, computed, effect, inject, signal } from 
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SUBSCRIPTION_TAB_INDEX } from '../../core/guards/subscription.guard';
+
+/** Separador "Empresas" (ver settings.component.html). */
+const COMPANIES_TAB_INDEX = 2;
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatTabsModule } from '@angular/material/tabs';
@@ -182,6 +185,12 @@ export class SettingsComponent implements OnInit {
         this.selectedTab.set(SUBSCRIPTION_TAB_INDEX);
       } else if (params.get('tab') === 'pos') {
         this.wantPosTab.set(true);
+      } else if (params.get('tab') === 'empresa') {
+        // "Completar dados" do aviso no painel: abre a edição da empresa activa.
+        this.selectedTab.set(COMPANIES_TAB_INDEX);
+        const company = this.companyService.activeCompany();
+        if (company) this.openCompanyDialog(company);
+        this.router.navigate([], { relativeTo: this.route, queryParams: { tab: null }, queryParamsHandling: 'merge', replaceUrl: true });
       }
     });
 

@@ -275,6 +275,39 @@
       } @else {
         <!-- Subscription Notifications -->
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+          @if (showDemoBanner()) {
+          <mat-card class="!shadow-sm mb-6 !rounded-2xl !border !border-sky-200 !bg-sky-50/70">
+            <mat-card-content class="p-4">
+              <div class="flex items-start">
+                <mat-icon class="mr-3 !text-2xl text-sky-600">science</mat-icon>
+                <div class="flex-1">
+                  <h3 class="font-bold text-slate-900 mb-1 text-base">{{ 'layout.demo.title' | t }}</h3>
+                  <p class="text-sm text-slate-600 mb-3 leading-relaxed">{{ 'layout.demo.body' | t }}</p>
+                  <button mat-stroked-button type="button" (click)="removeDemoData()" [disabled]="isRemovingDemoData()" class="!h-10">
+                    <mat-icon>delete_sweep</mat-icon>
+                    {{ 'layout.demo.remove' | t }}
+                  </button>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+          } @else if (showCompleteCompanyBanner()) {
+          <mat-card class="!shadow-sm mb-6 !rounded-2xl !border !border-amber-200 !bg-amber-50/70">
+            <mat-card-content class="p-4">
+              <div class="flex items-start">
+                <mat-icon class="mr-3 !text-2xl text-amber-600">badge</mat-icon>
+                <div class="flex-1">
+                  <h3 class="font-bold text-slate-900 mb-1 text-base">{{ 'layout.completeCompany.title' | t }}</h3>
+                  <p class="text-sm text-slate-600 mb-3 leading-relaxed">{{ 'layout.completeCompany.body' | t }}</p>
+                  <button mat-stroked-button routerLink="/configuracoes" [queryParams]="{ tab: 'empresa' }" class="!h-10">
+                    {{ 'layout.completeCompany.action' | t }}
+                  </button>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+          }
+
           @if (subscriptionService.isTrialing() && subscriptionService.getDaysRemainingInTrial() > 0) {
           <mat-card class="!shadow-sm mb-6 !rounded-2xl !border !border-orange-200 !bg-orange-50/70">
             <mat-card-content class="p-4">
@@ -327,4 +360,5 @@
     <!-- Assistente Virtual: lançador flutuante, presente em todas as páginas -->
     <app-ai-assistant-widget />
   </div>
+  <app-confirm-dialog></app-confirm-dialog>
 </div>

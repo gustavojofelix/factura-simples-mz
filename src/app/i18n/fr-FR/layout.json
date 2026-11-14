@@ -66,5 +66,20 @@
     "subscriptionExpired": "Abonnement expiré",
     "expiredBody": "Le système est bloqué jusqu'à ce que vous souscriviez une formule. Vos données sont conservées et redeviendront disponibles dès que le paiement sera confirmé.",
     "choosePlan": "Choisir une formule"
+  },
+  "demo": {
+    "title": "Vous consultez des données de démonstration",
+    "body": "Les clients, produits et factures d'exemple (factures DEMO) servent à explorer. Quand vous serez prêt à commencer pour de vrai, supprimez-les : vos vraies factures commencent au n° 1.",
+    "remove": "Supprimer les données de démonstration",
+    "confirmTitle": "Supprimer les données de démonstration ?",
+    "confirmMessage": "Les clients, produits et factures d'exemple seront supprimés. Les données que vous avez créées ne sont pas affectées.",
+    "confirmLabel": "Supprimer",
+    "removed": "Données de démonstration supprimées.",
+    "removeError": "Impossible de supprimer les données de démonstration."
+  },
+  "completeCompany": {
+    "title": "Complétez les données de l'entreprise",
+    "body": "Ajoutez le NUIT, l'adresse et le type d'entité pour qu'ils apparaissent sur vos factures.",
+    "action": "Compléter"
   }
 }

@@ -41,6 +41,10 @@ export class LoginFormComponent implements OnInit {
   isLoading = signal(false);
   hidePassword = signal(true);
 
+  get googleSignInAvailable(): boolean {
+    return this.authService.googleSignInAvailable;
+  }
+
   setMode(newMode: 'login' | 'forgot' | 'forgot_sent') {
     this.mode.set(newMode);
   }

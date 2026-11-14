@@ -753,12 +753,14 @@ export class SaftService {
       throw new Error(t('reports.saft.errors.notInPlan'));
     }
 
-    const [invoiceRows, paymentRows] = await Promise.all([
+    const [invoiceRows, allPaymentRows] = await Promise.all([
       this.fetchAll<any>(() => this.supabase.db
         .from('invoices')
         .select('*, items:invoice_items(*), issuer:profiles(full_name)')
         .eq('company_id', company.id)
         .neq('status', 'rascunho')
+        // Facturas de demonstração (período de teste) não são documentos fiscais.
+        .eq('is_demo', false)
         .gte('date', startDate)
         .lte('date', endDate)
         .order('date', { ascending: true })
@@ -766,7 +768,7 @@ export class SaftService {
         .order('id', { ascending: true })),
       this.fetchAll<any>(() => this.supabase.db
         .from('payments')
-        .select('*, invoice:invoices(invoice_number, date, client_id)')
+        .select('*, invoice:invoices(invoice_number, date, client_id, is_demo)')
         .eq('company_id', company.id)
         .gte('payment_date', startDate)
         .lte('payment_date', endDate)
@@ -775,6 +777,8 @@ export class SaftService {
     ]);
 
     const invoicesRaw = invoiceRows.filter(i => !String(i.invoice_number || '').startsWith('RSC-'));
+    // Recibos registados sobre facturas de demonstração também ficam de fora.
+    const paymentRows = allPaymentRows.filter(p => p.invoice?.is_demo !== true);
 
     // Data de anulação: coluna própria ou, para registos antigos, a auditoria.
     const annulledWithoutDate = invoicesRaw.filter(i => i.status === 'anulada' && !i.annulled_at).map(i => String(i.id));

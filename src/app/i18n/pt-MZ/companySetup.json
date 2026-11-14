@@ -122,5 +122,16 @@
     "nuitDigits": "NUIT deve ter 9 dígitos",
     "maxLength": "Máximo de {max} caracteres",
     "duplicateNuit": "Já existe uma entidade registada com este NUIT"
+  },
+  "quick": {
+    "title": "A sua primeira empresa",
+    "subtitle": "Basta o nome. NUIT, endereço e restantes dados podem ser completados depois em Configurações.",
+    "name": "Nome da empresa",
+    "namePlaceholder": "Ex.: Minha Loja, Lda",
+    "loadDemoData": "Carregar dados de demonstração",
+    "loadDemoDataHint": "Clientes, produtos e facturas de exemplo. Pode removê-los com um clique.",
+    "submit": "Começar",
+    "preparing": "A preparar a sua conta...",
+    "demoFailed": "A empresa foi criada, mas não foi possível carregar os dados de demonstração."
   }
 }

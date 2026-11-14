@@ -1,7 +1,6 @@
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -15,18 +14,17 @@ import { LegalDialogComponent } from '../../shared/components/legal-dialog.compo
 import { AuthService } from '../../core/services/auth.service';
 import { LandingCmsService } from '../../core/services/landing-cms.service';
 import { AccountService } from '../../core/services/account.service';
-import {
-  accountSlugAvailableValidator,
-  accountSlugErrorMessage,
-  accountSlugFormatValidator
-} from '../../core/validators/account-slug.validator';
-import { slugifyAccount } from '../../core/utils/tenant.util';
-import { environment } from '../../../environments/environment';
+import { ACCOUNT_SLUG_PATTERN, slugifyAccount } from '../../core/utils/tenant.util';
 import { t } from '../../core/i18n/i18n';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { LanguageSwitcherComponent } from '../../shared/components/language-switcher/language-switcher.component';
 import { GoogleSignInButtonComponent } from '../../shared/components/google-sign-in-button/google-sign-in-button.component';
 
+/**
+ * Registo para o teste de 14 dias: só nome da empresa, email e palavra-passe.
+ * O endereço da conta sai do nome da empresa (o servidor resolve colisões) e a
+ * primeira empresa é criada logo a seguir, em /configurar-empresa.
+ */
 @Component({
   selector: 'app-register',
   standalone: true,
@@ -53,12 +51,7 @@ export class RegisterComponent implements OnInit {
   registerForm: FormGroup;
   isLoading = signal(false);
   hidePassword = signal(true);
-  hideConfirmPassword = signal(true);
-  readonly rootDomain = environment.rootDomain;
   readonly googleSignInAvailable = inject(AuthService).googleSignInAvailable;
-  /** Enquanto o utilizador não editar o endereço, ele segue o nome. */
-  private slugEditedByUser = false;
-  private destroyRef = inject(DestroyRef);
 
   constructor(
     private fb: FormBuilder,
@@ -70,62 +63,43 @@ export class RegisterComponent implements OnInit {
     private accountService: AccountService
   ) {
     this.registerForm = this.fb.group({
-      fullName: ['', [Validators.required, Validators.minLength(3)]],
-      accountSlug: ['', {
-        validators: [Validators.required, accountSlugFormatValidator()],
-        asyncValidators: [accountSlugAvailableValidator(this.accountService)]
-      }],
+      companyName: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
-      phone: ['', [Validators.pattern(/^\+?258\s?\d{2}\s?\d{3}\s?\d{4}$/)]],
       password: ['', [Validators.required, Validators.minLength(6)]],
-      confirmPassword: ['', [Validators.required]],
-      acceptTerms: [false, [Validators.requiredTrue]]
-    }, {
-      validators: this.passwordMatchValidator
+      loadDemoData: [true]
     });
   }
 
   ngOnInit() {
     this.cmsService.loadAllContent().catch(() => {});
-
-    this.registerForm.get('fullName')!.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(name => {
-        if (this.slugEditedByUser) return;
-        const slugControl = this.registerForm.get('accountSlug')!;
-        slugControl.setValue(slugifyAccount(name || ''));
-        if (slugControl.value) slugControl.markAsTouched();
-      });
   }
 
-  onSlugInput() {
-    this.slugEditedByUser = true;
-    const slugControl = this.registerForm.get('accountSlug')!;
-    const clean = (slugControl.value || '').toLowerCase().replace(/[^a-z0-9-]/g, '');
-    if (clean !== slugControl.value) slugControl.setValue(clean);
-  }
-
-  private passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
-    const password = control.get('password');
-    const confirmPassword = control.get('confirmPassword');
-
-    if (!password || !confirmPassword) {
-      return null;
-    }
-
-    return password.value === confirmPassword.value ? null : { passwordMismatch: true };
+  /** Endereço sugerido a partir do nome da empresa (ou do email, se o nome não servir). */
+  private accountSlugFor(companyName: string, email: string): string {
+    const fromName = slugifyAccount(companyName);
+    if (ACCOUNT_SLUG_PATTERN.test(fromName)) return fromName;
+    const fromEmail = slugifyAccount(email.split('@')[0] || '');
+    if (ACCOUNT_SLUG_PATTERN.test(fromEmail)) return fromEmail;
+    return 'conta-' + Math.random().toString(36).slice(2, 8);
   }
 
   async onSubmit() {
-    if (this.registerForm.invalid || this.registerForm.pending) {
+    if (this.registerForm.invalid) {
       this.registerForm.markAllAsTouched();
       return;
     }
 
     this.isLoading.set(true);
 
-    const { fullName, email, phone, password, accountSlug } = this.registerForm.value;
-    const result = await this.authService.signUp(email, password, fullName, phone, accountSlug);
+    const { companyName, email, password, loadDemoData } = this.registerForm.value;
+    const name = (companyName as string).trim();
+    const result = await this.authService.signUp(
+      email,
+      password,
+      name,
+      this.accountSlugFor(name, email),
+      !!loadDemoData
+    );
 
     if (result.success) {
       this.snackBar.open(t('auth.messages.accountCreated'), t('common.actions.close'), {
@@ -133,7 +107,7 @@ export class RegisterComponent implements OnInit {
         panelClass: ['success-snackbar']
       });
 
-      // O slug final pode ter recebido um sufixo se alguém o ocupou entretanto.
+      // O slug final pode ter recebido um sufixo se já estava ocupado.
       const target = await this.accountService.resolvePostLoginTarget();
       this.isLoading.set(false);
       if (target.kind === 'external') {
@@ -150,32 +124,9 @@ export class RegisterComponent implements OnInit {
     }
   }
 
-  formatPhone() {
-    const phoneControl = this.registerForm.get('phone');
-    if (!phoneControl) return;
-
-    let value = phoneControl.value.replace(/\D/g, '');
-
-    if (value.startsWith('258')) {
-      value = value.substring(3);
-    }
-
-    if (value.length <= 2) {
-      phoneControl.setValue(value ? `+258 ${value}` : '');
-    } else if (value.length <= 5) {
-      phoneControl.setValue(`+258 ${value.substring(0, 2)} ${value.substring(2)}`);
-    } else if (value.length <= 9) {
-      phoneControl.setValue(`+258 ${value.substring(0, 2)} ${value.substring(2, 5)} ${value.substring(5)}`);
-    } else {
-      phoneControl.setValue(`+258 ${value.substring(0, 2)} ${value.substring(2, 5)} ${value.substring(5, 9)}`);
-    }
-  }
-
   getErrorMessage(field: string): string {
     const control = this.registerForm.get(field);
     if (!control || !control.touched) return '';
-
-    if (field === 'accountSlug') return accountSlugErrorMessage(control);
 
     if (control.hasError('required')) {
       return t('auth.validation.requiredShort');
@@ -186,12 +137,6 @@ export class RegisterComponent implements OnInit {
     if (control.hasError('minlength')) {
       const minLength = control.getError('minlength').requiredLength;
       return t('auth.validation.minLength', { min: minLength });
-    }
-    if (control.hasError('pattern') && field === 'phone') {
-      return t('auth.validation.phoneFormat');
-    }
-    if (field === 'confirmPassword' && this.registerForm.hasError('passwordMismatch')) {
-      return t('auth.validation.passwordMismatch');
     }
     return '';
   }

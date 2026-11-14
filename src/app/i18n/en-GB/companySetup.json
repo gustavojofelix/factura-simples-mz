@@ -122,5 +122,16 @@
     "nuitDigits": "NUIT must have 9 digits",
     "maxLength": "Maximum {max} characters",
     "duplicateNuit": "An entity with this NUIT is already registered"
+  },
+  "quick": {
+    "title": "Your first company",
+    "subtitle": "Just the name. NUIT, address and other details can be completed later in Settings.",
+    "name": "Company name",
+    "namePlaceholder": "e.g. My Shop, Lda",
+    "loadDemoData": "Load demo data",
+    "loadDemoDataHint": "Sample clients, products and invoices. Remove them with one click.",
+    "submit": "Get started",
+    "preparing": "Preparing your account...",
+    "demoFailed": "The company was created, but the demo data could not be loaded."
   }
 }

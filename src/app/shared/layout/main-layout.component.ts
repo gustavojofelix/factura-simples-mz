@@ -21,6 +21,11 @@ import { AiAlertsComponent } from '../components/ai-alerts/ai-alerts.component';
 import { AiAssistantWidgetComponent } from '../components/ai-chat/ai-assistant-widget.component';
 import { LanguageSwitcherComponent } from '../components/language-switcher/language-switcher.component';
 import { SupportContactDialogComponent } from '../components/support-contact-dialog.component';
+import { ConfirmDialogComponent } from '../components/confirm-dialog.component';
+import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
+import { DemoDataService } from '../../core/services/demo-data.service';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { friendlyErrorMessage } from '../../core/utils/error-message';
 import { effect } from '@angular/core';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { t } from '../../core/i18n/i18n';
@@ -52,6 +57,8 @@ interface MenuItem {
     AiSearchComponent,
     AiAlertsComponent,
     AiAssistantWidgetComponent,
+    ConfirmDialogComponent,
+    MatSnackBarModule,
     TranslatePipe
   ],
   templateUrl: './main-layout.component.html',
@@ -91,6 +98,21 @@ export class MainLayoutComponent {
     });
   });
 
+  isRemovingDemoData = signal(false);
+
+  /** Aviso dos dados de demonstração: só o titular da conta os pode remover. */
+  showDemoBanner = computed(() =>
+    this.demoData.hasDemoData() && this.accountService.isAccountOwner()
+  );
+
+  /** Empresa criada no registo rápido, ainda sem NUIT (só depois de sair do modo demo). */
+  showCompleteCompanyBanner = computed(() => {
+    const company = this.companyService.activeCompany();
+    const role = this.companyService.activeRole();
+    return !!company && !company.nuit?.trim() && !this.demoData.hasDemoData()
+      && (role === 'owner' || role === 'admin');
+  });
+
   nonSuspendedCompanies = computed(() => {
     return this.companyService.companies().filter(c => c.status !== 'suspended');
   });
@@ -102,13 +124,17 @@ export class MainLayoutComponent {
     public accountService: AccountService,
     private tenant: TenantService,
     private router: Router,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    public demoData: DemoDataService,
+    private confirmDialog: ConfirmDialogService,
+    private snackBar: MatSnackBar
   ) {
     effect(() => {
       const company = this.companyService.activeCompany();
       if (company) {
         this.subscriptionService.loadSubscription(company.id);
       }
+      this.demoData.refresh(company?.id ?? null);
     });
 
     // Se a subscrição da empresa activa expirar (ou se mudar para uma empresa
@@ -121,6 +147,34 @@ export class MainLayoutComponent {
         this.router.navigate(['/configuracoes'], { queryParams: { tab: 'subscricao' } });
       }
     });
+  }
+
+  async removeDemoData() {
+    const company = this.companyService.activeCompany();
+    if (!company || this.isRemovingDemoData()) return;
+
+    const confirmed = await this.confirmDialog.confirm({
+      title: t('layout.demo.confirmTitle'),
+      message: t('layout.demo.confirmMessage'),
+      confirmLabel: t('layout.demo.confirmLabel'),
+      cancelLabel: t('common.actions.cancel'),
+      danger: true
+    });
+    if (!confirmed) return;
+
+    this.isRemovingDemoData.set(true);
+    try {
+      await this.demoData.remove(company.id, company.name);
+      // Listas, painel e relatórios guardam os dados em memória: recarregar é o mais simples.
+      window.location.reload();
+    } catch (error) {
+      console.error('Erro ao remover dados de demonstração:', error);
+      this.snackBar.open(friendlyErrorMessage(error, t('layout.demo.removeError')), t('common.actions.close'), {
+        duration: 6000,
+        panelClass: ['error-snackbar']
+      });
+      this.isRemovingDemoData.set(false);
+    }
   }
 
   async logout() {

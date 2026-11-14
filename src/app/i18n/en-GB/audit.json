@@ -281,6 +281,8 @@
     "subscritor_ativado": "Subscriber Activated",
     "subscritor_suspenso": "Subscriber Suspended",
     "tentativa_de_login_falhada": "Failed Sign-in Attempt",
-    "tentativa_de_login_em_conta_suspensa": "Sign-in Attempt on Suspended Account"
+    "tentativa_de_login_em_conta_suspensa": "Sign-in Attempt on Suspended Account",
+    "carregou_dados_de_demonstracao": "Loaded Demo Data",
+    "removeu_dados_de_demonstracao": "Removed Demo Data"
   }
 }

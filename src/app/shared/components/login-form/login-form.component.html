@@ -59,15 +59,17 @@
       </button>
     </form>
 
-    <div class="mt-6 flex items-center justify-center">
-      <div class="border-t border-slate-800/60 flex-1"></div>
-      <span class="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">{{ 'auth.login.or' | t }}</span>
-      <div class="border-t border-slate-800/60 flex-1"></div>
-    </div>
+    @if (googleSignInAvailable) {
+      <div class="mt-6 flex items-center justify-center">
+        <div class="border-t border-slate-800/60 flex-1"></div>
+        <span class="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">{{ 'auth.login.or' | t }}</span>
+        <div class="border-t border-slate-800/60 flex-1"></div>
+      </div>
 
-    <div class="mt-6">
-      <app-google-sign-in-button variant="dark" />
-    </div>
+      <div class="mt-6">
+        <app-google-sign-in-button variant="dark" />
+      </div>
+    }
 
     <div class="mt-6 text-center">
       <p class="text-xs sm:text-sm text-slate-350">

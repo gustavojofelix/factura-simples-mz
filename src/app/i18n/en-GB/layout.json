@@ -66,5 +66,20 @@
     "subscriptionExpired": "Subscription expired",
     "expiredBody": "The system is locked until you subscribe to a plan. Your data is saved and will be available again as soon as payment is confirmed.",
     "choosePlan": "Choose a plan"
+  },
+  "demo": {
+    "title": "You are viewing demo data",
+    "body": "The sample clients, products and invoices (DEMO invoices) are there to explore. When you are ready to start for real, remove them: your real invoices start at no. 1.",
+    "remove": "Remove demo data",
+    "confirmTitle": "Remove demo data?",
+    "confirmMessage": "The sample clients, products and invoices will be deleted. Data you created is not affected.",
+    "confirmLabel": "Remove",
+    "removed": "Demo data removed.",
+    "removeError": "The demo data could not be removed."
+  },
+  "completeCompany": {
+    "title": "Complete your company details",
+    "body": "Add the NUIT, address and entity type so they appear on your invoices.",
+    "action": "Complete details"
   }
 }
