@@ -222,6 +222,7 @@
 }
 
 .ai-prose :is(.ai-p) { margin: 0 0 8px; }
+.ai-prose :is(.ai-link) { color: #2563eb; font-weight: 600; text-decoration: underline; }
 .ai-prose :is(.ai-p):last-child { margin-bottom: 0; }
 
 .ai-prose :is(.ai-h) {

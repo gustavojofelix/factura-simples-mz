@@ -3,6 +3,7 @@ import { Router, Routes } from '@angular/router';
 import { authGuard, guestGuard } from './core/guards/auth.guard';
 import { adminGuard, adminGuestGuard } from './core/guards/admin.guard';
 import { roleGuard, REPORT_ROLES } from './core/guards/role.guard';
+import { planFeatureGuard } from './core/guards/plan-feature.guard';
 import { subscriptionGuard } from './core/guards/subscription.guard';
 import {
   accountGuard,
@@ -100,22 +101,22 @@ export const routes: Routes = [
       },
       {
         path: 'relatorios',
-        canActivate: [roleGuard(REPORT_ROLES)],
+        canActivate: [roleGuard(REPORT_ROLES), planFeatureGuard('reports')],
         loadComponent: () => import('./pages/reports/reports.component').then(m => m.ReportsComponent)
       },
       {
         path: 'relatorios/extractos',
-        canActivate: [roleGuard(REPORT_ROLES)],
+        canActivate: [roleGuard(REPORT_ROLES), planFeatureGuard('reports')],
         loadComponent: () => import('./pages/reports/client-statements/client-statements.component').then(m => m.ClientStatementsComponent)
       },
       {
         path: 'relatorios/extractos/:clientId',
-        canActivate: [roleGuard(REPORT_ROLES)],
+        canActivate: [roleGuard(REPORT_ROLES), planFeatureGuard('reports')],
         loadComponent: () => import('./pages/reports/client-statements/client-statement-detail.component').then(m => m.ClientStatementDetailComponent)
       },
       {
         path: 'relatorios/saft',
-        canActivate: [roleGuard(REPORT_ROLES)],
+        canActivate: [roleGuard(REPORT_ROLES), planFeatureGuard('reports')],
         loadComponent: () => import('./pages/reports/saft-export/saft-export.component').then(m => m.SaftExportComponent)
       },
       {

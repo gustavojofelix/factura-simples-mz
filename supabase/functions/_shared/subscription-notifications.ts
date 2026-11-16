@@ -77,10 +77,22 @@ export function cycleLabel(cycle: string | null | undefined, language: EmailLang
 /** Locale dos números por língua (pt-MZ mantém o formato actual, pt-PT). */
 const NUMBER_LOCALE: Localized = { "pt-MZ": "pt-PT", "en-GB": "en-GB", "fr-FR": "fr-FR" };
 
-function methodLabel(method: string | null | undefined): string {
+const METHOD_LABELS: Record<string, Localized> = {
+  transfer: { "pt-MZ": "Transferência bancária", "en-GB": "Bank transfer", "fr-FR": "Virement bancaire" },
+  cash: { "pt-MZ": "Numerário", "en-GB": "Cash", "fr-FR": "Espèces" },
+  offer: { "pt-MZ": "Oferta", "en-GB": "Complimentary", "fr-FR": "Offert" },
+};
+
+function methodLabel(method: string | null | undefined, language: EmailLanguage = "pt-MZ"): string {
   if (method === "mpesa") return "M-Pesa";
   if (method === "emola") return "e-Mola";
+  if (method && METHOD_LABELS[method]) return pick(METHOD_LABELS[method], language);
   return method ? String(method).toUpperCase() : "—";
+}
+
+/** Plano atribuído sem pagamento (oferta do back office): não há factura. */
+function isComplimentary(payment: Row): boolean {
+  return payment.payment_method === "offer" || (Number(payment.amount) || 0) <= 0;
 }
 
 function formatAmount(amount: unknown, currency = "MZN", language: EmailLanguage = "pt-MZ"): string {
@@ -224,7 +236,7 @@ function sislogInfo(payment: Row) {
 
 function sourceLabel(opts: NotifyOptions): string {
   const who = opts.actorEmail ? ` por ${opts.actorEmail}` : "";
-  if (opts.source === "manual") return `Confirmação manual${who}`;
+  if (opts.source === "manual") return `Confirmação/atribuição manual no back office${who}`;
   if (opts.source === "resend") return `Reenvio manual${who}`;
   return "Sislog webhook (pagamento automático)";
 }
@@ -256,6 +268,25 @@ const CLIENT_TEXT = {
     "fr-FR": "Confirmation du paiement de l'abonnement",
   } as Localized,
   yourCompany: { "pt-MZ": "sua empresa", "en-GB": "your company", "fr-FR": "votre entreprise" } as Localized,
+  subjectAssigned: {
+    "pt-MZ": "[ISPC Fácil] O seu plano está activo",
+    "en-GB": "[ISPC Fácil] Your plan is active",
+    "fr-FR": "[ISPC Fácil] Votre formule est active",
+  } as Localized,
+  titleAssigned: {
+    "pt-MZ": "O seu plano de subscrição está activo",
+    "en-GB": "Your subscription plan is active",
+    "fr-FR": "Votre formule d'abonnement est active",
+  } as Localized,
+  /** `company` e `plan` já vêm escapados. */
+  assigned: {
+    "pt-MZ": (company: string, plan: string) =>
+      `Informamos que a empresa <strong>${company}</strong> tem agora o plano <strong>${plan}</strong> activo no ISPC Fácil.`,
+    "en-GB": (company: string, plan: string) =>
+      `We are pleased to inform you that <strong>${company}</strong> now has the <strong>${plan}</strong> plan active on ISPC Fácil.`,
+    "fr-FR": (company: string, plan: string) =>
+      `Nous vous informons que l'entreprise <strong>${company}</strong> dispose désormais de la formule <strong>${plan}</strong> active sur ISPC Fácil.`,
+  } as Localized<(company: string, plan: string) => string>,
   dearClient: { "pt-MZ": "Estimado(a) Cliente", "en-GB": "Valued Client", "fr-FR": "Cher client" } as Localized,
   hello: { "pt-MZ": "Olá", "en-GB": "Hello", "fr-FR": "Bonjour" } as Localized,
   /** `company` já vem escapado. */
@@ -331,26 +362,35 @@ function clientHtml(
   const downgradeNote = plan.downgradeIgnored
     ? `<p>${pick(t.downgrade, L)(escapeHtml(plan.planName), plan.requestedPlan ? ` (${escapeHtml(plan.requestedPlan)})` : "")}</p>`
     : "";
+  const free = isComplimentary(payment);
+  const intro = free
+    ? pick(t.assigned, L)(escapeHtml(companyName), escapeHtml(plan.planName))
+    : pick(t.confirmed, L)(escapeHtml(companyName));
+  const invoiceNote = free
+    ? ""
+    : invoiceAttached && invoiceNumber
+      ? noticeBox(pick(t.invoiceAttached, L)(escapeHtml(invoiceNumber)))
+      : noticeBox(escapeHtml(pick(t.invoiceLater, L)));
   const inner = `
     <p>${pick(t.hello, L)} <strong>${escapeHtml(ownerName || pick(t.dearClient, L))}</strong>,</p>
-    <p>${pick(t.confirmed, L)(escapeHtml(companyName))}</p>
+    <p>${intro}</p>
     ${downgradeNote}
     ${period?.queued ? `<p>${pick(t.queued, L)(escapeHtml(plan.planName), escapeHtml(period.start), escapeHtml(period.end))}</p>` : ""}
     ${detailsTable([
       [pick(t.plan, L), plan.planName],
       [pick(t.cycle, L), cycleLabel(payment.billing_cycle, L)],
       ...(period ? [[pick(t.paidPeriod, L), `${period.start} – ${period.end}`] as [string, string]] : []),
-      [pick(t.amount, L), formatAmount(payment.amount, payment.currency || "MZN", L)],
-      [pick(t.method, L), `${methodLabel(payment.payment_method)}${payment.phone_number ? ` (${payment.phone_number})` : ""}`],
-      [pick(t.reference, L), s.reference || payment.reference_code],
+      ...(free ? [] : [
+        [pick(t.amount, L), formatAmount(payment.amount, payment.currency || "MZN", L)] as [string, string],
+        [pick(t.method, L), `${methodLabel(payment.payment_method, L)}${payment.phone_number ? ` (${payment.phone_number})` : ""}`] as [string, string],
+        [pick(t.reference, L), s.reference || payment.reference_code] as [string, string],
+      ]),
       [pick(t.validUntil, L), periodEnd],
       ...(invoiceNumber ? [[pick(t.invoice, L), invoiceNumber] as [string, string]] : []),
     ])}
-    ${invoiceAttached && invoiceNumber
-      ? noticeBox(pick(t.invoiceAttached, L)(escapeHtml(invoiceNumber)))
-      : noticeBox(escapeHtml(pick(t.invoiceLater, L)))}
+    ${invoiceNote}
     <p>${pick(t.thanks, L)}</p>`;
-  return emailLayout(pick(t.title, L), inner, undefined, L);
+  return emailLayout(pick(free ? t.titleAssigned : t.title, L), inner, undefined, L);
 }
 
 function adminHtml(
@@ -365,13 +405,15 @@ function adminHtml(
 ): string {
   const c = payment.companies ?? {};
   const s = sislogInfo(payment);
-  const invoiceStatus = !invoice.number
+  const invoiceStatus = isComplimentary(payment)
+    ? "Sem factura (oferta, 0 MZN)."
+    : !invoice.number
     ? "Ainda não emitida no OfficeGest (emitir em Receitas → Emitir no OfficeGest e reenviar os e-mails)."
     : invoice.pdf?.ok
       ? `${invoice.number} — PDF anexado (cliente e LTS)`
       : `${invoice.number} — PDF não anexado: ${invoice.pdf && !invoice.pdf.ok ? invoice.pdf.error : "desconhecido"}`;
   const inner = `
-    <p>Foi registado um pagamento de subscrição concluído.</p>
+    <p>${isComplimentary(payment) ? "Foi atribuído um plano sem pagamento (oferta) no back office." : "Foi registado um pagamento de subscrição concluído."}</p>
     ${detailsTable([
       ["Empresa", c.name],
       ["NUIT", c.nuit],
@@ -401,7 +443,7 @@ function adminHtml(
       ["Cliente notificado em", clientRecipients.length ? clientRecipients.join(", ") : "Sem destinatário"],
       ["ID do pagamento", payment.id],
     ])}`;
-  return emailLayout("Nova subscrição paga", inner, "Notificação interna do ISPC Fácil.");
+  return emailLayout(isComplimentary(payment) ? "Plano atribuído (oferta)" : "Nova subscrição paga", inner, "Notificação interna do ISPC Fácil.");
 }
 
 interface InvoiceRef {
@@ -491,14 +533,16 @@ export async function notifySubscriptionActivated(
       relatedId: payment.id,
     };
 
-    // Factura do OfficeGest em PDF, anexada aos dois e-mails.
-    const invoice = await waitForInvoice(db, payment, options.invoiceWaitSeconds ?? 30);
+    // Factura do OfficeGest em PDF, anexada aos dois e-mails (ofertas não têm factura).
+    const invoice = isComplimentary(payment)
+      ? { id: null, number: null }
+      : await waitForInvoice(db, payment, options.invoiceWaitSeconds ?? 30);
     const invoicePdf: InvoicePdfResult | null = invoice.id
       ? await fetchOfficeGestInvoicePdf(invoice.id, invoice.number)
       : null;
     if (invoicePdf && !invoicePdf.ok) {
       console.warn(`[subscription-notify] PDF da factura ${invoice.number} indisponível: ${invoicePdf.error}`);
-    } else if (!invoice.id) {
+    } else if (!invoice.id && !isComplimentary(payment)) {
       console.warn(`[subscription-notify] payment ${paymentId} sem factura no OfficeGest; e-mail sai sem anexo.`);
     }
     const attachments = invoicePdf?.ok
@@ -513,7 +557,7 @@ export async function notifySubscriptionActivated(
           kind: "subscription_activated_client",
           to: clientRecipients,
           replyTo: adminRecipients()[0],
-          subject: pick(CLIENT_TEXT.subject, owner.language),
+          subject: pick(isComplimentary(payment) ? CLIENT_TEXT.subjectAssigned : CLIENT_TEXT.subject, owner.language),
           html: clientHtml(
             payment, owner.fullName, clientPeriodEnd, plan, owner.language, clientPeriod,
             invoice.number, !!attachments,
@@ -531,7 +575,7 @@ export async function notifySubscriptionActivated(
           kind: "subscription_activated_admin",
           to: adminRecipients(),
           replyTo: owner.email || undefined,
-          subject: `[ISPC Fácil] Nova subscrição paga – ${companyName}`,
+          subject: `[ISPC Fácil] ${isComplimentary(payment) ? "Plano atribuído (oferta)" : "Nova subscrição paga"} – ${companyName}`,
           html: adminHtml(payment, owner, clientRecipients, periodEnd, options, plan, adminPeriod, {
             number: invoice.number,
             pdf: invoicePdf,

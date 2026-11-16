@@ -1,7 +1,7 @@
 import { Injectable, signal } from "@angular/core";
 import { SupabaseService } from "./supabase.service";
 import { AuditLogService } from "./audit-log.service";
-import { t } from "../i18n/i18n";
+import { AppLanguage, currentLanguage, t } from "../i18n/i18n";
 
 export interface Subscription {
   id: string;
@@ -42,6 +42,17 @@ export interface SubscriptionPlan {
   updated_at?: string;
 }
 
+/** Textos da página de Subscrição editados no back office (vazio = texto por omissão). */
+export interface SubscriptionPageText {
+  title: string;
+  intro: string;
+  notice: string;
+}
+
+export type SubscriptionPageTexts = Partial<Record<AppLanguage, Partial<SubscriptionPageText>>>;
+
+const SUBSCRIPTION_PAGE_TEXT_KEY = 'subscription_page_text';
+
 /** Data de hoje (YYYY-MM-DD) no fuso de Moçambique, igual a public.subscription_today(). */
 export function maputoToday(): string {
   return new Intl.DateTimeFormat('en-CA', {
@@ -53,6 +64,21 @@ export function maputoToday(): string {
 }
 
 export type BillingCycle = "monthly" | "quarterly" | "semiannual" | "yearly";
+
+/** Formas de pagamento de um plano atribuído no back office ('offer' = sem pagamento, sem factura). */
+export type AdminPaymentMethod = 'transfer' | 'cash' | 'mpesa' | 'emola' | 'offer';
+
+export interface AdminAssignPlanResult {
+  ok: boolean;
+  error?: string;
+  paymentId?: string;
+  period?: SubscriptionPeriod;
+  /** Número da factura emitida no OfficeGest (null se não houve factura ou falhou). */
+  invoiceNumber?: string | null;
+  invoiceError?: string | null;
+  emailOk?: boolean;
+  emailMessage?: string;
+}
 
 /**
  * Um período pago da fila de subscrições (public.subscription_periods).
@@ -156,6 +182,12 @@ export class SubscriptionService {
   loadingPlans = signal<boolean>(false);
   private featuresSignal = signal<SubscriptionFeature[]>([]);
   features = this.featuresSignal.asReadonly();
+  /**
+   * Funcionalidades do plano da empresa carregada (subscription_feature_value,
+   * que já conta com as excepções por empresa). Só as que escondem secções do
+   * front office. null = ainda não carregadas.
+   */
+  private planFeaturesSignal = signal<{ companyId: string; flags: Record<string, boolean> } | null>(null);
   /** Nível/preço do plano actual vindo do servidor (cobre planos desactivados, invisíveis pela RLS). */
   private currentPlanLevelSignal = signal<{ plan_name: string; tier: number | null; monthly_price: number } | null>(null);
 
@@ -305,6 +337,46 @@ export class SubscriptionService {
     } finally {
       this.loadingPlans.set(false);
     }
+  }
+
+  /** Textos personalizados da página de Subscrição, em todas as línguas (back office). */
+  async loadSubscriptionPageTexts(): Promise<SubscriptionPageTexts> {
+    const { data, error } = await this.supabase.client
+      .from('platform_settings')
+      .select('value')
+      .eq('key', SUBSCRIPTION_PAGE_TEXT_KEY)
+      .maybeSingle();
+    if (error || !data?.value || typeof data.value !== 'object') return {};
+    return data.value as SubscriptionPageTexts;
+  }
+
+  /**
+   * Texto a mostrar na língua actual: o da língua, senão o português (o back
+   * office escreve primeiro em português), senão vazio (texto por omissão).
+   */
+  async subscriptionPageText(): Promise<SubscriptionPageText> {
+    const all = await this.loadSubscriptionPageTexts();
+    const lang = all[currentLanguage()] ?? {};
+    const pt = all['pt-MZ'] ?? {};
+    const pickText = (key: keyof SubscriptionPageText) => (lang[key] || pt[key] || '').trim();
+    return { title: pickText('title'), intro: pickText('intro'), notice: pickText('notice') };
+  }
+
+  async saveSubscriptionPageTexts(texts: SubscriptionPageTexts): Promise<boolean> {
+    const { error } = await this.supabase.client
+      .from('platform_settings')
+      .upsert({
+        key: SUBSCRIPTION_PAGE_TEXT_KEY,
+        value: texts,
+        description: 'Textos personalizados da página de Subscrição do front office (título, introdução e aviso), por língua.',
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'key' });
+    if (error) {
+      console.error('Erro ao guardar o texto da página de subscrição:', error);
+      return false;
+    }
+    await this.auditLogService.log('Actualizou Texto da Página de Subscrição', 'platform_settings', texts);
+    return true;
   }
 
   async loadFeatures(): Promise<SubscriptionFeature[]> {
@@ -487,6 +559,7 @@ export class SubscriptionService {
         .maybeSingle(),
       this.loadCurrentPlanLevel(companyId),
       this.loadPeriods(companyId),
+      this.loadPlanFeatures(companyId),
     ]);
 
     if (error) {
@@ -510,6 +583,43 @@ export class SubscriptionService {
       return;
     }
     this.periodsSignal.set((data || []) as SubscriptionPeriod[]);
+  }
+
+  /** Funcionalidades que mostram/escondem secções do front office. */
+  static readonly GATED_FEATURES = ['reports'] as const;
+
+  private async loadPlanFeatures(companyId: string): Promise<void> {
+    const flags: Record<string, boolean> = {};
+    await Promise.all(SubscriptionService.GATED_FEATURES.map(async (code) => {
+      try {
+        const { data, error } = await this.supabase.client.rpc('subscription_feature_value', {
+          p_company_id: companyId,
+          p_feature_code: code,
+        });
+        if (error) return; // erro de rede/servidor: não esconde nada
+        const row = Array.isArray(data) ? data[0] : data;
+        // Sem linha = a funcionalidade não está no plano nem numa excepção.
+        flags[code] = !!row?.enabled;
+      } catch {
+        /* não esconde nada */
+      }
+    }));
+    this.planFeaturesSignal.set({ companyId, flags });
+  }
+
+  /**
+   * O plano da empresa inclui a funcionalidade? Enquanto não se sabe (ou se a
+   * verificação falhar) devolve true: o servidor valida de novo onde importa.
+   */
+  hasPlanFeature(code: string, companyId?: string): boolean {
+    const state = this.planFeaturesSignal();
+    if (!state || (companyId && state.companyId !== companyId)) return true;
+    return state.flags[code] ?? true;
+  }
+
+  /** As funcionalidades do plano já foram carregadas para esta empresa. */
+  planFeaturesLoadedFor(companyId: string): boolean {
+    return this.planFeaturesSignal()?.companyId === companyId;
   }
 
   /** Carrega o nível e preço do plano actual (mesmo que o plano esteja desactivado). */
@@ -620,6 +730,144 @@ export class SubscriptionService {
     );
 
     return { ok: true, period };
+  }
+
+  /**
+   * Back office: atribui um plano a uma empresa. Usa o mesmo caminho de um
+   * pagamento confirmado manualmente:
+   *   1. regista o pagamento em subscription_payments;
+   *   2. cria o período (entra na fila se a empresa ainda tem tempo pago);
+   *   3. marca o pagamento como concluído;
+   *   4. emite a factura no OfficeGest (excepto ofertas a 0 MZN);
+   *   5. envia ao cliente o e-mail "plano activo", com a factura em anexo.
+   */
+  async adminAssignPlan(input: {
+    companyId: string;
+    companyName?: string;
+    planName: string;
+    billingCycle: BillingCycle;
+    amount: number;
+    paymentMethod: AdminPaymentMethod;
+    reference?: string;
+  }): Promise<AdminAssignPlanResult> {
+    const offer = input.paymentMethod === 'offer';
+    const amount = offer ? 0 : Math.max(0, Number(input.amount) || 0);
+    if (!offer && amount <= 0) {
+      return { ok: false, error: 'Indique o valor pago, ou escolha "Oferta" se o plano não for pago.' };
+    }
+
+    const { data: sub } = await this.supabase.client
+      .from('subscriptions')
+      .select('id')
+      .eq('company_id', input.companyId)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const stamp = new Date().toISOString().replace(/\D/g, '').substring(0, 14);
+    const referenceCode = `BO-${stamp}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+    const { data: payment, error: insertError } = await this.supabase.client
+      .from('subscription_payments')
+      .insert({
+        company_id: input.companyId,
+        subscription_id: sub?.id ?? null,
+        plan_name: input.planName,
+        billing_cycle: input.billingCycle,
+        amount,
+        currency: 'MZN',
+        payment_method: input.paymentMethod,
+        phone_number: null,
+        reference_code: referenceCode,
+        status: 'pending',
+        sislog_response: {
+          origin: 'backoffice',
+          ...(input.reference?.trim() ? { reference: input.reference.trim() } : {}),
+        },
+      })
+      .select('id')
+      .single();
+    if (insertError || !payment) {
+      return { ok: false, error: insertError?.message || 'Não foi possível registar a atribuição.' };
+    }
+
+    const enqueued = await this.enqueuePeriod(input.companyId, {
+      planName: input.planName,
+      billingCycle: input.billingCycle,
+      amount,
+      paymentMethod: input.paymentMethod,
+      paymentId: payment.id,
+      source: 'manual',
+    });
+    if (!enqueued.ok) {
+      await this.supabase.client.from('subscription_payments')
+        .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+        .eq('id', payment.id);
+      return { ok: false, paymentId: payment.id, error: `Não foi possível activar o plano: ${enqueued.error || 'erro desconhecido'}.` };
+    }
+
+    const { data: completed, error: completeError } = await this.supabase.client
+      .from('subscription_payments')
+      .update({ status: 'completed', updated_at: new Date().toISOString() })
+      .eq('id', payment.id)
+      .select('id');
+    if (completeError || !completed?.length) {
+      // Sem linhas actualizadas = o RLS bloqueou (migração 20261116100000 por aplicar).
+      const reason = completeError?.message || 'sem permissão para actualizar o pagamento';
+      return { ok: false, paymentId: payment.id, period: enqueued.period, error: `Plano activado, mas o pagamento não ficou concluído (${reason}). A factura e o e-mail não foram enviados.` };
+    }
+
+    // Factura no OfficeGest antes do e-mail, para seguir em anexo.
+    let invoiceNumber: string | null = null;
+    let invoiceError: string | null = null;
+    if (!offer) {
+      try {
+        const { data, error } = await this.supabase.client.functions.invoke('sync-officegest', {
+          body: { payment_ids: [payment.id] },
+        });
+        invoiceNumber = data?.documents?.[0]?.document_number ?? null;
+        if (error || !invoiceNumber) {
+          invoiceError = data?.errors?.[0] || error?.message || 'Factura não emitida.';
+        }
+      } catch (e: any) {
+        invoiceError = e?.message || 'Erro ao contactar o OfficeGest.';
+      }
+    }
+
+    let emailOk = false;
+    let emailMessage = '';
+    try {
+      const { data, error } = await this.supabase.client.functions.invoke('subscription-notify', {
+        body: { paymentId: payment.id, force: false, source: 'manual' },
+      });
+      const client = data?.client;
+      emailOk = !error && !!client?.ok;
+      emailMessage = emailOk
+        ? `E-mail enviado ao cliente${client?.recipients?.length ? ` (${client.recipients.join(', ')})` : ''}.`
+        : `O e-mail ao cliente não foi enviado: ${client?.error || data?.error || error?.message || 'erro desconhecido'}.`;
+    } catch (e: any) {
+      emailMessage = `O e-mail ao cliente não foi enviado: ${e?.message || 'erro desconhecido'}.`;
+    }
+
+    await this.auditLogService.log(
+      'Atribuiu Plano no Back Office',
+      'subscription_payments',
+      {
+        company: input.companyName,
+        plan: input.planName,
+        billing_cycle: input.billingCycle,
+        amount,
+        payment_method: input.paymentMethod,
+        reference: input.reference || null,
+        start_date: enqueued.period?.start_date,
+        end_date: enqueued.period?.end_date,
+        invoice: invoiceNumber,
+      },
+      payment.id,
+      input.planName,
+      input.companyId,
+    );
+
+    return { ok: true, paymentId: payment.id, period: enqueued.period, invoiceNumber, invoiceError, emailOk, emailMessage };
   }
 
   async updatePaymentMethod(

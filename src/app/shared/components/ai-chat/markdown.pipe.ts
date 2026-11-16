@@ -1,9 +1,18 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { environment } from '../../../../environments/environment';
+
+/**
+ * Só se transformam em ligação os ficheiros da base fiscal (bucket público
+ * 'ai-knowledge'). Qualquer outro [texto](url) — que podia vir de dados
+ * escritos por utilizadores — fica só como texto.
+ */
+const KNOWLEDGE_FILES_PREFIX = `${environment.supabaseUrl}/storage/v1/object/public/ai-knowledge/`;
 
 /**
  * Renderizador de um subconjunto de Markdown — o que o assistente produz:
- * títulos, negrito, itálico, código, listas e tabelas.
+ * títulos, negrito, itálico, código, listas, tabelas e ligações aos
+ * documentos legais da base fiscal.
  *
  * Não se usa uma biblioteca de Markdown por duas razões. Primeiro, o
  * subconjunto é pequeno e conhecido. Segundo, e mais importante, a saída do
@@ -31,8 +40,16 @@ function escape(s: string): string {
     .replace(/'/g, '&#39;');
 }
 
+function links(s: string): string {
+  return s.replace(/\[([^\]\n]+)\]\((https:\/\/[^\s)]+)\)/g, (_m, label: string, url: string) => {
+    const raw = url.replace(/&amp;/g, '&');
+    if (!raw.startsWith(KNOWLEDGE_FILES_PREFIX)) return label;
+    return `<a class="ai-link" href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+  });
+}
+
 function inline(s: string): string {
-  return s
+  return links(s)
     .replace(/`([^`]+)`/g, '<code class="ai-code">$1</code>')
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');

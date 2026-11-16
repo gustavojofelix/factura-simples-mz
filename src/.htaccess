@@ -1,3 +1,8 @@
+# Módulos JavaScript (ex.: o worker do PDF.js usado na base fiscal do back office).
+<IfModule mod_mime.c>
+  AddType text/javascript .mjs
+</IfModule>
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /

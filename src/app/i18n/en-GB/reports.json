@@ -207,5 +207,9 @@
     "sendRejected": "The send was rejected.",
     "sent": "Statement sent to {email}.",
     "sendError": "The statement could not be sent."
+  },
+  "planLocked": {
+    "title": "Reports are not included in your plan",
+    "message": "To view reports, statements and the SAF-T file, choose a plan that includes Reports."
   }
 }

@@ -277,6 +277,8 @@ async function createSalesDocument(
 
     const methodLabel = paymentMethod === "mpesa" ? "M-Pesa"
       : paymentMethod === "emola" ? "e-Mola"
+      : paymentMethod === "transfer" ? "Transferência bancária"
+      : paymentMethod === "cash" ? "Numerário"
       : paymentMethod || "Pagamento Electrónico";
 
     // Regra fiscal (OfficeGest / AT Moçambique): A data do documento não pode ser anterior
@@ -377,7 +379,10 @@ serve(async (req) => {
     let query = supabase
       .from("subscription_payments")
       .select("*, companies(name, nuit, address, email, phone)")
-      .eq("status", "completed");
+      .eq("status", "completed")
+      // Planos oferecidos no back office (0 MZN) não têm factura.
+      .neq("payment_method", "offer")
+      .gt("amount", 0);
 
     if (paymentIds && paymentIds.length > 0) {
       query = query.in("id", paymentIds);

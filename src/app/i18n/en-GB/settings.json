@@ -71,7 +71,14 @@
     "startsOn": "Starts on {date}, when your paid time ends",
     "queueLimitShort": "You already have more than 360 paid days ahead",
     "upcomingTitle": "Upcoming periods (already paid)",
-    "periodRange": "{start} to {end}"
+    "periodRange": "{start} to {end}",
+    "methods": {
+      "mpesa": "M-Pesa",
+      "emola": "e-Mola",
+      "transfer": "Bank transfer",
+      "cash": "Cash",
+      "offer": "Complimentary"
+    }
   },
   "status": {
     "active": "Active",

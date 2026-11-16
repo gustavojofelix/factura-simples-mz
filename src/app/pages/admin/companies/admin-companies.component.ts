@@ -7,13 +7,16 @@ import { ActivityService, ActivityType } from '../../../core/services/activity.s
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { friendlyFunctionError } from '../../../core/utils/error-message';
+import { AdminAssignPlanDialogComponent } from './admin-assign-plan-dialog.component';
 
 @Component({
   selector: 'app-admin-companies',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AdminAssignPlanDialogComponent],
   template: `
       <div class="space-y-6">
+        <app-admin-assign-plan-dialog *ngIf="assignPlanCompany() as c" [company]="c" (closed)="onAssignPlanClosed($event)"></app-admin-assign-plan-dialog>
+
         <!-- Edit Modal -->
         <div *ngIf="isEditModalOpen" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all animate-in fade-in zoom-in duration-200">
@@ -702,6 +705,11 @@ import { friendlyFunctionError } from '../../../core/utils/error-message';
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
                       </button>
+                      <button (click)="assignPlanCompany.set({ id: company.id, name: company.name })" class="text-emerald-600 hover:text-emerald-800 p-1" title="Atribuir plano de subscrição">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+                        </svg>
+                      </button>
                       <button (click)="openEditModal(company)" class="text-blue-600 hover:text-blue-800 p-1" title="Editar Contribuinte">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -722,6 +730,13 @@ import { friendlyFunctionError } from '../../../core/utils/error-message';
 })
 export class AdminCompaniesComponent implements OnInit {
   companies = signal<any[]>([]);
+  /** Empresa no diálogo "Atribuir plano". */
+  assignPlanCompany = signal<{ id: string; name: string } | null>(null);
+
+  onAssignPlanClosed(assigned: boolean) {
+    this.assignPlanCompany.set(null);
+    if (assigned) this.loadCompanies();
+  }
   searchTerm = signal('');
   providerFilter = signal('all');
   planFilter = signal('all');

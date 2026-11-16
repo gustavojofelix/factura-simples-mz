@@ -207,5 +207,9 @@
     "sendRejected": "O envio foi recusado.",
     "sent": "Extracto enviado para {email}.",
     "sendError": "Não foi possível enviar o extracto."
+  },
+  "planLocked": {
+    "title": "Relatórios não incluídos no seu plano",
+    "message": "Para consultar relatórios, extractos e o SAF-T, escolha um plano que inclua Relatórios."
   }
 }

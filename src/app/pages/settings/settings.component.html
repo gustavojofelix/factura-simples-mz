@@ -102,7 +102,16 @@
 
       <mat-tab [label]="'settings.tabs.subscriptions' | t">
         <div class="p-6">
-          <h2 class="text-xl font-semibold mb-4">{{ 'settings.subscription.title' | t }}</h2>
+          <h2 class="text-xl font-semibold mb-4">{{ subscriptionText().title || ('settings.subscription.title' | t) }}</h2>
+          @if (subscriptionText().intro) {
+            <p class="text-sm text-slate-600 mb-4 whitespace-pre-line max-w-4xl">{{ subscriptionText().intro }}</p>
+          }
+          @if (subscriptionText().notice) {
+            <div class="mb-4 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm flex items-start gap-2 max-w-4xl">
+              <mat-icon class="text-amber-600 shrink-0">campaign</mat-icon>
+              <span class="whitespace-pre-line">{{ subscriptionText().notice }}</span>
+            </div>
+          }
 
           <div class="mb-4">
             <mat-form-field appearance="outline" class="w-full md:w-1/2">
@@ -149,7 +158,7 @@
                     </div>
                     <div>
                       <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">{{ 'settings.subscription.paymentMethod' | t }}</p>
-                      <p class="text-base font-bold text-gray-900 mt-1 uppercase">{{ sub.payment_method || ('settings.subscription.notDefined' | t) }}</p>
+                      <p class="text-base font-bold text-gray-900 mt-1">{{ paymentMethodLabel(sub.payment_method) }}</p>
                     </div>
                   </div>
 

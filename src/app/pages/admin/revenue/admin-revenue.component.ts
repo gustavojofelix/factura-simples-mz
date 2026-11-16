@@ -880,7 +880,7 @@ export class AdminRevenueComponent implements OnInit {
 
   // ── Labels ──
   paymentMethodLabel(method: string) {
-    return ({ mpesa: 'M-Pesa', emola: 'e-Mola' } as Record<string, string>)[method] ?? method ?? 'Não definido';
+    return ({ mpesa: 'M-Pesa', emola: 'e-Mola', transfer: 'Transferência', cash: 'Numerário', offer: 'Oferta (back office)' } as Record<string, string>)[method] ?? method ?? 'Não definido';
   }
   // Mesma linguagem do front office (página de preços).
   billingCycleLabel(cycle: string) {

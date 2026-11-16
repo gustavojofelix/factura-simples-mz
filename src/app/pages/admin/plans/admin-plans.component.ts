@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { PlanEntitlement, SubscriptionFeature, SubscriptionPlan, SubscriptionService } from '../../../core/services/subscription.service';
+import { PlanEntitlement, SubscriptionFeature, SubscriptionPageText, SubscriptionPageTexts, SubscriptionPlan, SubscriptionService } from '../../../core/services/subscription.service';
+
+type TextLang = 'pt-MZ' | 'en-GB' | 'fr-FR';
 
 @Component({
   selector: 'app-admin-plans',
@@ -21,6 +23,49 @@ import { PlanEntitlement, SubscriptionFeature, SubscriptionPlan, SubscriptionSer
           </svg>
           Novo Plano
         </button>
+      </div>
+
+      <!-- Texto da página de Subscrição (front office) -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+          <div>
+            <h3 class="text-lg font-bold text-gray-800">Texto da página de Subscrição</h3>
+            <p class="text-sm text-gray-500 mt-1 max-w-3xl">
+              O que os clientes vêem no topo de Configurações → Subscrições. Campos vazios usam o texto normal da aplicação.
+              Sem tradução, o texto em português é mostrado também em inglês e francês.
+            </p>
+          </div>
+          <div class="inline-flex p-1 bg-gray-100 rounded-lg text-xs font-semibold">
+            <button type="button" *ngFor="let l of textLangs" (click)="textLang = l.code"
+              class="px-3 py-1.5 rounded-md transition-colors"
+              [class.bg-white]="textLang === l.code" [class.text-blue-600]="textLang === l.code" [class.shadow-sm]="textLang === l.code">
+              {{ l.label }}
+            </button>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Título</label>
+            <input type="text" [(ngModel)]="pageTexts[textLang].title" name="pt_title" placeholder="Gestão de Subscrição"
+              class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Introdução</label>
+            <textarea [(ngModel)]="pageTexts[textLang].intro" name="pt_intro" rows="3" placeholder="Ex.: Escolha o plano que melhor se adapta ao seu negócio. Pagamento por M-Pesa ou e-Mola."
+              class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Aviso em destaque</label>
+            <textarea [(ngModel)]="pageTexts[textLang].notice" name="pt_notice" rows="3" placeholder="Ex.: Campanha de Dezembro: 2 meses grátis no plano anual."
+              class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+          </div>
+        </div>
+        <div class="flex justify-end mt-4">
+          <button type="button" (click)="savePageTexts()" [disabled]="savingTexts"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg text-sm transition-colors disabled:opacity-50">
+            {{ savingTexts ? 'A guardar...' : 'Guardar texto' }}
+          </button>
+        </div>
       </div>
 
       <!-- Messages -->
@@ -119,6 +164,16 @@ import { PlanEntitlement, SubscriptionFeature, SubscriptionPlan, SubscriptionSer
             <div>
               <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Descrição</label>
               <textarea [(ngModel)]="form.description" name="description" rows="2" placeholder="Resumo do público-alvo ou benefício" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Vantagens mostradas ao cliente</label>
+              <textarea [(ngModel)]="featuresRaw" name="featuresRaw" rows="5" placeholder="Uma vantagem por linha&#10;Ex.: Facturação ilimitada&#10;Relatórios e SAF-T" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+              <p class="text-[11px] text-gray-500 mt-1">
+                Texto da lista do plano na página de Subscrição e na página inicial (uma linha por vantagem).
+                O que o cliente pode usar é definido em "Funcionalidades e limites" abaixo.
+              </p>
+              <p *ngIf="featureTextMismatch() as warn" class="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-2 py-1 mt-1">{{ warn }}</p>
             </div>
 
             <div class="grid grid-cols-2 gap-3">
@@ -245,11 +300,74 @@ export class AdminPlansComponent implements OnInit {
   featuresRaw = '';
   entitlements: PlanEntitlement[] = [];
 
+  readonly textLangs: { code: TextLang; label: string }[] = [
+    { code: 'pt-MZ', label: 'Português' },
+    { code: 'en-GB', label: 'English' },
+    { code: 'fr-FR', label: 'Français' },
+  ];
+  textLang: TextLang = 'pt-MZ';
+  pageTexts: Record<TextLang, SubscriptionPageText> = {
+    'pt-MZ': { title: '', intro: '', notice: '' },
+    'en-GB': { title: '', intro: '', notice: '' },
+    'fr-FR': { title: '', intro: '', notice: '' },
+  };
+  savingTexts = false;
+
   constructor(public subscriptionService: SubscriptionService) {}
 
   ngOnInit() {
     this.subscriptionService.loadPlans();
     this.subscriptionService.loadFeatures();
+    this.loadPageTexts();
+  }
+
+  private async loadPageTexts() {
+    const saved: SubscriptionPageTexts = await this.subscriptionService.loadSubscriptionPageTexts();
+    for (const l of this.textLangs) {
+      this.pageTexts[l.code] = {
+        title: saved[l.code]?.title ?? '',
+        intro: saved[l.code]?.intro ?? '',
+        notice: saved[l.code]?.notice ?? '',
+      };
+    }
+  }
+
+  async savePageTexts() {
+    this.savingTexts = true;
+    this.error = '';
+    this.message = '';
+    const clean: SubscriptionPageTexts = {};
+    for (const l of this.textLangs) {
+      const tx = this.pageTexts[l.code];
+      clean[l.code] = { title: tx.title.trim(), intro: tx.intro.trim(), notice: tx.notice.trim() };
+    }
+    const ok = await this.subscriptionService.saveSubscriptionPageTexts(clean);
+    this.savingTexts = false;
+    if (ok) this.message = 'Texto da página de Subscrição guardado. Os clientes vêem-no da próxima vez que abrirem a página.';
+    else this.error = 'Erro ao guardar o texto da página de Subscrição.';
+  }
+
+  /**
+   * Aviso quando a lista de vantagens promete uma funcionalidade que o plano
+   * não inclui (ex.: "Relatórios" com a funcionalidade Relatórios desligada).
+   */
+  featureTextMismatch(): string | null {
+    const text = this.normalize(this.featuresRaw);
+    if (!text) return null;
+    const missing = this.features
+      .filter(f => f.value_type === 'boolean' && !this.isFeatureEnabled(f.id))
+      .filter(f => {
+        const word = this.normalize(f.name).split(/\s+/).find(w => w.length >= 5);
+        return !!word && text.includes(word.slice(0, 7));
+      })
+      .map(f => f.name);
+    return missing.length
+      ? `Atenção: as vantagens mencionam ${missing.join(', ')}, mas o plano não inclui essa funcionalidade.`
+      : null;
+  }
+
+  private normalize(s: string): string {
+    return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   }
 
   get features(): SubscriptionFeature[] { return this.subscriptionService.features(); }

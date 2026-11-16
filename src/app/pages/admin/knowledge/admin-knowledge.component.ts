@@ -2,9 +2,11 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
-  KNOWLEDGE_CATEGORIES, KNOWLEDGE_STATUS_LABELS, KnowledgeArticle, KnowledgeArticleInput,
-  KnowledgeBaseService, KnowledgeGap, KnowledgeGapStatus, KnowledgeSearchHit, KnowledgeStatus
+  KNOWLEDGE_STATUS_LABELS, KnowledgeArticle, KnowledgeArticleInput, KnowledgeAttachment,
+  KnowledgeBaseService, KnowledgeCategory, KnowledgeExcerptHit, KnowledgeGap, KnowledgeGapStatus,
+  KnowledgeSearchHit, KnowledgeStatus
 } from '../../../core/services/knowledge-base.service';
+import { canExtractText, extractDocumentText } from '../../../core/utils/document-text.util';
 import { AuditLogService } from '../../../core/services/audit-log.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
@@ -52,6 +54,9 @@ interface ArticleForm {
           Perguntas sem resposta
           @if (openGapCount() > 0) { <span class="tab-count bg-amber-100 text-amber-800">{{ openGapCount() }}</span> }
         </button>
+        <button type="button" (click)="tab.set('categorias')" class="tab" [class.tab-active]="tab() === 'categorias'">
+          Categorias <span class="tab-count">{{ categories().length }}</span>
+        </button>
       </div>
 
       @if (tab() === 'artigos') {
@@ -59,12 +64,12 @@ interface ArticleForm {
           <!-- Lista -->
           <section class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden self-start">
             <div class="p-4 border-b border-gray-100 space-y-2">
-              <input type="text" class="input" placeholder="Pesquisar título ou slug…"
+              <input type="text" class="input" placeholder="Pesquisar no título, conteúdo, referência ou anexos…"
                      [ngModel]="search()" (ngModelChange)="search.set($event)">
               <div class="grid grid-cols-2 gap-2">
                 <select class="input" [ngModel]="categoryFilter()" (ngModelChange)="categoryFilter.set($event)">
                   <option value="">Todas as categorias</option>
-                  @for (c of categories; track c.value) { <option [value]="c.value">{{ c.label }}</option> }
+                  @for (c of categories(); track c.code) { <option [value]="c.code">{{ c.label }}</option> }
                 </select>
                 <select class="input" [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
                   <option value="">Todos os estados</option>
@@ -89,6 +94,9 @@ interface ArticleForm {
                     <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-400">
                       <span>{{ categoryLabel(a.category) }}</span>
                       <span class="font-mono">{{ a.slug }}</span>
+                      @if (attachmentCount(a.id); as n) {
+                        <span class="badge bg-blue-50 text-blue-700" [title]="n + ' anexo(s) da base legal'">📎 {{ n }}</span>
+                      }
                       @if (a.company_id) {
                         <span class="badge bg-purple-50 text-purple-700">{{ a.company?.name || 'Empresa' }}</span>
                       }
@@ -143,11 +151,11 @@ interface ArticleForm {
                 <div>
                   <label class="label">Categoria *</label>
                   <select class="input" [(ngModel)]="form.category">
-                    @for (c of categories; track c.value) { <option [value]="c.value">{{ c.label }}</option> }
+                    @for (c of categories(); track c.code) { <option [value]="c.code">{{ c.label }}</option> }
                   </select>
                 </div>
                 <div>
-                  <label class="label">Referência legal</label>
+                  <label class="label">Referência legal (base legal)</label>
                   <input class="input" [(ngModel)]="form.legal_reference" placeholder="Ex.: Código do ISPC — artigo 5">
                 </div>
                 <div class="grid grid-cols-[1fr_110px] gap-3">
@@ -239,6 +247,74 @@ interface ArticleForm {
                 }
               </div>
 
+              <!-- Anexos da base legal -->
+              <div class="border-t border-gray-100 pt-4">
+                <div class="flex flex-wrap items-start justify-between gap-3 mb-2">
+                  <div>
+                    <label class="label mb-0">Anexos da base legal</label>
+                    <p class="text-xs text-gray-400 mt-1 max-w-2xl">
+                      Leis, regulamentos ou circulares em PDF, Word ou texto. O assistente lê o texto dos anexos
+                      (de artigos publicados) e envia ao cliente a ligação para o documento quando o cita.
+                    </p>
+                  </div>
+                  @if (selectedId()) {
+                    <label class="btn-secondary cursor-pointer whitespace-nowrap" [class.opacity-50]="uploading()">
+                      {{ uploading() ? 'A carregar…' : '+ Anexar ficheiro' }}
+                      <input type="file" class="hidden" multiple [disabled]="uploading()"
+                             accept=".pdf,.docx,.doc,.txt,.md,.xlsx,.xls,.png,.jpg,.jpeg"
+                             (change)="onAttachmentFiles($event)">
+                    </label>
+                  }
+                </div>
+
+                @if (!selectedId()) {
+                  <p class="text-xs text-gray-500 bg-gray-50 rounded-lg p-3">Guarde o artigo primeiro para poder anexar ficheiros.</p>
+                } @else {
+                  <div class="space-y-2">
+                    @for (att of attachments(); track att.id) {
+                      <div class="border border-gray-200 rounded-lg p-3">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                          <div class="min-w-0">
+                            <a [href]="att.public_url" target="_blank" rel="noopener" class="text-sm font-semibold text-blue-700 hover:underline break-all">📎 {{ att.file_name }}</a>
+                            <p class="text-xs text-gray-400 mt-0.5">
+                              {{ formatSize(att.size_bytes) }} ·
+                              @if (att.content_text?.trim()) {
+                                {{ (att.content_text?.length || 0) | number }} caracteres de texto
+                              } @else {
+                                <span class="text-amber-700">sem texto — a IA não o lê (cole o texto em "Texto")</span>
+                              }
+                            </p>
+                          </div>
+                          <div class="flex flex-wrap items-center gap-2">
+                            <label class="text-xs text-gray-600 flex items-center gap-1.5" title="Desligado: o ficheiro fica no artigo, mas a IA não lê o texto">
+                              <input type="checkbox" [checked]="att.use_in_ai" (change)="toggleAttachmentAi(att)"> IA lê
+                            </label>
+                            <button type="button" class="btn-secondary !py-1 !px-2 text-xs" (click)="toggleAttachmentText(att)">
+                              {{ editingTextId() === att.id ? 'Fechar texto' : 'Texto' }}
+                            </button>
+                            <button type="button" class="btn-secondary !py-1 !px-2 text-xs text-red-600" (click)="removeAttachment(att)">Remover</button>
+                          </div>
+                        </div>
+                        @if (editingTextId() === att.id) {
+                          <div class="mt-3 space-y-2">
+                            <p class="text-xs text-gray-400">
+                              Texto que a IA lê. Corrija o que a extracção automática apanhou mal, ou cole aqui o texto de um PDF digitalizado.
+                              Separe os artigos da lei com uma linha em branco.
+                            </p>
+                            <textarea class="input font-mono text-[12px] leading-relaxed min-h-[240px]" [(ngModel)]="attachmentTextDraft"></textarea>
+                            <div class="flex justify-end">
+                              <button type="button" class="btn-primary" [disabled]="saving()" (click)="saveAttachmentText(att)">Guardar texto</button>
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    } @empty {
+                      <p class="text-xs text-gray-400">Nenhum anexo.</p>
+                    }
+                  </div>
+                }
+              </div>
+
               <!-- Acções -->
               <div class="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4">
                 <div class="flex flex-wrap gap-2">
@@ -298,9 +374,13 @@ interface ArticleForm {
               </label>
 
               @if (testHits(); as hits) {
-                @if (hits.length === 0) {
+                @if (hits.length === 0 && testExcerpts().length === 0) {
                   <div class="p-3 rounded-lg bg-red-50 text-red-700 text-sm">
-                    Nenhum artigo encontrado — o assistente diria que não tem informação sobre isto.
+                    Nenhum artigo nem excerto de anexo encontrado — o assistente diria que não tem informação sobre isto.
+                  </div>
+                } @else if (hits.length === 0) {
+                  <div class="p-3 rounded-lg bg-amber-50 text-amber-800 text-sm">
+                    Nenhum artigo encontrado, mas o assistente responderia a partir dos excertos dos anexos abaixo.
                   </div>
                 } @else {
                   <ol class="divide-y divide-gray-100 border border-gray-100 rounded-lg">
@@ -326,10 +406,62 @@ interface ArticleForm {
                     </p>
                   }
                 }
+                @if (testExcerpts().length > 0) {
+                  <div>
+                    <p class="label">Excertos dos anexos que a IA também receberia</p>
+                    <ol class="divide-y divide-gray-100 border border-gray-100 rounded-lg">
+                      @for (e of testExcerpts(); track $index) {
+                        <li class="p-3 space-y-1">
+                          <div class="flex flex-wrap items-center justify-between gap-2">
+                            <button type="button" class="text-left text-sm font-semibold text-gray-800 cursor-pointer" (click)="selectById(e.article_id)">
+                              📎 {{ e.file_name }} <span class="font-normal text-gray-400">· {{ e.article_title }}</span>
+                            </button>
+                            @if (e.article_status !== 'publicado') {
+                              <span class="badge shrink-0" [ngClass]="statusClass(e.article_status)">{{ statusLabels[e.article_status] }}</span>
+                            }
+                          </div>
+                          <p class="text-xs text-gray-500 whitespace-pre-line line-clamp-4">{{ e.content }}</p>
+                        </li>
+                      }
+                    </ol>
+                  </div>
+                }
               }
             </section>
           </div>
         </div>
+      }
+
+      @if (tab() === 'categorias') {
+        <section class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden max-w-3xl">
+          <div class="p-4 border-b border-gray-100">
+            <p class="text-sm text-gray-500">
+              Categorias para organizar os artigos. Pode mudar o nome e a ordem a qualquer momento;
+              uma categoria só pode ser eliminada quando não tiver artigos.
+            </p>
+          </div>
+          <div class="divide-y divide-gray-100">
+            @for (c of categoryDrafts; track c.code) {
+              <div class="p-3 grid grid-cols-[minmax(0,1fr)_80px_auto] gap-2 items-center">
+                <div>
+                  <input class="input" [(ngModel)]="c.label" placeholder="Nome">
+                  <span class="text-[11px] text-gray-400 font-mono">{{ c.code }} · {{ articlesInCategory(c.code) }} artigo(s)</span>
+                </div>
+                <input class="input" type="number" [(ngModel)]="c.sort_order" title="Ordem">
+                <div class="flex gap-2">
+                  <button type="button" class="btn-secondary" [disabled]="saving()" (click)="saveCategory(c)">Guardar</button>
+                  <button type="button" class="btn-secondary text-red-600" [disabled]="saving() || articlesInCategory(c.code) > 0"
+                          [title]="articlesInCategory(c.code) > 0 ? 'Tem artigos: mude-os de categoria primeiro' : 'Eliminar'"
+                          (click)="removeCategory(c)">Eliminar</button>
+                </div>
+              </div>
+            }
+            <div class="p-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2 items-center bg-gray-50">
+              <input class="input" [(ngModel)]="newCategoryLabel" (keydown.enter)="addCategory()" placeholder="Nova categoria (ex.: IVA, Segurança Social)">
+              <button type="button" class="btn-primary" [disabled]="saving() || !newCategoryLabel.trim()" (click)="addCategory()">Adicionar</button>
+            </div>
+          </div>
+        </section>
       }
 
       @if (tab() === 'perguntas') {
@@ -432,10 +564,22 @@ export class AdminKnowledgeComponent implements OnInit {
   private toast = inject(ToastService);
   private confirmDialog = inject(ConfirmDialogService);
 
-  readonly categories = KNOWLEDGE_CATEGORIES;
   readonly statusLabels = KNOWLEDGE_STATUS_LABELS;
 
-  tab = signal<'artigos' | 'perguntas'>('artigos');
+  tab = signal<'artigos' | 'perguntas' | 'categorias'>('artigos');
+  categories = signal<KnowledgeCategory[]>([]);
+  /** Cópias editáveis no separador Categorias. */
+  categoryDrafts: KnowledgeCategory[] = [];
+  newCategoryLabel = '';
+
+  /** Anexos de todos os artigos (só id, artigo e nome), para contar e pesquisar. */
+  attachmentIndex = signal<{ id: string; article_id: string; file_name: string }[]>([]);
+  /** Anexos do artigo em edição, com o texto. */
+  attachments = signal<KnowledgeAttachment[]>([]);
+  uploading = signal(false);
+  editingTextId = signal<string | null>(null);
+  attachmentTextDraft = '';
+  testExcerpts = signal<KnowledgeExcerptHit[]>([]);
   articles = signal<KnowledgeArticle[]>([]);
   companies = signal<{ id: string; name: string }[]>([]);
   loading = signal(false);
@@ -471,14 +615,30 @@ export class AdminKnowledgeComponent implements OnInit {
     const q = this.normalize(this.search());
     const cat = this.categoryFilter();
     const status = this.statusFilter();
+    const files = new Map<string, string>();
+    for (const att of this.attachmentIndex()) {
+      files.set(att.article_id, `${files.get(att.article_id) ?? ''} ${att.file_name}`);
+    }
     return this.articles().filter(a =>
       (!cat || a.category === cat) &&
       (!status || a.status === status) &&
-      (!q || this.normalize(`${a.title} ${a.slug} ${a.question_variants.join(' ')}`).includes(q)));
+      (!q || this.normalize([
+        a.title, a.slug, a.question_variants.join(' '), a.body, a.legal_reference ?? '', files.get(a.id) ?? ''
+      ].join(' ')).includes(q)));
   });
 
   async ngOnInit() {
-    await Promise.all([this.load(), this.loadCompanies(), this.loadGaps()]);
+    await Promise.all([this.load(), this.loadCompanies(), this.loadGaps(), this.loadCategories(), this.loadAttachmentIndex()]);
+  }
+
+  async loadCategories() {
+    const list = await this.kb.listCategories();
+    this.categories.set(list);
+    this.categoryDrafts = list.map(c => ({ ...c }));
+  }
+
+  private async loadAttachmentIndex() {
+    this.attachmentIndex.set(await this.kb.listAllAttachments());
   }
 
   async load() {
@@ -537,6 +697,7 @@ export class AdminKnowledgeComponent implements OnInit {
     this.slugTouched = true;
     this.variantDraft = '';
     if (this.gapLink() && this.gapLink()!.resolved_article_id !== a.id) this.gapLink.set(null);
+    this.loadAttachments(a.id);
   }
 
   selectById(id: string) {
@@ -551,6 +712,8 @@ export class AdminKnowledgeComponent implements OnInit {
     this.slugTouched = false;
     this.variantDraft = '';
     this.gapLink.set(null);
+    this.attachments.set([]);
+    this.editingTextId.set(null);
   }
 
   setEditorMode(mode: 'rico' | 'markdown') {
@@ -713,7 +876,12 @@ export class AdminKnowledgeComponent implements OnInit {
     if (q.length < 2) return;
     this.testing.set(true);
     try {
-      this.testHits.set(await this.kb.testSearch(q, this.testIncludeDrafts, this.testCompanyId));
+      const [hits, excerpts] = await Promise.all([
+        this.kb.testSearch(q, this.testIncludeDrafts, this.testCompanyId),
+        this.kb.testExcerpts(q, this.testIncludeDrafts, this.testCompanyId)
+      ]);
+      this.testExcerpts.set(excerpts);
+      this.testHits.set(hits);
     } catch (e: any) {
       this.toast.error('O teste falhou', e?.message);
     } finally {
@@ -771,11 +939,188 @@ export class AdminKnowledgeComponent implements OnInit {
   }
 
   // ---------------------------------------------------------------------
+  // Anexos da base legal
+  // ---------------------------------------------------------------------
+
+  private async loadAttachments(articleId: string) {
+    this.editingTextId.set(null);
+    try {
+      const list = await this.kb.listAttachments(articleId);
+      if (this.selectedId() === articleId) this.attachments.set(list);
+    } catch {
+      this.attachments.set([]);
+    }
+  }
+
+  async onAttachmentFiles(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    input.value = '';
+    const article = this.selected();
+    if (!article || files.length === 0) return;
+
+    this.uploading.set(true);
+    try {
+      for (const file of files) {
+        if (file.size > 20 * 1024 * 1024) {
+          this.toast.warning('Ficheiro demasiado grande', `${file.name}: o máximo é 20 MB.`);
+          continue;
+        }
+        const text = canExtractText(file) ? await extractDocumentText(file) : '';
+        const att = await this.kb.uploadAttachment(article.id, file, text);
+        await this.audit.log('Anexou Documento à Base Fiscal', 'ai_knowledge',
+          { ficheiro: file.name, caracteres: text.length }, article.id, article.title);
+        if (text) {
+          this.toast.success('Anexo carregado', `${file.name}: a IA passa a ler ${text.length.toLocaleString('pt-PT')} caracteres deste documento.`);
+        } else {
+          this.toast.warning('Anexo carregado sem texto',
+            `${file.name}: não foi possível ler o texto (ex.: PDF digitalizado). Abra "Texto" e cole o conteúdo para a IA o usar.`);
+          this.editingTextId.set(att.id);
+          this.attachmentTextDraft = '';
+        }
+      }
+    } catch (e: any) {
+      this.toast.error('Não foi possível anexar o ficheiro', e?.message);
+    } finally {
+      this.uploading.set(false);
+      await Promise.all([this.loadAttachments(article.id), this.loadAttachmentIndex()]);
+    }
+  }
+
+  toggleAttachmentText(att: KnowledgeAttachment) {
+    if (this.editingTextId() === att.id) {
+      this.editingTextId.set(null);
+      return;
+    }
+    this.attachmentTextDraft = att.content_text ?? '';
+    this.editingTextId.set(att.id);
+  }
+
+  async saveAttachmentText(att: KnowledgeAttachment) {
+    this.saving.set(true);
+    try {
+      await this.kb.updateAttachment(att.id, { content_text: this.attachmentTextDraft.trim() || null });
+      await this.audit.log('Editou Texto de Anexo da Base Fiscal', 'ai_knowledge',
+        { ficheiro: att.file_name, caracteres: this.attachmentTextDraft.trim().length }, att.article_id, att.file_name);
+      this.toast.success('Texto do anexo guardado');
+      await this.loadAttachments(att.article_id);
+    } catch (e: any) {
+      this.toast.error('Não foi possível guardar o texto', e?.message);
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  async toggleAttachmentAi(att: KnowledgeAttachment) {
+    try {
+      await this.kb.updateAttachment(att.id, { use_in_ai: !att.use_in_ai });
+      this.attachments.update(list => list.map(a => a.id === att.id ? { ...a, use_in_ai: !att.use_in_ai } : a));
+    } catch (e: any) {
+      this.toast.error('Não foi possível alterar o anexo', e?.message);
+    }
+  }
+
+  async removeAttachment(att: KnowledgeAttachment) {
+    const ok = await this.confirmDialog.confirm({
+      title: 'Remover anexo',
+      message: `Remover “${att.file_name}”? A IA deixa de ler este documento e a ligação deixa de funcionar.`,
+      confirmLabel: 'Remover',
+      danger: true
+    });
+    if (!ok) return;
+    try {
+      await this.kb.removeAttachment(att);
+      await this.audit.log('Removeu Anexo da Base Fiscal', 'ai_knowledge', { ficheiro: att.file_name }, att.article_id, att.file_name);
+      this.toast.success('Anexo removido');
+      await Promise.all([this.loadAttachments(att.article_id), this.loadAttachmentIndex()]);
+    } catch (e: any) {
+      this.toast.error('Não foi possível remover o anexo', e?.message);
+    }
+  }
+
+  attachmentCount(articleId: string): number {
+    return this.attachmentIndex().filter(a => a.article_id === articleId).length;
+  }
+
+  formatSize(bytes: number | null): string {
+    if (!bytes) return '—';
+    if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  }
+
+  // ---------------------------------------------------------------------
+  // Categorias
+  // ---------------------------------------------------------------------
+
+  articlesInCategory(code: string): number {
+    return this.articles().filter(a => a.category === code).length;
+  }
+
+  async addCategory() {
+    const label = this.newCategoryLabel.trim();
+    if (!label) return;
+    const code = this.slugify(label).replace(/-/g, '_').slice(0, 40);
+    if (code.length < 2) {
+      this.toast.warning('Nome inválido', 'Use pelo menos duas letras ou números.');
+      return;
+    }
+    if (this.categories().some(c => c.code === code)) {
+      this.toast.warning('Categoria já existe', `Já existe uma categoria com o código “${code}”.`);
+      return;
+    }
+    const sort = Math.max(0, ...this.categories().map(c => c.sort_order)) + 10;
+    await this.saveCategory({ code, label, sort_order: sort }, true);
+    this.newCategoryLabel = '';
+  }
+
+  async saveCategory(c: KnowledgeCategory, isNew = false) {
+    if (!c.label.trim()) {
+      this.toast.warning('Nome em falta', 'A categoria precisa de um nome.');
+      return;
+    }
+    this.saving.set(true);
+    try {
+      await this.kb.saveCategory({ code: c.code, label: c.label.trim(), sort_order: Number(c.sort_order) || 0 });
+      await this.audit.log(isNew ? 'Criou Categoria da Base Fiscal' : 'Actualizou Categoria da Base Fiscal',
+        'ai_knowledge', { codigo: c.code, nome: c.label.trim() }, undefined, c.label.trim());
+      this.toast.success(isNew ? 'Categoria criada' : 'Categoria guardada');
+      await this.loadCategories();
+    } catch (e: any) {
+      this.toast.error('Não foi possível guardar a categoria', e?.message);
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  async removeCategory(c: KnowledgeCategory) {
+    if (this.articlesInCategory(c.code) > 0) return;
+    const ok = await this.confirmDialog.confirm({
+      title: 'Eliminar categoria',
+      message: `Eliminar a categoria “${c.label}”?`,
+      confirmLabel: 'Eliminar',
+      danger: true
+    });
+    if (!ok) return;
+    this.saving.set(true);
+    try {
+      await this.kb.removeCategory(c.code);
+      await this.audit.log('Eliminou Categoria da Base Fiscal', 'ai_knowledge', { codigo: c.code }, undefined, c.label);
+      this.toast.success('Categoria eliminada');
+      await this.loadCategories();
+    } catch (e: any) {
+      const msg = e?.code === '23503' ? 'Ainda há artigos nesta categoria (incluindo arquivados).' : e?.message;
+      this.toast.error('Não foi possível eliminar a categoria', msg);
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  // ---------------------------------------------------------------------
   // Auxiliares
   // ---------------------------------------------------------------------
 
   categoryLabel(value: string) {
-    return this.categories.find(c => c.value === value)?.label ?? value;
+    return this.categories().find(c => c.code === value)?.label ?? value;
   }
 
   articleTitle(id: string) {
@@ -806,6 +1151,6 @@ export class AdminKnowledgeComponent implements OnInit {
   }
 
   private emptyForm(): ArticleForm {
-    return { title: '', slug: '', category: 'ispc', question_variants: [], body: '', legal_reference: '', company_id: null, sort_order: 0 };
+    return { title: '', slug: '', category: this.categories()[0]?.code ?? 'ispc', question_variants: [], body: '', legal_reference: '', company_id: null, sort_order: 0 };
   }
 }

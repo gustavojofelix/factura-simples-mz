@@ -207,5 +207,9 @@
     "sendRejected": "L'envoi a été refusé.",
     "sent": "Relevé envoyé à {email}.",
     "sendError": "Impossible d'envoyer le relevé."
+  },
+  "planLocked": {
+    "title": "Les rapports ne sont pas inclus dans votre formule",
+    "message": "Pour consulter les rapports, les relevés et le fichier SAF-T, choisissez une formule qui inclut les Rapports."
   }
 }

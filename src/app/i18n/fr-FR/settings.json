@@ -71,7 +71,14 @@
     "startsOn": "Commence le {date}, à la fin du temps déjà payé",
     "queueLimitShort": "Vous avez déjà plus de 360 jours payés à venir",
     "upcomingTitle": "Prochaines périodes (déjà payées)",
-    "periodRange": "du {start} au {end}"
+    "periodRange": "du {start} au {end}",
+    "methods": {
+      "mpesa": "M-Pesa",
+      "emola": "e-Mola",
+      "transfer": "Virement bancaire",
+      "cash": "Espèces",
+      "offer": "Offert"
+    }
   },
   "status": {
     "active": "Actif",

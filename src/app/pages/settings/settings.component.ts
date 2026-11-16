@@ -24,7 +24,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CompanyService, Company } from '../../core/services/company.service';
 import { AccountService } from '../../core/services/account.service';
 import { TenantService } from '../../core/services/tenant.service';
-import { SubscriptionService, SubscriptionPlan, SubscriptionPeriod, maputoToday } from '../../core/services/subscription.service';
+import { SubscriptionService, SubscriptionPlan, SubscriptionPeriod, SubscriptionPageText, maputoToday } from '../../core/services/subscription.service';
 import { UserManagementService, UserWithCompanies } from '../../core/services/user-management.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CompanyDialogComponent } from '../../shared/components/company-dialog.component';
@@ -77,6 +77,8 @@ export class SettingsComponent implements OnInit {
   selectedCompanyId = signal<string | null>(null);
   /** Lê directamente do serviço: actualiza sozinho quando o plano é activado (polling/webhook). */
   subscription = this.subscriptionService.subscription;
+  /** Título, introdução e aviso da página de Subscrição definidos no back office. */
+  subscriptionText = signal<SubscriptionPageText>({ title: '', intro: '', notice: '' });
 
   selectedTab = signal(0);
   private destroyRef = inject(DestroyRef);
@@ -171,7 +173,20 @@ export class SettingsComponent implements OnInit {
     }, { allowSignalWrites: true });
   }
 
+  /** Método de pagamento da subscrição (inclui os do back office: transferência, numerário, oferta). */
+  paymentMethodLabel(method: string | null | undefined): string {
+    if (!method) return t('settings.subscription.notDefined');
+    if (['mpesa', 'emola', 'transfer', 'cash', 'offer'].includes(method)) {
+      return t(`settings.subscription.methods.${method}`);
+    }
+    return method.toUpperCase();
+  }
+
   async ngOnInit() {
+    this.subscriptionService.subscriptionPageText()
+      .then(text => this.subscriptionText.set(text))
+      .catch(() => { /* fica o texto por omissão */ });
+
     const user = this.authService.currentUser();
     if (user) {
       this.currentUserId.set(user.id);

@@ -82,7 +82,14 @@ export class MainLayoutComponent {
   filteredMenuItems = computed(() => {
     const role = this.companyService.activeRole();
     
+    const companyId = this.companyService.activeCompany()?.id;
+
     return this.menuItems.filter(item => {
+      // Secções que dependem do plano (o back office pode tirá-las a um plano).
+      if (item.route === '/relatorios' && !this.subscriptionService.hasPlanFeature('reports', companyId)) {
+        return false;
+      }
+
       // Vendedor (user) only gets Invoices, Clients, Products and the assistant
       if (role === 'user') {
         return ['/facturas', '/clientes', '/produtos', '/assistente'].includes(item.route);

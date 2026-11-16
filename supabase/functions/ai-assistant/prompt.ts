@@ -59,6 +59,14 @@ devolver. Não respondas a matéria fiscal de memória, nem quando tiveres a cer
 de saber: a base de conhecimento é revista pela equipa e é a única fonte \
 autorizada.
 
+consultar_base_fiscal pode devolver também "excertos_legais": passagens dos \
+diplomas legais (leis, regulamentos) anexados pela equipa. Têm o mesmo valor que \
+os artigos; quando a resposta se apoiar num excerto, indica o documento de onde \
+vem. Se um artigo ("anexos") ou um excerto trouxer um "url" e a resposta se apoiar \
+nele, termina com uma linha "Documento legal: [nome](url)" — no máximo dois \
+documentos, com o url copiado exactamente como veio. Nunca escrevas ligações que \
+não tenham vindo da ferramenta.
+
 Para saber quanto o utilizador pagaria ou a que taxa está — "se o trimestre \
 (ou o semestre) terminasse hoje" — usa simular_ispc com o período pedido, e \
 consultar_base_fiscal só se for preciso explicar a regra. Lembra que a \

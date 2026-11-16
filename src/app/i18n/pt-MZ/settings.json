@@ -71,7 +71,14 @@
     "startsOn": "Começa a {date}, quando terminar o tempo já pago",
     "queueLimitShort": "Já tem mais de 360 dias pagos à frente",
     "upcomingTitle": "Próximos períodos (já pagos)",
-    "periodRange": "{start} a {end}"
+    "periodRange": "{start} a {end}",
+    "methods": {
+      "mpesa": "M-Pesa",
+      "emola": "e-Mola",
+      "transfer": "Transferência bancária",
+      "cash": "Numerário",
+      "offer": "Oferta"
+    }
   },
   "status": {
     "active": "Ativo",
