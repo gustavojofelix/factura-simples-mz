@@ -64,6 +64,8 @@
     "generateModel30": "Gerar Modelo 30",
     "generatingExcel": "A gerar Excel...",
     "exportExcel": "Exportar Modelo 30 (Excel)",
+    "generateModeloGeral": "Gerar Modelo Geral (M/G)",
+    "exportModeloGeralExcel": "Exportar Modelo Geral (Excel)",
     "markSubmitted": "Marcar como Submetida",
     "recordPayment": "Registar Pagamento",
     "excelError": "Não foi possível gerar o Excel. Por favor, tente novamente.",
@@ -94,6 +96,10 @@
     "referencePlaceholder": "Número de referência do pagamento",
     "notes": "Notas",
     "notesPlaceholder": "Observações adicionais"
+  },
+  "modeloGeral": {
+    "title": "Declaração Modelo Geral (M/G) — ISPC",
+    "notice": "A AT indicou temporariamente o Modelo Geral (M/G) para declarar e pagar o ISPC, em vez do Modelo 30 (Comunicado n.º 9/2026). Confira os dados antes de entregar."
   },
   "model30": {
     "title": "Modelo 30 — Declaração Periódica ISPC",

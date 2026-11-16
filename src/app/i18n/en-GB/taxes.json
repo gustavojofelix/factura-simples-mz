@@ -64,6 +64,8 @@
     "generateModel30": "Generate Form 30 (Modelo 30)",
     "generatingExcel": "Generating Excel...",
     "exportExcel": "Export Form 30 (Excel)",
+    "generateModeloGeral": "Generate General Form (Modelo Geral M/G)",
+    "exportModeloGeralExcel": "Export General Form (Excel)",
     "markSubmitted": "Mark as Submitted",
     "recordPayment": "Record Payment",
     "excelError": "The Excel file could not be generated. Please try again.",
@@ -94,6 +96,10 @@
     "referencePlaceholder": "Payment reference number",
     "notes": "Notes",
     "notesPlaceholder": "Additional notes"
+  },
+  "modeloGeral": {
+    "title": "General Form (Modelo Geral M/G) — ISPC",
+    "notice": "The Tax Authority (AT) has temporarily designated the General Form (Modelo Geral M/G) for filing and paying ISPC, instead of Form 30 (Comunicado n.º 9/2026). Check the details before submitting."
   },
   "model30": {
     "title": "Form 30 (Modelo 30) — ISPC Periodic Return",

@@ -20,6 +20,9 @@ import { TaxPaymentDialogComponent } from '../../shared/components/tax-payment-d
 import { TaxPaymentProofsDialogComponent } from '../../shared/components/tax-payment-proofs-dialog.component';
 import { Model30Component } from '../../shared/components/model30.component';
 import { Model30ExcelService } from '../../core/services/model30-excel.service';
+import { ModeloGeralComponent } from '../../shared/components/modelo-geral.component';
+import { ModeloGeralExcelService } from '../../core/services/modelo-geral-excel.service';
+import { ACTIVE_ISPC_DECLARATION_FORM } from '../../core/config/ispc-declaration-form';
 import { AuditLogService } from '../../core/services/audit-log.service';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { friendlyFunctionError } from '../../core/utils/error-message';
@@ -101,7 +104,8 @@ export class TaxesComponent implements OnInit {
     private dialog: MatDialog,
     private auditLogService: AuditLogService,
     private supabase: SupabaseService,
-    private model30Excel: Model30ExcelService
+    private model30Excel: Model30ExcelService,
+    private modeloGeralExcel: ModeloGeralExcelService
   ) {
     const currentYear = new Date().getFullYear();
     for (let i = currentYear; i >= currentYear - 5; i--) {
@@ -288,9 +292,13 @@ export class TaxesComponent implements OnInit {
     return (declaration.payments || []).filter(p => !p.receipt_url).length;
   }
 
-  openModel30(declaration: TaxDeclaration) {
+  /** Formulário em uso: Modelo Geral (M/G), por indicação temporária da AT, ou Modelo 30. */
+  readonly usesModeloGeral = ACTIVE_ISPC_DECLARATION_FORM === 'modelo_geral';
+
+  /** Abre o formulário da declaração em uso (ver ACTIVE_ISPC_DECLARATION_FORM). */
+  openDeclarationForm(declaration: TaxDeclaration) {
     this.auditLogService.log(
-      'Gerou Modelo 30',
+      this.usesModeloGeral ? 'Gerou Modelo Geral' : 'Gerou Modelo 30',
       'declarations',
       { year: declaration.year, period: declaration.period },
       declaration.id,
@@ -298,7 +306,8 @@ export class TaxesComponent implements OnInit {
       declaration.company_id
     );
 
-    this.dialog.open(Model30Component, {
+    const component = this.usesModeloGeral ? ModeloGeralComponent : Model30Component;
+    this.dialog.open<unknown>(component, {
       width: '100vw',
       height: '100vh',
       maxWidth: '100vw',
@@ -308,7 +317,7 @@ export class TaxesComponent implements OnInit {
     });
   }
 
-  async exportModel30Excel(declaration: TaxDeclaration) {
+  async exportDeclarationExcel(declaration: TaxDeclaration) {
     if (this.exportingExcelId()) return;
     const company = this.companyService.activeCompany();
     if (!company) return;
@@ -316,9 +325,13 @@ export class TaxesComponent implements OnInit {
     this.exportingExcelId.set(declaration.id);
     try {
       // O registo de auditoria é feito pelo serviço após exportação bem-sucedida.
-      await this.model30Excel.exportModel30(declaration, company);
+      if (this.usesModeloGeral) {
+        await this.modeloGeralExcel.export(declaration, company);
+      } else {
+        await this.model30Excel.exportModel30(declaration, company);
+      }
     } catch (error) {
-      console.error('Erro ao gerar o Excel do Modelo 30:', error);
+      console.error('Erro ao gerar o Excel da declaração:', error);
       window.alert(t('taxes.declarations.excelError'));
     } finally {
       this.exportingExcelId.set(null);

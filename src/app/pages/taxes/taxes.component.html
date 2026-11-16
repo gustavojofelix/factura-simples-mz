@@ -314,16 +314,16 @@
                       <div class="flex gap-2">
                         <button
                           mat-icon-button
-                          [matTooltip]="'taxes.declarations.generateModel30' | t"
-                          (click)="openModel30(declaration)">
+                          [matTooltip]="(usesModeloGeral ? 'taxes.declarations.generateModeloGeral' : 'taxes.declarations.generateModel30') | t"
+                          (click)="openDeclarationForm(declaration)">
                           <mat-icon>description</mat-icon>
                         </button>
 
                         <button
                           mat-icon-button
-                          [matTooltip]="(exportingExcelId() === declaration.id ? 'taxes.declarations.generatingExcel' : 'taxes.declarations.exportExcel') | t"
+                          [matTooltip]="(exportingExcelId() === declaration.id ? 'taxes.declarations.generatingExcel' : (usesModeloGeral ? 'taxes.declarations.exportModeloGeralExcel' : 'taxes.declarations.exportExcel')) | t"
                           [disabled]="!!exportingExcelId()"
-                          (click)="exportModel30Excel(declaration)">
+                          (click)="exportDeclarationExcel(declaration)">
                           <mat-icon>{{ exportingExcelId() === declaration.id ? 'hourglass_empty' : 'table_view' }}</mat-icon>
                         </button>
 

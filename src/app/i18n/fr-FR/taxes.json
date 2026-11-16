@@ -64,6 +64,8 @@
     "generateModel30": "Générer le Formulaire 30 (Modelo 30)",
     "generatingExcel": "Génération de l'Excel...",
     "exportExcel": "Exporter le Formulaire 30 (Excel)",
+    "generateModeloGeral": "Générer le Formulaire général (Modelo Geral M/G)",
+    "exportModeloGeralExcel": "Exporter le Formulaire général (Excel)",
     "markSubmitted": "Marquer comme soumise",
     "recordPayment": "Enregistrer un paiement",
     "excelError": "Impossible de générer le fichier Excel. Veuillez réessayer.",
@@ -94,6 +96,10 @@
     "referencePlaceholder": "Numéro de référence du paiement",
     "notes": "Notes",
     "notesPlaceholder": "Observations supplémentaires"
+  },
+  "modeloGeral": {
+    "title": "Formulaire général (Modelo Geral M/G) — ISPC",
+    "notice": "L'Autorité fiscale (AT) a temporairement désigné le Formulaire général (Modelo Geral M/G) pour déclarer et payer l'ISPC, à la place du Formulaire 30 (Comunicado n.º 9/2026). Vérifiez les données avant le dépôt."
   },
   "model30": {
     "title": "Formulaire 30 (Modelo 30) — Déclaration périodique ISPC",

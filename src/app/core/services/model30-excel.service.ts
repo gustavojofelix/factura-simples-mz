@@ -16,7 +16,7 @@ const BORDER: CellStyle['border'] = { top: thin, bottom: thin, left: thin, right
 const AMOUNT_FMT = '#,##0.00';
 const RATE_FMT = '0.00"%"';
 
-function style(extra: {
+export function style(extra: {
   bold?: boolean; italic?: boolean; sz?: number; color?: string; fill?: string;
   h?: 'left' | 'center' | 'right'; v?: 'top' | 'center' | 'bottom'; wrap?: boolean;
   border?: boolean; numFmt?: string;
@@ -75,9 +75,9 @@ const MODEL30_LOGO_URL = 'assets/escudomozambique.png';
 /* Pequeno construtor de folhas com células estilizadas e merges       */
 /* ------------------------------------------------------------------ */
 
-type CellValue = string | number | null | undefined;
+export type CellValue = string | number | null | undefined;
 
-class SheetBuilder {
+export class SheetBuilder {
   readonly ws: WorkSheet = {};
   private merges: { s: { r: number; c: number }; e: { r: number; c: number } }[] = [];
   private heights: { [row: number]: number } = {};
