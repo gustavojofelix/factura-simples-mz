@@ -833,7 +833,7 @@ export class SaftService {
       issued_at: i.issued_at ?? null,
       annulled_at: i.annulled_at ?? annulmentDates.get(String(i.id)) ?? i.updated_at ?? null,
       annulment_reason: i.annulment_reason ?? null,
-      source_id: i.issuer?.full_name || i.created_by || null,
+      source_id: i.issuer_name || i.issuer?.full_name || i.created_by || null,
       items: [...(i.items || [])]
         // created_at é igual para todas as linhas inseridas no mesmo lote; o id desempata
         // para que a numeração (LineNumber) seja determinística entre exportações.

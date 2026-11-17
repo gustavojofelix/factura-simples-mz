@@ -8,8 +8,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { AuthService } from '../../core/services/auth.service';
+import { AccountDeletionService } from '../../core/services/account-deletion.service';
+import { DeleteAccountDialogComponent, DeleteAccountDialogData } from './delete-account-dialog.component';
+import { DELETION_PENDING_URL } from '../../core/guards/auth.guard';
 import { User } from '@supabase/supabase-js';
 import { t } from '../../core/i18n/i18n';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
@@ -28,6 +32,7 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
     MatCardModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
+    MatDialogModule,
     TranslatePipe
   ],
   templateUrl: './profile.component.html'
@@ -47,7 +52,10 @@ export class ProfileComponent {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private dialog: MatDialog,
+    private deletionService: AccountDeletionService,
+    private router: Router
   ) {
     // Todos os campos começam desabilitados
     this.profileForm = this.fb.group({
@@ -93,6 +101,20 @@ export class ProfileComponent {
     } finally {
       this.isLoading.set(false); // ← spinner desaparece aqui
     }
+  }
+
+  /** Perfil → Zona de perigo → Eliminar conta. */
+  async openDeleteAccount() {
+    const user = this.authService.currentUser();
+    if (!user) return;
+    const companies = await this.deletionService.ownedCompanyNames(user.id);
+    const ref = this.dialog.open<DeleteAccountDialogComponent, DeleteAccountDialogData, string>(
+      DeleteAccountDialogComponent,
+      { data: { companies }, maxWidth: '95vw', autoFocus: false }
+    );
+    ref.afterClosed().subscribe(scheduledFor => {
+      if (scheduledFor) this.router.navigate([DELETION_PENDING_URL]);
+    });
   }
 
   toggleEditMode() {

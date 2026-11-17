@@ -23,5 +23,55 @@
   "messages": {
     "updated": "Perfil atualizado com sucesso!",
     "updateError": "Erro ao atualizar perfil"
+  },
+  "deleteAccount": {
+    "sectionTitle": "Eliminar conta",
+    "sectionText": "Remove os seus dados pessoais e encerra as suas empresas. Tem 30 dias para mudar de ideias.",
+    "button": "Eliminar conta",
+    "dialogTitle": "Eliminar a sua conta?",
+    "dialogSubtitle": "Leia com atenção o que acontece:",
+    "consequences": {
+      "companies": "As suas empresas serão encerradas: {companies}.",
+      "members": "Os utilizadores que convidou perdem o acesso a essas empresas.",
+      "subscription": "Os dias restantes da subscrição são perdidos, sem reembolso.",
+      "memberAccess": "Deixa de ter acesso às empresas onde foi convidado.",
+      "personalData": "Os seus dados pessoais (nome, email, telefone) são apagados.",
+      "retention": "Os documentos fiscais emitidos são conservados durante 10 anos, como exige a lei.",
+      "grace": "A eliminação acontece daqui a 30 dias. Até lá pode cancelar."
+    },
+    "exportHint": "Antes de continuar, guarde uma cópia dos seus documentos fiscais.",
+    "exportLink": "Exportar SAF-T",
+    "confirmWord": "ELIMINAR",
+    "typeToConfirm": "Para confirmar, escreva {word}:",
+    "sendCode": "Enviar código",
+    "codeSent": "Enviámos um código de 6 dígitos para {email}. Introduza-o para confirmar.",
+    "resend": "Reenviar código",
+    "confirm": "Eliminar conta",
+    "errors": {
+      "generic": "Não foi possível concluir o pedido. Tente novamente."
+    },
+    "pending": {
+      "title": "Conta em eliminação",
+      "text": "A sua conta será eliminada em {date}.",
+      "hint": "Mudou de ideias? Cancele a eliminação e continue a usar o ISPC Fácil normalmente.",
+      "cancel": "Cancelar eliminação",
+      "signOut": "Terminar sessão"
+    },
+    "public": {
+      "title": "Eliminar a conta ISPC Fácil",
+      "intro": "Pode eliminar a sua conta a qualquer momento, directamente na aplicação ou no site.",
+      "step1": "Entre na sua conta no ISPC Fácil (aplicação ou site).",
+      "step2": "Abra o menu e escolha \"Meu Perfil\".",
+      "step3": "Em \"Eliminar conta\", escreva ELIMINAR e confirme com o código enviado para o seu email.",
+      "step4": "A conta é eliminada ao fim de 30 dias. Até lá pode cancelar entrando novamente.",
+      "deletedTitle": "O que é apagado:",
+      "deletedText": "nome, email, telefone, conversas com o assistente e o acesso às empresas.",
+      "keptTitle": "O que é conservado:",
+      "keptText": "os documentos fiscais emitidos (facturas, recibos, notas de crédito) e os registos de auditoria, durante 10 anos, por obrigação legal.",
+      "signIn": "Entrar para eliminar a conta",
+      "noAccess": "Não consigo entrar — contactar o apoio",
+      "supportSubject": "Pedido de eliminação de conta",
+      "supportMessage": "Olá, pretendo eliminar a minha conta ISPC Fácil mas não consigo entrar.\nEmail da conta: "
+    }
   }
 }

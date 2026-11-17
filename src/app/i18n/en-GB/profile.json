@@ -23,5 +23,55 @@
   "messages": {
     "updated": "Profile updated successfully!",
     "updateError": "Error updating profile"
+  },
+  "deleteAccount": {
+    "sectionTitle": "Delete account",
+    "sectionText": "Removes your personal data and closes your companies. You have 30 days to change your mind.",
+    "button": "Delete account",
+    "dialogTitle": "Delete your account?",
+    "dialogSubtitle": "Please read carefully what happens:",
+    "consequences": {
+      "companies": "Your companies will be closed: {companies}.",
+      "members": "Users you invited lose access to those companies.",
+      "subscription": "Remaining subscription days are lost, with no refund.",
+      "memberAccess": "You lose access to the companies you were invited to.",
+      "personalData": "Your personal data (name, e-mail, phone) is erased.",
+      "retention": "Tax documents issued are kept for 10 years, as required by law.",
+      "grace": "Deletion happens in 30 days. Until then you can cancel."
+    },
+    "exportHint": "Before continuing, keep a copy of your tax documents.",
+    "exportLink": "Export SAF-T",
+    "confirmWord": "DELETE",
+    "typeToConfirm": "To confirm, type {word}:",
+    "sendCode": "Send code",
+    "codeSent": "We sent a 6-digit code to {email}. Enter it to confirm.",
+    "resend": "Resend code",
+    "confirm": "Delete account",
+    "errors": {
+      "generic": "We could not complete the request. Please try again."
+    },
+    "pending": {
+      "title": "Account being deleted",
+      "text": "Your account will be deleted on {date}.",
+      "hint": "Changed your mind? Cancel the deletion and keep using ISPC Fácil as usual.",
+      "cancel": "Cancel deletion",
+      "signOut": "Sign out"
+    },
+    "public": {
+      "title": "Delete your ISPC Fácil account",
+      "intro": "You can delete your account at any time, directly in the app or on the website.",
+      "step1": "Sign in to your ISPC Fácil account (app or website).",
+      "step2": "Open the menu and choose \"My Profile\".",
+      "step3": "Under \"Delete account\", type DELETE and confirm with the code sent to your e-mail.",
+      "step4": "The account is deleted after 30 days. Until then you can cancel by signing in again.",
+      "deletedTitle": "What is erased:",
+      "deletedText": "name, e-mail, phone, assistant conversations and access to companies.",
+      "keptTitle": "What is kept:",
+      "keptText": "tax documents issued (invoices, receipts, credit notes) and audit records, for 10 years, as required by law.",
+      "signIn": "Sign in to delete the account",
+      "noAccess": "I can't sign in — contact support",
+      "supportSubject": "Account deletion request",
+      "supportMessage": "Hello, I would like to delete my ISPC Fácil account but I can't sign in.\nAccount e-mail: "
+    }
   }
 }

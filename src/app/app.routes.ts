@@ -58,6 +58,17 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () => import('./pages/account/account-denied.component').then(m => m.AccountDeniedComponent)
   },
+  {
+    // Pedido de eliminação confirmado: 30 dias para cancelar.
+    path: 'conta-em-eliminacao',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/account/account-deletion-pending.component').then(m => m.AccountDeletionPendingComponent)
+  },
+  {
+    // Página pública exigida pela Google Play (link para pedir a eliminação da conta).
+    path: 'eliminar-conta',
+    loadComponent: () => import('./pages/account/delete-account-info.component').then(m => m.DeleteAccountInfoComponent)
+  },
   // Ponto de Venda: aplicação à parte em /pos (o index.html reencaminha /pos para #/pos).
   // Demonstração com dados JSON: sem login, a entrada é feita com o PIN do operador.
   {

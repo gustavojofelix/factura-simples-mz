@@ -23,5 +23,55 @@
   "messages": {
     "updated": "Profil mis à jour avec succès !",
     "updateError": "Erreur lors de la mise à jour du profil"
+  },
+  "deleteAccount": {
+    "sectionTitle": "Supprimer le compte",
+    "sectionText": "Efface vos données personnelles et clôture vos entreprises. Vous avez 30 jours pour changer d'avis.",
+    "button": "Supprimer le compte",
+    "dialogTitle": "Supprimer votre compte ?",
+    "dialogSubtitle": "Lisez attentivement ce qui va se passer :",
+    "consequences": {
+      "companies": "Vos entreprises seront clôturées : {companies}.",
+      "members": "Les utilisateurs que vous avez invités perdent l'accès à ces entreprises.",
+      "subscription": "Les jours d'abonnement restants sont perdus, sans remboursement.",
+      "memberAccess": "Vous perdez l'accès aux entreprises auxquelles vous avez été invité.",
+      "personalData": "Vos données personnelles (nom, e-mail, téléphone) sont effacées.",
+      "retention": "Les documents fiscaux émis sont conservés pendant 10 ans, comme l'exige la loi.",
+      "grace": "La suppression a lieu dans 30 jours. D'ici là, vous pouvez annuler."
+    },
+    "exportHint": "Avant de continuer, gardez une copie de vos documents fiscaux.",
+    "exportLink": "Exporter le SAF-T",
+    "confirmWord": "SUPPRIMER",
+    "typeToConfirm": "Pour confirmer, saisissez {word} :",
+    "sendCode": "Envoyer le code",
+    "codeSent": "Nous avons envoyé un code à 6 chiffres à {email}. Saisissez-le pour confirmer.",
+    "resend": "Renvoyer le code",
+    "confirm": "Supprimer le compte",
+    "errors": {
+      "generic": "Impossible de finaliser la demande. Veuillez réessayer."
+    },
+    "pending": {
+      "title": "Compte en cours de suppression",
+      "text": "Votre compte sera supprimé le {date}.",
+      "hint": "Vous avez changé d'avis ? Annulez la suppression et continuez à utiliser ISPC Fácil normalement.",
+      "cancel": "Annuler la suppression",
+      "signOut": "Se déconnecter"
+    },
+    "public": {
+      "title": "Supprimer votre compte ISPC Fácil",
+      "intro": "Vous pouvez supprimer votre compte à tout moment, directement dans l'application ou sur le site.",
+      "step1": "Connectez-vous à votre compte ISPC Fácil (application ou site).",
+      "step2": "Ouvrez le menu et choisissez « Mon profil ».",
+      "step3": "Dans « Supprimer le compte », saisissez SUPPRIMER et confirmez avec le code envoyé à votre e-mail.",
+      "step4": "Le compte est supprimé au bout de 30 jours. D'ici là, vous pouvez annuler en vous reconnectant.",
+      "deletedTitle": "Ce qui est effacé :",
+      "deletedText": "nom, e-mail, téléphone, conversations avec l'assistant et accès aux entreprises.",
+      "keptTitle": "Ce qui est conservé :",
+      "keptText": "les documents fiscaux émis (factures, reçus, avoirs) et les journaux d'audit, pendant 10 ans, par obligation légale.",
+      "signIn": "Se connecter pour supprimer le compte",
+      "noAccess": "Je ne peux pas me connecter — contacter l'assistance",
+      "supportSubject": "Demande de suppression de compte",
+      "supportMessage": "Bonjour, je souhaite supprimer mon compte ISPC Fácil mais je ne peux pas me connecter.\nE-mail du compte : "
+    }
   }
 }

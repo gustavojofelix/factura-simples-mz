@@ -106,7 +106,7 @@ export class InvoiceService {
         ...invoice,
         status: this.calculateInvoiceStatus(invoice),
         // Documentos do POS: o emissor é o funcionário do terminal.
-        issuer_name: (invoice.issuer as any)?.full_name ?? (invoice.pos_staff as any)?.name
+        issuer_name: invoice.issuer_name ?? (invoice.issuer as any)?.full_name ?? (invoice.pos_staff as any)?.name
       }));
 
       await this.updateInvoiceStatusesIfNeeded(invoicesWithStatus);
@@ -193,7 +193,7 @@ export class InvoiceService {
         ...invoice,
         status: this.calculateInvoiceStatus(invoice),
         items: items || [],
-        issuer_name: (invoice.issuer as any)?.full_name ?? (invoice.pos_staff as any)?.name
+        issuer_name: invoice.issuer_name ?? (invoice.issuer as any)?.full_name ?? (invoice.pos_staff as any)?.name
       };
 
       return invoiceWithStatus;
@@ -651,7 +651,7 @@ export class InvoiceService {
 
     return (data || []).map(inv => ({
       ...inv,
-      issuer_name: inv.issuer?.full_name || '-',
+      issuer_name: inv.issuer_name || inv.issuer?.full_name || '-',
       status: this.calculateStatus(inv)
     }));
   }

@@ -175,4 +175,20 @@
       </form>
     </mat-card-content>
   </mat-card>
+
+  <!-- Zona de perigo: eliminação de conta (Google Play / Política de Privacidade) -->
+  <mat-card class="!shadow-md mt-6 !border !border-rose-200">
+    <mat-card-content class="!p-6">
+      <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+        <div class="flex-1">
+          <h3 class="text-lg font-medium text-rose-700">{{ 'profile.deleteAccount.sectionTitle' | t }}</h3>
+          <p class="text-sm text-gray-600 mt-1">{{ 'profile.deleteAccount.sectionText' | t }}</p>
+        </div>
+        <button mat-stroked-button type="button" class="!text-rose-600 !border-rose-300" (click)="openDeleteAccount()">
+          <mat-icon class="mr-1">delete_forever</mat-icon>
+          {{ 'profile.deleteAccount.button' | t }}
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
 </div>

@@ -248,6 +248,7 @@ export class DashboardComponent {
         amount_paid,
         due_date,
         clients (name),
+        issuer_name,
         issuer:profiles (full_name)
       `)
       .eq('company_id', companyId)
@@ -263,7 +264,7 @@ export class DashboardComponent {
           date: inv.date,
           total: inv.total,
           status: this.calculateRecentInvoiceStatus(inv),
-          issuer_name: (inv.issuer as any)?.full_name
+          issuer_name: inv.issuer_name ?? (inv.issuer as any)?.full_name
         }))
       );
     }

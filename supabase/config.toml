@@ -72,6 +72,15 @@ verify_jwt = false
 import_map = "./functions/send-tax-reminders/deno.json"
 entrypoint = "./functions/send-tax-reminders/index.ts"
 
+# Eliminação de conta. verify_jwt = false porque o job diário (pg_cron +
+# pg_net) se autentica pelo cabeçalho x-cron-secret; os pedidos do utilizador
+# trazem JWT, validado dentro da própria função.
+[functions.delete-account]
+enabled = true
+verify_jwt = false
+import_map = "./functions/delete-account/deno.json"
+entrypoint = "./functions/delete-account/index.ts"
+
 # Emparelhamento de terminais POS: o dispositivo ainda não tem sessão.
 # A segurança vem do código de uso único (8 caracteres, 15 minutos).
 [functions.pos-pair-terminal]
