@@ -87,6 +87,15 @@ jobs:
             -Pandroid.injected.signing.key.alias="${{ secrets.ANDROID_KEY_ALIAS }}" \
             -Pandroid.injected.signing.key.password="${{ secrets.ANDROID_KEY_PASSWORD }}"
 
+      - name: Check Google Play credentials
+        env:
+          PLAY_JSON: ${{ secrets.PLAY_SERVICES_JSON_KEY }}
+        run: |
+          [ -n "$PLAY_JSON" ] || { echo "::error::Secret em falta ou vazio: PLAY_SERVICES_JSON_KEY (JSON da service account da Google Play)"; exit 1; }
+          printf '%s' "$PLAY_JSON" | jq -e '.type == "service_account" and .client_email and .private_key' > /dev/null \
+            || { echo "::error::PLAY_SERVICES_JSON_KEY não é o JSON de uma service account (cole o ficheiro .json inteiro)"; exit 1; }
+          echo "Service account: $(printf '%s' "$PLAY_JSON" | jq -r .client_email)"
+
       - name: Upload to Google Play
         uses: r0adkll/upload-google-play@v1
         with:
