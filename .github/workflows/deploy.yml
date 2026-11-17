@@ -58,8 +58,22 @@ jobs:
             echo "track=internal" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Decode keystore
-        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/upload-keystore.jks"
+      - name: Decode & check keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          for v in KEYSTORE_BASE64 STORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            [ -n "${!v}" ] || { echo "::error::Secret em falta ou vazio: ANDROID_${v/STORE_PASSWORD/KEYSTORE_PASSWORD}"; exit 1; }
+          done
+          # Aceita base64 com quebras de linha ou com cabeçalhos -----BEGIN/END----- (certutil no Windows).
+          printf '%s' "$KEYSTORE_BASE64" | grep -v -- '-----' | tr -d ' \r\n\t' | base64 --decode > "$RUNNER_TEMP/upload-keystore.jks" \
+            || { echo "::error::ANDROID_KEYSTORE_BASE64 não é base64 válido"; exit 1; }
+          keytool -list -keystore "$RUNNER_TEMP/upload-keystore.jks" -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" > /dev/null \
+            || { echo "::error::Keystore inválido, ANDROID_KEYSTORE_PASSWORD errada ou alias '$KEY_ALIAS' inexistente"; exit 1; }
+          echo "Keystore OK (alias $KEY_ALIAS)"
 
       - name: Build Android App Bundle (AAB)
         working-directory: android
