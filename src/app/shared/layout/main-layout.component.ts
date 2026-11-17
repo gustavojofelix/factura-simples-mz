@@ -29,6 +29,7 @@ import { friendlyErrorMessage } from '../../core/utils/error-message';
 import { effect } from '@angular/core';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { t } from '../../core/i18n/i18n';
+import { offlineMode } from '../../core/offline/offline-fetch';
 
 interface MenuItem {
   icon: string;
@@ -66,6 +67,8 @@ interface MenuItem {
 })
 export class MainLayoutComponent {
   isMobileMenuOpen = signal(false);
+  /** App nativa a mostrar dados guardados por falta de internet. */
+  readonly offlineMode = offlineMode;
 
   menuItems: MenuItem[] = [
     { icon: 'fa-house', label: t('layout.nav.dashboard'), route: '/painel' },

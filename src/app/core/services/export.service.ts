@@ -1,25 +1,26 @@
 import { Injectable } from '@angular/core';
 import * as XLSX from 'xlsx';
 import { t } from '../i18n/i18n';
+import { saveFile, saveWorkbook } from '../utils/file-save';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ExportService {
 
-  exportToExcel(data: any[], fileName: string, sheetName?: string) {
+  exportToExcel(data: any[], fileName: string, sheetName?: string): Promise<void> {
     if (!data || !data.length) {
       console.warn('Sem dados para exportar');
-      return;
+      return Promise.resolve();
     }
     const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(data);
     const wb: XLSX.WorkBook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, sheetName || t('reports.export.defaultSheet'));
-    XLSX.writeFile(wb, `${fileName}.xlsx`);
+    return saveWorkbook(XLSX, wb, `${fileName}.xlsx`);
   }
 
-  exportToCsv(data: any[], fileName: string) {
-    if (!data || !data.length) return;
+  exportToCsv(data: any[], fileName: string): Promise<void> {
+    if (!data || !data.length) return Promise.resolve();
 
     const replacer = (key: string, value: any) => value === null ? '' : value;
     const header = Object.keys(data[0]);
@@ -33,25 +34,16 @@ export class ExportService {
       }).join(','))
     ].join('\r\n');
 
-    this.downloadFile('\uFEFF' + csv, `${fileName}.csv`, 'text/csv;charset=utf-8;');
+    return this.downloadFile('\uFEFF' + csv, `${fileName}.csv`, 'text/csv;charset=utf-8;');
   }
 
-  /** Descarrega texto como ficheiro (CSV, XML, ...). */
-  downloadFile(content: string, fileName: string, mime: string) {
-    this.downloadBlob(new Blob([content], { type: mime }), fileName);
+  /** Descarrega texto como ficheiro (CSV, XML, ...). Na app nativa abre a partilha. */
+  downloadFile(content: string, fileName: string, mime: string): Promise<void> {
+    return this.downloadBlob(new Blob([content], { type: mime }), fileName);
   }
 
-  /** Descarrega um Blob (ZIP, ...) como ficheiro. */
-  downloadBlob(blob: Blob, fileName: string) {
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-
-    link.setAttribute('href', url);
-    link.setAttribute('download', fileName);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+  /** Descarrega um Blob (ZIP, PDF, ...) como ficheiro. Na app nativa abre a partilha. */
+  downloadBlob(blob: Blob, fileName: string): Promise<void> {
+    return saveFile(blob, fileName);
   }
 }

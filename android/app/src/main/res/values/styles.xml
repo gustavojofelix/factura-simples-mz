@@ -13,6 +13,11 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- Fundo atrás das barras do sistema: igual ao fundo da app (slate-50), também em modo escuro. -->
+        <item name="android:windowBackground">@color/systemBarsBackground</item>
+        <!-- Ícones escuros nas barras (fundo claro). -->
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
     </style>
 
 

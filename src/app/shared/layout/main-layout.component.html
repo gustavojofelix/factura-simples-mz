@@ -216,6 +216,12 @@
 
     <!-- Page Content Area -->
     <main class="app-canvas flex-1 overflow-y-auto custom-scrollbar pb-16 md:pb-6">
+      @if (offlineMode()) {
+        <div class="sticky top-0 z-20 flex items-center gap-2 bg-amber-50 border-b border-amber-200 px-4 py-2 text-sm text-amber-800" role="status">
+          <mat-icon class="!text-[18px] !w-[18px] !h-[18px] shrink-0">cloud_off</mat-icon>
+          <span>{{ 'layout.offline.banner' | t }}</span>
+        </div>
+      }
       @if (companyService.isCompanySuspended()) {
         <!-- Suspended Company Notice -->
         <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-12">

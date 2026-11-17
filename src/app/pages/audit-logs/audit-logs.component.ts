@@ -17,6 +17,7 @@ import {
 } from '../../core/utils/audit-formatter.util';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { t } from '../../core/i18n/i18n';
+import { saveFile } from '../../core/utils/file-save';
 
 @Component({
   selector: 'app-audit-logs',
@@ -489,17 +490,8 @@ export class AuditLogsComponent implements OnInit {
       + rows.map(r => r.join(';')).join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-
     const timestamp = new Date().toISOString().split('T')[0];
-    link.setAttribute('href', url);
-    link.setAttribute('download', `${t('audit.export.fileName')}_${timestamp}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    void saveFile(blob, `${t('audit.export.fileName')}_${timestamp}.csv`);
   }
 
   /** Exporta todos os registos que respeitam os filtros, não apenas a página visível. */

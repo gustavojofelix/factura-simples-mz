@@ -3,6 +3,7 @@ import { SupabaseService } from './supabase.service';
 import { SAFT_CONFIG, SAFT_PAYMENT_MECHANISMS } from '../constants/saft';
 import { toIsoDate } from '../utils/date.util';
 import { t } from '../i18n/i18n';
+import { saveWorkbook } from '../utils/file-save';
 
 // ---------------------------------------------------------------------------
 // Dados de entrada do gerador (independentes do Supabase, para testes)
@@ -968,7 +969,7 @@ export class SaftService {
       Company: company.name
     };
 
-    XLSX.writeFile(wb, `${this.fileBaseName(company, startDate, endDate)}.xlsx`, { compression: true });
+    await saveWorkbook(XLSX, wb, `${this.fileBaseName(company, startDate, endDate)}.xlsx`, { compression: true });
   }
 
   /** Lê todas as páginas de uma consulta (o Supabase devolve no máximo 1000 linhas). */

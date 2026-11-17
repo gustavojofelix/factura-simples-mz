@@ -26,6 +26,7 @@ import { SummaryStatementDocumentComponent } from './documents/summary-statement
 import { ClientStatementDocumentComponent } from './documents/client-statement-document.component';
 import { t } from '../../core/i18n/i18n';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { Capacitor } from '@capacitor/core';
 
 export interface SummaryStatementPreviewData {
   kind: 'summary';
@@ -213,7 +214,7 @@ export class StatementPreviewDialogComponent implements OnInit {
     try {
       this.isGeneratingPdf.set(true);
       const blob = await this.generate();
-      this.pdfService.downloadPdf(blob, this.fileName());
+      await this.pdfService.downloadPdf(blob, this.fileName());
       this.logExport('PDF');
     } catch (error) {
       console.error('Erro ao gerar o extracto em PDF:', error);
@@ -227,6 +228,11 @@ export class StatementPreviewDialogComponent implements OnInit {
     try {
       this.isGeneratingPdf.set(true);
       const blob = await this.generate();
+      // A WebView do Android não imprime janelas novas: abre a partilha (inclui imprimir).
+      if (Capacitor.isNativePlatform()) {
+        await this.pdfService.downloadPdf(blob, this.fileName());
+        return;
+      }
       const url = window.URL.createObjectURL(blob);
       const printWindow = window.open(url);
 

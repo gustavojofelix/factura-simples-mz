@@ -165,6 +165,10 @@ export class AccountService {
       return { kind: 'external', url: this.tenant.accountUrl(accounts[0].slug, '/painel') };
     }
 
+    // App nativa: sem subdomínio, quem tem várias contas escolhe uma depois do login
+    // (o login só acontece uma vez: a sessão fica guardada até sair).
+    if (this.tenant.isNative && accounts.length > 1) return { kind: 'route', route: '/escolher-conta' };
+
     // App nativa / dev: fica na mesma origem, na conta activa.
     return { kind: 'route', route: '/painel' };
   }

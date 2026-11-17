@@ -469,7 +469,7 @@ export class ModeloGeralComponent implements OnInit {
       this.isGeneratingPdf.set(true);
       const blob = await this.pdfService.generateMultiPagePdf('modelo-geral-document');
       const { period, year } = this.data.declaration;
-      this.pdfService.downloadPdf(blob, `Modelo_Geral_MG_ISPC_${year}_T${period}`);
+      await this.pdfService.downloadPdf(blob, `Modelo_Geral_MG_ISPC_${year}_T${period}`);
     } catch (error) {
       console.error('Erro ao gerar o PDF do Modelo Geral:', error);
       window.alert(t('taxes.model30.pdfError'));

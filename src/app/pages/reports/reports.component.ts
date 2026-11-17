@@ -22,6 +22,7 @@ import { toIsoDate } from '../../core/utils/date.util';
 import { ReportsNavComponent } from './reports-nav.component';
 import { t, currentLocale } from '../../core/i18n/i18n';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { saveFile } from '../../core/utils/file-save';
 
 interface SalesReport {
   totalSales: number;
@@ -636,10 +637,7 @@ export class ReportsComponent implements OnInit {
     });
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `relatorio_vendas_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
+    void saveFile(blob, `relatorio_vendas_${new Date().toISOString().split('T')[0]}.csv`);
   }
 
   async exportToExcel() {

@@ -76,10 +76,13 @@ export const ownedAccountGuard: CanActivateFn = async (_route, state) => {
   return tenant.usesSubdomains ? false : router.parseUrl('/configurar-empresa');
 };
 
-/** No subdomínio de uma conta a landing não existe: vai directo ao login da conta. */
+/**
+ * No subdomínio de uma conta, e na app nativa, a landing não existe: vai directo
+ * ao login (que envia para o painel quem já tem sessão guardada).
+ */
 export const accountLandingGuard: CanActivateFn = () => {
   const tenant = inject(TenantService);
-  return tenant.currentSlug() ? inject(Router).parseUrl('/entrar') : true;
+  return tenant.currentSlug() || tenant.isNative ? inject(Router).parseUrl('/entrar') : true;
 };
 
 /** Páginas que só existem no domínio raiz (ex.: registo de nova conta). */

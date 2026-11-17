@@ -4,6 +4,7 @@ import { Capacitor } from '@capacitor/core';
 import { environment } from '../../../environments/environment';
 import { createSharedCookieStorage, withLocalStorageMigration } from '../utils/cookie-storage';
 import { sharedCookieDomain } from '../utils/tenant.util';
+import { createOfflineFetch } from '../offline/offline-fetch';
 
 @Injectable({
   providedIn: 'root'
@@ -25,6 +26,10 @@ export class SupabaseService {
       environment.supabaseUrl,
       environment.supabaseKey,
       {
+        // Na app nativa as leituras ficam em cache para funcionar sem internet.
+        global: Capacitor.isNativePlatform()
+          ? { fetch: createOfflineFetch(environment.supabaseUrl, environment.supabaseKey) }
+          : undefined,
         auth: {
           storage,
           persistSession: true,

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { saveFile } from '../utils/file-save';
 
 /** Dimensões de uma página A4 em milímetros. */
 const A4_WIDTH_MM = 210;
@@ -493,12 +494,8 @@ export class PdfService {
     clonedDoc.head.appendChild(style);
   }
 
-  downloadPdf(blob: Blob, fileName: string) {
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${fileName}.pdf`;
-    link.click();
-    window.setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+  /** Descarrega o PDF (na app nativa abre a partilha: guardar, WhatsApp, imprimir...). */
+  downloadPdf(blob: Blob, fileName: string): Promise<void> {
+    return saveFile(blob, `${fileName}.pdf`);
   }
 }

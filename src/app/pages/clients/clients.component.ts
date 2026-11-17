@@ -24,6 +24,7 @@ import { SubscriptionLimitDialogComponent } from '../../shared/components/subscr
 import * as XLSX from 'xlsx';
 import { t } from '../../core/i18n/i18n';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { saveWorkbook } from '../../core/utils/file-save';
 
 /** Valores gravados na BD (client.industry) → chave da etiqueta traduzida. */
 const INDUSTRIES: ReadonlyArray<{ value: string; key: string }> = [
@@ -584,7 +585,7 @@ export class ClientsComponent implements OnInit {
     ];
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, t('clients.template.sheetName'));
-    XLSX.writeFile(workbook, `${fileName}.${format}`, format === 'xls' ? { bookType: 'biff8' } : undefined);
+    void saveWorkbook(XLSX, workbook, `${fileName}.${format}`, format === 'xls' ? { bookType: 'biff8' } : undefined);
   }
 
   async toggleStatus(client: Client) {

@@ -81,5 +81,8 @@
     "title": "Complete your company details",
     "body": "Add the NUIT, address and entity type so they appear on your invoices.",
     "action": "Complete details"
+  },
+  "offline": {
+    "banner": "No internet — showing the last saved data. Reconnect to create or change anything."
   }
 }

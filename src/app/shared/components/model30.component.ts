@@ -922,7 +922,7 @@ export class Model30Component implements OnInit {
       const blob = await this.pdfService.generateMultiPagePdf('model30-document');
       const period = this.data.declaration.period;
       const year = this.data.declaration.year;
-      this.pdfService.downloadPdf(blob, `Modelo_30_${year}_T${period}`);
+      await this.pdfService.downloadPdf(blob, `Modelo_30_${year}_T${period}`);
     } catch (error) {
       console.error('Erro ao gerar o PDF do Modelo 30:', error);
       window.alert(t('taxes.model30.pdfError'));

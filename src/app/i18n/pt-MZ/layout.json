@@ -81,5 +81,8 @@
     "title": "Complete os dados da empresa",
     "body": "Adicione o NUIT, o endereço e o tipo de entidade para que apareçam nas suas facturas.",
     "action": "Completar dados"
+  },
+  "offline": {
+    "banner": "Sem internet — está a ver os últimos dados guardados. Para criar ou alterar, volte a ligar-se."
   }
 }

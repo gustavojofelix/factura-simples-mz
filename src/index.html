@@ -6,6 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <base href="/">
     <script>
+      // App Android: sem viewport-fit=cover o Capacitor encaixa a WebView entre as barras
+      // do sistema (e acima do teclado), por isso h-screen e camadas fixed ficam correctos.
+      (function () {
+        var cap = window.Capacitor;
+        if (!cap || !cap.getPlatform || cap.getPlatform() !== 'android') return;
+        var meta = document.querySelector('meta[name=viewport]');
+        if (meta) meta.content = meta.content.replace('viewport-fit=cover', 'viewport-fit=contain');
+      })();
+    </script>
+    <script>
       // <conta>.ispcfacil.com/pos abre o POS como aplicação à parte (o router usa #/).
       (function () {
         var path = location.pathname.replace(/\/+$/, '');

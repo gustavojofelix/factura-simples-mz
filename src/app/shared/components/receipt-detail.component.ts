@@ -20,6 +20,7 @@ import {
 import { ReceiptDocumentComponent } from './documents/receipt-document.component';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { t } from '../../core/i18n/i18n';
+import { Capacitor } from '@capacitor/core';
 
 export interface ReceiptDialogData {
   paymentId: string;
@@ -213,7 +214,7 @@ export class ReceiptDetailComponent implements OnInit {
     try {
       this.isGeneratingPdf.set(true);
       const blob = await this.gerarPdf();
-      this.pdfService.downloadPdf(blob, this.receiptFileName());
+      await this.pdfService.downloadPdf(blob, this.receiptFileName());
     } catch (error) {
       console.error('Erro ao gerar o recibo em PDF:', error);
       this.snackBar.open(t('payments.receipt.pdfFailed'), t('common.actions.close'), { duration: 4000 });
@@ -232,6 +233,11 @@ export class ReceiptDetailComponent implements OnInit {
     try {
       this.isGeneratingPdf.set(true);
       const blob = await this.gerarPdf();
+      // A WebView do Android não imprime janelas novas: abre a partilha (inclui imprimir).
+      if (Capacitor.isNativePlatform()) {
+        await this.pdfService.downloadPdf(blob, this.receiptFileName());
+        return;
+      }
       const url = window.URL.createObjectURL(blob);
       const printWindow = window.open(url);
 

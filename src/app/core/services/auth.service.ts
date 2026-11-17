@@ -6,6 +6,8 @@ import { Capacitor } from '@capacitor/core';
 import { AuditLogService } from './audit-log.service';
 import { LanguageService } from '../i18n/language.service';
 import { t } from '../i18n/i18n';
+import { bindOfflineCacheToUser } from '../offline/offline-fetch';
+import { environment } from '../../../environments/environment';
 
 export interface AuthResponse {
   success: boolean;
@@ -53,9 +55,41 @@ export class AuthService {
     this.initAuthListener();
   }
 
+  /**
+   * App nativa sem internet: o token expira ao fim de 1h e a renovação falha,
+   * por isso o Supabase devolve sessão null — mas mantém-na guardada (só a apaga
+   * num logout ou quando o servidor a rejeita). Enquanto estiver guardada, o
+   * utilizador continua autenticado; ao voltar a rede o token renova-se sozinho.
+   */
+  private storedSessionUser(): User | null {
+    if (!Capacitor.isNativePlatform()) return null;
+    try {
+      const key = (this.supabase.auth as unknown as { storageKey: string }).storageKey;
+      const raw = localStorage.getItem(key);
+      const stored = raw ? JSON.parse(raw) : null;
+      return stored?.refresh_token && stored?.user ? (stored.user as User) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Origem dos links enviados por email (redefinir senha, OAuth). Na app nativa a
+   * origem é https://localhost, que não existe fora do telemóvel: usa-se o domínio
+   * raiz, que o Android abre na app (App Links) ou, sem a app, no browser.
+   */
+  private authRedirectOrigin(): string {
+    return Capacitor.isNativePlatform() ? `https://${environment.rootDomain}` : window.location.origin;
+  }
+
+  private setUser(user: User | null) {
+    this.currentUser.set(user);
+    if (Capacitor.isNativePlatform() && user) void bindOfflineCacheToUser(user.id);
+  }
+
   private initAuthListener() {
     this.supabase.auth.getSession().then(({ data: { session } }) => {
-      this.currentUser.set(session?.user ?? null);
+      this.setUser(session?.user ?? this.storedSessionUser());
       this.isLoading.set(false);
       if (!this._authResolved) {
         this._authResolved = true;
@@ -64,7 +98,7 @@ export class AuthService {
     });
 
     this.supabase.auth.onAuthStateChange((event, session) => {
-      this.currentUser.set(session?.user ?? null);
+      this.setUser(session?.user ?? (event === 'SIGNED_OUT' ? null : this.storedSessionUser()));
       if (session?.user?.id !== this.verifiedUserId) this.verifiedUserId = null;
       this.isLoading.set(false);
       this._isAdminCache = null; // Invalidate cache on auth state change
@@ -167,7 +201,7 @@ export class AuthService {
       const { error } = await this.supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/#/auth/callback`,
+          redirectTo: `${this.authRedirectOrigin()}/#/auth/callback`,
           queryParams: { prompt: 'select_account' }
         }
       });
@@ -320,14 +354,17 @@ export class AuthService {
         { email: user.email }
       );
     }
-    await this.supabase.auth.signOut();
+    const { error } = await this.supabase.auth.signOut();
+    // Sem internet o logout no servidor falha e a sessão ficava guardada: termina-a só no dispositivo.
+    if (error) await this.supabase.auth.signOut({ scope: 'local' });
+    if (Capacitor.isNativePlatform()) await bindOfflineCacheToUser(null);
     this.router.navigate(['/']);
   }
 
   async resetPassword(email: string): Promise<AuthResponse> {
     try {
       const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/#/resetar-senha`
+        redirectTo: `${this.authRedirectOrigin()}/#/resetar-senha`
       });
 
       if (error) {

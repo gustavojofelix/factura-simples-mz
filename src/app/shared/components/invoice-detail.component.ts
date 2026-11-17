@@ -30,6 +30,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { AuditLogService } from '../../core/services/audit-log.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { t } from '../../core/i18n/i18n';
+import { Capacitor } from '@capacitor/core';
 
 @Component({
   selector: 'app-invoice-detail',
@@ -538,6 +539,11 @@ export class InvoiceDetailComponent {
         this.invoice()!.invoice_number,
         this.pdfOptionsForPrinting()
       );
+      // A WebView do Android não imprime janelas novas: abre a partilha (inclui imprimir).
+      if (Capacitor.isNativePlatform()) {
+        await this.pdfService.downloadPdf(blob, `Factura_${this.invoice()!.invoice_number}`);
+        return;
+      }
       const url = window.URL.createObjectURL(blob);
       const printWindow = window.open(url);
       if (printWindow) {
@@ -574,7 +580,7 @@ export class InvoiceDetailComponent {
         invoice.invoice_number,
         this.pdfOptionsForPrinting()
       );
-      this.pdfService.downloadPdf(blob, `Factura_${invoice.invoice_number}`);
+      await this.pdfService.downloadPdf(blob, `Factura_${invoice.invoice_number}`);
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
       this.snackBar.open(t('invoices.detail.messages.pdfFailed'), t('common.actions.close'), { duration: 4000 });

@@ -188,7 +188,7 @@ export class AiChatComponent {
     const elementId = `ai-anexo-${indice}`;
     try {
       const blob = await this.pdfService.generatePdf(elementId, this.nomeFicheiro(anexo));
-      this.pdfService.downloadPdf(blob, this.nomeFicheiro(anexo));
+      await this.pdfService.downloadPdf(blob, this.nomeFicheiro(anexo));
       this.toast.success(t('ai.chat.reportExported'), t('ai.chat.pdfGenerated'));
     } catch {
       this.toast.error(t('ai.chat.pdfError'), t('ai.chat.pdfErrorHint'));

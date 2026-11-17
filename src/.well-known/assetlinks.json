@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.ispcfacilmz.app",
+      "sha256_cert_fingerprints": [
+        "10:0F:42:65:B3:F3:FD:64:C4:D9:90:2E:18:11:95:40:74:B1:8A:8D:CE:68:52:71:47:A0:4C:34:87:58:6A:94"
+      ]
+    }
+  }
+]

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fundo da app (Tailwind slate-50) atrás da barra de estado e da barra de navegação. -->
+    <color name="systemBarsBackground">#F8FAFC</color>
+</resources>

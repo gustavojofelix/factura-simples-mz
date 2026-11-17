@@ -81,5 +81,8 @@
     "title": "Complétez les données de l'entreprise",
     "body": "Ajoutez le NUIT, l'adresse et le type d'entité pour qu'ils apparaissent sur vos factures.",
     "action": "Compléter"
+  },
+  "offline": {
+    "banner": "Pas d’internet — affichage des dernières données enregistrées. Reconnectez-vous pour créer ou modifier."
   }
 }

@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Account, AccountService } from '../../core/services/account.service';
 import { AuthService } from '../../core/services/auth.service';
+import { TenantService } from '../../core/services/tenant.service';
 import { environment } from '../../../environments/environment';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { LanguageSwitcherComponent } from '../../shared/components/language-switcher/language-switcher.component';
@@ -68,7 +69,8 @@ export class AccountSelectComponent implements OnInit {
   constructor(
     readonly accountService: AccountService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private tenant: TenantService
   ) {}
 
   async ngOnInit() {
@@ -79,7 +81,10 @@ export class AccountSelectComponent implements OnInit {
   }
 
   async open(account: Account) {
-    this.accountService.switchAccount(account, await this.accountService.homeRouteFor(account));
+    const route = await this.accountService.homeRouteFor(account);
+    this.accountService.switchAccount(account, route);
+    // Na app nativa (e em dev) a troca é na mesma origem: falta navegar.
+    if (!this.tenant.usesSubdomains) this.router.navigate([route]);
   }
 
   async signOut() {
