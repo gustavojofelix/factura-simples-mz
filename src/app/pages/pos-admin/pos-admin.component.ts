@@ -1,5 +1,7 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { Capacitor } from '@capacitor/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -176,7 +178,14 @@ export class PosAdminComponent {
     this.notify(e instanceof Error ? e.message : String(e), 6000);
   }
 
+  private readonly router = inject(Router);
+
   openPos() {
+    // Na app nativa não há separador novo nem URL /pos: o POS abre dentro da app.
+    if (Capacitor.isNativePlatform()) {
+      this.router.navigate(['/pos']);
+      return;
+    }
     window.open('/pos', '_blank');
   }
 

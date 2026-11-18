@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, OnDestroy, OnInit, computed, effect, signal, untracked, viewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, OnInit, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -6,6 +6,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Capacitor } from '@capacitor/core';
+import { Router } from '@angular/router';
 import {
   PosClientRef,
   PosDocument,
@@ -389,7 +390,14 @@ export class PosComponent implements OnInit, OnDestroy {
     }
   }
 
+  private readonly router = inject(Router);
+
   openBackOffice() {
+    // Na app nativa o back-office está na mesma app (não há separadores).
+    if (this.isNative) {
+      this.router.navigate(['/configuracoes'], { queryParams: { tab: 'pos' } });
+      return;
+    }
     window.open('/#/configuracoes?tab=pos', '_blank');
   }
 

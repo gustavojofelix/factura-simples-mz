@@ -92,9 +92,7 @@
         @if (!isNative && !isStandalone && (installPrompt() || isIos)) {
           <button mat-menu-item (click)="install()"><mat-icon>install_mobile</mat-icon><span>{{ 'pos.app.install' | t }}</span></button>
         }
-        @if (!isNative) {
-          <button mat-menu-item (click)="openBackOffice()"><mat-icon>open_in_new</mat-icon><span>{{ 'pos.menu.backOffice' | t }}</span></button>
-        }
+        <button mat-menu-item (click)="openBackOffice()"><mat-icon>open_in_new</mat-icon><span>{{ 'pos.menu.backOffice' | t }}</span></button>
         @if (pos.phase() !== 'unpaired' && pos.phase() !== 'loading') {
           <button mat-menu-item (click)="unpair()"><mat-icon class="!text-rose-600">link_off</mat-icon><span>{{ 'pos.unpair.menu' | t }}</span></button>
         }
