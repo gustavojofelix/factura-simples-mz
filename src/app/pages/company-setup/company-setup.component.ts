@@ -69,6 +69,8 @@ export class CompanySetupComponent implements OnInit {
   isAutoCreating = signal(false);
 
   async ngOnInit() {
+    // Vindo do registo: mostra logo o "a preparar" em vez de piscar o formulário.
+    if (this.authService.pendingCompanySetup()) this.isAutoCreating.set(true);
     const account = this.accountService.activeAccount();
 
     // Já tem empresa (ex.: recarregou a página depois de a criar).
