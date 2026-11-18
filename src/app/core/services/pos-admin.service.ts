@@ -28,6 +28,7 @@ export interface PosStaffRow {
   role: PosStaffRole;
   permissions: { can_charge?: boolean; max_discount_pct?: number } & Record<string, unknown>;
   color: string;
+  avatar_url?: string | null;
   failed_attempts: number;
   locked_until: string | null;
   is_active: boolean;
@@ -174,7 +175,7 @@ export class PosAdminService {
 
   listStaff() {
     return this.run<PosStaffRow[]>(this.db.from('pos_staff')
-      .select('id, user_id, name, role, permissions, color, failed_attempts, locked_until, is_active')
+      .select('id, user_id, name, role, permissions, color, avatar_url, failed_attempts, locked_until, is_active')
       .eq('company_id', this.companyId())
       .order('is_active', { ascending: false })
       .order('name'));

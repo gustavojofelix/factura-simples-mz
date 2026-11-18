@@ -257,7 +257,11 @@
                   <tr [class.opacity-50]="!s.is_active">
                     <td>
                       <span class="inline-flex items-center gap-2 font-semibold">
-                        <span class="w-7 h-7 rounded-full text-white text-[11px] font-bold flex items-center justify-center" [style.background]="s.color">{{ s.name.slice(0, 1).toUpperCase() }}</span>
+                        @if (s.avatar_url) {
+                          <img class="w-7 h-7 rounded-full object-cover" [src]="s.avatar_url" alt="" [style.background]="s.color">
+                        } @else {
+                          <span class="w-7 h-7 rounded-full text-white text-[11px] font-bold flex items-center justify-center" [style.background]="s.color">{{ s.name.slice(0, 1).toUpperCase() }}</span>
+                        }
                         {{ s.name }}
                       </span>
                     </td>

@@ -18,6 +18,7 @@ import { ErrorDialogService } from '../../core/services/error-dialog.service';
 import { t } from '../../core/i18n/i18n';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { LanguageSwitcherComponent } from '../../shared/components/language-switcher/language-switcher.component';
+import { DEMO_BUSINESS_TYPES, asDemoBusinessType } from '../../core/constants/demo-business-types';
 
 /**
  * /configurar-empresa: cria a primeira empresa da conta só com o nome.
@@ -57,8 +58,11 @@ export class CompanySetupComponent implements OnInit {
 
   form: FormGroup = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
-    loadDemoData: [true]
+    loadDemoData: [true],
+    demoBusinessType: ['services']
   });
+
+  readonly demoBusinessTypes = DEMO_BUSINESS_TYPES;
 
   isLoading = signal(false);
   /** A criar a empresa pedida no registo (sem mostrar o formulário). */
@@ -76,7 +80,7 @@ export class CompanySetupComponent implements OnInit {
 
     const pending = this.authService.pendingCompanySetup();
     if (pending) {
-      this.form.setValue({ name: pending.name, loadDemoData: pending.loadDemoData });
+      this.form.setValue({ name: pending.name, loadDemoData: pending.loadDemoData, demoBusinessType: pending.businessType });
       this.isAutoCreating.set(true);
       const created = await this.createCompany();
       if (!created) this.isAutoCreating.set(false);
@@ -110,6 +114,7 @@ export class CompanySetupComponent implements OnInit {
     const account = this.accountService.activeAccount();
     const name = (this.form.value.name as string).trim();
     const loadDemoData = !!this.form.value.loadDemoData;
+    const businessType = asDemoBusinessType(this.form.value.demoBusinessType);
 
     try {
       const { data, error } = await this.supabase.db
@@ -146,7 +151,7 @@ export class CompanySetupComponent implements OnInit {
       );
 
       if (loadDemoData) {
-        const { error: demoError } = await this.supabase.db.rpc('seed_demo_data', { p_company_id: data.id });
+        const { error: demoError } = await this.supabase.db.rpc('seed_demo_data', { p_company_id: data.id, p_business_type: businessType });
         if (demoError) {
           console.error('Erro ao carregar dados de demonstração:', demoError);
           this.snackBar.open(t('companySetup.quick.demoFailed'), t('common.actions.close'), { duration: 5000 });
@@ -154,7 +159,7 @@ export class CompanySetupComponent implements OnInit {
           await this.auditLogService.log(
             'Carregou Dados de Demonstração',
             'settings',
-            { company_name: data.name },
+            { company_name: data.name, business_type: businessType },
             data.id,
             data.name,
             data.id

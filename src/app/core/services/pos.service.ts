@@ -71,6 +71,8 @@ export interface PosStaffSummary {
   name: string;
   role: PosStaffRole;
   color: string;
+  /** Fotografia/avatar (caminho da app ou URL); sem ela mostram-se as iniciais. */
+  avatar_url?: string | null;
   has_pin: boolean;
   locked: boolean;
 }

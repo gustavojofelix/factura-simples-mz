@@ -36,6 +36,20 @@
               <span class="text-sm font-medium text-gray-800">{{ 'companySetup.quick.loadDemoData' | t }}</span>
             </mat-checkbox>
             <p class="text-xs text-gray-600 ml-10 -mt-1">{{ 'companySetup.quick.loadDemoDataHint' | t }}</p>
+            @if (form.value.loadDemoData) {
+              <p class="text-sm font-semibold text-gray-800 mt-3 mb-2">{{ 'auth.register.businessType.question' | t }}</p>
+              <div class="biz-types" role="radiogroup" [attr.aria-label]="'auth.register.businessType.question' | t">
+                @for (bt of demoBusinessTypes; track bt.id) {
+                  <button type="button" role="radio" class="biz-type" [class.on]="form.value.demoBusinessType === bt.id"
+                    [attr.aria-checked]="form.value.demoBusinessType === bt.id"
+                    (click)="form.patchValue({ demoBusinessType: bt.id })">
+                    <i class="fa-solid {{ bt.icon }}" aria-hidden="true"></i>
+                    <span>{{ 'auth.register.businessType.' + bt.id | t }}</span>
+                  </button>
+                }
+              </div>
+              <p class="text-xs text-gray-600 mt-2">{{ 'auth.register.businessType.hint.' + form.value.demoBusinessType | t }}</p>
+            }
           </div>
 
           <button

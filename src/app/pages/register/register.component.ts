@@ -19,6 +19,7 @@ import { t } from '../../core/i18n/i18n';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { LanguageSwitcherComponent } from '../../shared/components/language-switcher/language-switcher.component';
 import { GoogleSignInButtonComponent } from '../../shared/components/google-sign-in-button/google-sign-in-button.component';
+import { DEMO_BUSINESS_TYPES, asDemoBusinessType } from '../../core/constants/demo-business-types';
 
 /**
  * Registo para o teste de 14 dias: só nome da empresa, email e palavra-passe.
@@ -52,6 +53,7 @@ export class RegisterComponent implements OnInit {
   isLoading = signal(false);
   hidePassword = signal(true);
   readonly googleSignInAvailable = inject(AuthService).googleSignInAvailable;
+  readonly demoBusinessTypes = DEMO_BUSINESS_TYPES;
 
   constructor(
     private fb: FormBuilder,
@@ -66,7 +68,8 @@ export class RegisterComponent implements OnInit {
       companyName: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
-      loadDemoData: [true]
+      loadDemoData: [true],
+      demoBusinessType: ['services']
     });
   }
 
@@ -91,14 +94,15 @@ export class RegisterComponent implements OnInit {
 
     this.isLoading.set(true);
 
-    const { companyName, email, password, loadDemoData } = this.registerForm.value;
+    const { companyName, email, password, loadDemoData, demoBusinessType } = this.registerForm.value;
     const name = (companyName as string).trim();
     const result = await this.authService.signUp(
       email,
       password,
       name,
       this.accountSlugFor(name, email),
-      !!loadDemoData
+      !!loadDemoData,
+      asDemoBusinessType(demoBusinessType)
     );
 
     if (result.success) {

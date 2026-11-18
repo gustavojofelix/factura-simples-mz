@@ -8,6 +8,7 @@ import { LanguageService } from '../i18n/language.service';
 import { t } from '../i18n/i18n';
 import { bindOfflineCacheToUser } from '../offline/offline-fetch';
 import { environment } from '../../../environments/environment';
+import { DemoBusinessType, asDemoBusinessType } from '../constants/demo-business-types';
 
 export interface AuthResponse {
   success: boolean;
@@ -136,7 +137,8 @@ export class AuthService {
     password: string,
     companyName: string,
     accountSlug: string,
-    loadDemoData: boolean
+    loadDemoData: boolean,
+    demoBusinessType: DemoBusinessType = 'services'
   ): Promise<AuthResponse> {
     try {
       const { data, error } = await this.supabase.auth.signUp({
@@ -149,7 +151,8 @@ export class AuthService {
             account_name: companyName,
             // Lidos em /configurar-empresa, que cria a primeira empresa sem perguntar nada.
             company_name: companyName,
-            load_demo_data: loadDemoData
+            load_demo_data: loadDemoData,
+            demo_business_type: demoBusinessType
           }
         }
       });
@@ -262,16 +265,20 @@ export class AuthService {
   }
 
   /** Empresa pedida no registo e ainda por criar (null quando não há). */
-  pendingCompanySetup(): { name: string; loadDemoData: boolean } | null {
+  pendingCompanySetup(): { name: string; loadDemoData: boolean; businessType: DemoBusinessType } | null {
     const meta = this.currentUser()?.user_metadata;
     const name = typeof meta?.['company_name'] === 'string' ? meta['company_name'].trim() : '';
     if (!name) return null;
-    return { name, loadDemoData: meta?.['load_demo_data'] !== false };
+    return {
+      name,
+      loadDemoData: meta?.['load_demo_data'] !== false,
+      businessType: asDemoBusinessType(meta?.['demo_business_type'])
+    };
   }
 
   /** Esquece a empresa pendente do registo, depois de criada. */
   async clearPendingCompanySetup(): Promise<void> {
-    const { error } = await this.supabase.auth.updateUser({ data: { company_name: null, load_demo_data: null } });
+    const { error } = await this.supabase.auth.updateUser({ data: { company_name: null, load_demo_data: null, demo_business_type: null } });
     if (error) console.warn('Não foi possível limpar os dados do registo:', error.message);
   }
 

@@ -68,7 +68,11 @@ import { formatPosDate, formatPosMoney } from './pos-format';
                 <div class="grid grid-cols-2 gap-3">
                   @for (s of pos.info()?.staff ?? []; track s.id) {
                     <button type="button" class="op-card" [disabled]="!s.has_pin" (click)="choose(s)">
-                      <span class="w-12 h-12 rounded-full text-white font-bold flex items-center justify-center" [style.background]="s.color">{{ initials(s.name) }}</span>
+                      @if (s.avatar_url) {
+                        <img class="w-12 h-12 rounded-full object-cover" [src]="s.avatar_url" alt="" [style.background]="s.color">
+                      } @else {
+                        <span class="w-12 h-12 rounded-full text-white font-bold flex items-center justify-center" [style.background]="s.color">{{ initials(s.name) }}</span>
+                      }
                       <span class="font-semibold text-slate-800 text-sm leading-tight text-center">{{ s.name }}</span>
                       <span class="text-[11px]" [class.text-slate-400]="s.has_pin && !s.locked" [class.text-rose-500]="!s.has_pin || s.locked">
                         {{ (!s.has_pin ? 'pos.access.noPin' : s.locked ? 'pos.access.locked' : 'pos.roles.' + s.role) | t }}

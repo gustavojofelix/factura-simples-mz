@@ -133,6 +133,11 @@ export class PosComponent implements OnInit, OnDestroy {
 
   tab = signal<PosTab>('terminal');
   isRestaurant = computed(() => this.pos.mode() === 'restaurant');
+  /** Avatar do operador com sessão, a partir da lista de operadores do terminal. */
+  operatorAvatar = computed(() => {
+    const id = this.pos.operator()?.staff?.id;
+    return (id && this.pos.info()?.staff.find(s => s.id === id)?.avatar_url) || null;
+  });
   /** Pronto a operar: com caixa aberta, ou empregado de mesa (só pedidos, sem caixa). */
   ready = computed(() => this.pos.phase() === 'ready' && (!!this.pos.session() || !this.pos.canSell()));
   /** Operação em curso (evita duplo toque em "Cobrar"). */
