@@ -34,6 +34,10 @@ import {
   StatementPreviewData
 } from '../../../shared/components/statement-preview-dialog.component';
 import { ReceiptDetailComponent } from '../../../shared/components/receipt-detail.component';
+import { ListCardComponent } from '../../../shared/ui/list-card.component';
+import { SearchPickerFieldComponent } from '../../../shared/ui/search-picker-field.component';
+import { PickerOption } from '../../../shared/ui/search-picker';
+import { ResponsiveDialogService } from '../../../core/services/responsive-dialog.service';
 
 /**
  * Extracto de um cliente: facturas e recibos do período, com saldo anterior
@@ -62,7 +66,9 @@ import { ReceiptDetailComponent } from '../../../shared/components/receipt-detai
     MatDialogModule,
     MatSnackBarModule,
     ReportsNavComponent,
-    TranslatePipe
+    TranslatePipe,
+    ListCardComponent,
+    SearchPickerFieldComponent
   ],
   templateUrl: './client-statement-detail.component.html'
 })
@@ -71,12 +77,21 @@ export class ClientStatementDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private dialog = inject(MatDialog);
+  private responsiveDialog = inject(ResponsiveDialogService);
   private snackBar = inject(MatSnackBar);
   private exportService = inject(ExportService);
   private auditLogService = inject(AuditLogService);
   companyService = inject(CompanyService);
   clientService = inject(ClientService);
   statementService = inject(StatementService);
+
+  clientOptions = computed<PickerOption[]>(() =>
+    this.clientService.clients().map(client => ({
+      value: client.id,
+      label: client.name,
+      sublabel: [client.client_code ? '#' + client.client_code : '', client.nuit ? 'NUIT ' + client.nuit : ''].filter(Boolean).join(' · ') || undefined
+    }))
+  );
   /** Formato de data de Configurações > Sistema. */
   private preferences = inject(PreferencesService);
 
@@ -207,11 +222,9 @@ export class ClientStatementDetailComponent implements OnInit {
 
   openDocument(movement: StatementMovement) {
     if (movement.kind === 'recibo' && movement.payment_id) {
-      this.dialog.open(ReceiptDetailComponent, {
-        data: { paymentId: movement.payment_id, invoiceId: movement.invoice_id },
-        width: '900px',
-        maxWidth: '95vw',
-        maxHeight: '95vh'
+      this.responsiveDialog.open(ReceiptDetailComponent, {
+        size: 'lg',
+        data: { paymentId: movement.payment_id, invoiceId: movement.invoice_id }
       });
       return;
     }
@@ -234,11 +247,9 @@ export class ClientStatementDetailComponent implements OnInit {
       notes: this.notes().trim()
     };
 
-    this.dialog.open(StatementPreviewDialogComponent, {
-      data,
-      width: '1000px',
-      maxWidth: '95vw',
-      maxHeight: '95vh'
+    this.responsiveDialog.open(StatementPreviewDialogComponent, {
+      size: 'xl',
+      data
     });
   }
 

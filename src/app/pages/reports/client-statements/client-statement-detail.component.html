@@ -1,6 +1,6 @@
 <div class="p-4 sm:p-6 max-w-7xl mx-auto">
   <div class="mb-4">
-    <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ 'reports.page.title' | t }}</h1>
+    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">{{ 'reports.page.title' | t }}</h1>
     <p class="text-gray-600">{{ 'reports.statements.detail.subtitle' | t }}</p>
   </div>
 
@@ -16,16 +16,12 @@
     <mat-card-content class="!pt-6">
       <form [formGroup]="filterForm" (ngSubmit)="applyFilters()">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <mat-form-field appearance="outline" class="lg:col-span-1">
-            <mat-label>{{ 'reports.sales.client' | t }}</mat-label>
-            <mat-select formControlName="clientId">
-              @for (client of clientService.clients(); track client.id) {
-                <mat-option [value]="client.id">
-                  {{ client.client_code ? client.client_code + ' · ' : '' }}{{ client.name }}
-                </mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
+          <app-search-picker-field
+            class="lg:col-span-1 mb-5"
+            formControlName="clientId"
+            [label]="'reports.sales.client' | t"
+            [options]="clientOptions()"
+          />
 
           <mat-form-field appearance="outline">
             <mat-label>{{ 'reports.statements.startDate' | t }}</mat-label>
@@ -171,7 +167,7 @@
           </p>
         }
 
-        <div class="overflow-x-auto">
+        <div class="list-table overflow-x-auto">
           <table class="w-full text-sm">
             <thead class="bg-gray-50">
               <tr>
@@ -222,6 +218,37 @@
               }
             </tbody>
           </table>
+        </div>
+
+        <!-- Telemóvel: cartões -->
+        <div class="list-cards">
+          @if (showBalance()) {
+            <div class="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50 text-sm italic text-gray-600">
+              <span>{{ 'reports.statements.openingBalance' | t }} · {{ formatDate(period()!.start) }}</span>
+              <strong class="not-italic text-gray-800 tabular-nums">{{ formatCurrency(statement()!.opening_balance) }}</strong>
+            </div>
+          }
+          @for (m of visibleMovements(); track m.kind + m.document + m.date) {
+            <app-list-card
+              [title]="statementService.movementLabel(m)"
+              [subtitle]="formatDate(m.date) + ' · ' + m.document"
+              (open)="openDocument(m)"
+            >
+              <ng-container lcAside>
+                @if (m.invoiced) {
+                  <span class="font-bold text-slate-900 whitespace-nowrap tabular-nums">{{ formatCurrency(m.invoiced) }}</span>
+                }
+                @if (m.paid) {
+                  <span class="font-bold text-green-700 whitespace-nowrap tabular-nums">− {{ formatCurrency(m.paid) }}</span>
+                }
+                @if (showBalance()) {
+                  <span class="text-[11px] text-slate-500 whitespace-nowrap tabular-nums">{{ 'reports.statements.balance' | t }}: {{ formatCurrency(m.balance) }}</span>
+                }
+              </ng-container>
+            </app-list-card>
+          } @empty {
+            <p class="p-6 text-center text-gray-500">{{ 'reports.statements.detail.noMovements' | t }}</p>
+          }
         </div>
       </mat-card-content>
     </mat-card>

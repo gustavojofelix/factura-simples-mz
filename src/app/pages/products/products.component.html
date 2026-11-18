@@ -1,12 +1,12 @@
-<div class="p-6">
-  <div class="flex items-center justify-between mb-6">
-    <div>
-      <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ 'products.list.title' | t }}</h1>
-      <p class="text-gray-600">{{ 'products.list.subtitle' | t: { company: companyService.activeCompany()?.name ?? '' } }}</p>
-    </div>
-    @if (companyService.activeRole() !== 'user') {
-      <div class="flex flex-wrap gap-2 justify-end">
-        <input #productImportInput type="file" accept=".csv,.xlsx,.xls" class="hidden" (change)="onImportFileSelected($event)">
+<div class="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+  <input #productImportInput type="file" accept=".csv,.xlsx,.xls" class="hidden" (change)="onImportFileSelected($event)">
+  <app-page-header
+    [title]="'products.list.title' | t"
+    [subtitle]="'products.list.subtitle' | t: { company: companyService.activeCompany()?.name ?? '' }"
+    [moreMenu]="canEditProducts() ? moreMenu : null"
+  >
+    @if (canEditProducts()) {
+      <ng-container headerActions>
         <button mat-stroked-button class="!border-ispc-orange !text-ispc-orange" (click)="productImportInput.click()">
           <mat-icon>upload_file</mat-icon>
           <span>{{ 'products.list.import' | t }}</span>
@@ -15,33 +15,55 @@
           <mat-icon>file_download</mat-icon>
           <span>{{ 'common.actions.export' | t }}</span>
         </button>
-        <mat-menu #exportMenu="matMenu">
-          <button mat-menu-item (click)="exportProducts('xlsx')"><mat-icon>table_view</mat-icon><span>Excel (.xlsx)</span></button>
-          <button mat-menu-item (click)="exportProducts('csv')"><mat-icon>text_format</mat-icon><span>CSV (.csv)</span></button>
-        </mat-menu>
         <button mat-stroked-button class="!border-ispc-orange !text-ispc-orange" [matMenuTriggerFor]="templateMenu">
           <mat-icon>description</mat-icon>
           <span>{{ 'products.list.downloadTemplate' | t }}</span>
         </button>
-        <mat-menu #templateMenu="matMenu">
-          <button mat-menu-item (click)="downloadImportTemplate('xlsx')"><mat-icon>table_view</mat-icon><span>Excel (.xlsx)</span></button>
-          <button mat-menu-item (click)="downloadImportTemplate('xls')"><mat-icon>table_view</mat-icon><span>Excel 97-2003 (.xls)</span></button>
-          <button mat-menu-item (click)="downloadImportTemplate('csv')"><mat-icon>text_format</mat-icon><span>CSV (.csv)</span></button>
-        </mat-menu>
-        <button mat-raised-button class="!bg-ispc-orange !text-white" (click)="openDialog()">
+      </ng-container>
+    }
+    @if (canEditProducts()) {
+      <ng-container headerPrimary>
+        <button mat-flat-button class="!bg-ispc-orange !text-white" (click)="openDialog()">
           <mat-icon>add</mat-icon>
           <span>{{ 'products.list.newProduct' | t }}</span>
         </button>
-      </div>
+      </ng-container>
     }
-  </div>
+  </app-page-header>
 
-  <mat-card class="!shadow-md">
-    <mat-card-content class="!p-6">
+  <!-- Telemóvel: acções secundárias no menu "⋮" -->
+  <mat-menu #moreMenu="matMenu">
+    <button mat-menu-item (click)="productImportInput.click()">
+      <mat-icon>upload_file</mat-icon>
+      <span>{{ 'products.list.import' | t }}</span>
+    </button>
+    <button mat-menu-item [matMenuTriggerFor]="exportMenu" [disabled]="filteredProducts().length === 0">
+      <mat-icon>file_download</mat-icon>
+      <span>{{ 'common.actions.export' | t }}</span>
+    </button>
+    <button mat-menu-item [matMenuTriggerFor]="templateMenu">
+      <mat-icon>description</mat-icon>
+      <span>{{ 'products.list.downloadTemplate' | t }}</span>
+    </button>
+  </mat-menu>
+  <mat-menu #exportMenu="matMenu">
+    <button mat-menu-item (click)="exportProducts('xlsx')"><mat-icon>table_view</mat-icon><span>Excel (.xlsx)</span></button>
+    <button mat-menu-item (click)="exportProducts('csv')"><mat-icon>text_format</mat-icon><span>CSV (.csv)</span></button>
+  </mat-menu>
+  <mat-menu #templateMenu="matMenu">
+    <button mat-menu-item (click)="downloadImportTemplate('xlsx')"><mat-icon>table_view</mat-icon><span>Excel (.xlsx)</span></button>
+    <button mat-menu-item (click)="downloadImportTemplate('xls')"><mat-icon>table_view</mat-icon><span>Excel 97-2003 (.xls)</span></button>
+    <button mat-menu-item (click)="downloadImportTemplate('csv')"><mat-icon>text_format</mat-icon><span>CSV (.csv)</span></button>
+  </mat-menu>
+
+  <mat-card class="m-flat-card !shadow-md">
+    <mat-card-content class="!p-4 sm:!p-6">
+      <app-filters-toggle class="mb-2" [(open)]="filtersOpen" [count]="activeFilterCount()" />
+
       <!-- Search & Filter Toolbar -->
-      <div class="flex flex-col md:flex-row items-stretch gap-4 mb-8">
+      <div class="m-filters flex flex-col md:flex-row items-stretch gap-3 sm:gap-4 mb-4 sm:mb-8" [class.is-open]="filtersOpen()">
         <!-- Search Field -->
-        <mat-form-field appearance="outline" class="flex-1 max-w-md" subscriptSizing="dynamic">
+        <mat-form-field appearance="outline" class="m-filter-keep flex-1 sm:max-w-md" subscriptSizing="dynamic">
           <mat-icon matPrefix class="text-gray-400 mr-2">search</mat-icon>
           <mat-label>{{ 'products.filters.searchLabel' | t }}</mat-label>
           <input 
@@ -59,8 +81,8 @@
 
         <div class="hidden md:block w-[1px] bg-gray-200 self-stretch my-1"></div>
 
-        <div class="flex flex-wrap items-center gap-4">
-          <mat-form-field appearance="outline" class="w-40" subscriptSizing="dynamic">
+        <div class="flex flex-wrap items-center gap-3 sm:gap-4">
+          <mat-form-field appearance="outline" class="flex-1 min-w-[9rem] sm:flex-none sm:w-40" subscriptSizing="dynamic">
             <mat-label>{{ 'common.fields.type' | t }}</mat-label>
             <mat-select [value]="typeFilter()" (selectionChange)="onTypeChange($event.value)">
               <mat-option value="all">{{ 'common.status.all' | t }}</mat-option>
@@ -69,7 +91,7 @@
             </mat-select>
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="w-40" subscriptSizing="dynamic">
+          <mat-form-field appearance="outline" class="flex-1 min-w-[9rem] sm:flex-none sm:w-40" subscriptSizing="dynamic">
             <mat-label>{{ 'common.fields.status' | t }}</mat-label>
             <mat-select [value]="statusFilter()" (selectionChange)="onStatusChange($event.value)">
               <mat-option value="all">{{ 'common.status.all' | t }}</mat-option>
@@ -79,8 +101,8 @@
           </mat-form-field>
 
           <!-- Sort Group -->
-          <div class="flex items-center">
-            <mat-form-field appearance="outline" class="w-48" subscriptSizing="dynamic">
+          <div class="flex items-center w-full sm:w-auto">
+            <mat-form-field appearance="outline" class="flex-1 sm:flex-none sm:w-48" subscriptSizing="dynamic">
               <mat-label>{{ 'products.filters.sortBy' | t }}</mat-label>
               <mat-select [value]="sortField()" (selectionChange)="onSortFieldChange($event.value)">
                 <mat-option value="code">{{ 'common.fields.code' | t }}</mat-option>
@@ -101,7 +123,7 @@
           </div>
 
           <!-- Price Group -->
-          <div class="flex items-center gap-2 border border-gray-200 rounded-lg pr-3 pl-1 h-[56px] transition-all hover:border-gray-300">
+          <div class="flex items-center gap-2 w-full sm:w-auto border border-gray-200 rounded-lg pr-3 pl-1 h-[56px] transition-all hover:border-gray-300">
             <div class="bg-gray-50 h-full flex items-center px-3 rounded-l-lg border-r border-gray-200">
               <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ 'common.fields.price' | t }}</span>
             </div>
@@ -146,7 +168,7 @@
             }
           </div>
         } @else {
-          <div class="overflow-x-auto">
+          <div class="list-table overflow-x-auto">
             <table mat-table [dataSource]="filteredProducts()" class="w-full">
               <ng-container matColumnDef="code">
                 <th mat-header-cell *matHeaderCellDef class="!font-semibold">ID</th>
@@ -233,6 +255,54 @@
               <tr mat-row *matRowDef="let row; columns: displayedColumns()" class="hover:bg-gray-50"></tr>
             </table>
           </div>
+
+
+          <!-- Telemóvel: cartões -->
+          <div class="list-cards">
+            @for (product of filteredProducts(); track product.id) {
+              <app-list-card
+                [title]="product.name"
+                [subtitle]="(product.code ? product.code + ' · ' : '') + typeLabel(product.type) + (product.unit ? ' · ' + product.unit : '')"
+                [clickable]="canEditProducts()"
+                (open)="openDialog(product)"
+              >
+                <ng-container lcAside>
+                  <span class="font-bold text-slate-900 whitespace-nowrap tabular-nums">{{ product.price | number:'1.2-2' }} MZN</span>
+                  @if (product.stock !== null && product.stock !== undefined) {
+                    <span class="text-xs font-semibold" [class]="product.stock > 0 ? 'text-green-600' : 'text-red-600'">
+                      {{ 'invoices.dialog.stock' | t: { stock: product.stock } }}
+                    </span>
+                  }
+                  @if (!product.is_active) {
+                    <span class="px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 text-gray-600">{{ 'common.status.inactive' | t }}</span>
+                  }
+                </ng-container>
+                @if (canEditProducts()) {
+                  <button lcActions mat-icon-button [matMenuTriggerFor]="productMenu" [matMenuTriggerData]="{ product: product }"
+                    [attr.aria-label]="'common.fields.actions' | t">
+                    <mat-icon>more_vert</mat-icon>
+                  </button>
+                }
+              </app-list-card>
+            }
+          </div>
+
+          <mat-menu #productMenu="matMenu">
+            <ng-template matMenuContent let-product="product">
+              <button mat-menu-item (click)="openDialog(product)">
+                <mat-icon>edit</mat-icon>
+                <span>{{ 'common.actions.edit' | t }}</span>
+              </button>
+              <button mat-menu-item (click)="toggleStatus(product)">
+                <mat-icon>{{ product.is_active ? 'visibility_off' : 'visibility' }}</mat-icon>
+                <span>{{ (product.is_active ? 'products.table.deactivate' : 'products.table.activate') | t }}</span>
+              </button>
+              <button mat-menu-item (click)="deleteProduct(product)" class="!text-red-600">
+                <mat-icon class="!text-red-600">delete</mat-icon>
+                <span>{{ 'common.actions.delete' | t }}</span>
+              </button>
+            </ng-template>
+          </mat-menu>
 
           <div class="mt-4 text-sm text-gray-600">
             @if (searchTerm() !== '') {

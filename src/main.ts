@@ -9,6 +9,7 @@ import localePt from '@angular/common/locales/pt';
 import localeEnGb from '@angular/common/locales/en-GB';
 import localeFr from '@angular/common/locales/fr';
 import { provideNativeDateAdapter } from '@angular/material/core';
+import { MAT_DIALOG_DEFAULT_OPTIONS, MatDialogConfig } from '@angular/material/dialog';
 import { PreferencesService } from './app/core/services/preferences.service';
 import { currentLocale, initI18n } from './app/core/i18n/i18n';
 
@@ -28,6 +29,12 @@ initI18n().then(() => bootstrapApplication(AppComponent, {
     // ':+0200' (Maputo) explicitamente; datas sem hora ('YYYY-MM-DD') ficam sem
     // conversão. As páginas da empresa usam o pipe appDate (Configurações > Sistema).
     // Carrega as preferências (fuso/formato de data) da empresa activa desde o arranque.
-    provideAppInitializer(() => { inject(PreferencesService); })
+    provideAppInitializer(() => { inject(PreferencesService); }),
+    // Diálogos pequenos (confirmações, avisos) ficam sempre com 16px de margem no telemóvel.
+    // Os diálogos de formulário usam o ResponsiveDialogService (ecrã inteiro no telemóvel).
+    {
+      provide: MAT_DIALOG_DEFAULT_OPTIONS,
+      useValue: { ...new MatDialogConfig(), maxWidth: 'calc(100vw - 32px)' }
+    }
   ]
 })).catch(err => console.error(err));

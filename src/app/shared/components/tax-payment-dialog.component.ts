@@ -13,6 +13,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PROOF_ACCEPT, TaxDeclaration, TaxService } from '../../core/services/tax.service';
 import { t, currentLocale } from '../../core/i18n/i18n';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { DialogShellComponent } from '../ui/dialog-shell.component';
 
 @Component({
   selector: 'app-tax-payment-dialog',
@@ -29,16 +30,20 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
     MatSelectModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    DialogShellComponent,
     TranslatePipe
   ],
   template: `
-    <h2 mat-dialog-title>{{ 'taxes.paymentDialog.title' | t }}</h2>
-    <mat-dialog-content class="min-w-[500px]">
-      <div class="mb-4 p-4 bg-gray-50 rounded">
-        <p class="text-sm text-gray-600">{{ 'taxes.paymentDialog.declaration' | t }}</p>
-        <p class="font-semibold">{{ 'taxes.calculator.periodOfYear' | t: { period: getPeriodLabel(), year: data.declaration.year } }}</p>
-        <p class="text-sm text-gray-600 mt-2">{{ 'taxes.paymentDialog.totalAmount' | t }}</p>
-        <p class="font-semibold text-lg">{{ formatCurrency(data.declaration.ispc_amount) }}</p>
+    <app-dialog-shell [title]="'taxes.paymentDialog.title' | t" icon="account_balance" (closed)="cancel()">
+      <div class="mb-4 grid grid-cols-2 gap-2">
+        <div class="p-3 bg-gray-50 rounded-xl min-w-0">
+          <p class="text-xs text-gray-600">{{ 'taxes.paymentDialog.declaration' | t }}</p>
+          <p class="font-semibold text-sm">{{ 'taxes.calculator.periodOfYear' | t: { period: getPeriodLabel(), year: data.declaration.year } }}</p>
+        </div>
+        <div class="p-3 bg-gray-50 rounded-xl min-w-0">
+          <p class="text-xs text-gray-600">{{ 'taxes.paymentDialog.totalAmount' | t }}</p>
+          <p class="font-semibold tabular-nums">{{ formatCurrency(data.declaration.ispc_amount) }}</p>
+        </div>
       </div>
 
       <mat-form-field appearance="outline" class="w-full">
@@ -46,6 +51,7 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
         <input
           matInput
           type="number"
+          inputmode="decimal"
           step="0.01"
           [(ngModel)]="amount"
           required>
@@ -116,26 +122,25 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
           rows="3"
           [placeholder]="'taxes.paymentDialog.notesPlaceholder' | t"></textarea>
       </mat-form-field>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-button (click)="cancel()" [disabled]="saving()">{{ 'common.actions.cancel' | t }}</button>
-      <button
-        mat-raised-button
-        color="primary"
-        (click)="save()"
-        [disabled]="!isValid() || saving()">
-        @if (saving()) {
-          <mat-spinner diameter="18" class="inline-block mr-2"></mat-spinner>
-        }
-        {{ 'common.actions.save' | t }}
-      </button>
-    </mat-dialog-actions>
-  `,
-  styles: [`
-    mat-dialog-content {
-      padding: 20px 24px;
-    }
-  `]
+
+      <div shellFooter class="flex gap-2 sm:justify-end">
+        <button mat-stroked-button type="button" class="flex-1 sm:flex-none !h-12 !rounded-xl" (click)="cancel()" [disabled]="saving()">
+          {{ 'common.actions.cancel' | t }}
+        </button>
+        <button
+          mat-flat-button
+          type="button"
+          class="flex-1 sm:flex-none !h-12 !rounded-xl !bg-ispc-orange !text-white"
+          (click)="save()"
+          [disabled]="!isValid() || saving()">
+          @if (saving()) {
+            <mat-spinner diameter="18" class="inline-block mr-2"></mat-spinner>
+          }
+          {{ 'common.actions.save' | t }}
+        </button>
+      </div>
+    </app-dialog-shell>
+  `
 })
 export class TaxPaymentDialogComponent {
   amount = signal(this.data.declaration.ispc_amount);

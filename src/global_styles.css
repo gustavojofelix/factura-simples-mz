@@ -43,9 +43,87 @@ input, select, textarea, .mat-mdc-form-field-input-control {
   font-size: 16px !important;
 }
 
-/* Touch Target Minimum (48x48px) rule */
-button, a, input, select, textarea, [role="button"], .mat-mdc-menu-item {
+/* Touch Target Minimum (48x48px) rule.
+   Não se aplica a links (quebrava o texto corrido) nem aos inputs do Material:
+   o campo já mede 56px e um input de 48px por dentro esticava-o para ~80px. */
+button, [role="button"], .mat-mdc-menu-item,
+input:not(.mat-mdc-input-element):not([type="checkbox"]):not([type="radio"]),
+select:not(.mat-mdc-input-element) {
   min-height: 48px;
+}
+
+/* Esconde a área de hint/erro por baixo de um mat-form-field (filtros, seletores). */
+.hide-subscript .mat-mdc-form-field-subscript-wrapper {
+  display: none !important;
+}
+
+/* ——— Diálogos adaptativos (ResponsiveDialogService + <app-dialog-shell>) ——— */
+.app-dialog .mat-mdc-dialog-surface {
+  overflow: hidden;
+}
+
+.app-dialog .mat-mdc-dialog-surface > * {
+  display: block;
+  height: 100%;
+}
+
+.app-dialog-fullscreen .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+.app-dialog-fullscreen .mat-mdc-dialog-container .mdc-dialog__surface {
+  border-radius: 0 !important;
+  border: 0 !important;
+  background: #fff !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ——— Listas: tabela no desktop, cartões (<app-list-card>) no telemóvel ——— */
+.list-cards {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+@media (min-width: 600px) {
+  .list-cards { display: none; }
+}
+@media (max-width: 599.98px) {
+  .list-table { display: none !important; }
+}
+
+/* Cartão exterior de uma página de lista: no telemóvel perde moldura e padding,
+   para os cartões da lista não ficarem dentro de outro cartão. */
+@media (max-width: 599.98px) {
+  html .m-flat-card.mat-mdc-card {
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    overflow: visible !important;
+  }
+  html .m-flat-card > .mat-mdc-card-content {
+    padding: 0 !important;
+  }
+}
+
+/* Filtros recolhíveis no telemóvel (ver <app-filters-toggle>). */
+@media (max-width: 599.98px) {
+  .m-filters:not(.is-open) > :not(.m-filter-keep) {
+    display: none !important;
+  }
+}
+
+/* ——— Telemóvel: sem vidro desfocado ———
+   backdrop-filter é caro em WebViews Android de gama baixa e baixa o contraste. */
+/* `html` à frente: o theme.scss carrega depois e usa !important com a mesma especificidade. */
+@media (max-width: 599.98px) {
+  html .glass-panel,
+  html .mat-mdc-card,
+  html .mat-mdc-menu-panel,
+  html .mat-mdc-dialog-container .mdc-dialog__surface {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: #fff !important;
+  }
 }
 
 /* Expanding smaller action buttons tap target */

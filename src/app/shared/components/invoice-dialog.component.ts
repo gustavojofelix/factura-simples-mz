@@ -1,24 +1,26 @@
-import { Component, OnInit, signal, computed, Inject } from '@angular/core';
+import { Component, OnInit, signal, computed, Inject, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatDialogModule, MatDialogRef, MatDialog, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { MatStepperModule } from '@angular/material/stepper';
+import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatTableModule } from '@angular/material/table';
-import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ClientService, Client } from '../../core/services/client.service';
 import { ProductService, Product } from '../../core/services/product.service';
 import { InvoiceService, InvoiceItem, Invoice } from '../../core/services/invoice.service';
 import { CompanyService } from '../../core/services/company.service';
 import { DocumentSettingsService } from '../../core/services/document-settings.service';
+import { ResponsiveDialogService } from '../../core/services/responsive-dialog.service';
 import { nuitValidator } from '../../core/validators/nuit.validator';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { currentLocale, t } from '../../core/i18n/i18n';
+import { DialogShellComponent } from '../ui/dialog-shell.component';
+import { StepIndicatorComponent } from '../ui/step-indicator.component';
+import { SearchPickerFieldComponent } from '../ui/search-picker-field.component';
+import { PickerOption, SearchPickerService } from '../ui/search-picker';
 
 @Component({
   selector: 'app-quick-client-dialog',
@@ -30,39 +32,43 @@ import { currentLocale, t } from '../../core/i18n/i18n';
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
+    DialogShellComponent,
     TranslatePipe
   ],
   template: `
-    <h2 mat-dialog-title>{{ 'invoices.quickClient.title' | t }}</h2>
-    <mat-dialog-content class="!pt-4">
-      <form [formGroup]="form" class="space-y-4">
+    <app-dialog-shell [title]="'invoices.quickClient.title' | t" icon="person_add" (closed)="dialogRef.close()">
+      <form [formGroup]="form" (ngSubmit)="save()">
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>{{ 'common.fields.name' | t }}</mat-label>
-          <input matInput formControlName="name" [placeholder]="'invoices.quickClient.namePlaceholder' | t">
+          <input matInput formControlName="name" autocomplete="off" [placeholder]="'invoices.quickClient.namePlaceholder' | t">
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>{{ 'invoices.quickClient.nuitOptional' | t }}</mat-label>
-          <input matInput formControlName="nuit">
+          <input matInput formControlName="nuit" inputmode="numeric" autocomplete="off">
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>{{ 'invoices.quickClient.phoneOptional' | t }}</mat-label>
-          <input matInput formControlName="phone">
+          <input matInput formControlName="phone" type="tel" inputmode="tel" autocomplete="off">
         </mat-form-field>
       </form>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end" class="!px-6 !pb-4">
-      <button mat-button mat-dialog-close>{{ 'common.actions.cancel' | t }}</button>
-      <button
-        mat-raised-button
-        class="!bg-ispc-orange !text-white"
-        [disabled]="form.invalid || saving()"
-        (click)="save()"
-      >
-        {{ (saving() ? 'common.status.saving' : 'common.actions.create') | t }}
-      </button>
-    </mat-dialog-actions>
+
+      <div shellFooter class="flex gap-2 sm:justify-end">
+        <button mat-stroked-button type="button" class="flex-1 sm:flex-none !h-12 !rounded-xl" (click)="dialogRef.close()">
+          {{ 'common.actions.cancel' | t }}
+        </button>
+        <button
+          mat-flat-button
+          type="button"
+          class="flex-1 sm:flex-none !h-12 !rounded-xl !bg-ispc-orange !text-white"
+          [disabled]="form.invalid || saving()"
+          (click)="save()"
+        >
+          {{ (saving() ? 'common.status.saving' : 'common.actions.create') | t }}
+        </button>
+      </div>
+    </app-dialog-shell>
   `
 })
 export class QuickClientDialogComponent {
@@ -73,7 +79,7 @@ export class QuickClientDialogComponent {
     private fb: FormBuilder,
     private clientService: ClientService,
     private snackBar: MatSnackBar,
-    private dialogRef: MatDialogRef<QuickClientDialogComponent>
+    public dialogRef: MatDialogRef<QuickClientDialogComponent>
   ) {
     this.form = this.fb.group({
       name: ['', Validators.required],
@@ -106,54 +112,48 @@ export class QuickClientDialogComponent {
     CommonModule,
     ReactiveFormsModule,
     MatDialogModule,
-    MatStepperModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
     MatButtonModule,
     MatIconModule,
-    MatTableModule,
-    MatAutocompleteModule,
+    DialogShellComponent,
+    StepIndicatorComponent,
+    SearchPickerFieldComponent,
     TranslatePipe
   ],
   templateUrl: './invoice-dialog.component.html',
   styleUrls: ['./invoice-dialog.component.css']
 })
 export class InvoiceDialogComponent implements OnInit {
+  private readonly pickerService = inject(SearchPickerService);
+  private readonly responsiveDialog = inject(ResponsiveDialogService);
+
   step1Form: FormGroup;
   step2Form: FormGroup;
+
+  /** Passo actual: 1 = cliente, 2 = itens e detalhes. */
+  step = signal<1 | 2>(1);
 
   selectedClient = signal<Client | null>(null);
   activeClients = computed(() => this.clientService.clients().filter(c => c.is_active || c.id === this.selectedClient()?.id));
   invoiceItems = signal<InvoiceItem[]>([]);
-  selectedProduct = signal<Product | null>(null);
-  quantity = signal(1);
 
-  // Product filtering
-  productSearchTerm = signal('');
+  clientOptions = computed<PickerOption[]>(() =>
+    this.activeClients().map(client => ({
+      value: client.id,
+      label: client.name,
+      sublabel: [client.nuit ? `NUIT ${client.nuit}` : '', client.phone || ''].filter(Boolean).join(' · ') || undefined,
+      keywords: client.email || ''
+    }))
+  );
 
-  filteredProducts = computed(() => {
-    const term = this.productSearchTerm().toLowerCase();
-    const products = [...this.productService.products()];
-
-    // 1. Filtering - always start with active products
-    let filtered = products.filter(p => p.is_active);
-
-    // 2. Search filtering
-    if (term) {
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(term) ||
-        product.description?.toLowerCase().includes(term) ||
-        product.code?.toLowerCase().includes(term) ||
-        product.barcode?.toLowerCase().includes(term)
-      );
-    }
-
-    // 3. Sorting by code (ascending) for consistency with product list
-    filtered.sort((a, b) => (a.code || '').localeCompare(b.code || ''));
-
-    return filtered;
-  });
+  /** Produtos activos, ordenados por código (como na lista de produtos). */
+  activeProducts = computed(() =>
+    this.productService.products()
+      .filter(p => p.is_active)
+      .sort((a, b) => (a.code || '').localeCompare(b.code || ''))
+  );
 
   paymentTerms = [0, 5, 10, 15, 30, 45, 60, 90].map(days => ({
     label: days === 0 ? t('invoices.list.immediate') : t('invoices.dialog.termDays', { days }),
@@ -162,8 +162,6 @@ export class InvoiceDialogComponent implements OnInit {
 
   saving = signal(false);
   isEditing = signal(false);
-
-  displayedColumns = ['product', 'quantity', 'price', 'total', 'actions'];
 
   private roundMoney(value: number): number {
     return Math.round((Number(value) || 0) * 100) / 100;
@@ -177,12 +175,11 @@ export class InvoiceDialogComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private dialogRef: MatDialogRef<InvoiceDialogComponent>,
+    public dialogRef: MatDialogRef<InvoiceDialogComponent>,
     public clientService: ClientService,
     public productService: ProductService,
     private invoiceService: InvoiceService,
     private snackBar: MatSnackBar,
-    private dialog: MatDialog,
     private companyService: CompanyService,
     private documentSettings: DocumentSettingsService,
     @Inject(MAT_DIALOG_DATA) public data: { invoice?: Invoice }
@@ -192,8 +189,6 @@ export class InvoiceDialogComponent implements OnInit {
     });
 
     this.step2Form = this.fb.group({
-      product_id: [''],
-      quantity: [1, [Validators.required, Validators.min(1)]],
       due_date_term: [0, Validators.required],
       notes: ['']
     });
@@ -237,7 +232,6 @@ export class InvoiceDialogComponent implements OnInit {
     if (this.data?.invoice) {
       // Load items
       const items = this.data.invoice.items || [];
-      // Map invoice items to match our type if needed, but they should be compatible
       this.invoiceItems.set(items);
 
       // Patch notes
@@ -265,9 +259,7 @@ export class InvoiceDialogComponent implements OnInit {
   }
 
   openQuickClientDialog() {
-    const dialogRef = this.dialog.open(QuickClientDialogComponent, {
-      width: '500px'
-    });
+    const dialogRef = this.responsiveDialog.open(QuickClientDialogComponent, { size: 'sm' });
 
     dialogRef.afterClosed().subscribe((client: Client) => {
       if (client) {
@@ -277,153 +269,145 @@ export class InvoiceDialogComponent implements OnInit {
     });
   }
 
-  onProductChange(productId: string) {
-    const product = this.productService.getProductById(productId);
-    this.selectedProduct.set(product || null);
+  goToItems() {
+    if (this.step1Form.invalid) return;
+    this.step.set(2);
   }
 
-  onProductSearchChange(event: Event) {
-    const value = (event.target as HTMLInputElement).value;
-    this.productSearchTerm.set(value);
+  goToClient() {
+    this.step.set(1);
   }
 
-  onProductSelected(product: Product) {
-    this.selectedProduct.set(product);
-    this.productSearchTerm.set(product.name);
-    this.step2Form.patchValue({ product_id: product.id });
-  }
-
-  addProduct() {
-    const product = this.selectedProduct();
-    const qty = Number(this.step2Form.get('quantity')?.value);
-
-    if (!product) return;
-    if (!Number.isFinite(qty) || qty <= 0) {
-      this.snackBar.open(
-        qty === 0
-          ? t('invoices.dialog.messages.noQuantity', { name: product.name })
-          : t('invoices.dialog.messages.invalidQuantity'),
-        t('common.actions.close'),
-        { duration: 4000 }
-      );
-      return;
+  /** Botão "voltar" do Android: no passo 2 volta ao passo 1 em vez de fechar. */
+  handleBack(): boolean {
+    if (this.step() === 2) {
+      this.goToClient();
+      return true;
     }
+    return false;
+  }
 
-    // Req #4: Prevent duplicate product addition
+  async openProductPicker() {
+    const result = await this.pickerService.pick<string>({
+      title: t('invoices.dialog.chooseProduct'),
+      searchPlaceholder: t('invoices.dialog.searchProductPlaceholder'),
+      options: this.activeProducts().map(product => ({
+        value: product.id,
+        label: product.name,
+        sublabel: [
+          product.code || '',
+          product.stock != null ? t('invoices.dialog.stock', { stock: product.stock }) : ''
+        ].filter(Boolean).join(' · ') || undefined,
+        trailing: this.formatCurrency(product.price),
+        keywords: [product.description, product.barcode].filter(Boolean).join(' ')
+      }))
+    });
+    if (result?.type !== 'select') return;
+    const product = this.productService.getProductById(result.option.value);
+    if (product) this.addProduct(product);
+  }
+
+  addProduct(product: Product) {
+    // Já está na factura: soma uma unidade em vez de bloquear.
     const existingIndex = this.invoiceItems().findIndex(item => item.product_id === product.id);
     if (existingIndex !== -1) {
-      this.snackBar.open(
-        t('invoices.dialog.messages.alreadyAdded', { name: product.name }),
-        t('common.actions.close'),
-        { duration: 4000 }
-      );
+      const next = this.invoiceItems()[existingIndex].quantity + 1;
+      if (this.setItemQuantity(existingIndex, next)) {
+        this.snackBar.open(
+          t('invoices.dialog.messages.qtyIncreased', { name: product.name, qty: next }),
+          '',
+          { duration: 1500 }
+        );
+      }
       return;
     }
 
     // Req #5 & #6: Stock validation for products
     // Produtos sem controlo de stock (stock null) não são validados.
-    if (product.type === 'produto' && product.stock != null) {
-      const availableStock = product.stock;
-      if (availableStock <= 0) {
-        this.snackBar.open(
-          t('invoices.dialog.messages.noStock', { name: product.name }),
-          t('common.actions.close'),
-          { duration: 4000 }
-        );
-        return;
-      }
-
-      if (qty > availableStock) {
-        this.snackBar.open(
-          t('invoices.dialog.messages.qtyExceedsStock', { qty, stock: availableStock, name: product.name }),
-          t('common.actions.close'),
-          { duration: 4000 }
-        );
-        return;
-      }
+    if (product.type === 'produto' && product.stock != null && product.stock <= 0) {
+      this.snackBar.open(
+        t('invoices.dialog.messages.noStock', { name: product.name }),
+        t('common.actions.close'),
+        { duration: 4000 }
+      );
+      return;
     }
 
-    const subtotal = this.roundMoney(product.price * qty);
+    const subtotal = this.roundMoney(product.price);
 
     const item: InvoiceItem = {
       product_id: product.id,
       product_name: product.name,
-      quantity: qty,
+      quantity: 1,
       unit_price: product.price,
       subtotal: subtotal,
       total: subtotal
     };
 
     this.invoiceItems.update(items => [...items, item]);
-
-    this.step2Form.patchValue({
-      product_id: '',
-      quantity: 1
-    });
-    this.selectedProduct.set(null);
-    this.productSearchTerm.set('');
-
     this.snackBar.open(t('invoices.dialog.messages.productAdded'), '', { duration: 1000 });
   }
+
   removeItem(index: number) {
     this.invoiceItems.update(items => items.filter((_, i) => i !== index));
   }
 
   updateItemQuantity(index: number, change: number) {
-    const items = this.invoiceItems();
-    if (index < 0 || index >= items.length) return;
-    const currentItem = items[index];
-    const newQty = currentItem.quantity + change;
-
-    if (newQty <= 0) {
-      this.invoiceItems.update(prev => prev.filter((_, i) => i !== index));
+    const item = this.invoiceItems()[index];
+    if (!item) return;
+    const next = this.roundMoney(item.quantity + change);
+    if (next <= 0) {
+      this.removeItem(index);
       return;
     }
+    this.setItemQuantity(index, next);
+  }
 
-    if (change > 0) {
+  /** Quantidade escrita à mão no campo do item (aceita vírgula decimal). */
+  onQuantityInput(index: number, input: HTMLInputElement) {
+    const item = this.invoiceItems()[index];
+    if (!item) return;
+    const qty = Number(String(input.value).replace(',', '.'));
+    if (!Number.isFinite(qty) || qty <= 0) {
+      this.snackBar.open(t('invoices.dialog.messages.invalidQuantity'), t('common.actions.close'), { duration: 3000 });
+      input.value = String(item.quantity);
+      return;
+    }
+    if (!this.setItemQuantity(index, qty)) {
+      input.value = String(this.invoiceItems()[index].quantity);
+    }
+  }
+
+  /** Muda a quantidade de um item, validando o stock. Devolve false se recusou. */
+  setItemQuantity(index: number, qty: number): boolean {
+    const currentItem = this.invoiceItems()[index];
+    if (!currentItem) return false;
+
+    if (qty > currentItem.quantity) {
       const product = this.productService.getProductById(currentItem.product_id);
-      if (product && product.type === 'produto' && product.stock != null) {
-        const availableStock = product.stock;
-        if (newQty > availableStock) {
-          this.snackBar.open(
-            t('invoices.dialog.messages.qtyIncreaseExceedsStock', { qty: newQty, stock: availableStock, name: currentItem.product_name }),
-            t('common.actions.close'),
-            { duration: 4000 }
-          );
-          return;
-        }
+      if (product && product.type === 'produto' && product.stock != null && qty > product.stock) {
+        this.snackBar.open(
+          t('invoices.dialog.messages.qtyIncreaseExceedsStock', { qty, stock: product.stock, name: currentItem.product_name }),
+          t('common.actions.close'),
+          { duration: 4000 }
+        );
+        return false;
       }
     }
 
     this.invoiceItems.update(prev => {
       const updated = [...prev];
       const item = { ...updated[index] };
-      item.quantity = newQty;
+      item.quantity = qty;
       item.subtotal = this.roundMoney(item.unit_price * item.quantity);
       item.total = item.subtotal;
       updated[index] = item;
       return updated;
     });
+    return true;
   }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   async save(status: string = 'pendente') {
-
-
     // Req #5 & #6: Stock validation for all items
     if (status !== 'rascunho') {
       for (const item of this.invoiceItems()) {

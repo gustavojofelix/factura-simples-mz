@@ -6,7 +6,9 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatDialogModule, MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { DialogShellComponent } from '../../shared/ui/dialog-shell.component';
+import { ResponsiveDialogService } from '../../core/services/responsive-dialog.service';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -25,6 +27,9 @@ import * as XLSX from 'xlsx';
 import { t } from '../../core/i18n/i18n';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { saveWorkbook } from '../../core/utils/file-save';
+import { PageHeaderComponent } from '../../shared/ui/page-header.component';
+import { ListCardComponent } from '../../shared/ui/list-card.component';
+import { FiltersToggleComponent } from '../../shared/ui/filters-toggle.component';
 
 /** Valores gravados na BD (client.industry) → chave da etiqueta traduzida. */
 const INDUSTRIES: ReadonlyArray<{ value: string; key: string }> = [
@@ -71,12 +76,16 @@ function industryValue(input: string): string {
     MatButtonModule,
     MatIconModule,
     MatSelectModule,
+    DialogShellComponent,
     TranslatePipe
   ],
   template: `
-    <h2 mat-dialog-title>{{ (data ? 'clients.dialog.editTitle' : 'clients.dialog.newTitle') | t }}</h2>
-    <mat-dialog-content class="!pt-4">
-      <form [formGroup]="form" class="space-y-4">
+    <app-dialog-shell
+      [title]="(data ? 'clients.dialog.editTitle' : 'clients.dialog.newTitle') | t"
+      icon="person"
+      (closed)="dialogRef.close()"
+    >
+      <form [formGroup]="form" class="space-y-1">
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>{{ 'common.fields.name' | t }}</mat-label>
           <input matInput formControlName="name" [placeholder]="'clients.dialog.namePlaceholder' | t">
@@ -123,7 +132,7 @@ function industryValue(input: string): string {
                 </div>
               }
 
-              <div class="flex items-center gap-2">
+              <div class="flex flex-wrap items-center gap-2">
                 <input
                   type="file"
                   #fileInput
@@ -184,18 +193,22 @@ function industryValue(input: string): string {
           }
         </mat-form-field>
       </form>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end" class="!px-6 !pb-4">
-      <button mat-button mat-dialog-close>{{ 'common.actions.cancel' | t }}</button>
-      <button
-        mat-raised-button
-        class="!bg-ispc-orange !text-white"
-        [disabled]="form.invalid || saving() || uploading()"
-        (click)="save()"
-      >
-        {{ (saving() ? 'common.status.saving' : 'common.actions.save') | t }}
-      </button>
-    </mat-dialog-actions>
+
+      <div shellFooter class="flex gap-2 sm:justify-end">
+        <button mat-stroked-button type="button" class="flex-1 sm:flex-none !h-12 !rounded-xl" (click)="dialogRef.close()">
+          {{ 'common.actions.cancel' | t }}
+        </button>
+        <button
+          mat-flat-button
+          type="button"
+          class="flex-1 sm:flex-none !h-12 !rounded-xl !bg-ispc-orange !text-white"
+          [disabled]="form.invalid || saving() || uploading()"
+          (click)="save()"
+        >
+          {{ (saving() ? 'common.status.saving' : 'common.actions.save') | t }}
+        </button>
+      </div>
+    </app-dialog-shell>
   `
 })
 export class ClientDialogComponent {
@@ -210,7 +223,8 @@ export class ClientDialogComponent {
     private fb: FormBuilder,
     private clientService: ClientService,
     private snackBar: MatSnackBar,
-    public dialog: MatDialog
+    public dialog: MatDialog,
+    public dialogRef: MatDialogRef<ClientDialogComponent>
   ) {
     this.form = this.fb.group({
       name: ['', Validators.required],
@@ -360,18 +374,30 @@ export class ClientDialogComponent {
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    TranslatePipe
+    TranslatePipe,
+    PageHeaderComponent,
+    ListCardComponent,
+    FiltersToggleComponent
   ],
   templateUrl: './clients.component.html',
   styleUrls: ['./clients.component.css']
 })
 export class ClientsComponent implements OnInit {
+  private responsiveDialog = inject(ResponsiveDialogService);
   displayedColumns = ['id', 'name', 'nuit', 'email', 'industry', 'status', 'actions'];
   searchTerm = signal('');
   industryFilter = signal('');
   statusFilter = signal<'all' | 'active' | 'inactive'>('all');
   sortField = signal<'id' | 'name'>('id');
   sortOrder = signal<'asc' | 'desc'>('asc');
+
+  /** Telemóvel: painel de filtros aberto/fechado. */
+  filtersOpen = signal(false);
+  activeFilterCount = computed(() =>
+    (this.industryFilter() ? 1 : 0) +
+    (this.statusFilter() !== 'all' ? 1 : 0) +
+    (this.sortField() !== 'id' || this.sortOrder() !== 'asc' ? 1 : 0)
+  );
 
   industries = industryOptions();
   industryLabel = industryLabel;
@@ -458,8 +484,8 @@ export class ClientsComponent implements OnInit {
   }
 
   openDialog(client?: Client) {
-    const dialogRef = this.dialog.open(ClientDialogComponent, {
-      width: '600px',
+    const dialogRef = this.responsiveDialog.open(ClientDialogComponent, {
+      size: 'md',
       data: client || null
     });
 

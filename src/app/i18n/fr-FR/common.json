@@ -92,5 +92,13 @@
     "copy": "Copier",
     "copied": "Copié",
     "messageLabel": "Message"
+  },
+  "ui": {
+    "stepOf": "Étape {current} sur {total}",
+    "searchPlaceholder": "Rechercher...",
+    "noResults": "Aucun résultat",
+    "choose": "Choisir",
+    "moreResults": "{shown} sur {total} affichés. Affinez la recherche pour en voir plus.",
+    "moreActions": "Plus d’actions"
   }
 }

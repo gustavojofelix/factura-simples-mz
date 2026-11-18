@@ -13,6 +13,7 @@ import { CompanyService } from '../../core/services/company.service';
 import { UserManagementService } from '../../core/services/user-management.service';
 import { t } from '../../core/i18n/i18n';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { DialogShellComponent } from '../ui/dialog-shell.component';
 
 @Component({
   selector: 'app-user-company-dialog',
@@ -28,14 +29,18 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
     MatCheckboxModule,
     MatChipsModule,
     MatIconModule,
+    DialogShellComponent,
     TranslatePipe
   ],
   template: `
-    <h2 mat-dialog-title>{{ (data.userId ? 'company.userAccess.manageTitle' : 'company.userAccess.addTitle') | t }}</h2>
-    <mat-dialog-content>
+    <app-dialog-shell
+      [title]="(data.userId ? 'company.userAccess.manageTitle' : 'company.userAccess.addTitle') | t"
+      icon="manage_accounts"
+      (closed)="onCancel()"
+    >
       @if (!data.userId) {
-        <form [formGroup]="form" class="space-y-4">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form [formGroup]="form" class="space-y-1">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>{{ 'company.userAccess.fullName' | t }}</mat-label>
               <input matInput formControlName="fullName" required>
@@ -46,7 +51,7 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>{{ 'common.fields.phone' | t }}</mat-label>
-              <input matInput formControlName="phone">
+              <input matInput type="tel" inputmode="tel" formControlName="phone">
             </mat-form-field>
           </div>
 
@@ -63,16 +68,16 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
           <div class="mb-4">
             <p class="text-sm font-semibold mb-2">{{ 'company.userAccess.selectCompanies' | t }}</p>
-            <div class="space-y-2 max-h-64 overflow-y-auto">
+            <div class="space-y-2 sm:max-h-64 sm:overflow-y-auto">
               @for (company of companies(); track company.id) {
-                <div class="flex items-center gap-4 p-2 border rounded">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 border rounded-xl hover:bg-gray-50">
                   <mat-checkbox
                     [checked]="isCompanySelected(company.id)"
                     (change)="toggleCompany(company.id, $event.checked)">
                     {{ company.name }}
                   </mat-checkbox>
                   @if (isCompanySelected(company.id)) {
-                    <mat-form-field appearance="outline" class="flex-1 !mb-[-1.25em]">
+                    <mat-form-field appearance="outline" class="w-full sm:flex-1 hide-subscript">
                       <mat-label>{{ 'company.userAccess.role' | t }}</mat-label>
                       <mat-select [value]="getCompanyRole(company.id)" (selectionChange)="updateCompanyRole(company.id, $event.value)">
                         <mat-option value="admin">{{ 'company.roles.admin' | t }}</mat-option>
@@ -89,16 +94,16 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
       } @else {
         <div class="space-y-4">
           <p class="text-sm text-gray-600 mb-4">{{ 'company.userAccess.manageAccessBefore' | t }} <strong>{{ data.userEmail }}</strong> {{ 'company.userAccess.manageAccessAfter' | t }}</p>
-          <div class="space-y-2 max-h-96 overflow-y-auto">
+          <div class="space-y-2 sm:max-h-96 sm:overflow-y-auto">
             @for (company of companies(); track company.id) {
-              <div class="flex items-center gap-4 p-3 border rounded hover:bg-gray-50">
+              <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 border rounded-xl hover:bg-gray-50">
                 <mat-checkbox
                   [checked]="isCompanySelected(company.id)"
                   (change)="toggleCompany(company.id, $event.checked)">
                   {{ company.name }}
                 </mat-checkbox>
                 @if (isCompanySelected(company.id)) {
-                  <mat-form-field appearance="outline" class="flex-1 !mb-[-1.25em]">
+                  <mat-form-field appearance="outline" class="w-full sm:flex-1 hide-subscript">
                     <mat-label>{{ 'company.userAccess.role' | t }}</mat-label>
                     <mat-select [value]="getCompanyRole(company.id)" (selectionChange)="updateCompanyRole(company.id, $event.value)">
                       <mat-option value="admin">{{ 'company.roles.admin' | t }}</mat-option>
@@ -119,21 +124,18 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
           }
         </div>
       }
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-button (click)="onCancel()">{{ 'common.actions.cancel' | t }}</button>
-      <button mat-raised-button color="primary" (click)="onSave()"
-              [disabled]="(!data.userId && (form.invalid || selectedCompanies().size === 0)) || loading()">
-        {{ (data.userId ? 'company.userAccess.update' : 'common.actions.add') | t }}
-      </button>
-    </mat-dialog-actions>
-  `,
-  styles: [`
-    mat-dialog-content {
-      min-width: min(600px, 85vw);
-      max-width: 700px;
-    }
-  `]
+
+      <div shellFooter class="flex gap-2 sm:justify-end">
+        <button mat-stroked-button type="button" class="flex-1 sm:flex-none !h-12 !rounded-xl" (click)="onCancel()">
+          {{ 'common.actions.cancel' | t }}
+        </button>
+        <button mat-flat-button type="button" class="flex-1 sm:flex-none !h-12 !rounded-xl !bg-ispc-orange !text-white" (click)="onSave()"
+                [disabled]="(!data.userId && (form.invalid || selectedCompanies().size === 0)) || loading()">
+          {{ (data.userId ? 'company.userAccess.update' : 'common.actions.add') | t }}
+        </button>
+      </div>
+    </app-dialog-shell>
+  `
 })
 export class UserCompanyDialogComponent implements OnInit {
   form: FormGroup;

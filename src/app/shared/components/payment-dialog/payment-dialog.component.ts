@@ -38,14 +38,15 @@ export interface PaymentDialogData {
     TranslatePipe
   ],
   template: `
-    <div class="relative p-6 max-w-md w-full bg-slate-900 text-white rounded-2xl border border-slate-800 shadow-2xl space-y-5">
+    <!-- Checkout escuro: no telemóvel ocupa o ecrã inteiro (ResponsiveDialogService), no desktop é um cartão. -->
+    <div class="relative p-4 sm:p-6 w-full min-h-full sm:min-h-0 bg-slate-900 text-white sm:rounded-2xl sm:border border-slate-800 shadow-2xl space-y-5">
       <!-- Header -->
       <div class="flex items-center justify-between border-b border-slate-800 pb-4">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400">
             <mat-icon>credit_card</mat-icon>
           </div>
-          <div>
+          <div class="min-w-0">
             <h2 class="text-lg font-bold text-white leading-tight">{{ 'payments.subscription.title' | t }}</h2>
             <p class="text-xs text-slate-400">{{ 'payments.subscription.planPrice' | t: { plan: data.plan.name, price: (getOriginalPrice() | number:'1.0-0'), currency: data.plan.currency || 'MZN', cycle: getCycleSuffix() } }}</p>
           </div>
@@ -73,7 +74,9 @@ export interface PaymentDialogData {
             [(ngModel)]="voucherInput"
             [placeholder]="'payments.subscription.voucherPlaceholder' | t"
             [disabled]="loading() || (voucherResult()?.valid || false)"
-            class="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs font-mono uppercase font-bold text-amber-300 focus:ring-2 focus:ring-amber-500 outline-none placeholder:font-sans placeholder:font-normal placeholder:text-slate-500"
+            autocapitalize="characters"
+            autocomplete="off"
+            class="flex-1 min-w-0 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs font-mono uppercase font-bold text-amber-300 focus:ring-2 focus:ring-amber-500 outline-none placeholder:font-sans placeholder:font-normal placeholder:text-slate-500"
           >
           <button
             *ngIf="!voucherResult()?.valid"
@@ -193,7 +196,7 @@ export interface PaymentDialogData {
           <div>
             <mat-form-field appearance="outline" class="w-full !m-0 custom-dark-form-field">
               <mat-label class="!text-slate-300">{{ 'payments.subscription.phoneLabel' | t }}</mat-label>
-              <input matInput type="tel" formControlName="phone" placeholder="84 123 4567" class="!text-white">
+              <input matInput type="tel" inputmode="tel" autocomplete="tel" formControlName="phone" placeholder="84 123 4567" class="!text-white">
               <mat-icon matPrefix class="!text-orange-400">phone_iphone</mat-icon>
               @if (getErrorMessage('phone')) {
                 <mat-error class="!text-rose-400 font-semibold">{{ getErrorMessage('phone') }}</mat-error>
@@ -203,12 +206,12 @@ export interface PaymentDialogData {
 
           <!-- Actions -->
           <div class="flex items-center gap-3 pt-1">
-            <button mat-button type="button" (click)="dialogRef.close(false)" [disabled]="loading()" class="!text-slate-400 hover:!text-white flex-1">
+            <button mat-button type="button" (click)="dialogRef.close(false)" [disabled]="loading()" class="!text-slate-400 hover:!text-white flex-1 !h-12">
               {{ 'common.actions.cancel' | t }}
             </button>
             <button mat-raised-button type="submit"
               [class]="selectedMethod() === 'mpesa' ? '!bg-red-600 hover:!bg-red-500' : '!bg-amber-500 hover:!bg-amber-400 !text-slate-950'"
-              class="flex-1 !h-11 !font-bold !rounded-xl !shadow-lg transition-all flex items-center justify-center gap-2"
+              class="flex-[2] !h-12 !font-bold !rounded-xl !shadow-lg transition-all flex items-center justify-center gap-2"
               [disabled]="loading()">
               @if (loading()) {
                 <div class="flex items-center gap-2">
@@ -228,7 +231,7 @@ export interface PaymentDialogData {
 
       <!-- PUSH SENT – awaiting PIN confirmation screen -->
       @if (pushSent()) {
-        <div class="absolute inset-0 bg-slate-900 rounded-2xl flex flex-col items-center justify-center gap-5 p-8 text-center z-10">
+        <div class="absolute inset-0 bg-slate-900 sm:rounded-2xl flex flex-col items-center justify-center gap-5 p-8 text-center z-10">
           <div class="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
             <mat-icon class="!text-4xl text-amber-400">phonelink_ring</mat-icon>
           </div>
@@ -262,6 +265,10 @@ export interface PaymentDialogData {
     </div>
   `,
   styles: [`
+    /* O corpo faz scroll aqui: a superfície do diálogo adaptativo tem overflow: hidden. */
+    :host { display: block; height: 100%; overflow-y: auto; overscroll-behavior: contain; }
+    @media (max-width: 599.98px) { :host { background: #0f172a; } }
+    @media (min-width: 600px) { :host { max-height: 90vh; } }
     ::ng-deep .custom-dark-form-field .mdc-text-field--outlined {
       --mdc-outlined-text-field-container-color: rgba(15, 23, 42, 0.6) !important;
       --mdc-outlined-text-field-outline-color: rgba(51, 65, 85, 0.8) !important;

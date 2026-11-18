@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed, Inject } from '@angular/core';
+import { Component, OnInit, signal, computed, Inject, inject } from '@angular/core';
 import { friendlyErrorMessage } from '../../core/utils/error-message';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -12,6 +12,11 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { DialogShellComponent } from '../../shared/ui/dialog-shell.component';
+import { ResponsiveDialogService } from '../../core/services/responsive-dialog.service';
+import { PageHeaderComponent } from '../../shared/ui/page-header.component';
+import { ListCardComponent } from '../../shared/ui/list-card.component';
+import { FiltersToggleComponent } from '../../shared/ui/filters-toggle.component';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
@@ -35,14 +40,12 @@ import { saveWorkbook } from '../../core/utils/file-save';
     MatInputModule,
     MatSelectModule,
     MatButtonModule,
+    DialogShellComponent,
     TranslatePipe
   ],
   template: `
-    <h2 mat-dialog-title>
-      {{ 'products.dialog.title' | t }}
-    </h2>
-    <mat-dialog-content class="!pt-4">
-      <form [formGroup]="form" class="space-y-4">
+    <app-dialog-shell [title]="'products.dialog.title' | t" icon="inventory_2" (closed)="dialogRef.close()">
+      <form [formGroup]="form" class="space-y-1">
         <!-- Tipo hidden as per requirements -->
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>{{ 'common.fields.type' | t }}</mat-label>
@@ -64,7 +67,7 @@ import { saveWorkbook } from '../../core/utils/file-save';
         </mat-form-field>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <mat-form-field appearance="outline" class="w-full">
+          <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
             <mat-label>{{ 'common.fields.code' | t }}</mat-label>
             <input matInput formControlName="code" [placeholder]="'products.dialog.codePlaceholder' | t">
             <mat-hint>{{ 'products.dialog.codeHint' | t }}</mat-hint>
@@ -84,7 +87,7 @@ import { saveWorkbook } from '../../core/utils/file-save';
         <div class="grid grid-cols-2 gap-4">
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>{{ 'products.dialog.price' | t }}</mat-label>
-            <input matInput type="number" formControlName="price" placeholder="0.00" step="0.01" min="0">
+            <input matInput type="number" inputmode="decimal" formControlName="price" placeholder="0.00" step="0.01" min="0">
             @if (form.get('price')?.hasError('required') && form.get('price')?.touched) {
               <mat-error>{{ 'products.dialog.priceRequired' | t }}</mat-error>
             }
@@ -97,27 +100,29 @@ import { saveWorkbook } from '../../core/utils/file-save';
         </div>
 
         @if (form.get('type')?.value === 'produto') {
-          <mat-form-field appearance="outline" class="w-full">
+          <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
             <mat-label>{{ 'products.dialog.stock' | t }}</mat-label>
-            <input matInput type="number" formControlName="stock" [placeholder]="'products.dialog.stockPlaceholder' | t" min="0">
+            <input matInput type="number" inputmode="numeric" formControlName="stock" [placeholder]="'products.dialog.stockPlaceholder' | t" min="0">
             <mat-hint>{{ 'products.dialog.stockHint' | t }}</mat-hint>
           </mat-form-field>
         }
       </form>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end" class="!px-6 !pb-4">
-      <button mat-button mat-dialog-close>{{ 'common.actions.cancel' | t }}</button>
-      <button
-        mat-raised-button
-        class="!bg-ispc-orange !text-white"
-        [disabled]="form.invalid || saving()"
-        (click)="save()"
-      >
-        <span>
-          @if (saving()) { {{ 'common.status.saving' | t }} } @else { {{ 'common.actions.save' | t }} }
-        </span>
-      </button>
-    </mat-dialog-actions>
+
+      <div shellFooter class="flex gap-2 sm:justify-end">
+        <button mat-stroked-button type="button" class="flex-1 sm:flex-none !h-12 !rounded-xl" (click)="dialogRef.close()">
+          {{ 'common.actions.cancel' | t }}
+        </button>
+        <button
+          mat-flat-button
+          type="button"
+          class="flex-1 sm:flex-none !h-12 !rounded-xl !bg-ispc-orange !text-white"
+          [disabled]="form.invalid || saving()"
+          (click)="save()"
+        >
+          {{ (saving() ? 'common.status.saving' : 'common.actions.save') | t }}
+        </button>
+      </div>
+    </app-dialog-shell>
   `
 })
 export class ProductDialogComponent implements OnInit {
@@ -129,7 +134,7 @@ export class ProductDialogComponent implements OnInit {
     private productService: ProductService,
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
-    private dialogRef: MatDialogRef<ProductDialogComponent>,
+    public dialogRef: MatDialogRef<ProductDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public product: Product | null
   ) {
     this.form = this.fb.group({
@@ -249,12 +254,16 @@ export class ProductDialogComponent implements OnInit {
     MatSnackBarModule,
     MatTooltipModule,
     MatMenuModule,
-    TranslatePipe
+    TranslatePipe,
+    PageHeaderComponent,
+    ListCardComponent,
+    FiltersToggleComponent
   ],
   templateUrl: './products.component.html',
   styleUrls: ['./products.component.css']
 })
 export class ProductsComponent implements OnInit {
+  private responsiveDialog = inject(ResponsiveDialogService);
   displayedColumns = computed(() => {
     const role = this.companyService.activeRole();
     if (role === 'user') {
@@ -269,6 +278,16 @@ export class ProductsComponent implements OnInit {
   maxPriceFilter = signal<number | null>(null);
   typeFilter = signal<'all' | Product['type']>('all');
   statusFilter = signal<'all' | 'active' | 'inactive'>('all');
+
+  /** Telemóvel: painel de filtros aberto/fechado. */
+  filtersOpen = signal(false);
+  activeFilterCount = computed(() =>
+    (this.typeFilter() !== 'all' ? 1 : 0) +
+    (this.statusFilter() !== 'all' ? 1 : 0) +
+    (this.minPriceFilter() !== null || this.maxPriceFilter() !== null ? 1 : 0) +
+    (this.sortField() !== 'code' || this.sortDirection() !== 'asc' ? 1 : 0)
+  );
+  canEditProducts = computed(() => this.displayedColumns().includes('actions'));
 
   filteredProducts = computed(() => {
     const term = this.searchTerm().toLowerCase();
@@ -390,8 +409,8 @@ export class ProductsComponent implements OnInit {
   }
 
   openDialog(product?: Product) {
-    const dialogRef = this.dialog.open(ProductDialogComponent, {
-      width: '600px',
+    const dialogRef = this.responsiveDialog.open(ProductDialogComponent, {
+      size: 'md',
       data: product || null
     });
 

@@ -137,7 +137,7 @@
     "notesPlaceholder": "E.g.: Payment on delivery, bank details...",
     "totalToPay": "Total Amount Due",
     "emptyItems": "The item list is empty.",
-    "emptyItemsHint": "Search for and add products above to get started.",
+    "emptyItemsHint": "No items yet. Tap \"Add item\" to get started.",
     "draft": "Draft",
     "update": "Update",
     "issue": "Issue Invoice",
@@ -151,8 +151,13 @@
       "productAdded": "Product added!",
       "issueNoStock": "Cannot issue. No stock for product \"{name}\".",
       "issueQtyExceedsStock": "Cannot issue. Item \"{name}\" has a quantity ({qty}) greater than the available stock ({stock}).",
-      "selectClientAndProducts": "Select a client and add products"
-    }
+      "selectClientAndProducts": "Select a client and add products",
+      "qtyIncreased": "Quantity of \"{name}\" increased to {qty}."
+    },
+    "addItem": "Add item",
+    "chooseProduct": "Choose a product or service",
+    "chooseClient": "Tap to choose the client",
+    "searchClientPlaceholder": "Name, NUIT or phone"
   },
   "quickClient": {
     "title": "Quick Client",

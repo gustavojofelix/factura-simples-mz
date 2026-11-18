@@ -66,7 +66,6 @@ export class DeleteAccountInfoComponent {
         subject: t('profile.deleteAccount.public.supportSubject'),
         message: t('profile.deleteAccount.public.supportMessage')
       },
-      maxWidth: '95vw',
       autoFocus: false
     });
   }

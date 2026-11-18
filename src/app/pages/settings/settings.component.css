@@ -36,3 +36,40 @@ th {
   font-weight: 600;
   background-color: #f9fafb;
 }
+
+/* ——— Telemóvel ———
+   As abas (segmented control, ver .settings-tabs em global_styles.css) passam a
+   deslizar na horizontal em vez de saírem do ecrã; sem setas de paginação. */
+@media (max-width: 599.98px) {
+  :host ::ng-deep .settings-tabs .mat-mdc-tab-header {
+    margin: .5rem;
+  }
+  :host ::ng-deep .settings-tabs .mat-mdc-tab-label-container {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  :host ::ng-deep .settings-tabs .mat-mdc-tab-label-container::-webkit-scrollbar {
+    display: none;
+  }
+  :host ::ng-deep .settings-tabs .mat-mdc-tab {
+    flex: none;
+    min-width: 0;
+    padding: 0 .875rem;
+  }
+  :host ::ng-deep .settings-tabs .mdc-tab__text-label {
+    font-size: .85rem;
+    white-space: nowrap;
+  }
+  :host ::ng-deep .settings-tabs .mat-mdc-tab-body-content {
+    overflow-x: hidden;
+  }
+
+  /* Cartões interiores mais compactos: menos padding = mais largura útil. */
+  :host ::ng-deep .settings-tabs .mat-mdc-card-content {
+    padding: .875rem;
+  }
+  :host ::ng-deep .settings-tabs .mat-mdc-card-header {
+    padding: .875rem .875rem 0;
+  }
+}

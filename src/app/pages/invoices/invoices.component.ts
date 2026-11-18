@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -20,6 +20,9 @@ import { InvoiceDialogComponent } from '../../shared/components/invoice-dialog.c
 import { PaymentDialogComponent } from '../../shared/components/payment-dialog.component';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { t } from '../../core/i18n/i18n';
+import { ResponsiveDialogService } from '../../core/services/responsive-dialog.service';
+import { PageHeaderComponent } from '../../shared/ui/page-header.component';
+import { ListCardComponent } from '../../shared/ui/list-card.component';
 
 @Component({
   selector: 'app-invoices',
@@ -38,12 +41,15 @@ import { t } from '../../core/i18n/i18n';
     MatDialogModule,
     MatFormFieldModule,
     MatSelectModule,
-    TranslatePipe
+    TranslatePipe,
+    PageHeaderComponent,
+    ListCardComponent
   ],
   templateUrl: './invoices.component.html',
   styleUrls: ['./invoices.component.css']
 })
 export class InvoicesComponent implements OnInit {
+  private responsiveDialog = inject(ResponsiveDialogService);
   displayedColumns = ['invoice_number', 'client', 'issuer_name', 'date', 'due_date', 'total', 'status', 'actions'];
 
   searchTerm = signal('');
@@ -254,9 +260,8 @@ export class InvoicesComponent implements OnInit {
   }
 
   openNewInvoiceDialog() {
-    const dialogRef = this.dialog.open(InvoiceDialogComponent, {
-      width: '1000px',
-      maxWidth: '95vw',
+    const dialogRef = this.responsiveDialog.open(InvoiceDialogComponent, {
+      size: 'lg',
       disableClose: true
     });
 
@@ -268,9 +273,8 @@ export class InvoicesComponent implements OnInit {
   }
 
   openPaymentDialog(invoice: Invoice) {
-    const dialogRef = this.dialog.open(PaymentDialogComponent, {
-      width: '500px',
-      maxWidth: '95vw',
+    const dialogRef = this.responsiveDialog.open(PaymentDialogComponent, {
+      size: 'sm',
       data: {
         invoiceId: invoice.id,
         invoiceNumber: invoice.invoice_number,
@@ -298,9 +302,8 @@ export class InvoicesComponent implements OnInit {
     const fullInvoice = await this.invoiceService.getInvoiceWithItems(invoice.id);
     if (!fullInvoice) return;
 
-    const dialogRef = this.dialog.open(InvoiceDialogComponent, {
-      width: '1000px',
-      maxWidth: '95vw',
+    const dialogRef = this.responsiveDialog.open(InvoiceDialogComponent, {
+      size: 'lg',
       disableClose: true,
       data: { invoice: fullInvoice }
     });

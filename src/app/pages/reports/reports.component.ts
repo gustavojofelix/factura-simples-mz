@@ -20,6 +20,9 @@ import { ClientService } from '../../core/services/client.service';
 import { AuditLogService } from '../../core/services/audit-log.service';
 import { toIsoDate } from '../../core/utils/date.util';
 import { ReportsNavComponent } from './reports-nav.component';
+import { FiltersToggleComponent } from '../../shared/ui/filters-toggle.component';
+import { SearchPickerFieldComponent } from '../../shared/ui/search-picker-field.component';
+import { PickerOption } from '../../shared/ui/search-picker';
 import { t, currentLocale } from '../../core/i18n/i18n';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { saveFile } from '../../core/utils/file-save';
@@ -66,21 +69,25 @@ interface SalesReport {
     MatTabsModule,
     MatSelectModule,
     ReportsNavComponent,
+    FiltersToggleComponent,
+    SearchPickerFieldComponent,
     TranslatePipe
   ],
   template: `
-    <div class="p-6 max-w-7xl mx-auto">
-      <div class="mb-6">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ 'reports.page.title' | t }}</h1>
-        <p class="text-gray-600">{{ 'reports.page.subtitle' | t }}</p>
+    <div class="p-4 sm:p-6 max-w-7xl mx-auto">
+      <div class="mb-4 sm:mb-6">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">{{ 'reports.page.title' | t }}</h1>
+        <p class="text-sm sm:text-base text-gray-600">{{ 'reports.page.subtitle' | t }}</p>
       </div>
 
       <app-reports-nav></app-reports-nav>
 
-      <mat-card class="mb-6">
-        <mat-card-content class="!pt-6">
+      <mat-card class="mb-4 sm:mb-6">
+        <mat-card-content class="!pt-4 sm:!pt-6">
           <form [formGroup]="filterForm" class="space-y-4">
-             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+             <!-- Telemóvel: só as datas e o botão; trimestre, ano e cliente ficam em "Filtros". -->
+             <app-filters-toggle class="mb-3" [(open)]="filtersOpen" [count]="activeFilterCount()" />
+             <div class="m-filters grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-x-4" [class.is-open]="filtersOpen()">
                 <!-- <mat-form-field appearance="outline">
                   <mat-label>Periodo</mat-label>
                   <mat-select formControlName="period" (selectionChange)="onPeriodChange()">
@@ -97,14 +104,14 @@ interface SalesReport {
                     <mat-option value="last_year">Ano Passado</mat-option>
                   </mat-select>
                 </mat-form-field> -->
-                <mat-form-field appearance="outline">
+                <mat-form-field appearance="outline" class="m-filter-keep">
                   <mat-label>{{ 'reports.filters.startDate' | t }}</mat-label>
                   <input matInput [matDatepicker]="startPicker" formControlName="startDate">
                   <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
                   <mat-datepicker #startPicker></mat-datepicker>
                 </mat-form-field>
 
-                <mat-form-field appearance="outline">
+                <mat-form-field appearance="outline" class="m-filter-keep">
                   <mat-label>{{ 'reports.filters.endDate' | t }}</mat-label>
                   <input matInput [matDatepicker]="endPicker" formControlName="endDate">
                   <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
@@ -127,19 +134,16 @@ interface SalesReport {
                   <input matInput type="number" min="2000" formControlName="year" (change)="onQuarterChange()">
                 </mat-form-field>
 
-              <mat-form-field appearance="outline">
-                <mat-label>{{ 'reports.filters.client' | t }}</mat-label>
-                <mat-select formControlName="clientId">
-                  <mat-option value="all">{{ 'reports.filters.allClients' | t }}</mat-option>
-                  @for (client of clients(); track client.id) {
-                    <mat-option [value]="client.id">{{ client.name }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
+              <app-search-picker-field
+                class="mb-5"
+                formControlName="clientId"
+                [label]="'reports.filters.client' | t"
+                [options]="clientOptions()"
+              />
 
               <button
-                mat-raised-button
-                class="!bg-ispc-orange !text-white"
+                mat-flat-button
+                class="m-filter-keep !h-12 !rounded-xl !bg-ispc-orange !text-white"
                 (click)="generateReport()"
                 [disabled]="isLoading() || filterForm.invalid"
               >
@@ -156,17 +160,17 @@ interface SalesReport {
           <mat-spinner diameter="50"></mat-spinner>
         </div>
       } @else if (report()) {
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
           <mat-card>
-            <mat-card-content class="!pt-6">
-              <div class="flex items-start justify-between">
-                <div>
-                  <p class="text-sm text-gray-600 mb-1">{{ 'reports.sales.totalSales' | t }}</p>
-                  <h3 class="text-2xl font-bold text-gray-900">
+            <mat-card-content class="!p-3 sm:!p-4 sm:!pt-6">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="text-xs sm:text-sm text-gray-600 mb-1">{{ 'reports.sales.totalSales' | t }}</p>
+                  <h3 class="text-base sm:text-2xl leading-tight font-bold tabular-nums [overflow-wrap:anywhere] text-gray-900">
                     {{ formatCurrency(report()!.totalSales) }}
                   </h3>
                 </div>
-                <div class="bg-green-100 p-3 rounded-lg">
+                <div class="hidden sm:block bg-green-100 p-3 rounded-lg">
                   <mat-icon class="!text-green-600">trending_up</mat-icon>
                 </div>
               </div>
@@ -174,15 +178,15 @@ interface SalesReport {
           </mat-card>
 
           <mat-card>
-            <mat-card-content class="!pt-6">
-              <div class="flex items-start justify-between">
-                <div>
-                  <p class="text-sm text-gray-600 mb-1">{{ 'reports.sales.totalInvoices' | t }}</p>
-                  <h3 class="text-2xl font-bold text-gray-900">
+            <mat-card-content class="!p-3 sm:!p-4 sm:!pt-6">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="text-xs sm:text-sm text-gray-600 mb-1">{{ 'reports.sales.totalInvoices' | t }}</p>
+                  <h3 class="text-base sm:text-2xl leading-tight font-bold tabular-nums [overflow-wrap:anywhere] text-gray-900">
                     {{ report()!.totalInvoices }}
                   </h3>
                 </div>
-                <div class="bg-blue-100 p-3 rounded-lg">
+                <div class="hidden sm:block bg-blue-100 p-3 rounded-lg">
                   <mat-icon class="!text-blue-600">receipt</mat-icon>
                 </div>
               </div>
@@ -190,15 +194,15 @@ interface SalesReport {
           </mat-card>
 
           <mat-card>
-            <mat-card-content class="!pt-6">
-              <div class="flex items-start justify-between">
-                <div>
-                  <p class="text-sm text-gray-600 mb-1">{{ 'reports.sales.paidAmount' | t }}</p>
-                  <h3 class="text-2xl font-bold text-green-600">
+            <mat-card-content class="!p-3 sm:!p-4 sm:!pt-6">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="text-xs sm:text-sm text-gray-600 mb-1">{{ 'reports.sales.paidAmount' | t }}</p>
+                  <h3 class="text-base sm:text-2xl leading-tight font-bold tabular-nums [overflow-wrap:anywhere] text-green-600">
                     {{ formatCurrency(report()!.paidAmount) }}
                   </h3>
                 </div>
-                <div class="bg-green-100 p-3 rounded-lg">
+                <div class="hidden sm:block bg-green-100 p-3 rounded-lg">
                   <mat-icon class="!text-green-600">paid</mat-icon>
                 </div>
               </div>
@@ -206,15 +210,15 @@ interface SalesReport {
           </mat-card>
 
           <mat-card>
-            <mat-card-content class="!pt-6">
-              <div class="flex items-start justify-between">
-                <div>
-                  <p class="text-sm text-gray-600 mb-1">{{ 'reports.sales.pendingAmount' | t }}</p>
-                  <h3 class="text-2xl font-bold text-orange-600">
+            <mat-card-content class="!p-3 sm:!p-4 sm:!pt-6">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="text-xs sm:text-sm text-gray-600 mb-1">{{ 'reports.sales.pendingAmount' | t }}</p>
+                  <h3 class="text-base sm:text-2xl leading-tight font-bold tabular-nums [overflow-wrap:anywhere] text-orange-600">
                     {{ formatCurrency(report()!.pendingAmount) }}
                   </h3>
                 </div>
-                <div class="bg-orange-100 p-3 rounded-lg">
+                <div class="hidden sm:block bg-orange-100 p-3 rounded-lg">
                   <mat-icon class="!text-orange-600">schedule</mat-icon>
                 </div>
               </div>
@@ -227,8 +231,8 @@ interface SalesReport {
             <mat-card-title>{{ 'reports.sales.byStatus' | t }}</mat-card-title>
           </mat-card-header>
           <mat-card-content class="!pt-4">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div class="border border-gray-200 rounded-lg p-4">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+              <div class="border border-gray-200 rounded-lg p-3 sm:p-4">
                 <div class="flex items-center justify-between mb-2">
                   <span class="text-sm text-gray-600">{{ 'reports.sales.statusPending' | t }}</span>
                   <mat-icon class="!text-yellow-600">schedule</mat-icon>
@@ -238,7 +242,7 @@ interface SalesReport {
                 </p>
               </div>
 
-              <div class="border border-gray-200 rounded-lg p-4">
+              <div class="border border-gray-200 rounded-lg p-3 sm:p-4">
                 <div class="flex items-center justify-between mb-2">
                   <span class="text-sm text-gray-600">{{ 'reports.sales.statusPaid' | t }}</span>
                   <mat-icon class="!text-green-600">check_circle</mat-icon>
@@ -248,7 +252,7 @@ interface SalesReport {
                 </p>
               </div>
 
-              <div class="border border-gray-200 rounded-lg p-4">
+              <div class="border border-gray-200 rounded-lg p-3 sm:p-4">
                   <div class="flex items-center justify-between mb-2">
                     <span class="text-sm text-gray-600">{{ 'reports.sales.statusOverdue' | t }}</span>
                     <mat-icon class="!text-red-600">error</mat-icon>
@@ -258,7 +262,7 @@ interface SalesReport {
                   </p>
                 </div>
 
-                <div class="border border-red-200 rounded-lg p-4 bg-red-50/40">
+                <div class="border border-red-200 rounded-lg p-3 sm:p-4 bg-red-50/40">
                   <div class="flex items-center justify-between mb-2">
                     <span class="text-sm text-gray-600">{{ 'reports.sales.statusCancelled' | t }}</span>
                     <mat-icon class="!text-red-700">block</mat-icon>
@@ -277,10 +281,12 @@ interface SalesReport {
               <mat-card-title>{{ 'reports.sales.topClients' | t }}</mat-card-title>
             </mat-card-header>
             <mat-card-content class="!pt-4">
+              <!-- Tabela de 3 colunas: cabe a 360dp; o scroll horizontal só protege nomes muito longos. -->
+              <div class="overflow-x-auto -mx-2 sm:mx-0">
               <table mat-table [dataSource]="report()!.topClients" class="w-full">
                 <ng-container matColumnDef="client">
                   <th mat-header-cell *matHeaderCellDef>{{ 'reports.sales.client' | t }}</th>
-                  <td mat-cell *matCellDef="let item" class="font-medium">
+                  <td mat-cell *matCellDef="let item" class="font-medium [overflow-wrap:anywhere]">
                     {{ item.clientName }}
                   </td>
                 </ng-container>
@@ -294,7 +300,7 @@ interface SalesReport {
 
                 <ng-container matColumnDef="total">
                   <th mat-header-cell *matHeaderCellDef class="!text-right">{{ 'common.fields.total' | t }}</th>
-                  <td mat-cell *matCellDef="let item" class="!text-right font-semibold">
+                  <td mat-cell *matCellDef="let item" class="!text-right font-semibold whitespace-nowrap">
                     {{ formatCurrency(item.totalAmount) }}
                   </td>
                 </ng-container>
@@ -302,6 +308,7 @@ interface SalesReport {
                 <tr mat-header-row *matHeaderRowDef="topClientsColumns"></tr>
                 <tr mat-row *matRowDef="let row; columns: topClientsColumns;"></tr>
               </table>
+              </div>
             </mat-card-content>
           </mat-card>
         }
@@ -312,10 +319,11 @@ interface SalesReport {
               <mat-card-title>{{ 'reports.sales.dailySales' | t }}</mat-card-title>
             </mat-card-header>
             <mat-card-content class="!pt-4">
+              <div class="overflow-x-auto -mx-2 sm:mx-0">
               <table mat-table [dataSource]="report()!.dailySales" class="w-full">
                 <ng-container matColumnDef="date">
                   <th mat-header-cell *matHeaderCellDef>{{ 'common.fields.date' | t }}</th>
-                  <td mat-cell *matCellDef="let item">
+                  <td mat-cell *matCellDef="let item" class="whitespace-nowrap">
                     {{ formatDate(item.date) }}
                   </td>
                 </ng-container>
@@ -329,7 +337,7 @@ interface SalesReport {
 
                 <ng-container matColumnDef="amount">
                   <th mat-header-cell *matHeaderCellDef class="!text-right">{{ 'common.fields.total' | t }}</th>
-                  <td mat-cell *matCellDef="let item" class="!text-right font-semibold">
+                  <td mat-cell *matCellDef="let item" class="!text-right font-semibold whitespace-nowrap">
                     {{ formatCurrency(item.amount) }}
                   </td>
                 </ng-container>
@@ -337,20 +345,21 @@ interface SalesReport {
                 <tr mat-header-row *matHeaderRowDef="dailySalesColumns"></tr>
                 <tr mat-row *matRowDef="let row; columns: dailySalesColumns;"></tr>
               </table>
+              </div>
             </mat-card-content>
           </mat-card>
         }
 
-        <div class="flex justify-end gap-4">
-          <button mat-stroked-button (click)="exportToExcel()" [disabled]="isLoading()">
+        <div class="grid grid-cols-1 sm:flex sm:justify-end gap-2 sm:gap-4">
+          <button mat-stroked-button class="!h-12 sm:!h-10 !rounded-xl" (click)="exportToExcel()" [disabled]="isLoading()">
             <mat-icon>table_view</mat-icon>
             {{ 'reports.sales.exportExcel' | t }}
           </button>
-          <button mat-stroked-button (click)="exportToCSV()">
+          <button mat-stroked-button class="!h-12 sm:!h-10 !rounded-xl" (click)="exportToCSV()">
             <mat-icon>download</mat-icon>
             {{ 'reports.sales.exportCsv' | t }}
           </button>
-          <button mat-stroked-button (click)="printReport()">
+          <button mat-stroked-button class="!h-12 sm:!h-10 !rounded-xl" (click)="printReport()">
             <mat-icon>print</mat-icon>
             {{ 'common.actions.print' | t }}
           </button>
@@ -377,6 +386,24 @@ export class ReportsComponent implements OnInit {
   clients = this.clientService.clients;
 
   topClientsColumns = ['client', 'invoices', 'total'];
+
+  /** Telemóvel: painel de filtros aberto/fechado. */
+  filtersOpen = signal(false);
+
+  clientOptions = computed<PickerOption[]>(() => [
+    { value: 'all', label: t('reports.filters.allClients') },
+    ...this.clients().map(client => ({
+      value: client.id,
+      label: client.name,
+      sublabel: client.nuit ? `NUIT ${client.nuit}` : undefined
+    }))
+  ]);
+
+  /** Filtros escondidos no telemóvel que estão activos (trimestre, cliente). */
+  activeFilterCount(): number {
+    const value = this.filterForm.value;
+    return (value.quarter && value.quarter !== 'all' ? 1 : 0) + (value.clientId && value.clientId !== 'all' ? 1 : 0);
+  }
   dailySalesColumns = ['date', 'invoices', 'amount'];
 
   /** Formato de data e fuso horário de Configurações > Sistema. */

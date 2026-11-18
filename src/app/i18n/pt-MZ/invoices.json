@@ -137,7 +137,7 @@
     "notesPlaceholder": "Ex: Pagamento no ato da entrega, Dados bancários...",
     "totalToPay": "Valor Total a Pagar",
     "emptyItems": "A lista de itens está vazia.",
-    "emptyItemsHint": "Pesquise e adicione produtos acima para começar.",
+    "emptyItemsHint": "Ainda não há itens. Toque em «Adicionar item» para começar.",
     "draft": "Rascunho",
     "update": "Actualizar",
     "issue": "Emitir Factura",
@@ -151,8 +151,13 @@
       "productAdded": "Produto adicionado!",
       "issueNoStock": "Não é possível emitir. Sem stock para o produto \"{name}\".",
       "issueQtyExceedsStock": "Não é possível emitir. O item \"{name}\" tem quantidade ({qty}) superior ao stock disponível ({stock}).",
-      "selectClientAndProducts": "Selecione cliente e adicione produtos"
-    }
+      "selectClientAndProducts": "Selecione cliente e adicione produtos",
+      "qtyIncreased": "Quantidade de \"{name}\" aumentada para {qty}."
+    },
+    "addItem": "Adicionar item",
+    "chooseProduct": "Escolher produto ou serviço",
+    "chooseClient": "Toque para escolher o cliente",
+    "searchClientPlaceholder": "Nome, NUIT ou telefone"
   },
   "quickClient": {
     "title": "Cliente Rápido",

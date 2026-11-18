@@ -26,6 +26,7 @@ import { SummaryStatementDocumentComponent } from './documents/summary-statement
 import { ClientStatementDocumentComponent } from './documents/client-statement-document.component';
 import { t } from '../../core/i18n/i18n';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { DialogShellComponent } from '../ui/dialog-shell.component';
 import { Capacitor } from '@capacitor/core';
 
 export interface SummaryStatementPreviewData {
@@ -65,17 +66,15 @@ export type StatementPreviewData = SummaryStatementPreviewData | ClientStatement
     MatSnackBarModule,
     SummaryStatementDocumentComponent,
     ClientStatementDocumentComponent,
+    DialogShellComponent,
     TranslatePipe
   ],
   template: `
-    <h2 mat-dialog-title class="flex items-center justify-between">
-      <span>{{ (data.kind === 'client' ? 'reports.preview.clientTitle' : 'reports.preview.summaryTitle') | t }}</span>
-      <button mat-icon-button (click)="close()" [attr.aria-label]="'common.actions.close' | t">
-        <mat-icon>close</mat-icon>
-      </button>
-    </h2>
-
-    <mat-dialog-content>
+    <app-dialog-shell
+      [title]="(data.kind === 'client' ? 'reports.preview.clientTitle' : 'reports.preview.summaryTitle') | t"
+      icon="account_balance_wallet"
+      (closed)="close()"
+    >
       @if (isLoading()) {
         <div class="text-center py-8">
           <mat-spinner diameter="36" class="mx-auto mb-3"></mat-spinner>
@@ -116,27 +115,42 @@ export type StatementPreviewData = SummaryStatementPreviewData | ClientStatement
           }
         </div>
       }
-    </mat-dialog-content>
 
-    <mat-dialog-actions align="end" class="!gap-2 !px-6 !pb-4">
-      <button mat-stroked-button (click)="download()" [disabled]="isLoading() || isGeneratingPdf()">
-        <mat-icon>picture_as_pdf</mat-icon>
-        {{ 'reports.preview.downloadPdf' | t }}
-      </button>
-      <button mat-stroked-button (click)="print()" [disabled]="isLoading() || isGeneratingPdf()">
-        <mat-icon>print</mat-icon>
-        {{ 'common.actions.print' | t }}
-      </button>
-      @if (data.kind === 'client') {
-        <button mat-stroked-button (click)="sendEmail()"
-          [disabled]="isLoading() || isGeneratingPdf() || !data.statement.client.email"
-          [title]="data.statement.client.email ? ('reports.preview.sendTo' | t: { email: data.statement.client.email }) : ('reports.preview.noEmailTooltip' | t)">
-          <mat-icon>email</mat-icon>
-          {{ 'reports.preview.sendEmail' | t }}
+      <!-- Telemóvel: acções lado a lado, com rótulos curtos (o "fechar" está no cabeçalho). -->
+      <div shellFooter class="grid gap-2 sm:flex sm:justify-end" [class.grid-cols-3]="data.kind === 'client'" [class.grid-cols-2]="data.kind !== 'client'">
+        <button mat-stroked-button class="preview-action" (click)="download()" [disabled]="isLoading() || isGeneratingPdf()">
+          <mat-icon>picture_as_pdf</mat-icon>
+          <span class="sm:hidden">PDF</span>
+          <span class="hidden sm:inline">{{ 'reports.preview.downloadPdf' | t }}</span>
         </button>
-      }
-    </mat-dialog-actions>
-  `
+        <button mat-stroked-button class="preview-action" (click)="print()" [disabled]="isLoading() || isGeneratingPdf()">
+          <mat-icon>print</mat-icon>
+          {{ 'common.actions.print' | t }}
+        </button>
+        @if (data.kind === 'client') {
+          <button mat-stroked-button class="preview-action" (click)="sendEmail()"
+            [disabled]="isLoading() || isGeneratingPdf() || !data.statement.client.email"
+            [title]="data.statement.client.email ? ('reports.preview.sendTo' | t: { email: data.statement.client.email }) : ('reports.preview.noEmailTooltip' | t)">
+            <mat-icon>email</mat-icon>
+            <span class="sm:hidden">E-mail</span>
+            <span class="hidden sm:inline">{{ 'reports.preview.sendEmail' | t }}</span>
+          </button>
+        }
+      </div>
+    </app-dialog-shell>
+  `,
+  styles: [`
+    :host { display: block; height: 100%; }
+    .preview-action { height: 3rem !important; border-radius: .75rem !important; min-width: 0 !important; padding: 0 .5rem !important; }
+    @media (min-width: 600px) { .preview-action { padding: 0 1rem !important; } }
+
+    /* Telemóvel: a tabela do extracto encolhe para caber na largura em vez de ficar cortada. */
+    @media (max-width: 599.98px) {
+      :host ::ng-deep .statement-table { font-size: 10px; }
+      :host ::ng-deep .statement-table th,
+      :host ::ng-deep .statement-table td { padding: 4px 3px !important; white-space: normal !important; overflow-wrap: anywhere; }
+    }
+  `]
 })
 export class StatementPreviewDialogComponent implements OnInit {
   data = inject<StatementPreviewData>(MAT_DIALOG_DATA);

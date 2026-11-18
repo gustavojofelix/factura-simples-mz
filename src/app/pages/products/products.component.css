@@ -1,18 +1,13 @@
-::ng-deep .mat-mdc-table {
+:host ::ng-deep .mat-mdc-table {
   background: transparent;
 }
 
-::ng-deep .mat-mdc-header-cell {
+:host ::ng-deep .mat-mdc-header-cell {
   background-color: #f9fafb;
   font-weight: 600;
   color: #374151;
 }
 
-::ng-deep .mat-mdc-dialog-container .mdc-dialog__surface {
-  border-radius: 12px;
-}
-
-::ng-deep .hide-subscript .mat-mdc-form-field-subscript-wrapper,
 ::ng-deep .no-label-field .mat-mdc-form-field-subscript-wrapper,
 ::ng-deep .no-border-field .mat-mdc-form-field-subscript-wrapper {
   display: none;

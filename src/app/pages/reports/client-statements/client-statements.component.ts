@@ -34,6 +34,8 @@ import {
   StatementPreviewDialogComponent,
   StatementPreviewData
 } from '../../../shared/components/statement-preview-dialog.component';
+import { ListCardComponent } from '../../../shared/ui/list-card.component';
+import { ResponsiveDialogService } from '../../../core/services/responsive-dialog.service';
 
 type SortKey = 'client_code' | 'client_name' | 'opening_balance' | 'total_invoiced' | 'total_paid' | 'balance';
 
@@ -63,7 +65,8 @@ type SortKey = 'client_code' | 'client_name' | 'opening_balance' | 'total_invoic
     MatDialogModule,
     MatSnackBarModule,
     ReportsNavComponent,
-    TranslatePipe
+    TranslatePipe,
+    ListCardComponent
   ],
   templateUrl: './client-statements.component.html'
 })
@@ -72,6 +75,7 @@ export class ClientStatementsComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private dialog = inject(MatDialog);
+  private responsiveDialog = inject(ResponsiveDialogService);
   private snackBar = inject(MatSnackBar);
   private exportService = inject(ExportService);
   private auditLogService = inject(AuditLogService);
@@ -227,11 +231,9 @@ export class ClientStatementsComponent implements OnInit {
       notes: this.notes().trim()
     };
 
-    this.dialog.open(StatementPreviewDialogComponent, {
-      data,
-      width: '1000px',
-      maxWidth: '95vw',
-      maxHeight: '95vh'
+    this.responsiveDialog.open(StatementPreviewDialogComponent, {
+      size: 'xl',
+      data
     });
   }
 

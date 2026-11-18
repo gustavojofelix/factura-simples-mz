@@ -51,13 +51,13 @@ function monthNames(): string[] {
   template: `
     <div class="p-4 sm:p-6 max-w-7xl mx-auto">
       <div class="mb-4">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ 'reports.page.title' | t }}</h1>
-        <p class="text-gray-600">{{ 'reports.saft.subtitle' | t: { company: companyService.activeCompany()?.name } }}</p>
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">{{ 'reports.page.title' | t }}</h1>
+        <p class="text-sm sm:text-base text-gray-600">{{ 'reports.saft.subtitle' | t: { company: companyService.activeCompany()?.name } }}</p>
       </div>
 
       <app-reports-nav></app-reports-nav>
 
-      <div class="mb-6 flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-900">
+      <div class="mb-4 sm:mb-6 flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 sm:p-4 text-amber-900">
         <mat-icon class="shrink-0 text-amber-600">info</mat-icon>
         <div class="text-sm">
           <p class="font-semibold mb-1">{{ 'reports.saft.noticeTitle' | t }}</p>
@@ -77,7 +77,7 @@ function monthNames(): string[] {
       } @else {
         <mat-card class="mb-6">
           <mat-card-content class="!pt-6">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-x-4">
               <mat-form-field appearance="outline">
                 <mat-label>{{ 'reports.saft.period' | t }}</mat-label>
                 <mat-select [ngModel]="mode()" (ngModelChange)="setMode($event)">
@@ -122,7 +122,7 @@ function monthNames(): string[] {
               <p class="text-sm text-gray-600">
                 {{ 'reports.saft.periodLabel' | t }} <strong>{{ formatIsoDate(range().start) }}</strong> {{ 'reports.saft.periodTo' | t }} <strong>{{ formatIsoDate(range().end) }}</strong>
               </p>
-              <button mat-raised-button type="button" class="!bg-ispc-orange !text-white"
+              <button mat-flat-button type="button" class="w-full sm:w-auto !h-12 sm:!h-10 !rounded-xl !bg-ispc-orange !text-white"
                 [disabled]="isGenerating() || !companyService.activeCompany()" (click)="generate()">
                 @if (isGenerating()) {
                   <mat-spinner diameter="18" class="inline-block mr-2"></mat-spinner>
@@ -138,25 +138,25 @@ function monthNames(): string[] {
         @if (result(); as res) {
           <mat-card class="mb-6">
             <mat-card-content class="!pt-6">
-              <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <div class="rounded-lg bg-gray-50 p-4">
+              <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
+                <div class="min-w-0 rounded-lg bg-gray-50 p-3 sm:p-4">
                   <p class="text-xs uppercase text-gray-500">{{ 'reports.saft.invoices' | t }}</p>
-                  <p class="text-2xl font-bold text-gray-900">{{ res.summary.invoices }}</p>
+                  <p class="text-base sm:text-2xl leading-tight font-bold text-gray-900 tabular-nums [overflow-wrap:anywhere]">{{ res.summary.invoices }}</p>
                   <p class="text-xs text-gray-500">{{ 'reports.saft.annulledInvoices' | t: { count: res.summary.annulledInvoices } }}</p>
                 </div>
-                <div class="rounded-lg bg-gray-50 p-4">
+                <div class="min-w-0 rounded-lg bg-gray-50 p-3 sm:p-4">
                   <p class="text-xs uppercase text-gray-500">{{ 'reports.saft.invoicedTotal' | t }}</p>
-                  <p class="text-2xl font-bold text-gray-900">{{ formatCurrency(res.summary.invoicesTotal) }}</p>
+                  <p class="text-base sm:text-2xl leading-tight font-bold text-gray-900 tabular-nums [overflow-wrap:anywhere]">{{ formatCurrency(res.summary.invoicesTotal) }}</p>
                   <p class="text-xs text-gray-500">{{ 'reports.saft.excludingCancelled' | t }}</p>
                 </div>
-                <div class="rounded-lg bg-gray-50 p-4">
+                <div class="min-w-0 rounded-lg bg-gray-50 p-3 sm:p-4">
                   <p class="text-xs uppercase text-gray-500">{{ 'reports.saft.receipts' | t }}</p>
-                  <p class="text-2xl font-bold text-gray-900">{{ res.summary.payments }}</p>
+                  <p class="text-base sm:text-2xl leading-tight font-bold text-gray-900 tabular-nums [overflow-wrap:anywhere]">{{ res.summary.payments }}</p>
                   <p class="text-xs text-gray-500">{{ 'reports.saft.annulledReceipts' | t: { count: res.summary.annulledPayments } }}</p>
                 </div>
-                <div class="rounded-lg bg-gray-50 p-4">
+                <div class="min-w-0 rounded-lg bg-gray-50 p-3 sm:p-4">
                   <p class="text-xs uppercase text-gray-500">{{ 'reports.saft.receivedTotal' | t }}</p>
-                  <p class="text-2xl font-bold text-gray-900">{{ formatCurrency(res.summary.paymentsTotal) }}</p>
+                  <p class="text-base sm:text-2xl leading-tight font-bold text-gray-900 tabular-nums [overflow-wrap:anywhere]">{{ formatCurrency(res.summary.paymentsTotal) }}</p>
                   <p class="text-xs text-gray-500">{{ 'reports.saft.customersAndProducts' | t: { customers: res.summary.customers, products: res.summary.products } }}</p>
                 </div>
               </div>
@@ -175,13 +175,13 @@ function monthNames(): string[] {
               }
 
               <div class="flex flex-col sm:flex-row sm:justify-end gap-3">
-                <button mat-stroked-button type="button" [disabled]="isDownloading()" (click)="download('csv')">
+                <button mat-stroked-button type="button" class="!h-12 sm:!h-10 !rounded-xl" [disabled]="isDownloading()" (click)="download('csv')">
                   <mat-icon>table_rows</mat-icon> {{ 'reports.saft.downloadCsv' | t }}
                 </button>
-                <button mat-stroked-button type="button" [disabled]="isDownloading()" (click)="download('xlsx')">
+                <button mat-stroked-button type="button" class="!h-12 sm:!h-10 !rounded-xl" [disabled]="isDownloading()" (click)="download('xlsx')">
                   <mat-icon>grid_on</mat-icon> {{ 'reports.saft.downloadExcel' | t }}
                 </button>
-                <button mat-raised-button color="primary" type="button" [disabled]="isDownloading()" (click)="download('xml')">
+                <button mat-flat-button type="button" class="!h-12 sm:!h-10 !rounded-xl !bg-ispc-orange !text-white" [disabled]="isDownloading()" (click)="download('xml')">
                   <mat-icon>download</mat-icon> {{ 'reports.saft.downloadXml' | t }}
                 </button>
               </div>

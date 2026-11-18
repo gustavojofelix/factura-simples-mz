@@ -132,7 +132,7 @@ import { AuthService } from '../../../core/services/auth.service';
       ::ng-deep .white-spinner circle {
         stroke: white !important;
       }
-      ::ng-deep .mat-mdc-form-field-error {
+      :host ::ng-deep .mat-mdc-form-field-error {
         color: #f87171 !important;
       }
     `

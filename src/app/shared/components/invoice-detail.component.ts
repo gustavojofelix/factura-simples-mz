@@ -31,6 +31,7 @@ import { AuditLogService } from '../../core/services/audit-log.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { t } from '../../core/i18n/i18n';
 import { Capacitor } from '@capacitor/core';
+import { ResponsiveDialogService } from '../../core/services/responsive-dialog.service';
 
 @Component({
   selector: 'app-invoice-detail',
@@ -307,6 +308,7 @@ export class InvoiceDetailComponent {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private dialog = inject(MatDialog);
+  private responsiveDialog = inject(ResponsiveDialogService);
   private snackBar = inject(MatSnackBar);
 
   invoiceService = inject(InvoiceService);
@@ -406,8 +408,8 @@ export class InvoiceDetailComponent {
     const invoice = this.invoice();
     if (!invoice) return;
 
-    const dialogRef = this.dialog.open(PaymentDialogComponent, {
-      width: '500px',
+    const dialogRef = this.responsiveDialog.open(PaymentDialogComponent, {
+      size: 'sm',
       data: {
         invoiceId: invoice.id,
         invoiceNumber: invoice.invoice_number,
@@ -430,9 +432,8 @@ export class InvoiceDetailComponent {
     const invoice = this.invoice();
     if (!invoice) return;
 
-    this.dialog.open(ReceiptDetailComponent, {
-      width: '800px',
-      maxWidth: '95vw',
+    this.responsiveDialog.open(ReceiptDetailComponent, {
+      size: 'lg',
       data: {
         paymentId: paymentId,
         invoiceId: invoice.id
@@ -452,7 +453,6 @@ export class InvoiceDetailComponent {
   annulPayment(payment: Payment) {
     const dialogRef = this.dialog.open(AnnulReceiptDialogComponent, {
       width: '480px',
-      maxWidth: '95vw',
       data: {
         receiptNumber: this.paymentService.getReceiptNumber(payment),
         amount: this.formatCurrency(payment.amount)
@@ -477,9 +477,8 @@ export class InvoiceDetailComponent {
     const invoice = this.invoice();
     if (!invoice || !this.invoiceService.canEditInvoice(invoice)) return;
 
-    const dialogRef = this.dialog.open(InvoiceDialogComponent, {
-      width: '900px',
-      maxWidth: '95vw',
+    const dialogRef = this.responsiveDialog.open(InvoiceDialogComponent, {
+      size: 'lg',
       disableClose: true,
       data: { invoice }
     });

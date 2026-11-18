@@ -1,45 +1,44 @@
 <div class="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-    <div>
-      <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-2">{{ 'invoices.list.title' | t }}</h1>
-      <p class="text-sm text-slate-500 font-medium">{{ 'invoices.list.subtitle' | t: { company: companyService.activeCompany()?.name } }}</p>
-    </div>
-    <div class="flex items-center gap-2">
-      <button
-        mat-stroked-button
-        [matMenuTriggerFor]="exportMenu"
-        class="!h-12 !px-4 !rounded-xl !border-slate-200 !text-slate-700 font-medium hover:!bg-slate-50"
-      >
-        <mat-icon class="mr-2 text-slate-500">file_download</mat-icon>
-        {{ 'common.actions.export' | t }}
-      </button>
-      <mat-menu #exportMenu="matMenu">
-        <button mat-menu-item (click)="exportExcel()">
-          <mat-icon class="!text-emerald-600">table_chart</mat-icon>
-          <span>{{ 'invoices.list.exportExcel' | t }}</span>
-        </button>
-        <button mat-menu-item (click)="exportCsv()">
-          <mat-icon class="!text-blue-600">description</mat-icon>
-          <span>{{ 'invoices.list.exportCsv' | t }}</span>
-        </button>
-      </mat-menu>
-
-      <button
-      mat-raised-button
-      class="!bg-ispc-orange !text-white !h-12 !px-5 !rounded-xl !shadow-sm hover:!shadow-md"
+  <app-page-header
+    [title]="'invoices.list.title' | t"
+    [subtitle]="'invoices.list.subtitle' | t: { company: companyService.activeCompany()?.name }"
+    [moreMenu]="exportMenu"
+  >
+    <button
+      headerActions
+      mat-stroked-button
+      [matMenuTriggerFor]="exportMenu"
+      class="!h-12 !px-4 !rounded-xl !border-slate-200 !text-slate-700 font-medium hover:!bg-slate-50"
+    >
+      <mat-icon class="mr-2 text-slate-500">file_download</mat-icon>
+      {{ 'common.actions.export' | t }}
+    </button>
+    <button
+      headerPrimary
+      mat-flat-button
+      class="!bg-ispc-orange !text-white !h-12 !px-5 !rounded-xl"
       (click)="openNewInvoiceDialog()"
     >
-      <mat-icon class="mr-2">add</mat-icon>
+      <mat-icon>add</mat-icon>
       {{ 'invoices.list.newInvoice' | t }}
     </button>
-    </div>
-  </div>
+  </app-page-header>
+  <mat-menu #exportMenu="matMenu">
+    <button mat-menu-item (click)="exportExcel()">
+      <mat-icon class="!text-emerald-600">table_chart</mat-icon>
+      <span>{{ 'invoices.list.exportExcel' | t }}</span>
+    </button>
+    <button mat-menu-item (click)="exportCsv()">
+      <mat-icon class="!text-blue-600">description</mat-icon>
+      <span>{{ 'invoices.list.exportCsv' | t }}</span>
+    </button>
+  </mat-menu>
 
   <!-- Stats Grid -->
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
     <button
       (click)="filterByStatus('todas')"
-      class="bg-white/40 backdrop-blur-md p-4 rounded-xl border transition-all duration-200 hover:shadow-sm text-left flex flex-col justify-between h-24"
+      class="bg-white sm:bg-white/40 sm:backdrop-blur-md p-3 sm:p-4 rounded-xl border transition-all duration-200 hover:shadow-sm text-left flex flex-col justify-between h-20 sm:h-24"
       [class.border-ispc-orange]="statusFilter() === 'todas'"
       [class.border-slate-200/60]="statusFilter() !== 'todas'"
     >
@@ -49,7 +48,7 @@
 
     <button
       (click)="filterByStatus('paga')"
-      class="bg-white/40 backdrop-blur-md p-4 rounded-xl border transition-all duration-200 hover:shadow-sm text-left flex flex-col justify-between h-24"
+      class="bg-white sm:bg-white/40 sm:backdrop-blur-md p-3 sm:p-4 rounded-xl border transition-all duration-200 hover:shadow-sm text-left flex flex-col justify-between h-20 sm:h-24"
       [class.border-emerald-500]="statusFilter() === 'paga'"
       [class.border-slate-200/60]="statusFilter() !== 'paga'"
     >
@@ -59,7 +58,7 @@
 
     <button
       (click)="filterByStatus('pendente')"
-      class="bg-white/40 backdrop-blur-md p-4 rounded-xl border transition-all duration-200 hover:shadow-sm text-left flex flex-col justify-between h-24"
+      class="bg-white sm:bg-white/40 sm:backdrop-blur-md p-3 sm:p-4 rounded-xl border transition-all duration-200 hover:shadow-sm text-left flex flex-col justify-between h-20 sm:h-24"
       [class.border-amber-500]="statusFilter() === 'pendente'"
       [class.border-slate-200/60]="statusFilter() !== 'pendente'"
     >
@@ -69,7 +68,7 @@
 
     <button
       (click)="filterByStatus('vencida')"
-      class="bg-white/40 backdrop-blur-md p-4 rounded-xl border transition-all duration-200 hover:shadow-sm text-left flex flex-col justify-between h-24"
+      class="bg-white sm:bg-white/40 sm:backdrop-blur-md p-3 sm:p-4 rounded-xl border transition-all duration-200 hover:shadow-sm text-left flex flex-col justify-between h-20 sm:h-24"
       [class.border-rose-500]="statusFilter() === 'vencida'"
       [class.border-slate-200/60]="statusFilter() !== 'vencida'"
     >
@@ -78,19 +77,19 @@
     </button>
   </div>
 
-  <mat-card class="!rounded-2xl !shadow-sm overflow-hidden">
+  <mat-card class="m-flat-card !rounded-2xl !shadow-sm overflow-hidden">
     <mat-card-content class="!p-4 sm:!p-6">
       <!-- Search & Filters -->
-      <div class="mb-6 flex flex-col md:flex-row items-stretch md:items-center gap-4">
+      <div class="mb-4 sm:mb-6 flex flex-col md:flex-row items-stretch md:items-center gap-3 sm:gap-4">
         <input
           type="text"
           [placeholder]="'invoices.list.searchPlaceholder' | t"
-          class="w-full md:flex-1 px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-ispc-orange focus:border-transparent outline-none text-sm bg-slate-50/50"
+          class="w-full md:flex-1 h-12 px-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-ispc-orange focus:border-transparent outline-none text-sm bg-slate-50/50"
           (input)="onSearchChange($event)"
         >
         
         <div class="flex items-center gap-2">
-          <mat-form-field appearance="outline" class="w-48 hide-subscript !text-sm">
+          <mat-form-field appearance="outline" class="flex-1 md:flex-none md:w-48 hide-subscript !text-sm">
             <mat-label>{{ 'invoices.list.sortBy' | t }}</mat-label>
             <mat-select [value]="sortField()" (selectionChange)="onSortFieldChange($event.value)">
               <mat-option value="date">{{ 'invoices.list.sort.date' | t }}</mat-option>
@@ -147,7 +146,7 @@
           }
         </div>
       } @else {
-        <div class="overflow-x-auto custom-scrollbar border border-slate-100 rounded-xl">
+        <div class="list-table overflow-x-auto custom-scrollbar border border-slate-100 rounded-xl">
           <table mat-table [dataSource]="filteredInvoices()" class="w-full">
             <ng-container matColumnDef="invoice_number">
               <th mat-header-cell *matHeaderCellDef class="!font-semibold !text-slate-800">{{ 'invoices.list.columns.number' | t }}</th>
@@ -230,62 +229,13 @@
               <td mat-cell *matCellDef="let invoice" class="!text-right">
                 <button
                   mat-icon-button
-                  [matMenuTriggerFor]="menu"
+                  [matMenuTriggerFor]="rowMenu"
+                  [matMenuTriggerData]="{ invoice: invoice }"
                   class="!w-12 !h-12"
+                  [attr.aria-label]="'invoices.list.columns.actions' | t"
                 >
                   <mat-icon>more_vert</mat-icon>
                 </button>
-                <mat-menu #menu="matMenu">
-                  @if (invoice.status === 'rascunho') {
-                    <button mat-menu-item (click)="emitDraft(invoice)">
-                      <mat-icon class="!text-ispc-orange">check_circle</mat-icon>
-                      <span class="!font-semibold !text-ispc-orange">{{ 'invoices.list.menu.validateAndIssue' | t }}</span>
-                    </button>
-                    <mat-divider></mat-divider>
-                  }
-                  <button mat-menu-item (click)="viewInvoice(invoice)">
-                    <mat-icon>visibility</mat-icon>
-                    <span>{{ 'invoices.list.menu.viewDetails' | t }}</span>
-                  </button>
-                  @if (invoiceService.canManagePayments(invoice)) {
-                    <button mat-menu-item (click)="openPaymentDialog(invoice)">
-                      <mat-icon>payments</mat-icon>
-                      <span>{{ 'invoices.list.menu.registerPayment' | t }}</span>
-                    </button>
-                  }
-                  <mat-divider></mat-divider>
-                  <button mat-menu-item (click)="printInvoice(invoice)">
-                    <mat-icon>print</mat-icon>
-                    <span>{{ 'invoices.list.menu.printPdf' | t }}</span>
-                  </button>
-                  @if (invoice.client?.email) {
-                    <button mat-menu-item (click)="sendEmail(invoice)">
-                      <mat-icon>email</mat-icon>
-                      <span>{{ 'invoices.list.menu.sendEmail' | t }}</span>
-                    </button>
-                  }
-                  @if (invoiceService.canEditInvoice(invoice)) {
-                    <mat-divider></mat-divider>
-                    <button mat-menu-item (click)="editInvoice(invoice)">
-                      <mat-icon>edit</mat-icon>
-                      <span>{{ 'common.actions.edit' | t }}</span>
-                    </button>
-                  }
-                  
-                  @if (invoiceService.canDeleteInvoice(invoice)) {
-                    <button mat-menu-item (click)="deleteInvoice(invoice)" class="!text-red-600">
-                      <mat-icon class="!text-red-600">delete</mat-icon>
-                      <span>{{ 'invoices.list.menu.deleteDraft' | t }}</span>
-                    </button>
-                  }
-
-                  @if (invoiceService.canAnnulInvoice(invoice)) {
-                    <button mat-menu-item (click)="annulInvoice(invoice)" class="!text-red-600">
-                      <mat-icon class="!text-red-600">block</mat-icon>
-                      <span>{{ 'invoices.list.menu.annul' | t }}</span>
-                    </button>
-                  }
-                </mat-menu>
               </td>
             </ng-container>
 
@@ -293,6 +243,41 @@
             <tr mat-row *matRowDef="let row; columns: displayedColumns;"
                 class="hover:bg-slate-50/50 transition-all duration-150"></tr>
           </table>
+        </div>
+
+
+        <!-- Telemóvel: cartões -->
+        <div class="list-cards">
+          @for (invoice of filteredInvoices(); track invoice.id) {
+            <app-list-card
+              [title]="invoice.client?.name || ('invoices.list.clientFallback' | t)"
+              [subtitle]="invoice.invoice_number + ' · ' + formatDate(invoice.date || invoice.created_at)"
+              (open)="viewInvoice(invoice)"
+            >
+              <ng-container lcAside>
+                <span class="font-bold text-slate-900 whitespace-nowrap tabular-nums">{{ formatCurrency(invoice.total) }}</span>
+                <span [class]="getStatusColor(invoice.status)" class="status-badge whitespace-nowrap !min-w-0">{{ getStatusLabel(invoice.status) }}</span>
+              </ng-container>
+              <button
+                lcActions
+                mat-icon-button
+                [matMenuTriggerFor]="rowMenu"
+                [matMenuTriggerData]="{ invoice: invoice }"
+                [attr.aria-label]="'invoices.list.columns.actions' | t"
+              >
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              @if (invoice.amount_paid > 0 && invoice.amount_pending > 0) {
+                <p lcFooter class="mt-1.5 text-xs font-semibold text-orange-600">
+                  {{ 'invoices.list.pendingAmount' | t: { amount: formatCurrency(invoice.amount_pending) } }}
+                </p>
+              } @else if (invoice.status === 'vencida' && invoice.due_date) {
+                <p lcFooter class="mt-1.5 text-xs font-semibold text-red-600">
+                  {{ 'invoices.list.columns.dueDate' | t }}: {{ formatDate(invoice.due_date) }}
+                </p>
+              }
+            </app-list-card>
+          }
         </div>
 
         <div class="mt-4 text-xs font-semibold text-slate-400">
@@ -305,4 +290,59 @@
       }
     </mat-card-content>
   </mat-card>
+
+  <!-- Menu de acções de uma factura (partilhado pela tabela e pelos cartões) -->
+  <mat-menu #rowMenu="matMenu">
+    <ng-template matMenuContent let-invoice="invoice">
+      @if (invoice.status === 'rascunho') {
+        <button mat-menu-item (click)="emitDraft(invoice)">
+          <mat-icon class="!text-ispc-orange">check_circle</mat-icon>
+          <span class="!font-semibold !text-ispc-orange">{{ 'invoices.list.menu.validateAndIssue' | t }}</span>
+        </button>
+        <mat-divider></mat-divider>
+      }
+      <button mat-menu-item (click)="viewInvoice(invoice)">
+        <mat-icon>visibility</mat-icon>
+        <span>{{ 'invoices.list.menu.viewDetails' | t }}</span>
+      </button>
+      @if (invoiceService.canManagePayments(invoice)) {
+        <button mat-menu-item (click)="openPaymentDialog(invoice)">
+          <mat-icon>payments</mat-icon>
+          <span>{{ 'invoices.list.menu.registerPayment' | t }}</span>
+        </button>
+      }
+      <mat-divider></mat-divider>
+      <button mat-menu-item (click)="printInvoice(invoice)">
+        <mat-icon>print</mat-icon>
+        <span>{{ 'invoices.list.menu.printPdf' | t }}</span>
+      </button>
+      @if (invoice.client?.email) {
+        <button mat-menu-item (click)="sendEmail(invoice)">
+          <mat-icon>email</mat-icon>
+          <span>{{ 'invoices.list.menu.sendEmail' | t }}</span>
+        </button>
+      }
+      @if (invoiceService.canEditInvoice(invoice)) {
+        <mat-divider></mat-divider>
+        <button mat-menu-item (click)="editInvoice(invoice)">
+          <mat-icon>edit</mat-icon>
+          <span>{{ 'common.actions.edit' | t }}</span>
+        </button>
+      }
+      
+      @if (invoiceService.canDeleteInvoice(invoice)) {
+        <button mat-menu-item (click)="deleteInvoice(invoice)" class="!text-red-600">
+          <mat-icon class="!text-red-600">delete</mat-icon>
+          <span>{{ 'invoices.list.menu.deleteDraft' | t }}</span>
+        </button>
+      }
+
+      @if (invoiceService.canAnnulInvoice(invoice)) {
+        <button mat-menu-item (click)="annulInvoice(invoice)" class="!text-red-600">
+          <mat-icon class="!text-red-600">block</mat-icon>
+          <span>{{ 'invoices.list.menu.annul' | t }}</span>
+        </button>
+      }
+    </ng-template>
+  </mat-menu>
 </div>

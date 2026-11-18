@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-gray-50 p-6 relative">
+<div class="min-h-screen bg-gray-50 p-3 sm:p-6 relative">
   @if (loading()) {
     <div class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm">
       <mat-spinner diameter="50" color="primary"></mat-spinner>
@@ -7,15 +7,15 @@
   }
 
   <div class="max-w-7xl mx-auto">
-    <div class="mb-6">
-      <h1 class="text-3xl font-bold text-gray-900">{{ 'settings.page.title' | t }}</h1>
-      <p class="text-gray-600 mt-2">{{ 'settings.page.subtitle' | t }}</p>
+    <div class="mb-4 sm:mb-6 px-1 sm:px-0">
+      <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">{{ 'settings.page.title' | t }}</h1>
+      <p class="text-sm sm:text-base text-gray-600 mt-1 sm:mt-2">{{ 'settings.page.subtitle' | t }}</p>
     </div>
 
-    <mat-tab-group [(selectedIndex)]="selectedTab" (selectedIndexChange)="onTabChange($event)" class="settings-tabs bg-white rounded-2xl shadow-sm">
+    <mat-tab-group [(selectedIndex)]="selectedTab" (selectedIndexChange)="onTabChange($event)" class="settings-tabs bg-white rounded-2xl shadow-sm" [disablePagination]="true" mat-stretch-tabs="false">
       <mat-tab [label]="'settings.tabs.system' | t" [disabled]="locked()">
-        <div class="p-6">
-          <h2 class="text-xl font-semibold mb-4">{{ 'settings.system.title' | t }}</h2>
+        <div class="p-3 sm:p-6">
+          <h2 class="text-lg sm:text-xl font-semibold mb-4">{{ 'settings.system.title' | t }}</h2>
 
           <div class="mb-4">
             <mat-form-field appearance="outline" class="w-full md:w-1/2">
@@ -84,8 +84,9 @@
                 <p class="text-xs text-gray-500">{{ 'settings.system.enableNotificationsHint' | t }}</p>
               </div>
 
-              <div class="flex justify-end">
-                <button mat-raised-button color="primary" type="submit" [disabled]="systemForm.invalid || loading() || !canEditSystemSettings()">
+              <div class="flex sm:justify-end">
+                <button mat-raised-button color="primary" type="submit" class="w-full sm:w-auto !h-12 sm:!h-10 !rounded-xl"
+                  [disabled]="systemForm.invalid || loading() || !canEditSystemSettings()">
                   <mat-icon>save</mat-icon>
                   {{ 'settings.system.save' | t }}
                 </button>
@@ -101,8 +102,8 @@
       </mat-tab>
 
       <mat-tab [label]="'settings.tabs.subscriptions' | t">
-        <div class="p-6">
-          <h2 class="text-xl font-semibold mb-4">{{ subscriptionText().title || ('settings.subscription.title' | t) }}</h2>
+        <div class="p-3 sm:p-6">
+          <h2 class="text-lg sm:text-xl font-semibold mb-4">{{ subscriptionText().title || ('settings.subscription.title' | t) }}</h2>
           @if (subscriptionText().intro) {
             <p class="text-sm text-slate-600 mb-4 whitespace-pre-line max-w-4xl">{{ subscriptionText().intro }}</p>
           }
@@ -129,17 +130,17 @@
             @if (subscription(); as sub) {
               <mat-card class="mb-6">
                 <mat-card-content>
-                  <div class="flex justify-between items-start mb-4">
-                    <div>
+                  <div class="flex justify-between items-start gap-3 mb-4">
+                    <div class="min-w-0">
                       <h3 class="text-lg font-semibold">{{ 'settings.subscription.currentPlan' | t: { plan: sub.plan_name } }}</h3>
                       <p class="text-gray-600 font-medium">{{ getCycleLabel(sub.billing_cycle) }}</p>
                     </div>
-                    <span class="px-3 py-1 rounded-full text-white text-sm" [ngClass]="getStatusColor(sub.status)">
+                    <span class="shrink-0 px-3 py-1 rounded-full text-white text-sm whitespace-nowrap" [ngClass]="getStatusColor(sub.status)">
                       {{ getStatusLabel(sub.status) }}
                     </span>
                   </div>
 
-                  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 mb-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  <div class="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4 mb-4 p-3 sm:p-4 bg-slate-50 rounded-xl border border-slate-100">
                     <div>
                       <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">{{ 'common.fields.amount' | t }}</p>
                       <p class="text-base font-bold text-gray-900 mt-1">{{ formatCurrency(sub.amount, sub.currency || 'MZN') }}</p>
@@ -219,12 +220,12 @@
               </div>
 
               <!-- Cycle Switcher Pills -->
-              <div class="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-semibold">
+              <div class="grid grid-cols-4 w-full sm:w-auto sm:inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-semibold">
                 <button
                   type="button"
                   (click)="selectedCycle.set('monthly')"
                   [class]="selectedCycle() === 'monthly' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
-                  class="px-3 py-1.5 rounded-lg transition-all"
+                  class="px-2 sm:px-3 py-1.5 rounded-lg transition-all whitespace-nowrap"
                 >
                   {{ 'settings.cycles.monthly' | t }}
                 </button>
@@ -232,7 +233,7 @@
                   type="button"
                   (click)="selectedCycle.set('quarterly')"
                   [class]="selectedCycle() === 'quarterly' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
-                  class="px-3 py-1.5 rounded-lg transition-all"
+                  class="px-2 sm:px-3 py-1.5 rounded-lg transition-all whitespace-nowrap"
                 >
                   {{ 'settings.cycles.quarterlyShort' | t }}
                 </button>
@@ -240,7 +241,7 @@
                   type="button"
                   (click)="selectedCycle.set('semiannual')"
                   [class]="selectedCycle() === 'semiannual' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
-                  class="px-3 py-1.5 rounded-lg transition-all"
+                  class="px-2 sm:px-3 py-1.5 rounded-lg transition-all whitespace-nowrap"
                 >
                   {{ 'settings.cycles.semiannualShort' | t }}
                 </button>
@@ -248,14 +249,14 @@
                   type="button"
                   (click)="selectedCycle.set('yearly')"
                   [class]="selectedCycle() === 'yearly' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
-                  class="px-3 py-1.5 rounded-lg transition-all"
+                  class="px-2 sm:px-3 py-1.5 rounded-lg transition-all whitespace-nowrap"
                 >
                   {{ 'settings.cycles.yearly' | t }}
                 </button>
               </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-6xl">
               @for (plan of availablePlans; track plan.name) {
                 <mat-card class="plan-card border rounded-2xl shadow-sm transition-all relative overflow-hidden" 
                   [class.border-amber-400]="plan.is_popular" 
@@ -283,7 +284,7 @@
                       </p>
                     </div>
 
-                    <ul class="space-y-2 mb-6 min-h-[140px]">
+                    <ul class="space-y-2 mb-6 sm:min-h-[140px]">
                       @for (feature of plan.features; track feature) {
                         <li class="flex items-start gap-2 text-sm text-slate-700">
                           <mat-icon class="text-green-600 text-base">check_circle</mat-icon>
@@ -311,7 +312,7 @@
                         @if (isCurrentPlan(plan)) {
                           <span class="text-center text-green-700 font-bold text-xs">{{ 'settings.subscription.currentPlanBadge' | t }}</span>
                         }
-                        <button mat-raised-button color="primary" class="!py-2.5 !rounded-xl !font-bold" (click)="changePlan(plan)">
+                        <button mat-raised-button color="primary" class="!h-12 !rounded-xl !font-bold" (click)="changePlan(plan)">
                           @if (purchaseIsQueued()) {
                             {{ 'settings.subscription.addPeriod' | t: { cycle: getCycleLabel(selectedCycle()) } }}
                           } @else if (isSamePlan(plan)) {
@@ -339,11 +340,11 @@
       </mat-tab>
 
       <mat-tab [label]="'settings.tabs.companies' | t" [disabled]="locked()">
-        <div class="p-6">
+        <div class="p-3 sm:p-6">
           @if (accountService.activeAccount(); as account) {
-            <mat-card class="mb-6">
+            <mat-card class="mb-4 sm:mb-6">
               <mat-card-content>
-                <div class="flex flex-col md:flex-row md:items-end gap-4">
+                <div class="flex flex-col md:flex-row md:items-end gap-3 md:gap-4">
                   <div class="flex-1">
                     <h3 class="text-lg font-semibold mb-1">{{ 'settings.account.title' | t }}</h3>
                     <p class="text-sm text-gray-600">
@@ -359,6 +360,7 @@
                     <button
                       mat-stroked-button
                       color="primary"
+                      class="w-full md:w-auto !h-12 md:!h-14 !rounded-xl"
                       (click)="saveAccountName()"
                       [disabled]="accountNameControl.invalid || accountNameControl.pristine || savingAccountName()"
                     >
@@ -372,22 +374,22 @@
             </mat-card>
           }
 
-          <div class="flex justify-between items-center mb-6">
+          <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 sm:mb-6">
             <div>
-              <h2 class="text-xl font-semibold">{{ 'settings.companies.title' | t }}</h2>
+              <h2 class="text-lg sm:text-xl font-semibold">{{ 'settings.companies.title' | t }}</h2>
               <p class="text-gray-600 text-sm">{{ 'settings.companies.subtitle' | t }}</p>
             </div>
             @if (accountService.isAccountOwner()) {
-              <button mat-raised-button color="primary" (click)="openCompanyDialog()">
+              <button mat-raised-button color="primary" class="w-full sm:w-auto !h-12 sm:!h-10 !rounded-xl" (click)="openCompanyDialog()">
                 <mat-icon>add_business</mat-icon>
                 {{ 'settings.companies.new' | t }}
               </button>
             }
           </div>
 
-          <mat-card>
+          <mat-card class="m-flat-card">
             <mat-card-content>
-              <div class="overflow-x-auto">
+              <div class="list-table overflow-x-auto">
                 <table mat-table [dataSource]="companies()" class="w-full">
                   <ng-container matColumnDef="name">
                     <th mat-header-cell *matHeaderCellDef class="font-semibold">{{ 'common.fields.name' | t }}</th>
@@ -433,6 +435,43 @@
                 </table>
               </div>
 
+              <!-- Telemóvel: cartões -->
+              <div class="list-cards">
+                @for (company of companies(); track company.id) {
+                  <app-list-card
+                    [title]="company.name"
+                    [subtitle]="(company.nuit ? 'NUIT ' + company.nuit : '') + (company.category1 ? (company.nuit ? ' · ' : '') + company.category1 : '')"
+                    (open)="openCompanyDialog(company)"
+                  >
+                    <div lcLeading class="w-10 h-10 flex-none bg-ispc-orange/10 rounded-full flex items-center justify-center">
+                      <mat-icon class="!text-ispc-orange">business</mat-icon>
+                    </div>
+                    <button lcActions mat-icon-button [matMenuTriggerFor]="companyMenu" [matMenuTriggerData]="{ company: company }"
+                      [attr.aria-label]="'settings.columns.actions' | t">
+                      <mat-icon>more_vert</mat-icon>
+                    </button>
+                    @if (company.phone || company.email) {
+                      <p lcFooter class="mt-1.5 text-xs text-slate-500 truncate">
+                        {{ company.phone || '' }}{{ company.phone && company.email ? ' · ' : '' }}{{ company.email || '' }}
+                      </p>
+                    }
+                  </app-list-card>
+                }
+              </div>
+
+              <mat-menu #companyMenu="matMenu">
+                <ng-template matMenuContent let-company="company">
+                  <button mat-menu-item (click)="openCompanyDialog(company)">
+                    <mat-icon>edit</mat-icon>
+                    <span>{{ 'common.actions.edit' | t }}</span>
+                  </button>
+                  <button mat-menu-item (click)="deleteCompany(company)" class="!text-red-600">
+                    <mat-icon class="!text-red-600">delete</mat-icon>
+                    <span>{{ 'common.actions.delete' | t }}</span>
+                  </button>
+                </ng-template>
+              </mat-menu>
+
               @if (companies().length === 0) {
                 <div class="text-center py-8 text-gray-500">
                   <mat-icon class="text-6xl mb-2">business</mat-icon>
@@ -451,23 +490,23 @@
       </mat-tab>
 
       <mat-tab [label]="'settings.tabs.users' | t" [disabled]="locked()">
-        <div class="p-6">
-          <div class="flex justify-between items-center mb-6">
+        <div class="p-3 sm:p-6">
+          <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 sm:mb-6">
             <div>
-              <h2 class="text-xl font-semibold">{{ 'settings.users.title' | t }}</h2>
+              <h2 class="text-lg sm:text-xl font-semibold">{{ 'settings.users.title' | t }}</h2>
               <p class="text-gray-600 text-sm">{{ 'settings.users.subtitle' | t }}</p>
             </div>
             @if (canInviteUsers()) {
-              <button mat-raised-button color="primary" (click)="openUserDialog()">
+              <button mat-raised-button color="primary" class="w-full sm:w-auto !h-12 sm:!h-10 !rounded-xl" (click)="openUserDialog()">
                 <mat-icon>person_add</mat-icon>
                 {{ 'settings.users.add' | t }}
               </button>
             }
           </div>
 
-          <mat-card>
+          <mat-card class="m-flat-card">
             <mat-card-content>
-              <div class="overflow-x-auto">
+              <div class="list-table overflow-x-auto">
                 <table mat-table [dataSource]="allUsers()" class="w-full">
                   <ng-container matColumnDef="email">
                     <th mat-header-cell *matHeaderCellDef class="font-semibold">{{ 'settings.users.email' | t }}</th>
@@ -514,6 +553,52 @@
                 </table>
               </div>
 
+              <!-- Telemóvel: cartões -->
+              <div class="list-cards">
+                @for (user of allUsers(); track user.user_id) {
+                  <app-list-card
+                    [title]="user.user_email"
+                    [subtitle]="user.user_id === currentUserId() ? ('settings.users.you' | t) : ''"
+                    [clickable]="canManageUser(user)"
+                    (open)="openUserDialog(user)"
+                  >
+                    <div lcLeading class="w-10 h-10 flex-none bg-slate-100 rounded-full flex items-center justify-center">
+                      <mat-icon class="!text-slate-500">person</mat-icon>
+                    </div>
+                    @if (canManageUser(user)) {
+                      <button lcActions mat-icon-button [matMenuTriggerFor]="userMenu" [matMenuTriggerData]="{ user: user }"
+                        [attr.aria-label]="'settings.columns.actions' | t">
+                        <mat-icon>more_vert</mat-icon>
+                      </button>
+                    }
+                    <div lcFooter class="mt-2 flex flex-wrap gap-1.5">
+                      @for (company of user.companies; track company.company_id) {
+                        <span class="inline-flex max-w-full items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600">
+                          <span class="font-semibold text-slate-800 truncate">{{ company.company_name }}</span>
+                          <span class="whitespace-nowrap">· {{ getRoleLabel(company.role) }}</span>
+                          @if (!company.is_active) {
+                            <span class="whitespace-nowrap text-red-600">· {{ 'settings.users.inactive' | t }}</span>
+                          }
+                        </span>
+                      }
+                    </div>
+                  </app-list-card>
+                }
+              </div>
+
+              <mat-menu #userMenu="matMenu">
+                <ng-template matMenuContent let-user="user">
+                  <button mat-menu-item (click)="openUserDialog(user)">
+                    <mat-icon>manage_accounts</mat-icon>
+                    <span>{{ 'settings.users.manageAccess' | t }}</span>
+                  </button>
+                  <button mat-menu-item (click)="revokeUserAccess(user)" class="!text-red-600">
+                    <mat-icon class="!text-red-600">person_remove</mat-icon>
+                    <span>{{ 'settings.users.removeAccess' | t }}</span>
+                  </button>
+                </ng-template>
+              </mat-menu>
+
               @if (allUsers().length === 0) {
                 <div class="text-center py-8 text-gray-500">
                   <mat-icon class="text-6xl mb-2">people_outline</mat-icon>
@@ -532,8 +617,8 @@
       </mat-tab>
 
       <mat-tab [label]="'settings.tabs.documents' | t" [disabled]="locked()">
-        <div class="p-6">
-          <h2 class="text-xl font-semibold mb-1">{{ 'settings.documents.title' | t }}</h2>
+        <div class="p-3 sm:p-6">
+          <h2 class="text-lg sm:text-xl font-semibold mb-1">{{ 'settings.documents.title' | t }}</h2>
           <p class="text-gray-600 text-sm mb-4">{{ 'settings.documents.description' | t }}</p>
 
           <div class="mb-4">

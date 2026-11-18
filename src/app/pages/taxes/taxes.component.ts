@@ -1,4 +1,5 @@
 import { Component, OnInit, signal, effect, inject } from '@angular/core';
+import { ResponsiveDialogService } from '../../core/services/responsive-dialog.service';
 import { PreferencesService } from '../../core/services/preferences.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -28,6 +29,8 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { friendlyFunctionError } from '../../core/utils/error-message';
 import { t, currentLocale } from '../../core/i18n/i18n';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { MatMenuModule } from '@angular/material/menu';
+import { ListCardComponent } from '../../shared/ui/list-card.component';
 
 /** Lembrete de obrigação fiscal gerado por generate_tax_reminders(). */
 export interface TaxReminder {
@@ -62,12 +65,15 @@ export interface TaxReminder {
     MatProgressSpinnerModule,
     MatTabsModule,
     MatTooltipModule,
-    TranslatePipe
+    TranslatePipe,
+    MatMenuModule,
+    ListCardComponent
   ],
   templateUrl: './taxes.component.html',
   styleUrls: ['./taxes.component.css']
 })
 export class TaxesComponent implements OnInit {
+  private responsiveDialog = inject(ResponsiveDialogService);
   selectedYear = signal(new Date().getFullYear());
   selectedPeriod = signal(Math.ceil((new Date().getMonth() + 1) / 3));
   calculation = signal<TaxCalculation | null>(null);
@@ -256,8 +262,8 @@ export class TaxesComponent implements OnInit {
   }
 
   openPaymentDialog(declaration: TaxDeclaration) {
-    const dialogRef = this.dialog.open(TaxPaymentDialogComponent, {
-      width: '600px',
+    const dialogRef = this.responsiveDialog.open(TaxPaymentDialogComponent, {
+      size: 'md',
       data: { declaration }
     });
 
@@ -280,9 +286,8 @@ export class TaxesComponent implements OnInit {
   }
 
   openPaymentProofs(declaration: TaxDeclaration) {
-    this.dialog.open(TaxPaymentProofsDialogComponent, {
-      width: '560px',
-      maxWidth: '95vw',
+    this.responsiveDialog.open(TaxPaymentProofsDialogComponent, {
+      size: 'sm',
       data: { declaration }
     });
   }

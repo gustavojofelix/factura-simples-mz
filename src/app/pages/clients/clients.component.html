@@ -1,61 +1,73 @@
 <div class="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-  <div class="flex items-center justify-between mb-6">
-    <div>
-      <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ 'clients.list.title' | t }}</h1>
-      <p class="text-sm text-slate-500">{{ 'clients.list.subtitle' | t: { company: companyService.activeCompany()?.name ?? '' } }}</p>
-    </div>
-    <div class="flex gap-2">
-      <input #clientImportInput type="file" accept=".csv,.xlsx,.xls" class="hidden" (change)="onImportFileSelected($event)">
-      <button mat-stroked-button class="!border-ispc-orange !text-ispc-orange" (click)="clientImportInput.click()">
-        <mat-icon class="mr-2">upload_file</mat-icon>
-        {{ 'clients.list.import' | t }}
-      </button>
-      <button mat-stroked-button class="!border-ispc-orange !text-ispc-orange" [matMenuTriggerFor]="exportMenu"
-        [disabled]="clientService.clients().length === 0">
-        <mat-icon class="mr-2">file_download</mat-icon>
-        {{ 'common.actions.export' | t }}
-      </button>
-      <mat-menu #exportMenu="matMenu">
-        <button mat-menu-item (click)="exportAsCSV()">
-          <mat-icon>text_format</mat-icon>
-          <span>CSV</span>
-        </button>
-        <button mat-menu-item (click)="exportAsExcel()">
-          <mat-icon>description</mat-icon>
-          <span>Excel</span>
-        </button>
-      </mat-menu>
+  <input #clientImportInput type="file" accept=".csv,.xlsx,.xls" class="hidden" (change)="onImportFileSelected($event)">
+  <app-page-header
+    [title]="'clients.list.title' | t"
+    [subtitle]="'clients.list.subtitle' | t: { company: companyService.activeCompany()?.name ?? '' }"
+    [moreMenu]="moreMenu"
+  >
+    <button headerActions mat-stroked-button class="!border-ispc-orange !text-ispc-orange" (click)="clientImportInput.click()">
+      <mat-icon class="mr-2">upload_file</mat-icon>
+      {{ 'clients.list.import' | t }}
+    </button>
+    <button headerActions mat-stroked-button class="!border-ispc-orange !text-ispc-orange" [matMenuTriggerFor]="exportMenu"
+      [disabled]="clientService.clients().length === 0">
+      <mat-icon class="mr-2">file_download</mat-icon>
+      {{ 'common.actions.export' | t }}
+    </button>
+    <button headerActions mat-stroked-button class="!border-ispc-orange !text-ispc-orange" [matMenuTriggerFor]="templateMenu">
+      <mat-icon class="mr-2">description</mat-icon>
+      {{ 'clients.list.downloadTemplate' | t }}
+    </button>
+    <button headerPrimary mat-flat-button class="!bg-ispc-orange !text-white" (click)="openDialog()">
+      <mat-icon>add</mat-icon>
+      {{ 'clients.list.newClient' | t }}
+    </button>
+  </app-page-header>
 
-      <button mat-stroked-button class="!border-ispc-orange !text-ispc-orange" [matMenuTriggerFor]="templateMenu">
-        <mat-icon class="mr-2">description</mat-icon>
-        {{ 'clients.list.downloadTemplate' | t }}
-      </button>
-      <mat-menu #templateMenu="matMenu">
-        <button mat-menu-item (click)="downloadImportTemplate('xlsx')">
-          <mat-icon>table_view</mat-icon>
-          <span>Excel (.xlsx)</span>
-        </button>
-        <button mat-menu-item (click)="downloadImportTemplate('xls')">
-          <mat-icon>table_view</mat-icon>
-          <span>Excel 97-2003 (.xls)</span>
-        </button>
-        <button mat-menu-item (click)="downloadImportTemplate('csv')">
-          <mat-icon>text_format</mat-icon>
-          <span>CSV (.csv)</span>
-        </button>
-      </mat-menu>
+  <!-- Telemóvel: acções secundárias no menu "⋮" -->
+  <mat-menu #moreMenu="matMenu">
+    <button mat-menu-item (click)="clientImportInput.click()">
+      <mat-icon>upload_file</mat-icon>
+      <span>{{ 'clients.list.import' | t }}</span>
+    </button>
+    <button mat-menu-item [matMenuTriggerFor]="exportMenu" [disabled]="clientService.clients().length === 0">
+      <mat-icon>file_download</mat-icon>
+      <span>{{ 'common.actions.export' | t }}</span>
+    </button>
+    <button mat-menu-item [matMenuTriggerFor]="templateMenu">
+      <mat-icon>description</mat-icon>
+      <span>{{ 'clients.list.downloadTemplate' | t }}</span>
+    </button>
+  </mat-menu>
+  <mat-menu #exportMenu="matMenu">
+    <button mat-menu-item (click)="exportAsCSV()">
+      <mat-icon>text_format</mat-icon>
+      <span>CSV</span>
+    </button>
+    <button mat-menu-item (click)="exportAsExcel()">
+      <mat-icon>description</mat-icon>
+      <span>Excel</span>
+    </button>
+  </mat-menu>
+  <mat-menu #templateMenu="matMenu">
+    <button mat-menu-item (click)="downloadImportTemplate('xlsx')">
+      <mat-icon>table_view</mat-icon>
+      <span>Excel (.xlsx)</span>
+    </button>
+    <button mat-menu-item (click)="downloadImportTemplate('xls')">
+      <mat-icon>table_view</mat-icon>
+      <span>Excel 97-2003 (.xls)</span>
+    </button>
+    <button mat-menu-item (click)="downloadImportTemplate('csv')">
+      <mat-icon>text_format</mat-icon>
+      <span>CSV (.csv)</span>
+    </button>
+  </mat-menu>
 
-      <button mat-raised-button class="!bg-ispc-orange !text-white" (click)="openDialog()">
-        <mat-icon class="mr-2">add</mat-icon>
-        {{ 'clients.list.newClient' | t }}
-      </button>
-    </div>
-  </div>
-
-  <mat-card class="!rounded-2xl !shadow-sm">
+  <mat-card class="m-flat-card !rounded-2xl !shadow-sm">
     <mat-card-content class="!p-4 sm:!p-5">
       <div class="filter-toolbar-head">
-        <div>
+        <div class="hidden sm:block">
           <p class="filter-toolbar-title">{{ 'clients.filters.title' | t }}</p>
           <p class="filter-toolbar-caption">{{ 'clients.filters.caption' | t }}</p>
         </div>
@@ -67,8 +79,10 @@
         }
       </div>
 
-      <div class="client-filter-toolbar">
-        <mat-form-field appearance="outline" class="client-filter-field client-filter-search hide-subscript">
+      <app-filters-toggle class="mb-2" [(open)]="filtersOpen" [count]="activeFilterCount()" />
+
+      <div class="client-filter-toolbar m-filters" [class.is-open]="filtersOpen()">
+        <mat-form-field appearance="outline" class="client-filter-field client-filter-search hide-subscript m-filter-keep">
           <mat-label>{{ 'clients.filters.searchLabel' | t }}</mat-label>
           <input matInput [value]="searchTerm()" (input)="onSearchChange($event)" [placeholder]="'clients.filters.searchPlaceholder' | t">
           <mat-icon matPrefix class="text-gray-400">search</mat-icon>
@@ -132,7 +146,7 @@
         }
       </div>
       } @else {
-      <div class="overflow-x-auto">
+      <div class="list-table overflow-x-auto">
         <table mat-table [dataSource]="filteredClients()" class="w-full">
           <ng-container matColumnDef="id">
             <th mat-header-cell *matHeaderCellDef class="!font-semibold !w-12 numeric-cell">ID</th>
@@ -211,6 +225,52 @@
           <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover:bg-gray-50"></tr>
         </table>
       </div>
+
+
+      <!-- Telemóvel: cartões -->
+      <div class="list-cards">
+        @for (client of filteredClients(); track client.id) {
+          <app-list-card
+            [title]="client.name"
+            [subtitle]="(client.client_code ? '#' + client.client_code + ' · ' : '') + (client.nuit ? 'NUIT ' + client.nuit : (client.email || ''))"
+            (open)="openDialog(client)"
+          >
+            <div lcLeading class="w-10 h-10 flex-none bg-ispc-orange/10 rounded-full flex items-center justify-center">
+              <mat-icon class="!text-ispc-orange">person</mat-icon>
+            </div>
+            @if (!client.is_active) {
+              <span lcAside class="status-badge !min-w-0 bg-slate-50 text-slate-600 border-slate-200">{{ 'common.status.inactive' | t }}</span>
+            }
+            <button lcActions mat-icon-button [matMenuTriggerFor]="clientMenu" [matMenuTriggerData]="{ client: client }"
+              [attr.aria-label]="'common.fields.actions' | t">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+          </app-list-card>
+        }
+      </div>
+
+      <mat-menu #clientMenu="matMenu">
+        <ng-template matMenuContent let-client="client">
+          @if (canViewStatement()) {
+            <button mat-menu-item (click)="viewStatement(client)">
+              <mat-icon class="!text-ispc-orange">account_balance_wallet</mat-icon>
+              <span>{{ 'clients.table.viewStatement' | t }}</span>
+            </button>
+          }
+          <button mat-menu-item (click)="openDialog(client)">
+            <mat-icon>edit</mat-icon>
+            <span>{{ 'common.actions.edit' | t }}</span>
+          </button>
+          <button mat-menu-item (click)="toggleStatus(client)">
+            <mat-icon>{{ client.is_active ? 'visibility_off' : 'visibility' }}</mat-icon>
+            <span>{{ (client.is_active ? 'clients.table.deactivate' : 'clients.table.activate') | t }}</span>
+          </button>
+          <button mat-menu-item (click)="deleteClient(client)" class="!text-red-600">
+            <mat-icon class="!text-red-600">delete</mat-icon>
+            <span>{{ 'common.actions.delete' | t }}</span>
+          </button>
+        </ng-template>
+      </mat-menu>
 
       <div class="mt-4 text-sm text-gray-600">
         @if (searchTerm()) {

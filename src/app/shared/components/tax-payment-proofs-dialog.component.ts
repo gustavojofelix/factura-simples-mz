@@ -9,6 +9,7 @@ import { PROOF_ACCEPT, TaxDeclaration, TaxPayment, TaxService } from '../../core
 import { PreferencesService } from '../../core/services/preferences.service';
 import { currentLocale, t } from '../../core/i18n/i18n';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { DialogShellComponent } from '../ui/dialog-shell.component';
 
 /**
  * Pagamentos registados de uma declaração, com o respectivo comprovativo:
@@ -17,13 +18,15 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
 @Component({
   selector: 'app-tax-payment-proofs-dialog',
   standalone: true,
-  imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule, MatTooltipModule, MatProgressSpinnerModule, TranslatePipe],
+  imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule, MatTooltipModule, MatProgressSpinnerModule, DialogShellComponent, TranslatePipe],
   template: `
-    <h2 mat-dialog-title>{{ 'taxes.proof.dialogTitle' | t }}</h2>
-    <mat-dialog-content class="sm:min-w-[480px]">
-      <p class="text-sm text-gray-600 mb-4">
-        {{ 'taxes.calculator.periodOfYear' | t: { period: periodLabel, year: declaration().year } }}
-      </p>
+    <app-dialog-shell
+      [title]="'taxes.proof.dialogTitle' | t"
+      [subtitle]="'taxes.calculator.periodOfYear' | t: { period: periodLabel, year: declaration().year }"
+      icon="receipt_long"
+      [footer]="false"
+      (closed)="dialogRef.close()"
+    >
 
       <input #fileInput type="file" class="hidden" [accept]="proofAccept" (change)="onFileSelected($event)">
 
@@ -59,14 +62,14 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
               }
             </div>
 
-            <div class="mt-3 flex flex-wrap gap-2">
+            <div class="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
               @if (payment.receipt_url) {
-                <button mat-stroked-button type="button" (click)="open(payment)" [disabled]="busyId() !== null">
+                <button mat-stroked-button type="button" class="!h-11 !rounded-xl" (click)="open(payment)" [disabled]="busyId() !== null">
                   <mat-icon>visibility</mat-icon>
                   {{ 'taxes.proof.view' | t }}
                 </button>
               }
-              <button mat-stroked-button color="primary" type="button" (click)="pick(payment, fileInput)" [disabled]="busyId() !== null">
+              <button mat-stroked-button color="primary" type="button" class="!h-11 !rounded-xl" [class.col-span-2]="!payment.receipt_url" (click)="pick(payment, fileInput)" [disabled]="busyId() !== null">
                 @if (busyId() === payment.id) {
                   <mat-spinner diameter="18" class="inline-block mr-1"></mat-spinner>
                 } @else {
@@ -83,10 +86,7 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
       @if (error()) {
         <p class="text-sm text-red-600 mt-2">{{ error() }}</p>
       }
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-button (click)="dialogRef.close()">{{ 'common.actions.close' | t }}</button>
-    </mat-dialog-actions>
+    </app-dialog-shell>
   `
 })
 export class TaxPaymentProofsDialogComponent {

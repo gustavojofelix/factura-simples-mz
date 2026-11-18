@@ -120,19 +120,20 @@ export function sanitizeRichText(html: string): string {
       [class.border-orange-500]="focused()"
       [class.opacity-60]="disabled()">
 
-      <div class="flex items-center justify-between gap-2 px-3 pt-2">
-        <span class="text-xs font-medium" [class.text-gray-500]="!focused()" [class.text-orange-600]="focused()">
+      <!-- Em ecrãs estreitos a barra de formatação passa para a linha de baixo em vez de sair da caixa. -->
+      <div class="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 px-3 pt-2">
+        <span class="min-w-0 text-xs font-medium" [class.text-gray-500]="!focused()" [class.text-orange-600]="focused()">
           {{ label() }}
         </span>
 
-        <div class="flex items-center gap-0.5">
+        <div class="flex flex-wrap items-center gap-0.5 -ml-1.5 sm:ml-0">
           @for (action of actions; track action.command) {
             <button type="button"
               (mousedown)="$event.preventDefault()"
               (click)="run(action.command)"
               [disabled]="disabled()"
               [matTooltip]="action.hint"
-              class="w-7 h-7 rounded flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+              class="w-9 h-9 sm:w-7 sm:h-7 !min-h-0 rounded flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
               [class.!bg-orange-100]="active()[action.command]"
               [class.!text-orange-700]="active()[action.command]">
               <mat-icon class="!text-[18px] !w-[18px] !h-[18px]">{{ action.icon }}</mat-icon>

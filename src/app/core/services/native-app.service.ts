@@ -43,7 +43,11 @@ export class NativeAppService {
   private onBack(canGoBack: boolean) {
     const dialogs = this.dialog.openDialogs;
     if (dialogs.length > 0) {
-      dialogs[dialogs.length - 1].close();
+      const top = dialogs[dialogs.length - 1];
+      // Diálogos com passos (ex.: Nova Factura) podem tratar o "voltar" eles próprios.
+      const instance = top.componentInstance as { handleBack?: () => boolean } | null;
+      if (instance?.handleBack?.()) return;
+      top.close();
       return;
     }
     const path = this.router.url.split(/[?#]/)[0];

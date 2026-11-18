@@ -110,7 +110,7 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
 
         <!-- MODELO -->
         <mat-card class="!rounded-2xl !shadow-sm">
-          <mat-card-content class="!p-6">
+          <mat-card-content class="!p-4 sm:!p-6">
             <h3 class="text-base font-bold text-gray-800 mb-1">{{ 'settings.documentTab.template.title' | t }}</h3>
             <p class="text-xs text-gray-500 mb-5">{{ 'settings.documentTab.template.subtitle' | t }}</p>
 
@@ -138,7 +138,7 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
 
         <!-- MARCA -->
         <mat-card class="!rounded-2xl !shadow-sm">
-          <mat-card-content class="!p-6">
+          <mat-card-content class="!p-4 sm:!p-6">
             <h3 class="text-base font-bold text-gray-800 mb-1">{{ 'settings.documentTab.brand.title' | t }}</h3>
             <p class="text-xs text-gray-500 mb-5">{{ 'settings.documentTab.brand.subtitle' | t }}</p>
 
@@ -200,7 +200,7 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
                     <p class="text-xs text-gray-400">{{ 'settings.documentTab.brand.noLogo' | t }}</p>
                   }
 
-                  <div class="flex items-center gap-2">
+                  <div class="flex flex-wrap items-center justify-center gap-2">
                     <input type="file" #logoInput accept="image/png,image/jpeg" hidden (change)="onLogoSelected($event)">
                     <button type="button" mat-stroked-button [disabled]="!canEdit() || isUploadingLogo()"
                       (click)="logoInput.click()">
@@ -223,15 +223,16 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
 
         <!-- TEXTOS -->
         <mat-card class="!rounded-2xl !shadow-sm">
-          <mat-card-content class="!p-6">
+          <mat-card-content class="!p-4 sm:!p-6">
             <h3 class="text-base font-bold text-gray-800 mb-1">{{ 'settings.documentTab.texts.title' | t }}</h3>
             <p class="text-xs text-gray-500 mb-5">{{ 'settings.documentTab.texts.subtitle' | t }}</p>
 
             <div class="space-y-4">
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>{{ 'settings.documentTab.texts.thankYou' | t }}</mat-label>
-                <input matInput formControlName="thank_you_message" maxlength="160"
-                  [placeholder]="'settings.documentTab.texts.thankYouPlaceholder' | t">
+                <textarea matInput formControlName="thank_you_message" maxlength="160" rows="2"
+                  (keydown.enter)="$event.preventDefault()" (input)="stripNewlines('thank_you_message')"
+                  [placeholder]="'settings.documentTab.texts.thankYouPlaceholder' | t"></textarea>
                 <mat-hint align="end">{{ form.value.thank_you_message?.length || 0 }} / 160</mat-hint>
               </mat-form-field>
 
@@ -254,7 +255,7 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
 
         <!-- IMPRESSÃO -->
         <mat-card class="!rounded-2xl !shadow-sm">
-          <mat-card-content class="!p-6">
+          <mat-card-content class="!p-4 sm:!p-6">
             <h3 class="text-base font-bold text-gray-800 mb-1">{{ 'settings.documentTab.print.title' | t }}</h3>
             <p class="text-xs text-gray-500 mb-5">{{ 'settings.documentTab.print.subtitle' | t }}</p>
 
@@ -282,7 +283,7 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
 
         <!-- E-MAIL -->
         <mat-card class="!rounded-2xl !shadow-sm">
-          <mat-card-content class="!p-6">
+          <mat-card-content class="!p-4 sm:!p-6">
             <h3 class="text-base font-bold text-gray-800 mb-1">{{ 'settings.documentTab.email.title' | t }}</h3>
             <p class="text-xs text-gray-500 mb-4">{{ 'settings.documentTab.email.subtitle' | t }}</p>
 
@@ -290,7 +291,7 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
               @for (tok of tokens; track tok.token) {
                 <button type="button" (click)="insertToken(tok.token)" [disabled]="!canEdit()"
                   [matTooltip]="tok.hintKey | t"
-                  class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 text-[11px] font-mono text-slate-700 transition-colors disabled:opacity-50">
+                  class="!min-h-[2.25rem] max-w-full break-all px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 text-[11px] font-mono text-slate-700 transition-colors disabled:opacity-50">
                   {{ tok.token }}
                 </button>
               }
@@ -299,14 +300,16 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
             <div class="space-y-4">
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>{{ 'settings.documentTab.email.subject' | t }}</mat-label>
-                <input matInput formControlName="email_subject" maxlength="200"
-                  (focus)="lastFocused.set('email_subject')">
+                <textarea matInput formControlName="email_subject" maxlength="200" rows="2"
+                  (keydown.enter)="$event.preventDefault()" (input)="stripNewlines('email_subject')"
+                  (focus)="lastFocused.set('email_subject')"></textarea>
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>{{ 'settings.documentTab.email.greeting' | t }}</mat-label>
-                <input matInput formControlName="email_greeting" maxlength="200"
-                  (focus)="lastFocused.set('email_greeting')">
+                <textarea matInput formControlName="email_greeting" maxlength="200" rows="2"
+                  (keydown.enter)="$event.preventDefault()" (input)="stripNewlines('email_greeting')"
+                  (focus)="lastFocused.set('email_greeting')"></textarea>
               </mat-form-field>
 
               <div>
@@ -321,8 +324,10 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
 
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>{{ 'settings.documentTab.email.signature' | t }}</mat-label>
-                <input matInput formControlName="email_signature" maxlength="200"
-                  (focus)="lastFocused.set('email_signature')">
+                <!-- textarea para o texto ficar visível no telemóvel; Enter não cria linhas. -->
+                <textarea matInput formControlName="email_signature" maxlength="200" rows="2"
+                  (keydown.enter)="$event.preventDefault()" (input)="stripNewlines('email_signature')"
+                  (focus)="lastFocused.set('email_signature')"></textarea>
               </mat-form-field>
 
               <div>
@@ -337,8 +342,9 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
 
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>{{ 'settings.documentTab.email.statementSubject' | t }}</mat-label>
-                <input matInput formControlName="statement_email_subject" maxlength="200"
-                  (focus)="lastFocused.set('statement_email_subject')">
+                <textarea matInput formControlName="statement_email_subject" maxlength="200" rows="2"
+                  (keydown.enter)="$event.preventDefault()" (input)="stripNewlines('statement_email_subject')"
+                  (focus)="lastFocused.set('statement_email_subject')"></textarea>
               </mat-form-field>
 
               <div>
@@ -366,11 +372,11 @@ const MAX_EMAIL_BODY_LENGTH = 5000;
           </mat-card-content>
         </mat-card>
 
-        <div class="flex items-center justify-end gap-3 pb-4">
-          <button type="button" mat-button (click)="reset()" [disabled]="!canEdit() || isSaving()">
+        <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3 pb-4">
+          <button type="button" mat-button class="w-full sm:w-auto" (click)="reset()" [disabled]="!canEdit() || isSaving()">
             {{ 'settings.documentTab.reset' | t }}
           </button>
-          <button type="button" mat-raised-button class="!bg-ispc-orange !text-white"
+          <button type="button" mat-raised-button class="w-full sm:w-auto !h-12 sm:!h-10 !rounded-xl !bg-ispc-orange !text-white"
             (click)="save()" [disabled]="!canEdit() || form.invalid || isSaving()">
             @if (isSaving()) {
               <mat-spinner diameter="18" class="inline-block mr-2"></mat-spinner>
@@ -594,6 +600,15 @@ export class DocumentSettingsTabComponent {
    * corpos com formatação entra onde estava o cursor; nos restantes, no fim.
    * Sem campo escolhido, vai para o corpo da mensagem, que é o caso comum.
    */
+  /** Campos de uma linha mostrados como textarea: quebras de linha coladas viram espaços. */
+  stripNewlines(field: string) {
+    const control = this.form.get(field);
+    const value = String(control?.value ?? '');
+    if (/[\r\n]/.test(value)) {
+      control!.setValue(value.replace(/[\r\n]+/g, ' '));
+    }
+  }
+
   insertToken(token: string) {
     if (!this.canEdit()) return;
 

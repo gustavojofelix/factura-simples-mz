@@ -200,7 +200,6 @@ export class MainLayoutComponent {
       email: this.authService.currentUser()?.email || '—'
     };
     this.dialog.open(SupportContactDialogComponent, {
-      maxWidth: '95vw',
       data: {
         subject: t('layout.suspended.supportSubject', params),
         message: t('layout.suspended.supportMessage', params)

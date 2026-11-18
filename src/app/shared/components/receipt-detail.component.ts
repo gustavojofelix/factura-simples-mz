@@ -19,6 +19,7 @@ import {
 } from '../../core/services/document-settings.service';
 import { ReceiptDocumentComponent } from './documents/receipt-document.component';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { DialogShellComponent } from '../ui/dialog-shell.component';
 import { t } from '../../core/i18n/i18n';
 import { Capacitor } from '@capacitor/core';
 
@@ -39,18 +40,11 @@ export interface ReceiptDialogData {
     MatProgressSpinnerModule,
     MatSnackBarModule,
     ReceiptDocumentComponent,
+    DialogShellComponent,
     TranslatePipe
   ],
   template: `
-    <div class="receipt-dialog">
-      <h2 mat-dialog-title class="flex items-center justify-between">
-        <span>{{ 'payments.receipt.title' | t }}</span>
-        <button mat-icon-button (click)="close()">
-          <mat-icon>close</mat-icon>
-        </button>
-      </h2>
-
-      <mat-dialog-content>
+    <app-dialog-shell [title]="'payments.receipt.title' | t" icon="receipt" (closed)="close()">
         @if (isLoading()) {
           <div class="text-center py-8">
             <mat-spinner diameter="36" class="mx-auto mb-3"></mat-spinner>
@@ -77,37 +71,29 @@ export interface ReceiptDialogData {
             <p class="text-gray-500">{{ 'payments.receipt.loadError' | t }}</p>
           </div>
         }
-      </mat-dialog-content>
-
-      <mat-dialog-actions align="end" class="border-t">
-        <button mat-button (click)="close()">{{ 'common.actions.close' | t }}</button>
-        <button mat-stroked-button (click)="downloadReceipt()" [disabled]="!payment() || isGeneratingPdf()">
+      <!-- Telemóvel: três acções lado a lado (o "fechar" está no cabeçalho). -->
+      <div shellFooter class="grid grid-cols-3 gap-2 sm:flex sm:justify-end">
+        <button mat-stroked-button class="receipt-action" (click)="downloadReceipt()" [disabled]="!payment() || isGeneratingPdf()">
           <mat-icon>file_download</mat-icon>
           PDF
         </button>
-        <button mat-stroked-button (click)="printReceipt()" [disabled]="!payment() || isGeneratingPdf()">
+        <button mat-stroked-button class="receipt-action" (click)="printReceipt()" [disabled]="!payment() || isGeneratingPdf()">
           <mat-icon>print</mat-icon>
           {{ 'common.actions.print' | t }}
         </button>
-        <button mat-stroked-button (click)="sendEmail()"
+        <button mat-stroked-button class="receipt-action" (click)="sendEmail()"
           [disabled]="!payment() || !invoice()?.client?.email || isGeneratingPdf() || paymentService.isAnnulled(payment()!)">
           <mat-icon>email</mat-icon>
-          {{ 'payments.receipt.sendEmail' | t }}
+          <span class="sm:hidden">E-mail</span>
+          <span class="hidden sm:inline">{{ 'payments.receipt.sendEmail' | t }}</span>
         </button>
-      </mat-dialog-actions>
-    </div>
+      </div>
+    </app-dialog-shell>
   `,
   styles: [`
-    .receipt-dialog {
-      min-width: 600px;
-      max-width: 800px;
-    }
-
-    mat-dialog-content {
-      max-height: 70vh;
-      overflow-y: auto;
-      padding: 20px;
-    }
+    :host { display: block; height: 100%; }
+    .receipt-action { height: 3rem !important; border-radius: .75rem !important; min-width: 0 !important; padding: 0 .5rem !important; }
+    @media (min-width: 600px) { .receipt-action { padding: 0 1rem !important; } }
   `]
 })
 export class ReceiptDetailComponent implements OnInit {

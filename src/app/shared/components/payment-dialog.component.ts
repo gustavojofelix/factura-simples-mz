@@ -12,6 +12,8 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { PaymentService } from '../../core/services/payment.service';
 import { ReceiptDetailComponent } from './receipt-detail.component';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { DialogShellComponent } from '../ui/dialog-shell.component';
+import { ResponsiveDialogService } from '../../core/services/responsive-dialog.service';
 import { currentLocale, t } from '../../core/i18n/i18n';
 
 export interface PaymentDialogData {
@@ -36,22 +38,36 @@ export interface PaymentDialogData {
     MatSelectModule,
     MatDatepickerModule,
     MatNativeDateModule,
+    DialogShellComponent,
     TranslatePipe
   ],
   template: `
-    <h2 mat-dialog-title>{{ 'payments.dialog.title' | t }}</h2>
-    <mat-dialog-content>
-      <div class="mb-4">
-        <p class="text-sm text-gray-600">{{ 'payments.dialog.invoiceLabel' | t }} <span class="font-medium">{{ data.invoiceNumber }}</span></p>
-        <p class="text-sm text-gray-600">{{ 'payments.dialog.totalLabel' | t }} <span class="font-medium">{{ formatCurrency(data.totalAmount) }}</span></p>
-        <p class="text-sm text-gray-600">{{ 'payments.dialog.paidLabel' | t }} <span class="font-medium text-green-600">{{ formatCurrency(data.amountPaid) }}</span></p>
-        <p class="text-sm text-gray-600">{{ 'payments.dialog.pendingLabel' | t }} <span class="font-medium text-orange-600">{{ formatCurrency(data.amountPending) }}</span></p>
+    <app-dialog-shell
+      [title]="'payments.dialog.title' | t"
+      [subtitle]="data.invoiceNumber"
+      icon="payments"
+      (closed)="cancel()"
+    >
+      <!-- Resumo da factura -->
+      <div class="grid grid-cols-3 gap-2 mb-5 text-center">
+        <div class="rounded-xl bg-slate-50 px-2 py-2.5">
+          <p class="text-[11px] text-slate-500">{{ 'payments.dialog.totalLabel' | t }}</p>
+          <p class="text-sm font-bold text-slate-900 tabular-nums">{{ formatCurrency(data.totalAmount) }}</p>
+        </div>
+        <div class="rounded-xl bg-green-50 px-2 py-2.5">
+          <p class="text-[11px] text-green-700">{{ 'payments.dialog.paidLabel' | t }}</p>
+          <p class="text-sm font-bold text-green-700 tabular-nums">{{ formatCurrency(data.amountPaid) }}</p>
+        </div>
+        <div class="rounded-xl bg-orange-50 px-2 py-2.5">
+          <p class="text-[11px] text-orange-700">{{ 'payments.dialog.pendingLabel' | t }}</p>
+          <p class="text-sm font-bold text-orange-700 tabular-nums">{{ formatCurrency(data.amountPending) }}</p>
+        </div>
       </div>
 
-      <form [formGroup]="paymentForm" class="flex flex-col gap-4">
-        <mat-form-field>
+      <form [formGroup]="paymentForm" class="flex flex-col gap-1">
+        <mat-form-field appearance="outline">
           <mat-label>{{ 'payments.dialog.amount' | t }}</mat-label>
-          <input matInput type="number" formControlName="amount" step="0.01" min="0.01" [max]="data.amountPending">
+          <input matInput type="number" inputmode="decimal" formControlName="amount" step="0.01" min="0.01" [max]="data.amountPending">
           <span matSuffix>MZN</span>
           @if (paymentForm.get('amount')?.hasError('required')) {
             <mat-error>{{ 'common.validation.required' | t }}</mat-error>
@@ -64,16 +80,16 @@ export interface PaymentDialogData {
           }
         </mat-form-field>
 
-        <div class="flex gap-2">
-          <button type="button" mat-stroked-button class="flex-1" (click)="setPartialPayment()">
+        <div class="flex gap-2 mb-4">
+          <button type="button" mat-stroked-button class="flex-1 !h-11 !rounded-xl" (click)="setPartialPayment()">
             {{ 'payments.dialog.partial' | t }}
           </button>
-          <button type="button" mat-stroked-button class="flex-1" (click)="setFullPayment()">
+          <button type="button" mat-stroked-button class="flex-1 !h-11 !rounded-xl" (click)="setFullPayment()">
             {{ 'payments.dialog.full' | t }}
           </button>
         </div>
 
-        <mat-form-field>
+        <mat-form-field appearance="outline">
           <mat-label>{{ 'payments.dialog.date' | t }}</mat-label>
           <input matInput [matDatepicker]="picker" formControlName="payment_date" [min]="minDate" [max]="maxDate">
           <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
@@ -89,7 +105,7 @@ export interface PaymentDialogData {
           }
         </mat-form-field>
 
-        <mat-form-field>
+        <mat-form-field appearance="outline">
           <mat-label>{{ 'payments.dialog.method' | t }}</mat-label>
           <mat-select formControlName="payment_method">
             <mat-option value="dinheiro">{{ 'payments.methods.cash' | t }}</mat-option>
@@ -100,35 +116,34 @@ export interface PaymentDialogData {
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field>
+        <mat-form-field appearance="outline">
           <mat-label>{{ 'payments.dialog.reference' | t }}</mat-label>
           <input matInput formControlName="reference" [placeholder]="'payments.dialog.referencePlaceholder' | t">
         </mat-form-field>
 
-        <mat-form-field>
+        <mat-form-field appearance="outline">
           <mat-label>{{ 'payments.dialog.notes' | t }}</mat-label>
           <textarea matInput formControlName="notes" rows="3"></textarea>
         </mat-form-field>
       </form>
 
       @if (errorMessage()) {
-        <div class="mt-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+        <div class="mt-2 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
           {{ errorMessage() }}
         </div>
       }
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-button (click)="cancel()">{{ 'common.actions.cancel' | t }}</button>
-      <button mat-raised-button color="primary" (click)="save()" [disabled]="!paymentForm.valid || isSaving()">
-        {{ (isSaving() ? 'common.status.saving' : 'payments.dialog.title') | t }}
-      </button>
-    </mat-dialog-actions>
-  `,
-  styles: [`
-    mat-dialog-content {
-      min-width: 400px;
-    }
-  `]
+
+      <div shellFooter class="flex gap-2 sm:justify-end">
+        <button mat-stroked-button type="button" class="flex-1 sm:flex-none !h-12 !rounded-xl" (click)="cancel()">
+          {{ 'common.actions.cancel' | t }}
+        </button>
+        <button mat-flat-button type="button" class="flex-[2] sm:flex-none !h-12 !rounded-xl !bg-ispc-orange !text-white"
+          (click)="save()" [disabled]="!paymentForm.valid || isSaving()">
+          {{ (isSaving() ? 'common.status.saving' : 'payments.dialog.title') | t }}
+        </button>
+      </div>
+    </app-dialog-shell>
+  `
 })
 export class PaymentDialogComponent {
   private fb = inject(FormBuilder);
@@ -136,6 +151,7 @@ export class PaymentDialogComponent {
   data = inject<PaymentDialogData>(MAT_DIALOG_DATA);
   private paymentService = inject(PaymentService);
   private dialog = inject(MatDialog);
+  private responsiveDialog = inject(ResponsiveDialogService);
 
   isSaving = signal(false);
   errorMessage = signal('');
@@ -230,9 +246,8 @@ export class PaymentDialogComponent {
         this.dialogRef.close(true);
 
         setTimeout(() => {
-          this.dialog.open(ReceiptDetailComponent, {
-            width: '800px',
-            maxWidth: '95vw',
+          this.responsiveDialog.open(ReceiptDetailComponent, {
+            size: 'lg',
             data: {
               paymentId: payment.id,
               invoiceId: this.data.invoiceId

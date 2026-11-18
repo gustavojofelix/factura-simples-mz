@@ -1,5 +1,6 @@
 import { Component, DestroyRef, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ResponsiveDialogService } from '../../core/services/responsive-dialog.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SUBSCRIPTION_TAB_INDEX } from '../../core/guards/subscription.guard';
 
@@ -21,6 +22,8 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatMenuModule } from '@angular/material/menu';
+import { ListCardComponent } from '../../shared/ui/list-card.component';
 import { CompanyService, Company } from '../../core/services/company.service';
 import { AccountService } from '../../core/services/account.service';
 import { TenantService } from '../../core/services/tenant.service';
@@ -63,12 +66,15 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
     MatProgressSpinnerModule,
     DocumentSettingsTabComponent,
     PosAdminComponent,
+    MatMenuModule,
+    ListCardComponent,
     TranslatePipe
   ],
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.css']
 })
 export class SettingsComponent implements OnInit {
+  private responsiveDialog = inject(ResponsiveDialogService);
   companies = this.companyService.companies;
   allUsers = this.userManagementService.allUsers;
   currentUserId = signal<string>('');
@@ -346,9 +352,9 @@ export class SettingsComponent implements OnInit {
   }
 
   openCompanyDialog(company?: Company) {
-    const dialogRef = this.dialog.open(CompanyDialogComponent, {
-      data: { company },
-      maxWidth: '95vw'
+    const dialogRef = this.responsiveDialog.open(CompanyDialogComponent, {
+      size: 'xl',
+      data: { company }
     });
 
     dialogRef.afterClosed().subscribe(async (result) => {
@@ -408,13 +414,13 @@ export class SettingsComponent implements OnInit {
   }
 
   openUserDialog(user?: UserWithCompanies) {
-    const dialogRef = this.dialog.open(UserCompanyDialogComponent, {
+    const dialogRef = this.responsiveDialog.open(UserCompanyDialogComponent, {
+      size: 'md',
       data: {
         userId: user?.user_id,
         userEmail: user?.user_email,
         userCompanies: user?.companies
-      },
-      maxWidth: '95vw'
+      }
     });
 
     dialogRef.afterClosed().subscribe(async (result) => {
@@ -544,15 +550,14 @@ export class SettingsComponent implements OnInit {
     }
 
     // Qualquer plano pago: se ainda houver tempo pago, o período entra na fila.
-    const dialogRef = this.dialog.open(PaymentDialogComponent, {
+    const dialogRef = this.responsiveDialog.open(PaymentDialogComponent, {
+      size: 'sm',
       data: {
         companyId,
         subscriptionId: sub?.id,
         plan,
         billingCycle: targetCycle
       },
-      width: '450px',
-      maxWidth: '95vw',
       panelClass: 'dark-dialog'
     });
 

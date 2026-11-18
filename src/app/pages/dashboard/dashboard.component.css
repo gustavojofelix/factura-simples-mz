@@ -17,38 +17,44 @@
 @media (max-width: 1279px) { .dashboard-context-card { width: 100%; } }
 @media (max-width: 640px) { .dashboard-context-grid { grid-template-columns: 1fr 1fr; } .dashboard-context-grid div:last-child { grid-column: 1 / -1; } }
 
-::ng-deep .mat-mdc-card {
+:host ::ng-deep .mat-mdc-card {
   border-radius: 12px;
 }
 
-::ng-deep .mat-mdc-chip {
+:host ::ng-deep .mat-mdc-chip {
   font-size: 11px;
   font-weight: 600;
   height: 24px;
   min-height: 24px;
 }
 
-::ng-deep .mat-mdc-chip.mat-success {
+:host ::ng-deep .mat-mdc-chip.mat-success {
   background-color: #10B981;
   color: white;
 }
 
-::ng-deep .mat-mdc-chip.mat-warn {
+:host ::ng-deep .mat-mdc-chip.mat-warn {
   background-color: #F59E0B;
   color: white;
 }
 
-::ng-deep .mat-mdc-chip.mat-error {
+:host ::ng-deep .mat-mdc-chip.mat-error {
   background-color: #EF4444;
   color: white;
 }
 
-::ng-deep .mat-mdc-table {
+:host ::ng-deep .mat-mdc-table {
   background: transparent;
 }
 
-::ng-deep .mat-mdc-header-cell {
+:host ::ng-deep .mat-mdc-header-cell {
   background-color: #f9fafb;
   font-weight: 600;
   color: #374151;
+}
+
+/* Telemóvel: KPIs em duas colunas — o valor encolhe e pode quebrar em vez de sair do cartão. */
+@media (max-width: 599.98px) {
+  .kpi-value { font-size: 1.05rem; white-space: normal; overflow-wrap: anywhere; }
+  .quick-tile { min-width: 0; padding-left: .25rem !important; padding-right: .25rem !important; }
 }

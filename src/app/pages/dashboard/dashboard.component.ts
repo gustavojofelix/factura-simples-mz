@@ -20,6 +20,8 @@ import { PreferencesService } from '../../core/services/preferences.service';
 import { getAuditCategoryLabel, getAuditCategoryBadge, getAuditCategoryIcon, getAuditActionLabel } from '../../core/utils/audit-formatter.util';
 import { t, currentLocale } from '../../core/i18n/i18n';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { ResponsiveDialogService } from '../../core/services/responsive-dialog.service';
+import { ListCardComponent } from '../../shared/ui/list-card.component';
 
 interface DashboardMetrics {
   quarterSales: number;
@@ -51,12 +53,14 @@ interface RecentInvoice {
     MatChipsModule,
     MatProgressSpinnerModule,
     MatDialogModule,
-    TranslatePipe
+    TranslatePipe,
+    ListCardComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent {
+  private responsiveDialog = inject(ResponsiveDialogService);
   readonly lastUpdatedAt = signal<Date | null>(null);
   readonly greeting = computed(() => {
     const hour = new Date().getHours();
@@ -386,9 +390,8 @@ export class DashboardComponent {
   }
 
   openNewInvoiceDialog() {
-    const dialogRef = this.dialog.open(InvoiceDialogComponent, {
-      width: '900px',
-      maxWidth: '95vw',
+    const dialogRef = this.responsiveDialog.open(InvoiceDialogComponent, {
+      size: 'lg',
       disableClose: true
     });
 

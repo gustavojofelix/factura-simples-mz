@@ -1,54 +1,54 @@
-<div class="p-6 max-w-7xl mx-auto">
-  <div class="mb-6">
-    <h1 class="text-3xl font-bold text-gray-900">{{ 'taxes.page.title' | t }}</h1>
-    <p class="text-gray-600 mt-1">{{ 'taxes.page.subtitle' | t }}</p>
+<div class="p-4 sm:p-6 max-w-7xl mx-auto">
+  <div class="mb-4 sm:mb-6">
+    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">{{ 'taxes.page.title' | t }}</h1>
+    <p class="text-sm sm:text-base text-gray-600 mt-1">{{ 'taxes.page.subtitle' | t }}</p>
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
     <mat-card class="bg-blue-50">
-      <mat-card-content>
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-gray-600">{{ 'taxes.summary.yearToDate' | t }}</p>
-            <p class="text-2xl font-bold text-blue-600">{{ formatCurrency(summary().yearToDate) }}</p>
+      <mat-card-content class="!p-3 sm:!p-4">
+        <div class="flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <p class="text-xs sm:text-sm text-gray-600">{{ 'taxes.summary.yearToDate' | t }}</p>
+            <p class="text-base sm:text-2xl leading-tight font-bold tabular-nums [overflow-wrap:anywhere] text-blue-600">{{ formatCurrency(summary().yearToDate) }}</p>
           </div>
-          <mat-icon class="text-blue-600 text-4xl">account_balance</mat-icon>
+          <mat-icon class="hidden sm:inline-block shrink-0 text-blue-600 text-4xl">account_balance</mat-icon>
         </div>
       </mat-card-content>
     </mat-card>
 
     <mat-card class="bg-green-50">
-      <mat-card-content>
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-gray-600">{{ 'taxes.summary.totalPaid' | t }}</p>
-            <p class="text-2xl font-bold text-green-600">{{ formatCurrency(summary().totalPaid) }}</p>
+      <mat-card-content class="!p-3 sm:!p-4">
+        <div class="flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <p class="text-xs sm:text-sm text-gray-600">{{ 'taxes.summary.totalPaid' | t }}</p>
+            <p class="text-base sm:text-2xl leading-tight font-bold tabular-nums [overflow-wrap:anywhere] text-green-600">{{ formatCurrency(summary().totalPaid) }}</p>
           </div>
-          <mat-icon class="text-green-600 text-4xl">check_circle</mat-icon>
+          <mat-icon class="hidden sm:inline-block shrink-0 text-green-600 text-4xl">check_circle</mat-icon>
         </div>
       </mat-card-content>
     </mat-card>
 
     <mat-card class="bg-red-50">
-      <mat-card-content>
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-gray-600">{{ 'taxes.summary.overdue' | t }}</p>
-            <p class="text-2xl font-bold text-red-600">{{ formatCurrency(summary().overdue) }}</p>
+      <mat-card-content class="!p-3 sm:!p-4">
+        <div class="flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <p class="text-xs sm:text-sm text-gray-600">{{ 'taxes.summary.overdue' | t }}</p>
+            <p class="text-base sm:text-2xl leading-tight font-bold tabular-nums [overflow-wrap:anywhere] text-red-600">{{ formatCurrency(summary().overdue) }}</p>
           </div>
-          <mat-icon class="text-red-600 text-4xl">error</mat-icon>
+          <mat-icon class="hidden sm:inline-block shrink-0 text-red-600 text-4xl">error</mat-icon>
         </div>
       </mat-card-content>
     </mat-card>
 
     <mat-card class="bg-orange-50">
-      <mat-card-content>
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-gray-600">{{ 'taxes.summary.pendingDeclarations' | t }}</p>
-            <p class="text-2xl font-bold text-orange-600">{{ summary().pendingDeclarations }}</p>
+      <mat-card-content class="!p-3 sm:!p-4">
+        <div class="flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <p class="text-xs sm:text-sm text-gray-600">{{ 'taxes.summary.pendingDeclarations' | t }}</p>
+            <p class="text-base sm:text-2xl leading-tight font-bold tabular-nums [overflow-wrap:anywhere] text-orange-600">{{ summary().pendingDeclarations }}</p>
           </div>
-          <mat-icon class="text-orange-600 text-4xl">pending_actions</mat-icon>
+          <mat-icon class="hidden sm:inline-block shrink-0 text-orange-600 text-4xl">pending_actions</mat-icon>
         </div>
       </mat-card-content>
     </mat-card>
@@ -109,9 +109,9 @@
     </mat-card>
   }
 
-  <mat-tab-group class="segmented-tabs mb-6" [(selectedIndex)]="selectedTabIndex">
+  <mat-tab-group class="segmented-tabs mb-4 sm:mb-6" [(selectedIndex)]="selectedTabIndex">
     <mat-tab [label]="'taxes.tabs.calculator' | t">
-      <div class="py-6">
+      <div class="py-4 sm:py-6">
         <mat-card>
           <mat-card-header>
             <mat-card-title>{{ 'taxes.calculator.title' | t }}</mat-card-title>
@@ -140,6 +140,7 @@
             <button
               mat-raised-button
               color="primary"
+              class="w-full sm:w-auto !h-12 sm:!h-10 !rounded-xl"
               (click)="calculateTax()"
               [disabled]="isCalculating()">
               <mat-icon>calculate</mat-icon>
@@ -151,7 +152,7 @@
             </button>
 
             @if (calculation()) {
-              <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+              <div class="mt-4 sm:mt-6 p-3 sm:p-4 bg-gray-50 rounded-lg">
                 <h3 class="font-semibold text-lg mb-4">{{ 'taxes.calculator.result' | t }}</h3>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -185,7 +186,7 @@
                       <p class="text-sm font-semibold text-gray-900 mb-3">{{ 'common.actions.details' | t }}</p>
                       <div class="space-y-3">
                         @for (split of calculation()!.ispcSplits; track $index) {
-                          <div class="flex items-center justify-between p-3 bg-white rounded-md border border-gray-100 shadow-sm">
+                          <div class="flex items-center justify-between gap-3 p-3 bg-white rounded-md border border-gray-100 shadow-sm">
                             <div>
                               <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">{{ splitLabel(split) }}</p>
                               <div class="flex items-center gap-2">
@@ -206,12 +207,13 @@
 
                 <div class="p-4 bg-blue-100 rounded-lg mb-4 mt-2">
                   <p class="text-sm text-gray-700">{{ 'taxes.calculator.totalPayable' | t }}</p>
-                  <p class="text-3xl font-bold text-blue-700">{{ formatCurrency(calculation()!.ispcAmount) }}</p>
+                  <p class="text-2xl sm:text-3xl font-bold text-blue-700 tabular-nums [overflow-wrap:anywhere]">{{ formatCurrency(calculation()!.ispcAmount) }}</p>
                 </div>
 
                 <button
                   mat-raised-button
                   color="accent"
+                  class="w-full sm:w-auto !h-12 sm:!h-10 !rounded-xl"
                   (click)="createDeclaration()">
                   <mat-icon>add</mat-icon>
                   {{ 'taxes.calculator.createDeclaration' | t }}
@@ -224,7 +226,7 @@
     </mat-tab>
 
     <mat-tab [label]="'taxes.tabs.declarations' | t">
-      <div class="py-6">
+      <div class="py-4 sm:py-6">
         @if (taxService.isLoading()) {
           <div class="flex justify-center py-8">
             <mat-spinner></mat-spinner>
@@ -238,9 +240,9 @@
             </mat-card-content>
           </mat-card>
         } @else {
-          <mat-card>
+          <mat-card class="m-flat-card">
             <mat-card-content>
-              <div class="overflow-x-auto">
+              <div class="list-table overflow-x-auto">
                 <table mat-table [dataSource]="taxService.declarations()" class="w-full">
                   <ng-container matColumnDef="period">
                     <th mat-header-cell *matHeaderCellDef class="font-semibold">{{ 'taxes.calculator.period' | t }}</th>
@@ -363,6 +365,69 @@
                   <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
                 </table>
               </div>
+
+              <!-- Telemóvel: cartões; as acções da tabela estão no menu "⋮". -->
+              <div class="list-cards">
+                @for (declaration of taxService.declarations(); track declaration.id) {
+                  <app-list-card
+                    [title]="getPeriodLabel(declaration.period) + ' ' + declaration.year"
+                    [subtitle]="formatDate(declaration.start_date) + ' – ' + formatDate(declaration.end_date)"
+                    (open)="openDeclarationForm(declaration)"
+                  >
+                    <ng-container lcAside>
+                      <span class="font-bold text-slate-900 whitespace-nowrap tabular-nums">{{ formatCurrency(declaration.ispc_amount) }}</span>
+                      <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap bg-slate-100 text-slate-700">{{ getStatusLabel(declaration.status) }}</span>
+                    </ng-container>
+                    <button lcActions mat-icon-button [matMenuTriggerFor]="declarationMenu" [matMenuTriggerData]="{ declaration: declaration }"
+                      [attr.aria-label]="'common.fields.actions' | t">
+                      <mat-icon>more_vert</mat-icon>
+                    </button>
+                    <div lcFooter class="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs">
+                      <span [class.text-red-600]="isOverdue(declaration)" [class.font-semibold]="isOverdue(declaration)" class="text-slate-500">
+                        {{ 'taxes.declarations.dueDate' | t }}: {{ formatDate(declaration.due_date) }}
+                        @if (isOverdue(declaration)) { · {{ 'taxes.declarations.late' | t }} }
+                      </span>
+                      @if (getTotalPaid(declaration) > 0) {
+                        <span class="text-green-600">{{ 'taxes.declarations.paid' | t: { amount: formatCurrency(getTotalPaid(declaration)) } }}</span>
+                      }
+                      @if (getAmountPending(declaration) > 0) {
+                        <span class="text-orange-600">{{ 'taxes.declarations.pending' | t: { amount: formatCurrency(getAmountPending(declaration)) } }}</span>
+                      }
+                    </div>
+                  </app-list-card>
+                }
+              </div>
+
+              <mat-menu #declarationMenu="matMenu">
+                <ng-template matMenuContent let-declaration="declaration">
+                  <button mat-menu-item (click)="openDeclarationForm(declaration)">
+                    <mat-icon>description</mat-icon>
+                    <span>{{ (usesModeloGeral ? 'taxes.declarations.generateModeloGeral' : 'taxes.declarations.generateModel30') | t }}</span>
+                  </button>
+                  <button mat-menu-item [disabled]="!!exportingExcelId()" (click)="exportDeclarationExcel(declaration)">
+                    <mat-icon>table_view</mat-icon>
+                    <span>{{ (usesModeloGeral ? 'taxes.declarations.exportModeloGeralExcel' : 'taxes.declarations.exportExcel') | t }}</span>
+                  </button>
+                  @if (declaration.status === 'pendente') {
+                    <button mat-menu-item (click)="submitDeclaration(declaration)">
+                      <mat-icon>send</mat-icon>
+                      <span>{{ 'taxes.declarations.markSubmitted' | t }}</span>
+                    </button>
+                  }
+                  @if (declaration.status !== 'paga') {
+                    <button mat-menu-item (click)="openPaymentDialog(declaration)">
+                      <mat-icon>payment</mat-icon>
+                      <span>{{ 'taxes.declarations.recordPayment' | t }}</span>
+                    </button>
+                  }
+                  @if (declaration.payments?.length) {
+                    <button mat-menu-item (click)="openPaymentProofs(declaration)">
+                      <mat-icon [class.!text-amber-600]="countMissingProofs(declaration) > 0">attach_file</mat-icon>
+                      <span>{{ (countMissingProofs(declaration) ? 'taxes.proof.attachTooltip' : 'taxes.proof.viewTooltip') | t }}</span>
+                    </button>
+                  }
+                </ng-template>
+              </mat-menu>
             </mat-card-content>
           </mat-card>
         }

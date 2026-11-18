@@ -30,6 +30,7 @@ import {
 } from '../../core/services/company-bank-account.service';
 import { t } from '../../core/i18n/i18n';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { DialogShellComponent } from '../ui/dialog-shell.component';
 
 /** Valores gravados em companies.country → chave da etiqueta traduzida. */
 const COUNTRIES: ReadonlyArray<{ value: string; key: string }> = [
@@ -72,14 +73,18 @@ const DOCUMENT_TYPES: ReadonlyArray<{ value: string; key: string }> = [
     MatSnackBarModule,
     MatProgressSpinnerModule,
     MatSlideToggleModule,
+    DialogShellComponent,
     TranslatePipe
   ],
   template: `
-    <h2 mat-dialog-title>{{ (data.company ? 'company.dialog.editTitle' : 'company.dialog.newTitle') | t }}</h2>
-    <mat-dialog-content>
-      <div class="px-6 py-4 overflow-y-auto max-h-[calc(80vh-140px)]">
+    <app-dialog-shell
+      [title]="(data.company ? 'company.dialog.editTitle' : 'company.dialog.newTitle') | t"
+      icon="business"
+      (closed)="onCancel()"
+    >
+      <div>
         <!-- Logo Upload -->
-        <div class="flex flex-col items-center mb-8 pb-6 border-b border-gray-100">
+        <div class="flex flex-col items-center mb-6 sm:mb-8 pb-6 border-b border-gray-100">
           <div class="relative group">
             <div 
               class="w-32 h-32 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50 overflow-hidden cursor-pointer hover:border-ispc-orange transition-colors"
@@ -117,7 +122,7 @@ const DOCUMENT_TYPES: ReadonlyArray<{ value: string; key: string }> = [
           >
         </div>
 
-        <form [formGroup]="form" class="space-y-6">
+        <form [formGroup]="form" class="space-y-4 sm:space-y-6">
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>{{ 'company.dialog.entityType' | t }}</mat-label>
             <mat-select formControlName="entity_type" required>
@@ -357,7 +362,7 @@ const DOCUMENT_TYPES: ReadonlyArray<{ value: string; key: string }> = [
 
             <div formArrayName="bankAccounts" class="space-y-4">
               @for (bank of bankAccountsArray.controls; track bank; let i = $index) {
-                <div [formGroupName]="i" class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <div [formGroupName]="i" class="border border-gray-200 rounded-lg p-3 sm:p-4 bg-gray-50">
                   <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
                     <div class="flex items-center gap-2">
                       <span class="text-sm font-semibold text-gray-700">{{ 'company.bank.bankNumber' | t: { number: i + 1 } }}</span>
@@ -414,15 +419,15 @@ const DOCUMENT_TYPES: ReadonlyArray<{ value: string; key: string }> = [
                       <input matInput formControlName="account_number" maxlength="60" [placeholder]="'company.bank.accountNumberPlaceholder' | t">
                     </mat-form-field>
 
-                    <mat-form-field appearance="outline" class="w-full">
+                    <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
                       <mat-label>NIB</mat-label>
-                      <input matInput formControlName="nib" maxlength="40" [placeholder]="'company.bank.nibPlaceholder' | t">
+                      <input matInput formControlName="nib" inputmode="numeric" maxlength="40" [placeholder]="'company.bank.nibPlaceholder' | t">
                       @if (nibWarningFor(bank); as warning) {
                         <mat-hint class="!text-amber-700">{{ warning }}</mat-hint>
                       }
                     </mat-form-field>
 
-                    <mat-form-field appearance="outline" class="w-full">
+                    <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
                       <mat-label>IBAN</mat-label>
                       <input matInput formControlName="iban" maxlength="40" placeholder="MZ59 0000...">
                       @if (ibanWarningFor(bank); as warning) {
@@ -430,7 +435,7 @@ const DOCUMENT_TYPES: ReadonlyArray<{ value: string; key: string }> = [
                       }
                     </mat-form-field>
 
-                    <mat-form-field appearance="outline" class="w-full">
+                    <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
                       <mat-label>SWIFT/BIC</mat-label>
                       <input matInput formControlName="swift" maxlength="15" [placeholder]="'company.bank.swiftPlaceholder' | t">
                       @if (swiftWarningFor(bank); as warning) {
@@ -464,7 +469,7 @@ const DOCUMENT_TYPES: ReadonlyArray<{ value: string; key: string }> = [
                     <div class="flex items-center gap-2 min-w-0">
                       @if (bank.get('document_path')?.value) {
                         <mat-icon class="text-green-500 shrink-0">description</mat-icon>
-                        <span class="text-sm truncate max-w-[220px]" [title]="bank.get('document_file_name')?.value || ''">
+                        <span class="text-sm truncate max-w-[140px] sm:max-w-[220px]" [title]="bank.get('document_file_name')?.value || ''">
                           {{ bank.get('document_file_name')?.value || ('company.bank.proof' | t) }}
                         </span>
                         <button type="button" mat-icon-button color="primary" (click)="viewBankDocument(i)" [matTooltip]="'company.bank.viewProof' | t">
@@ -500,13 +505,13 @@ const DOCUMENT_TYPES: ReadonlyArray<{ value: string; key: string }> = [
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>M-Pesa</mat-label>
-                <input matInput formControlName="mpesa_number" [placeholder]="'company.bank.mpesaPlaceholder' | t">
+                <input matInput type="tel" inputmode="tel" formControlName="mpesa_number" [placeholder]="'company.bank.mpesaPlaceholder' | t">
                 <mat-icon matPrefix class="text-gray-400">smartphone</mat-icon>
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>e-Mola</mat-label>
-                <input matInput formControlName="emola_number" [placeholder]="'company.bank.emolaPlaceholder' | t">
+                <input matInput type="tel" inputmode="tel" formControlName="emola_number" [placeholder]="'company.bank.emolaPlaceholder' | t">
                 <mat-icon matPrefix class="text-gray-400">smartphone</mat-icon>
               </mat-form-field>
             </div>
@@ -520,8 +525,8 @@ const DOCUMENT_TYPES: ReadonlyArray<{ value: string; key: string }> = [
               </h3>
               <div class="bg-gray-50 p-4 rounded-lg">
                 @if (alvaraDoc) {
-                  <div class="flex items-center justify-between bg-white p-3 rounded border">
-                    <span class="text-sm truncate">{{ alvaraDoc.file_name }}</span>
+                  <div class="flex items-center justify-between gap-2 bg-white p-3 rounded border">
+                    <span class="text-sm truncate min-w-0">{{ alvaraDoc.file_name }}</span>
                     <div class="flex items-center">
                       <button type="button" mat-icon-button color="primary" (click)="viewOtherDocument(alvaraDoc)" [matTooltip]="'company.dialog.view' | t">
                         <mat-icon>visibility</mat-icon>
@@ -532,7 +537,7 @@ const DOCUMENT_TYPES: ReadonlyArray<{ value: string; key: string }> = [
                     </div>
                   </div>
                 } @else {
-                  <div class="flex items-center gap-3">
+                  <div class="flex flex-wrap items-center gap-3">
                     <button type="button" mat-raised-button (click)="alvaraInput.click()" [disabled]="isUploadingAlvara()">
                       <mat-icon>file_upload</mat-icon>
                       {{ (isUploadingAlvara() ? 'company.dialog.uploading' : 'company.dialog.uploadLicence') | t }}
@@ -569,7 +574,7 @@ const DOCUMENT_TYPES: ReadonlyArray<{ value: string; key: string }> = [
                           </div>
                       </div>
                     } @else {
-                      <div class="flex items-center gap-3">
+                      <div class="flex flex-wrap items-center gap-3">
                         <button type="button" mat-raised-button (click)="commercialInput.click()" [disabled]="isUploadingCommercial()">
                           <mat-icon>file_upload</mat-icon>
                           {{ (isUploadingCommercial() ? 'company.dialog.uploading' : 'company.dialog.uploadActivityStart') | t }}
@@ -621,16 +626,19 @@ const DOCUMENT_TYPES: ReadonlyArray<{ value: string; key: string }> = [
                   <thead class="bg-gray-50 text-gray-700 uppercase text-xs">
                     <tr>
                       <th class="px-4 py-2">{{ 'common.fields.type' | t }}</th>
-                      <th class="px-4 py-2">{{ 'company.dialog.file' | t }}</th>
+                      <th class="px-4 py-2 hidden sm:table-cell">{{ 'company.dialog.file' | t }}</th>
                       <th class="px-4 py-2 text-right">{{ 'common.fields.actions' | t }}</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y">
                     @for (doc of otherDocsWithoutAlvara; track doc.id) {
                       <tr>
-                        <td class="px-4 py-3 font-medium">{{ documentTypeLabel(doc.type) }}</td>
-                        <td class="px-4 py-3 text-gray-500">{{ doc.file_name }}</td>
-                        <td class="px-4 py-3 text-right">
+                        <td class="px-3 sm:px-4 py-3 font-medium">
+                          {{ documentTypeLabel(doc.type) }}
+                          <span class="block sm:hidden text-xs font-normal text-gray-500 break-all">{{ doc.file_name }}</span>
+                        </td>
+                        <td class="px-4 py-3 text-gray-500 hidden sm:table-cell break-all">{{ doc.file_name }}</td>
+                        <td class="px-1 sm:px-4 py-3 text-right whitespace-nowrap">
                           <button type="button" mat-icon-button color="primary" (click)="viewOtherDocument(doc)" [matTooltip]="'company.dialog.view' | t">
                             <mat-icon>visibility</mat-icon>
                           </button>
@@ -650,31 +658,25 @@ const DOCUMENT_TYPES: ReadonlyArray<{ value: string; key: string }> = [
 
         </form>
       </div>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      @if (bankAccountsArray.invalid && !isLoadingBanks()) {
-        <span class="text-xs text-red-600 mr-auto pl-2">{{ 'company.bank.invalidFooter' | t }}</span>
-      }
-      <button mat-button (click)="onCancel()">{{ 'common.actions.cancel' | t }}</button>
-      <button mat-raised-button color="primary" (click)="onSave()" [disabled]="form.invalid || loading()">
-        {{ (data.company ? 'common.actions.save' : 'common.actions.create') | t }}
-      </button>
-    </mat-dialog-actions>
+
+      <div shellFooter>
+        @if (bankAccountsArray.invalid && !isLoadingBanks()) {
+          <p class="text-xs text-red-600 mb-2">{{ 'company.bank.invalidFooter' | t }}</p>
+        }
+        <div class="flex gap-2 sm:justify-end">
+          <button mat-stroked-button type="button" class="flex-1 sm:flex-none !h-12 !rounded-xl" (click)="onCancel()">
+            {{ 'common.actions.cancel' | t }}
+          </button>
+          <button mat-flat-button type="button" class="flex-1 sm:flex-none !h-12 !rounded-xl !bg-ispc-orange !text-white"
+            (click)="onSave()" [disabled]="form.invalid || loading()">
+            {{ (data.company ? 'common.actions.save' : 'common.actions.create') | t }}
+          </button>
+        </div>
+      </div>
+    </app-dialog-shell>
   `,
   styles: [`
-    :host ::ng-deep .mat-mdc-dialog-container {
-      max-width: none !important;
-      width: auto !important;
-    }
-
-    mat-dialog-content {
-      min-width: 1000px;
-      width: 85vw;
-      max-width: 1400px;
-      max-height: 80vh;
-      overflow-y: auto;
-      overflow-x: hidden;
-    }
+    :host { display: block; height: 100%; }
 
     form {
       width: 100%;
