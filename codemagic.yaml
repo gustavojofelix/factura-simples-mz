@@ -1,74 +1,126 @@
+# iOS CI/CD no Codemagic (plano gratuito: 500 min/mês em mac_mini_m2).
+#
+#   git tag v1.2.0 && git push origin v1.2.0
+#       → ios-testflight: build → TestFlight + submissão para revisão da App Store
+#         (o GitHub Actions publica o Android em produção com a mesma tag)
+#
+#   git tag adhoc-1 && git push origin adhoc-1   (ou "Start new build" no painel)
+#       → ios-adhoc: .ipa Ad Hoc para instalar diretamente nos iPhones registados (UDID) no Apple Developer
+#
+# Pré-requisitos no Codemagic (uma vez) — ver docs/ios-codemagic.md.
+
+definitions:
+  environment: &environment
+    vars:
+      XCODE_WORKSPACE: "ios/App/App.xcworkspace"
+      XCODE_SCHEME: "App"
+    node: 22
+    xcode: latest
+    cocoapods: default
+
+  scripts:
+    - &install
+      name: Instalar dependências Node
+      script: npm ci
+    - &build_web
+      name: Build Angular + sync Capacitor iOS (inclui pod install)
+      script: |
+        npm run build
+        npx cap sync ios
+    - &signing
+      name: Aplicar perfis de assinatura
+      script: xcode-project use-profiles
+    - &version
+      name: Versão e build number
+      script: |
+        # Tag v1.2.0 → 1.2.0; noutros casos usa a versão do package.json.
+        if [[ "$CM_TAG" == v* ]]; then
+          VERSION="${CM_TAG#v}"
+        else
+          VERSION=$(node -p "require('./package.json').version")
+        fi
+        BUILD_NUMBER=$((PROJECT_BUILD_NUMBER + 100))
+        PBX=ios/App/App.xcodeproj/project.pbxproj
+        sed -i '' "s/MARKETING_VERSION = .*;/MARKETING_VERSION = $VERSION;/" "$PBX"
+        sed -i '' "s/CURRENT_PROJECT_VERSION = .*;/CURRENT_PROJECT_VERSION = $BUILD_NUMBER;/" "$PBX"
+        echo "Versão $VERSION ($BUILD_NUMBER)"
+    - &build_ipa
+      name: Build e exportação do .ipa
+      script: |
+        xcode-project build-ipa \
+          --workspace "$XCODE_WORKSPACE" \
+          --scheme "$XCODE_SCHEME"
+
+  artifacts: &artifacts
+    - build/ios/ipa/*.ipa
+    - /tmp/xcodebuild_logs/*.log
+
+  email: &email
+    email:
+      recipients:
+        - gustavo@ltsmoz.com
+      notify:
+        success: true
+        failure: true
+
 workflows:
-  ios-app-store:
-    name: iOS App Store Deploy
-    max_build_duration: 60
-    instance_type: mac_mini_m2  # Runner macOS gratuito no plano free
-
+  ios-testflight:
+    name: iOS → TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 45
     integrations:
-      app_store_connect: ISPC Facil ASC   # nome da API key em Codemagic → Team settings → Integrations
-
+      app_store_connect: ISPC Facil ASC   # nome da API key em Team settings → Integrations
     environment:
+      <<: *environment
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.ispcfacilmz.app
-      vars:
-        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
-        XCODE_SCHEME: "App"
-      node: 22
-      xcode: latest
-      cocoapods: default
-
     triggering:
       events:
-        - tag           # dispara quando fazeres: git tag v1.0.0 && git push --tags
+        - tag
       tag_patterns:
         - pattern: "v*"
           include: true
-      # Ou remove o "triggering" para disparar manualmente pelo painel Codemagic
-
+      cancel_previous_builds: true
     scripts:
-      - name: Install Node dependencies
-        script: npm ci
-
-      - name: Build Angular (web assets)
-        script: npm run build
-
-      - name: Sync Capacitor iOS (inclui pod install)
-        script: npx cap sync ios
-
-      - name: Set up code signing
-        script: xcode-project use-profiles
-
-      - name: Set app version from tag
-        script: |
-          # Usa a tag git como versão (ex: v1.0.2 → 1.0.2); build number incremental do Codemagic
-          BUILD_NUMBER=$PROJECT_BUILD_NUMBER
-          VERSION=$(echo "${CM_TAG:-v1.0.0}" | sed 's/^v//')
-          PBX=ios/App/App.xcodeproj/project.pbxproj
-          sed -i '' "s/MARKETING_VERSION = .*;/MARKETING_VERSION = $VERSION;/" $PBX
-          sed -i '' "s/CURRENT_PROJECT_VERSION = .*;/CURRENT_PROJECT_VERSION = $BUILD_NUMBER;/" $PBX
-          echo "Version: $VERSION, Build: $BUILD_NUMBER"
-
-      - name: Build and archive iOS
-        script: |
-          xcode-project build-ipa \
-            --workspace "$XCODE_WORKSPACE" \
-            --scheme "$XCODE_SCHEME"
-
-    artifacts:
-      - build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
-
+      - *install
+      - *build_web
+      - *signing
+      - *version
+      - *build_ipa
+    artifacts: *artifacts
     publishing:
+      <<: *email
       app_store_connect:
         auth: integration
-        submit_to_testflight: true   # true = vai para TestFlight primeiro
-        submit_to_app_store: false   # muda para true quando estiveres pronto
-        beta_groups:
-          - "Internal Testers"
-      email:
-        recipients:
-          - gustavo@ltsmoz.com   # ← muda para o teu email
-        notify:
-          success: true
-          failure: true
+        submit_to_testflight: true   # testadores internos recebem automaticamente
+        submit_to_app_store: true    # cria a versão na App Store e submete para revisão da Apple
+        release_type: AFTER_APPROVAL # publica sozinho quando a Apple aprovar (MANUAL = tu carregas em "Release")
+
+  ios-adhoc:
+    name: iOS → Ad Hoc (.ipa)
+    instance_type: mac_mini_m2
+    max_build_duration: 45
+    integrations:
+      app_store_connect: ISPC Facil ASC
+    environment:
+      <<: *environment
+      ios_signing:
+        distribution_type: ad_hoc
+        bundle_identifier: com.ispcfacilmz.app
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: "adhoc-*"
+          include: true
+      cancel_previous_builds: true
+    scripts:
+      - *install
+      - *build_web
+      - *signing
+      - *version
+      - *build_ipa
+    artifacts: *artifacts
+    publishing:
+      <<: *email
