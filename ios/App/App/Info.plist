@@ -24,6 +24,12 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>O ISPC Fácil usa a câmara para fotografar documentos da empresa, comprovativos de pagamento e o seu logótipo.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>O ISPC Fácil acede às suas fotografias para anexar documentos, comprovativos de pagamento e o seu logótipo.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>O ISPC Fácil guarda nas suas fotografias as facturas e recibos que decidir guardar.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
