@@ -74,10 +74,10 @@
     "waiting": "A aguardar a confirmação do pagamento...",
     "reference": "Referência:",
     "cycles": {
-      "monthly": "30 dias",
-      "quarterly": "90 dias",
-      "semiannual": "180 dias",
-      "yearly": "360 dias"
+      "monthly": "1 mês",
+      "quarterly": "3 meses",
+      "semiannual": "6 meses",
+      "yearly": "1 ano"
     },
     "phoneRequired": "O número de telefone é obrigatório",
     "phoneInvalid": "Número de telefone inválido (ex: 841234567 ou 861234567)",
@@ -89,7 +89,7 @@
       "activateError": "Erro ao ativar subscrição.",
       "activateUnexpected": "Erro inesperado ao ativar subscrição.",
       "requestError": "Erro ao efetuar pedido de pagamento",
-      "queueLimit": "Já tem mais de 360 dias de subscrição pagos à frente. Poderá comprar mais tempo mais tarde."
+      "queueLimit": "Já tem mais de 1 ano de subscrição pago à frente. Poderá comprar mais tempo mais tarde."
     },
     "periodRange": "Período: {start} a {end}",
     "periodQueued": "Ainda tem tempo pago: o plano {plan} começa quando esse tempo terminar. Até lá mantém o plano actual.",

@@ -74,10 +74,10 @@
     "waiting": "En attente de la confirmation du paiement...",
     "reference": "Référence :",
     "cycles": {
-      "monthly": "30 jours",
-      "quarterly": "90 jours",
-      "semiannual": "180 jours",
-      "yearly": "360 jours"
+      "monthly": "1 mois",
+      "quarterly": "3 mois",
+      "semiannual": "6 mois",
+      "yearly": "1 an"
     },
     "phoneRequired": "Le numéro de téléphone est obligatoire",
     "phoneInvalid": "Numéro de téléphone invalide (ex. : 841234567 ou 861234567)",
@@ -89,7 +89,7 @@
       "activateError": "Erreur lors de l'activation de l'abonnement.",
       "activateUnexpected": "Erreur inattendue lors de l'activation de l'abonnement.",
       "requestError": "Erreur lors de la demande de paiement",
-      "queueLimit": "Vous avez déjà plus de 360 jours d'abonnement payés à venir. Vous pourrez acheter plus de temps plus tard."
+      "queueLimit": "Vous avez déjà plus d'1 an d'abonnement payé à venir. Vous pourrez acheter plus de temps plus tard."
     },
     "periodRange": "Période : du {start} au {end}",
     "periodQueued": "Il vous reste du temps payé : la formule {plan} commence à la fin de ce temps. D'ici là, vous conservez votre formule actuelle.",

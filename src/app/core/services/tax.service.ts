@@ -267,8 +267,6 @@ export class TaxService {
           .eq('company_id', company.id)
           .neq('status', 'rascunho')
           .neq('status', 'anulada')
-          // As facturas de demonstração não entram no imposto a declarar.
-          .eq('is_demo', false)
           .gte('date', yearStart)
           .lte('date', endDate),
         this.getConfiguredActivityRate(company)

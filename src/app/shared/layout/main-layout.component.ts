@@ -175,6 +175,16 @@ export class MainLayoutComponent {
     this.isRemovingDemoData.set(true);
     try {
       await this.demoData.remove(company.id, company.name);
+      // A empresa ficou vazia: avisa que é preciso configurá-la com dados reais.
+      const configureNow = await this.confirmDialog.confirm({
+        title: t('layout.demo.removedTitle'),
+        message: t('layout.demo.removedMessage'),
+        confirmLabel: t('layout.demo.removedAction'),
+        cancelLabel: t('layout.demo.removedLater')
+      });
+      if (configureNow) {
+        await this.router.navigate(['/configuracoes'], { queryParams: { tab: 'empresa' } });
+      }
       // Listas, painel e relatórios guardam os dados em memória: recarregar é o mais simples.
       window.location.reload();
     } catch (error) {

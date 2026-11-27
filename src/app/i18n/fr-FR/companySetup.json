@@ -129,7 +129,7 @@
     "name": "Nom de l'entreprise",
     "namePlaceholder": "Ex. : Ma Boutique, Lda",
     "loadDemoData": "Charger des données de démonstration",
-    "loadDemoDataHint": "Clients, produits et factures d'exemple. Supprimables en un clic.",
+    "loadDemoDataHint": "Données de l'entreprise, clients, produits et factures d'exemple. Supprimables en un clic.",
     "submit": "Commencer",
     "preparing": "Préparation de votre compte...",
     "demoFailed": "L'entreprise a été créée, mais les données de démonstration n'ont pas pu être chargées."

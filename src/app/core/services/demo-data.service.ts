@@ -3,8 +3,10 @@ import { SupabaseService } from './supabase.service';
 import { AuditLogService } from './audit-log.service';
 
 /**
- * Dados de demonstração do período de teste (clientes, produtos e facturas
- * marcados com is_demo). Carregados no registo e removidos de uma só vez.
+ * Dados de demonstração do período de teste: dados da empresa, clientes,
+ * produtos e facturas de exemplo, carregados no registo (seed_demo_data).
+ * Remover (remove_demo_data) apaga TUDO o que a empresa tem, incluindo o que o
+ * utilizador criou durante os testes, e repõe os dados da empresa em branco.
  */
 @Injectable({
   providedIn: 'root'

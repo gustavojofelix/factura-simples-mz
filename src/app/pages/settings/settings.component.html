@@ -140,7 +140,7 @@
                     </span>
                   </div>
 
-                  <div class="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4 mb-4 p-3 sm:p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-4 p-3 sm:p-4 bg-slate-50 rounded-xl border border-slate-100">
                     <div>
                       <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">{{ 'common.fields.amount' | t }}</p>
                       <p class="text-base font-bold text-gray-900 mt-1">{{ formatCurrency(sub.amount, sub.currency || 'MZN') }}</p>
@@ -152,10 +152,6 @@
                     <div>
                       <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">{{ 'settings.subscription.expiryDate' | t }}</p>
                       <p class="text-base font-bold text-blue-600 mt-1">{{ sub.end_date ? formatDate(sub.end_date) : (sub.next_billing_date ? formatDate(sub.next_billing_date) : '-') }}</p>
-                    </div>
-                    <div>
-                      <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">{{ 'settings.subscription.nextBilling' | t }}</p>
-                      <p class="text-base font-bold text-gray-900 mt-1">{{ sub.next_billing_date ? formatDate(sub.next_billing_date) : '-' }}</p>
                     </div>
                     <div>
                       <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">{{ 'settings.subscription.paymentMethod' | t }}</p>

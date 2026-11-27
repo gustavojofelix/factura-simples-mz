@@ -31,6 +31,8 @@ import { DOCUMENT_LOCALE, formatDocumentCurrency } from './document-format';
 
       @if (invoice().status === 'anulada') {
         <div class="doc-watermark doc-watermark--annulled">ANULADO</div>
+      } @else if (isTestInvoice()) {
+        <div class="doc-watermark doc-watermark--test">FACTURA DE TESTE</div>
       } @else if (isReprint()) {
         <div class="doc-watermark doc-watermark--reprint">2ª VIA</div>
       }
@@ -234,6 +236,9 @@ export class InvoiceDocumentComponent {
   hasBankDetails = computed(() => companyHasBankDetails(this.company(), this.bankAccounts()));
   /** Contas visíveis, a conta por omissão primeiro (ou o banco antigo de companies). */
   visibleBankAccounts = computed(() => documentBankAccounts(this.company(), this.bankAccounts()));
+
+  /** Criada no período de teste (ou de demonstração): não vale como documento fiscal. */
+  isTestInvoice = computed(() => !!this.invoice().is_trial || !!this.invoice().is_demo);
 
   isReprint = computed(() =>
     !this.preview() && (this.invoice().print_count || 0) > 1

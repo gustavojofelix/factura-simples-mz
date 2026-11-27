@@ -129,7 +129,7 @@
     "name": "Company name",
     "namePlaceholder": "e.g. My Shop, Lda",
     "loadDemoData": "Load demo data",
-    "loadDemoDataHint": "Sample clients, products and invoices. Remove them with one click.",
+    "loadDemoDataHint": "Sample company details, clients, products and invoices. Remove them with one click.",
     "submit": "Get started",
     "preparing": "Preparing your account...",
     "demoFailed": "The company was created, but the demo data could not be loaded."

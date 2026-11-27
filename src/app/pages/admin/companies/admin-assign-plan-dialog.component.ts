@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   AdminAssignPlanResult, AdminPaymentMethod, BillingCycle, SubscriptionPlan, SubscriptionService
@@ -124,6 +124,12 @@ export class AdminAssignPlanDialogComponent implements OnInit {
   @Output() closed = new EventEmitter<boolean>();
 
   private subscriptionService = inject(SubscriptionService);
+  /**
+   * A aplicação não usa zone.js e estes campos não são sinais: depois de um
+   * await é preciso pedir a actualização do ecrã, senão o botão fica em
+   * "A activar…" (e o resultado não aparece) até outra coisa redesenhar a página.
+   */
+  private cdr = inject(ChangeDetectorRef);
 
   readonly cycles: { value: BillingCycle; label: string }[] = [
     { value: 'monthly', label: '1 mês' },
@@ -154,6 +160,7 @@ export class AdminAssignPlanDialogComponent implements OnInit {
     const popular = this.paidPlans.find(p => p.is_popular) ?? this.paidPlans[0];
     this.planName = popular?.name ?? '';
     this.updateAmount();
+    this.cdr.markForCheck();
   }
 
   updateAmount() {
@@ -190,6 +197,7 @@ export class AdminAssignPlanDialogComponent implements OnInit {
       this.result = { ok: false, error: e?.message || 'Erro inesperado.' };
     } finally {
       this.saving = false;
+      this.cdr.markForCheck();
     }
   }
 

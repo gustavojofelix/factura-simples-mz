@@ -43,7 +43,6 @@
     "currentPlan": "Formule actuelle : {plan}",
     "startDate": "Date de début",
     "expiryDate": "Date d'expiration",
-    "nextBilling": "Prochaine facturation",
     "paymentMethod": "Moyen de paiement",
     "notDefined": "Non défini",
     "trialExpired": "Essai gratuit expiré",
@@ -69,7 +68,7 @@
     "empty": "Sélectionnez une entreprise pour voir son abonnement et les formules disponibles",
     "upgradeTodayCredit": "Commence aujourd'hui. Les jours restants de la formule actuelle deviennent des jours supplémentaires : {days}",
     "startsOn": "Commence le {date}, à la fin du temps déjà payé",
-    "queueLimitShort": "Vous avez déjà plus de 360 jours payés à venir",
+    "queueLimitShort": "Vous avez déjà plus d'1 an payé à venir",
     "upcomingTitle": "Prochaines périodes (déjà payées)",
     "periodRange": "du {start} au {end}",
     "methods": {
@@ -87,12 +86,12 @@
     "cancelled": "Annulé"
   },
   "cycles": {
-    "monthly": "Mensuel (30 jours)",
-    "quarterly": "Trimestriel (90 jours)",
-    "semiannual": "Semestriel (180 jours)",
-    "yearly": "Annuel (360 jours)",
-    "quarterlyShort": "90 jours",
-    "semiannualShort": "180 jours"
+    "monthly": "1 mois",
+    "quarterly": "3 mois",
+    "semiannual": "6 mois",
+    "yearly": "1 an",
+    "quarterlyShort": "3 mois",
+    "semiannualShort": "6 mois"
   },
   "roles": {
     "owner": "Titulaire",
@@ -154,7 +153,7 @@
     "removeAccessFailed": "Impossible de retirer l'accès.",
     "downgradeToTrial": "Impossible de revenir à l'essai gratuit après avoir souscrit une formule payante.",
     "revokeAccessConfirm": "Retirer l'accès de {email} à : {companies} ?",
-    "queueLimit": "Vous avez déjà plus de 360 jours d'abonnement payés à venir. Vous pourrez acheter plus de temps plus tard."
+    "queueLimit": "Vous avez déjà plus d'1 an d'abonnement payé à venir. Vous pourrez acheter plus de temps plus tard."
   },
   "documentTab": {
     "noCompany": "Sélectionnez une entreprise pour personnaliser ses documents.",

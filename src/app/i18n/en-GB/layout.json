@@ -69,12 +69,15 @@
   },
   "demo": {
     "title": "You are viewing demo data",
-    "body": "The sample clients, products and invoices (DEMO invoices) are there to explore. When you are ready to start for real, remove them: your real invoices start at no. 1.",
+    "body": "The company is filled with sample data (company details, clients, products and invoices) so you can explore everything, including the ISPC calculation. When you are ready to start for real, remove it and set up the company with your real details.",
     "remove": "Remove demo data",
     "confirmTitle": "Remove demo data?",
-    "confirmMessage": "The sample clients, products and invoices will be deleted. Data you created is not affected.",
-    "confirmLabel": "Remove",
-    "removed": "Demo data removed.",
+    "confirmMessage": "Everything in this company will be deleted: clients, products, invoices and receipts (including the ones you created while testing), tax returns and the company details. This cannot be undone.",
+    "confirmLabel": "Delete everything",
+    "removedTitle": "Demo data removed",
+    "removedMessage": "The company is now empty. Set it up with your real details (NUIT, address and activity) before issuing invoices.",
+    "removedAction": "Set up company",
+    "removedLater": "Later",
     "removeError": "The demo data could not be removed."
   },
   "completeCompany": {

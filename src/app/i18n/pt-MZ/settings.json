@@ -43,7 +43,6 @@
     "currentPlan": "Plano Actual: {plan}",
     "startDate": "Data de Início",
     "expiryDate": "Data de Expiração",
-    "nextBilling": "Próxima Cobrança",
     "paymentMethod": "Método de Pagamento",
     "notDefined": "Não definido",
     "trialExpired": "Período de teste expirado",
@@ -69,7 +68,7 @@
     "empty": "Selecione uma empresa para ver a subscrição e os planos disponíveis",
     "upgradeTodayCredit": "Começa hoje. Os dias que restam do plano actual passam a dias extra: {days}",
     "startsOn": "Começa a {date}, quando terminar o tempo já pago",
-    "queueLimitShort": "Já tem mais de 360 dias pagos à frente",
+    "queueLimitShort": "Já tem mais de 1 ano pago à frente",
     "upcomingTitle": "Próximos períodos (já pagos)",
     "periodRange": "{start} a {end}",
     "methods": {
@@ -87,12 +86,12 @@
     "cancelled": "Cancelado"
   },
   "cycles": {
-    "monthly": "Mensal (30 dias)",
-    "quarterly": "Trimestral (90 dias)",
-    "semiannual": "Semestral (180 dias)",
-    "yearly": "Anual (360 dias)",
-    "quarterlyShort": "90 dias",
-    "semiannualShort": "180 dias"
+    "monthly": "1 mês",
+    "quarterly": "3 meses",
+    "semiannual": "6 meses",
+    "yearly": "1 ano",
+    "quarterlyShort": "3 meses",
+    "semiannualShort": "6 meses"
   },
   "roles": {
     "owner": "Proprietário",
@@ -154,7 +153,7 @@
     "removeAccessFailed": "Não foi possível remover o acesso.",
     "downgradeToTrial": "Não é possível voltar ao período de teste depois de subscrever um plano pago.",
     "revokeAccessConfirm": "Remover o acesso de {email} a: {companies}?",
-    "queueLimit": "Já tem mais de 360 dias de subscrição pagos à frente. Poderá comprar mais tempo mais tarde."
+    "queueLimit": "Já tem mais de 1 ano de subscrição pago à frente. Poderá comprar mais tempo mais tarde."
   },
   "documentTab": {
     "noCompany": "Seleccione uma empresa para personalizar os seus documentos.",

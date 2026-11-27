@@ -7,17 +7,3 @@
   background-color: #EF4444;
   color: white;
 }
-
-/* Tipo de negócio (dados de demonstração) */
-.biz-types { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
-.biz-type {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.35rem;
-  min-height: 4.5rem; padding: 0.5rem 0.25rem; border-radius: 0.75rem; border: 1.5px solid #fed7aa;
-  background: #fff; color: #44403c; font-size: 0.75rem; font-weight: 600; line-height: 1.15; text-align: center;
-  cursor: pointer; transition: border-color .15s, background-color .15s, color .15s;
-}
-.biz-type i { font-size: 1.1rem; color: #f16c39; }
-.biz-type:hover { border-color: #f16c39; }
-.biz-type.on { border-color: #f16c39; background: #f16c39; color: #fff; }
-.biz-type.on i { color: #fff; }
-.biz-type:focus-visible { outline: 2px solid #f16c39; outline-offset: 2px; }

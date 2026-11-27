@@ -43,7 +43,6 @@
     "currentPlan": "Current plan: {plan}",
     "startDate": "Start date",
     "expiryDate": "Expiry date",
-    "nextBilling": "Next billing",
     "paymentMethod": "Payment method",
     "notDefined": "Not set",
     "trialExpired": "Free trial expired",
@@ -69,7 +68,7 @@
     "empty": "Select a company to view its subscription and the available plans",
     "upgradeTodayCredit": "Starts today. The days left on your current plan become extra days: {days}",
     "startsOn": "Starts on {date}, when your paid time ends",
-    "queueLimitShort": "You already have more than 360 paid days ahead",
+    "queueLimitShort": "You already have more than 1 paid year ahead",
     "upcomingTitle": "Upcoming periods (already paid)",
     "periodRange": "{start} to {end}",
     "methods": {
@@ -87,12 +86,12 @@
     "cancelled": "Cancelled"
   },
   "cycles": {
-    "monthly": "Monthly (30 days)",
-    "quarterly": "Quarterly (90 days)",
-    "semiannual": "Half-yearly (180 days)",
-    "yearly": "Yearly (360 days)",
-    "quarterlyShort": "90 days",
-    "semiannualShort": "180 days"
+    "monthly": "1 month",
+    "quarterly": "3 months",
+    "semiannual": "6 months",
+    "yearly": "1 year",
+    "quarterlyShort": "3 months",
+    "semiannualShort": "6 months"
   },
   "roles": {
     "owner": "Owner",
@@ -154,7 +153,7 @@
     "removeAccessFailed": "Could not remove the access.",
     "downgradeToTrial": "You cannot go back to the free trial after subscribing to a paid plan.",
     "revokeAccessConfirm": "Remove access for {email} to: {companies}?",
-    "queueLimit": "You already have more than 360 days of paid subscription ahead. You can buy more time later."
+    "queueLimit": "You already have more than 1 year of paid subscription ahead. You can buy more time later."
   },
   "documentTab": {
     "noCompany": "Select a company to customise its documents.",

@@ -69,12 +69,15 @@
   },
   "demo": {
     "title": "Vous consultez des données de démonstration",
-    "body": "Les clients, produits et factures d'exemple (factures DEMO) servent à explorer. Quand vous serez prêt à commencer pour de vrai, supprimez-les : vos vraies factures commencent au n° 1.",
+    "body": "L'entreprise est remplie de données d'exemple (données de l'entreprise, clients, produits et factures) pour tout explorer, y compris le calcul de l'ISPC. Quand vous serez prêt à commencer pour de vrai, supprimez-les et configurez l'entreprise avec vos données réelles.",
     "remove": "Supprimer les données de démonstration",
     "confirmTitle": "Supprimer les données de démonstration ?",
-    "confirmMessage": "Les clients, produits et factures d'exemple seront supprimés. Les données que vous avez créées ne sont pas affectées.",
-    "confirmLabel": "Supprimer",
-    "removed": "Données de démonstration supprimées.",
+    "confirmMessage": "Tout ce qui existe dans cette entreprise sera supprimé : clients, produits, factures et reçus (y compris ceux que vous avez créés pendant les tests), déclarations d'impôt et données de l'entreprise. Cette action est irréversible.",
+    "confirmLabel": "Tout supprimer",
+    "removedTitle": "Données de démonstration supprimées",
+    "removedMessage": "L'entreprise est maintenant vide. Configurez-la avec vos données réelles (NUIT, adresse et activité) avant d'émettre des factures.",
+    "removedAction": "Configurer l'entreprise",
+    "removedLater": "Plus tard",
     "removeError": "Impossible de supprimer les données de démonstration."
   },
   "completeCompany": {

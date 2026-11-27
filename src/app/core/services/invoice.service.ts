@@ -56,6 +56,10 @@ export interface Invoice {
     document_type?: string;
   };
   print_count?: number;
+  /** Factura de demonstração (seed_demo_data). */
+  is_demo?: boolean;
+  /** Criada durante o período de teste: sai com a marca de água "FACTURA DE TESTE". */
+  is_trial?: boolean;
   items?: InvoiceItem[];
 }
 
