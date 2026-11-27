@@ -8,7 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { SubscriptionService, SubscriptionPlan, maputoToday } from '../../../core/services/subscription.service';
+import { SubscriptionService, SubscriptionPlan } from '../../../core/services/subscription.service';
 import { VoucherService, VoucherValidationResult } from '../../../core/services/voucher.service';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
@@ -131,6 +131,8 @@ export interface PaymentDialogData {
           <span>{{ 'payments.subscription.periodRange' | t: { start: (periodStart | date:'dd/MM/yyyy'), end: (periodEnd | date:'dd/MM/yyyy') } }}</span>
         </div>
         <p *ngIf="periodQueued" class="text-slate-400 leading-snug">{{ 'payments.subscription.periodQueued' | t: { plan: data.plan.name } }}</p>
+        <p *ngIf="periodUpgrade && creditDays > 0" class="text-slate-400 leading-snug">{{ 'payments.subscription.periodUpgradeCredit' | t: { plan: data.plan.name, days: creditDays } }}</p>
+        <p *ngIf="periodUpgrade && creditDays === 0" class="text-slate-400 leading-snug">{{ 'payments.subscription.periodUpgrade' | t: { plan: data.plan.name } }}</p>
         <p class="text-slate-500 leading-snug">{{ 'payments.subscription.invoiceNow' | t }}</p>
       </div>
 
@@ -307,6 +309,9 @@ export class PaymentDialogComponent implements OnInit, OnDestroy {
   periodStart = '';
   periodEnd = '';
   periodQueued = false;
+  /** Plano de nível superior: começa hoje e os dias que restavam viram dias extra. */
+  periodUpgrade = false;
+  creditDays = 0;
 
   constructor(
     public dialogRef: MatDialogRef<PaymentDialogComponent>,
@@ -320,9 +325,12 @@ export class PaymentDialogComponent implements OnInit, OnDestroy {
     this.paymentForm = this.fb.group({
       phone: ['', [Validators.required, Validators.pattern(/^(?:258)?(?:84|85|86|87)\d{7}$/)]]
     });
-    this.periodStart = this.subscriptionService.nextPeriodStart();
-    this.periodEnd = this.subscriptionService.nextPeriodEnd(this.data.billingCycle);
-    this.periodQueued = this.periodStart > maputoToday();
+    const preview = this.subscriptionService.purchasePreview(this.data.plan, this.data.billingCycle);
+    this.periodStart = preview.start;
+    this.periodEnd = preview.end;
+    this.periodQueued = preview.queued;
+    this.periodUpgrade = preview.upgrade;
+    this.creditDays = preview.creditDays;
   }
 
   async ngOnInit() {
@@ -445,7 +453,7 @@ export class PaymentDialogComponent implements OnInit, OnDestroy {
     let message = '';
     if (this.subscriptionService.isPlanUnavailable(this.data.plan)) {
       message = t('payments.subscription.messages.noTrialBack');
-    } else if (this.subscriptionService.queueLimitReached()) {
+    } else if (this.subscriptionService.queueLimitReached(this.data.plan)) {
       message = t('payments.subscription.messages.queueLimit');
     }
     if (!message) return false;

@@ -93,6 +93,8 @@
     },
     "periodRange": "Période : du {start} au {end}",
     "periodQueued": "Il vous reste du temps payé : la formule {plan} commence à la fin de ce temps. D'ici là, vous conservez votre formule actuelle.",
+    "periodUpgrade": "La formule {plan} commence aujourd'hui et remplace la formule actuelle.",
+    "periodUpgradeCredit": "La formule {plan} commence aujourd'hui et remplace la formule actuelle. Les jours restants ont été convertis en jours supplémentaires ({days}), déjà inclus dans cette période.",
     "invoiceNow": "Vous payez maintenant et la facture est émise aujourd'hui."
   }
 }

@@ -93,6 +93,8 @@
     },
     "periodRange": "Período: {start} a {end}",
     "periodQueued": "Ainda tem tempo pago: o plano {plan} começa quando esse tempo terminar. Até lá mantém o plano actual.",
+    "periodUpgrade": "O plano {plan} começa hoje e substitui o plano actual.",
+    "periodUpgradeCredit": "O plano {plan} começa hoje e substitui o plano actual. Os dias que restavam foram convertidos em dias extra ({days}), já incluídos neste período.",
     "invoiceNow": "O pagamento é feito agora e a factura é emitida hoje."
   }
 }

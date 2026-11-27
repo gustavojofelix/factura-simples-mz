@@ -100,6 +100,24 @@ export interface SubscriptionPeriod {
   source: 'payment' | 'manual' | 'voucher' | 'legacy';
   cancelled_at?: string | null;
   created_at: string;
+  /** Dias extra incluídos em end_date, vindos do período substituído num upgrade. */
+  credit_days?: number;
+  /** Valor (MZN) dos dias não usados do período substituído num upgrade. */
+  credit_amount?: number;
+  replaces_period_id?: string | null;
+}
+
+/** Onde cai um período comprado agora (igual a enqueue_subscription_period no SQL). */
+export interface PurchasePreview {
+  start: string;
+  /** Fim inclusivo, já com os dias extra de um upgrade. */
+  end: string;
+  /** Começa depois de hoje: vai para o fim da fila. */
+  queued: boolean;
+  /** Plano de nível superior ao que está em vigor: começa hoje e substitui-o. */
+  upgrade: boolean;
+  /** Dias extra dados pelos dias não usados do plano substituído. */
+  creditDays: number;
 }
 
 /** Um período novo não pode começar mais do que isto depois de hoje (igual ao SQL). */
@@ -977,13 +995,59 @@ export class SubscriptionService {
     return next > today ? next : today;
   }
 
-  /** Fim (inclusivo) de um período de `cycle` comprado agora. */
-  nextPeriodEnd(cycle: BillingCycle): string {
-    return addDaysIso(this.nextPeriodStart(), cycleDays(cycle) - 1);
+  /** Preço de tabela do plano para um ciclo (igual a subscription_plan_cycle_price no SQL). */
+  planCyclePrice(plan: SubscriptionPlan, cycle: BillingCycle): number {
+    const monthly = Number(plan.monthly_price) || 0;
+    switch (cycle) {
+      case 'quarterly': return Number(plan.three_months_price) || monthly * 3;
+      case 'semiannual': return Number(plan.six_months_price) || monthly * 6;
+      case 'yearly': return Number(plan.yearly_price) || 0;
+      default: return monthly;
+    }
   }
 
-  /** A fila já tem mais de 360 dias pagos à frente: não é possível comprar mais por agora. */
-  queueLimitReached(): boolean {
+  /** Nível de um plano pelo nome: do catálogo ou, se estiver desactivado, do servidor. */
+  private tierOfPlanName(name?: string | null): number | null {
+    const found = this.findPlan(name);
+    if (found) return this.planTier(found);
+    const level = this.currentPlanLevelSignal();
+    if (level && level.plan_name?.trim().toLowerCase() === (name || '').trim().toLowerCase()) return level.tier;
+    return null;
+  }
+
+  /**
+   * Onde cai um período de `plan`/`cycle` comprado agora.
+   * - Plano de nível superior ao do período em vigor: começa hoje; os dias pagos
+   *   que restavam viram dias extra (valor proporcional, arredondado para baixo).
+   * - Tudo o resto: hoje, ou no dia seguinte ao fim do último período pago.
+   */
+  purchasePreview(plan: SubscriptionPlan, cycle: BillingCycle): PurchasePreview {
+    const today = maputoToday();
+    const days = cycleDays(cycle);
+    const cur = this.currentPeriod();
+    const curTier = cur ? this.tierOfPlanName(cur.plan_name) : null;
+    const newTier = this.planTier(plan);
+
+    if (cur && curTier !== null && newTier !== null && newTier > curTier) {
+      const remaining = daysBetweenIso(today, cur.end_date) + 1;
+      const length = daysBetweenIso(cur.start_date, cur.end_date) + 1;
+      const paid = (Number(cur.amount) || 0) + (Number(cur.credit_amount) || 0);
+      const credit = Math.round((paid * remaining / length) * 100) / 100;
+      const listPrice = this.planCyclePrice(plan, cycle);
+      const creditDays = listPrice > 0 ? Math.min(Math.floor(credit * days / listPrice), remaining) : 0;
+      return { start: today, end: addDaysIso(today, days + creditDays - 1), queued: false, upgrade: true, creditDays };
+    }
+
+    const start = this.nextPeriodStart();
+    return { start, end: addDaysIso(start, days - 1), queued: start > today, upgrade: false, creditDays: 0 };
+  }
+
+  /**
+   * A fila já tem mais de 360 dias pagos à frente: não é possível comprar mais
+   * por agora. Um upgrade começa hoje, por isso nunca é bloqueado pela fila.
+   */
+  queueLimitReached(plan?: SubscriptionPlan): boolean {
+    if (plan && this.purchasePreview(plan, 'monthly').upgrade) return false;
     return daysBetweenIso(maputoToday(), this.nextPeriodStart()) > SUBSCRIPTION_QUEUE_LIMIT_DAYS;
   }
 

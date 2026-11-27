@@ -27,7 +27,7 @@ import { ListCardComponent } from '../../shared/ui/list-card.component';
 import { CompanyService, Company } from '../../core/services/company.service';
 import { AccountService } from '../../core/services/account.service';
 import { TenantService } from '../../core/services/tenant.service';
-import { SubscriptionService, SubscriptionPlan, SubscriptionPeriod, SubscriptionPageText, maputoToday } from '../../core/services/subscription.service';
+import { SubscriptionService, SubscriptionPlan, SubscriptionPeriod, SubscriptionPageText, PurchasePreview } from '../../core/services/subscription.service';
 import { UserManagementService, UserWithCompanies } from '../../core/services/user-management.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CompanyDialogComponent } from '../../shared/components/company-dialog.component';
@@ -544,7 +544,7 @@ export class SettingsComponent implements OnInit {
       this.snackBar.open(t('settings.messages.downgradeToTrial'), t('common.actions.close'), { duration: 6000 });
       return;
     }
-    if (this.queueLimitReached()) {
+    if (this.queueLimitReached(plan)) {
       this.snackBar.open(t('settings.messages.queueLimit'), t('common.actions.close'), { duration: 6000 });
       return;
     }
@@ -645,19 +645,14 @@ export class SettingsComponent implements OnInit {
     return this.subscriptionService.isPlanUnavailable(plan);
   }
 
-  /** Já há mais de 360 dias pagos à frente. */
-  queueLimitReached(): boolean {
-    return this.subscriptionService.queueLimitReached();
+  /** Já há mais de 360 dias pagos à frente (um upgrade começa hoje e nunca é bloqueado). */
+  queueLimitReached(plan?: SubscriptionPlan): boolean {
+    return this.subscriptionService.queueLimitReached(plan);
   }
 
-  /** Data em que começaria um período comprado agora (hoje ou a seguir ao último pago). */
-  nextPeriodStart(): string {
-    return this.subscriptionService.nextPeriodStart();
-  }
-
-  /** Uma compra agora entra na fila (ainda há tempo pago à frente). */
-  purchaseIsQueued(): boolean {
-    return this.nextPeriodStart() > maputoToday();
+  /** Onde cai este plano se for comprado agora, no período seleccionado. */
+  purchasePreview(plan: SubscriptionPlan): PurchasePreview {
+    return this.subscriptionService.purchasePreview(plan, this.selectedCycle());
   }
 
   /** Períodos já pagos que ainda não começaram. */

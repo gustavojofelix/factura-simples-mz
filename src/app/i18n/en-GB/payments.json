@@ -93,6 +93,8 @@
     },
     "periodRange": "Period: {start} to {end}",
     "periodQueued": "You still have paid time: the {plan} plan starts when it ends. Until then you keep your current plan.",
+    "periodUpgrade": "The {plan} plan starts today and replaces your current plan.",
+    "periodUpgradeCredit": "The {plan} plan starts today and replaces your current plan. The days you had left were converted into extra days ({days}), already included in this period.",
     "invoiceNow": "You pay now and the invoice is issued today."
   }
 }

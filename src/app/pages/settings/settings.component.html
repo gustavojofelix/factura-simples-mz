@@ -301,28 +301,29 @@
                           {{ (isCurrentPlan(plan) ? 'settings.subscription.currentPlanBadge' : 'settings.subscription.notAvailable') | t }}
                         </span>
                       </div>
-                    } @else if (queueLimitReached()) {
+                    } @else if (queueLimitReached(plan)) {
                       <!-- Já há mais de 360 dias pagos à frente -->
                       <div class="text-center py-2.5 px-3 bg-slate-100 rounded-xl border border-slate-200">
                         <span class="block text-slate-600 font-semibold text-sm">{{ 'settings.subscription.queueLimitShort' | t }}</span>
                       </div>
                     } @else {
-                      <!-- Qualquer plano pago: com tempo pago à frente, o período entra na fila -->
+                      <!-- Qualquer plano pago. Plano superior: começa hoje com crédito; o resto entra na fila.
+                           O botão diz sempre "Subscrever"; a linha por baixo explica quando começa. -->
                       <div class="flex flex-col gap-2">
                         @if (isCurrentPlan(plan)) {
                           <span class="text-center text-green-700 font-bold text-xs">{{ 'settings.subscription.currentPlanBadge' | t }}</span>
                         }
                         <button mat-raised-button color="primary" class="!h-12 !rounded-xl !font-bold" (click)="changePlan(plan)">
-                          @if (purchaseIsQueued()) {
-                            {{ 'settings.subscription.addPeriod' | t: { cycle: getCycleLabel(selectedCycle()) } }}
-                          } @else if (isSamePlan(plan)) {
-                            {{ 'settings.subscription.renew' | t }}
-                          } @else {
-                            {{ 'settings.subscription.subscribe' | t }}
-                          }
+                          {{ 'settings.subscription.subscribe' | t }}
                         </button>
-                        @if (purchaseIsQueued()) {
-                          <span class="text-center text-slate-500 text-[11px]">{{ 'settings.subscription.startsOn' | t: { date: formatDate(nextPeriodStart()) } }}</span>
+                        @if (purchasePreview(plan); as preview) {
+                          @if (preview.upgrade && preview.creditDays > 0) {
+                            <span class="text-center text-slate-500 text-[11px]">{{ 'settings.subscription.upgradeTodayCredit' | t: { days: preview.creditDays } }}</span>
+                          } @else if (preview.upgrade) {
+                            <span class="text-center text-slate-500 text-[11px]">{{ 'settings.subscription.upgradeToday' | t }}</span>
+                          } @else if (preview.queued) {
+                            <span class="text-center text-slate-500 text-[11px]">{{ 'settings.subscription.startsOn' | t: { date: formatDate(preview.start) } }}</span>
+                          }
                         }
                       </div>
                     }
