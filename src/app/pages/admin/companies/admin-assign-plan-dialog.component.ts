@@ -77,6 +77,20 @@ import {
               </div>
             </div>
 
+            <div>
+              <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Início *</label>
+              <div class="grid grid-cols-2 gap-1 p-1 bg-gray-100 rounded-lg text-xs font-semibold">
+                <button type="button" (click)="startNow = true" class="py-1.5 rounded-md transition-colors"
+                  [class.bg-white]="startNow" [class.text-blue-600]="startNow" [class.shadow-sm]="startNow">
+                  Hoje
+                </button>
+                <button type="button" (click)="startNow = false" class="py-1.5 rounded-md transition-colors"
+                  [class.bg-white]="!startNow" [class.text-blue-600]="!startNow" [class.shadow-sm]="!startNow">
+                  Depois do tempo já pago
+                </button>
+              </div>
+            </div>
+
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Forma de pagamento *</label>
@@ -99,7 +113,8 @@ import {
             </div>
 
             <div class="p-3 rounded-lg bg-blue-50 border border-blue-100 text-blue-900 text-xs space-y-1">
-              <p>Se a empresa ainda tiver tempo pago, o novo período começa no dia seguinte ao fim do actual.</p>
+              <p *ngIf="startNow">O plano fica activo hoje. Se a empresa ainda tiver tempo pago de outro plano, esse plano termina e os dias que restavam são convertidos em dias extra do plano novo.</p>
+              <p *ngIf="!startNow">Se a empresa ainda tiver tempo pago, o plano actual mantém-se e o novo período só começa no dia seguinte ao fim do actual.</p>
               <p *ngIf="method !== 'offer'">É emitida a factura no OfficeGest (documento fiscal real) e o cliente recebe um e-mail a informar que o plano está activo, com a factura em anexo.</p>
               <p *ngIf="method === 'offer'">Oferta: sem factura. O cliente recebe um e-mail a informar que o plano está activo.</p>
             </div>
@@ -148,6 +163,8 @@ export class AdminAssignPlanDialogComponent implements OnInit {
   paidPlans: SubscriptionPlan[] = [];
   planName = '';
   cycle: BillingCycle = 'monthly';
+  /** O plano começa hoje (omissão) ou no fim do tempo já pago. */
+  startNow = true;
   method: AdminPaymentMethod = 'transfer';
   amount = 0;
   reference = '';
@@ -192,6 +209,7 @@ export class AdminAssignPlanDialogComponent implements OnInit {
         amount: this.amount,
         paymentMethod: this.method,
         reference: this.reference,
+        startNow: this.startNow,
       });
     } catch (e: any) {
       this.result = { ok: false, error: e?.message || 'Erro inesperado.' };

@@ -717,6 +717,8 @@ export class SubscriptionService {
       paymentMethod?: string | null;
       paymentId?: string | null;
       source: 'voucher' | 'manual';
+      /** Back office: começa hoje, substituindo o período em vigor (seja qual for o nível do plano). */
+      startNow?: boolean;
     },
   ): Promise<{ ok: boolean; period?: SubscriptionPeriod; error?: string; code?: string }> {
     const { data, error } = await this.supabase.client.rpc('enqueue_subscription_period', {
@@ -728,6 +730,8 @@ export class SubscriptionService {
       p_payment_method: input.paymentMethod ?? null,
       p_payment_id: input.paymentId ?? null,
       p_source: input.source,
+      // Só segue quando pedido: sem ele, a função anterior à migração 20261127120000 continua a servir.
+      ...(input.startNow ? { p_start_now: true } : {}),
     });
 
     if (error) {
@@ -767,6 +771,8 @@ export class SubscriptionService {
     amount: number;
     paymentMethod: AdminPaymentMethod;
     reference?: string;
+    /** true = o plano começa hoje; false = começa depois do tempo já pago. */
+    startNow?: boolean;
   }): Promise<AdminAssignPlanResult> {
     const offer = input.paymentMethod === 'offer';
     const amount = offer ? 0 : Math.max(0, Number(input.amount) || 0);
@@ -815,6 +821,7 @@ export class SubscriptionService {
       paymentMethod: input.paymentMethod,
       paymentId: payment.id,
       source: 'manual',
+      startNow: input.startNow,
     });
     if (!enqueued.ok) {
       await this.supabase.client.from('subscription_payments')
@@ -878,6 +885,7 @@ export class SubscriptionService {
         reference: input.reference || null,
         start_date: enqueued.period?.start_date,
         end_date: enqueued.period?.end_date,
+        start_now: !!input.startNow,
         invoice: invoiceNumber,
       },
       payment.id,
